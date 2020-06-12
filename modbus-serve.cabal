@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 111c2c7868023b134b04614de118f73feca04eab345c50f77ad630f26aaaf53f
+-- hash: ff8db472815de8e3634b56cb5fa1c60fac6efadbd530b57859a23c21a88d1d6e
 
 name:           modbus-serve
 version:        0.1.0.0
@@ -26,12 +26,16 @@ source-repository head
   location: https://github.com/githubuser/modbus-serve
 
 library
+  exposed-modules:
+      OptParser
   other-modules:
       Paths_modbus_serve
   hs-source-dirs:
       src
   build-depends:
       base >=4.7 && <5
+    , iproute
+    , optparse-applicative
   default-language: Haskell2010
 
 executable modbus-serve-exe
@@ -43,7 +47,9 @@ executable modbus-serve-exe
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       base >=4.7 && <5
+    , iproute
     , modbus-serve
+    , optparse-applicative
   default-language: Haskell2010
 
 test-suite modbus-serve-test
@@ -56,5 +62,7 @@ test-suite modbus-serve-test
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       base >=4.7 && <5
+    , iproute
     , modbus-serve
+    , optparse-applicative
   default-language: Haskell2010
