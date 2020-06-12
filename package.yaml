@@ -1,10 +1,10 @@
 name:                modbus-serve
 version:             0.1.0.0
-github:              "githubuser/modbus-serve"
+github:              "3kyro/modbus-serve"
 license:             BSD3
-author:              "Author name here"
-maintainer:          "example@example.com"
-copyright:           "2020 Author name here"
+author:              "Kyriakos Papachrysanthou"
+maintainer:          "k.papachrisanthou@gmail.com"
+copyright:           "2020 Kyriakos Papachrysanthou"
 
 extra-source-files:
 - README.md
@@ -24,6 +24,8 @@ dependencies:
 - optparse-applicative
 - iproute
 - hspec
+- parsec
+- text
 
 library:
   source-dirs: src
@@ -36,6 +38,7 @@ executables:
     - -threaded
     - -rtsopts
     - -with-rtsopts=-N
+    - -fwarn-unused-imports
     dependencies:
     - modbus-serve
 
