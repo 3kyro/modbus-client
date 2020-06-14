@@ -4,16 +4,16 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 252febec414978050b498ebed59fafdda2959def1a3c4db6b73a5a39e5d04eca
+-- hash: 8d0ae959776936560c3b9fb280ac77ccb1f2b9b78fe1d0dfdacb8b92aee091d4
 
 name:           modbus-serve
 version:        0.1.0.0
 description:    Please see the README on GitHub at <https://github.com/githubuser/modbus-serve#readme>
-homepage:       https://github.com/githubuser/modbus-serve#readme
-bug-reports:    https://github.com/githubuser/modbus-serve/issues
-author:         Author name here
-maintainer:     example@example.com
-copyright:      2020 Author name here
+homepage:       https://github.com/3kyro/modbus-serve#readme
+bug-reports:    https://github.com/3kyro/modbus-serve/issues
+author:         Kyriakos Papachrysanthou
+maintainer:     k.papachrisanthou@gmail.com
+copyright:      2020 Kyriakos Papachrysanthou
 license:        BSD3
 license-file:   LICENSE
 build-type:     Simple
@@ -23,7 +23,7 @@ extra-source-files:
 
 source-repository head
   type: git
-  location: https://github.com/githubuser/modbus-serve
+  location: https://github.com/3kyro/modbus-serve
 
 library
   exposed-modules:

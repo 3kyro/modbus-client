@@ -4,36 +4,28 @@ Description: Defines the parser used for csv files
 
 
 -}
-module CsvParser
-    ( pCSV
-    , ModDatum
-    )
-where
+module CsvParser where
 
 import           Text.Parsec.Text               ( Parser )
-import           Text.Parsec                    ( ParseError
-                                                , parse
-                                                , char
+import           Text.Parsec                    ( char
                                                 , many
                                                 , noneOf
                                                 , digit
                                                 , many1
                                                 , try
                                                 , eof
-                                                , optional
                                                 , anyChar
                                                 , manyTill
                                                 , endOfLine
+                                                , optional
                                                 )
 import           Control.Applicative            ( (<|>) )
 import qualified Data.Text                     as T
 import           CsvParser.Spec
 import           Data.Word                      ( Word16 )
 import           Data.Char                      ( toLower )
+import           Control.Monad                  ( void )
 
--- debbuging parser
-run :: Parser a -> String -> Either ParseError a
-run p s = parse p "" $ T.pack s
 
 pCSV :: Parser [ModDatum]
 pCSV = pLine *> many pModDatum <* eof
@@ -47,7 +39,7 @@ pModDatum =
         <*> pRegister
         <*> pValue
         <*> pComments
-        <*  endOfLine
+        <*  optional endOfLine
 
 pDescription :: Parser T.Text
 pDescription = field pText
@@ -73,21 +65,23 @@ pValue = do
         "word"  -> field $ ModWord <$> pWord
         _       -> fail "Parsing Error on data type"
 
-pFloat :: Parser Float
-pFloat = read <$> d
+pFloat :: Parser (Maybe Float)
+pFloat = try (Just . read <$> d) <|> return Nothing
   where
     d          = (++) <$> integer <*> fractional
     integer    = many1 digit
-    fractional = try $ (:) <$> char '.' <*> many digit <|> return []
+    fractional = try ((:) <$> char '.' <*> many1 digit) <|> return []
 
-pWord :: Parser Word16
-pWord = field $ read <$> many1 digit
+pWord :: Parser (Maybe Word16)
+pWord = Just . read <$> many1 digit <|> return Nothing
 
+-- comment is the last fied and so we exclude the check for a semicolon
 pComments :: Parser T.Text
-pComments = field pText
+pComments = pText
 
+-- PArses an inner csv field, discarding the separating semicolon
 field :: Parser a -> Parser a
-field p = p <* optional semicolon
+field p = p <* semicolon
 
 semicolon :: Parser Char
 semicolon = char ';'
@@ -99,3 +93,6 @@ pText = T.pack <$> many (noneOf ";\r\n")
 
 pLine :: Parser T.Text
 pLine = T.pack <$> manyTill anyChar endOfLine
+
+discardField :: Parser ()
+discardField = void $ field $ manyTill anyChar semicolon
