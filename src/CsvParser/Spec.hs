@@ -33,9 +33,8 @@ data ModFunction = ReadInput | ReadMultHolding | WriteSingleHolding | WriteMultH
     deriving (Show, Eq)
 
 isFnRead :: ModFunction -> Bool
-isFnRead fn 
-    | fn == ReadInput || fn == ReadMultHolding = True
-    | otherwise = False
+isFnRead fn | fn == ReadInput || fn == ReadMultHolding = True
+            | otherwise = False
 
 modData :: T.Text -> ModFunction -> Word16 -> ModType -> T.Text -> ModDatum
 modData d f r v c = ModDatum { description = d
