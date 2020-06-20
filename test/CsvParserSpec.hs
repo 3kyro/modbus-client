@@ -13,6 +13,7 @@ csvParserSpec = do
     pDescriptionSpec
     pFunctionSpec
     pFloatSpec
+    pWordSpec
 
 pDescriptionSpec :: Spec
 pDescriptionSpec = describe "Parse a description field" $ do
@@ -58,6 +59,13 @@ pFloatSpec = describe "Parse a float" $ do
     it "parses floats with a leading dot (eg .5)" $ property prop_leading_dot
     it "fails on alphabetic input" $ property prop_alphabetic_float
 
+pWordSpec :: Spec
+pWordSpec = describe "Parse a word" $ do
+    it "parses integers" $ property $ \x ->
+        Right (Just x) == testCSVParser pWord (show x)
+    it "fails on floating points" $ property prop_floats_as_words
+    it "fails on alphabetic input" $ property prop_alphabetic_word
+
 testFunctionFailure :: Int -> SpecWith (Arg Expectation)
 testFunctionFailure x =
     it ("fails for function code " <> s)
@@ -82,13 +90,10 @@ prop_leading_dot x = x > 0 ==> Right (Just x') == testCSVParser
 prop_alphabetic_float :: Int -> Int -> Char -> Property
 prop_alphabetic_float x y c =
     not (isDigit c)
-        &&  c
-        /=  'e'
-        &&  y
-        >   0
-        ==> Right Nothing
-        ==  parseResult
-        ||  isLeft parseResult
+        && c /= 'e'
+        && c`notElem` "-."
+        && y > 0
+        ==> isLeft parseResult
   where
     parseResult = testCSVParser pFloat (integer ++ "." ++ fractional)
     integer     = insertChar x c
@@ -102,5 +107,13 @@ insertChar x c = intercalate [c] [fst splitted, snd splitted]
   where
     splitted = splitAt modidx x'
     modidx   = x `mod` length x'
-    x' = show x
+    x'       = show x
 
+prop_floats_as_words :: Float -> Bool
+prop_floats_as_words x = isLeft $ testCSVParser pWord (show x)
+
+prop_alphabetic_word :: Int -> Char -> Property
+prop_alphabetic_word x c = not (isDigit c) ==> isLeft $ testCSVParser
+    pWord
+    charWord
+    where charWord = insertChar x c

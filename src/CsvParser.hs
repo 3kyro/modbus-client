@@ -25,6 +25,7 @@ import           Text.Parsec                    ( char
                                                 , parse
                                                 , option
                                                 , notFollowedBy
+                                                , (<?>)
                                                 , ParseError
                                                 )
 import           Control.Applicative            ( (<|>) )
@@ -83,8 +84,9 @@ pValue = do
 -- usual representation: eg 10.24
 -- scientific representation: eg 3.24e-12
 pFloat :: Parser (Maybe Float)
-pFloat = Just . read <$> float <|> return Nothing
+pFloat = Just . read <$> float <|> nothing <?> "Float"
   where
+    nothing        = eof >> return Nothing
     -- optional trailing scientific notation  
     float          = (++) <$> noScientific <*> option "" scientific
     -- optional leading dot (eg .2)
@@ -104,8 +106,14 @@ pFloat = Just . read <$> float <|> return Nothing
     scientific     = (:) <$> char 'e' <*> integer
 
 
+-- Parses a word16 
 pWord :: Parser (Maybe Word16)
-pWord = Just . read <$> many1 digit <|> return Nothing
+pWord = Just . read <$> word <|> nothing <?> "Word"
+  where
+    word     = minus <|> unsigned <?> "Parse error"
+    minus    = char '-' *> fail "only positive numbers"
+    unsigned = many1 digit <* notFollowedBy anyChar <?> "Parse error"
+    nothing  = eof >> return Nothing
 
 -- comment is the last fied and so we exclude the check for a semicolon
 pComments :: Parser T.Text
