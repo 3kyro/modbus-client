@@ -72,8 +72,8 @@ pValue :: Parser ModType
 pValue = do
     dataType <- T.map toLower <$> field pText
     case T.unpack dataType of
-        "float" -> field $ ModFloat <$> pFloat
-        "word"  -> field $ ModWord <$> pWord
+        "float" -> ModFloat <$> pFloat
+        "word"  -> ModWord <$> pWord
         _       -> fail "Parsing Error on data type"
 
 -- Parses a floating point number
@@ -86,34 +86,33 @@ pValue = do
 pFloat :: Parser (Maybe Float)
 pFloat = Just . read <$> float <|> nothing <?> "Float"
   where
-    nothing        = eof >> return Nothing
+    nothing        = char ';' >> return Nothing
     -- optional trailing scientific notation  
-    float          = (++) <$> noScientific <*> option "" scientific
+    float          = try noScientific <|> scientific
     -- optional leading dot (eg .2)
-    noScientific   = leadingDot <|> try noDot <|> try noFractional <|> middleDot
+    noScientific   = leadingDot <|> try noDot <|> try noFractional <|> middleDot <* char ';'
+    noDot = integer <* char ';'
     -- number that starts with a separating dot (eg .5)
     leadingDot     = char '.' *> addLeadingZero
-    addLeadingZero = (++) <$> return "0." <*> many1 digit
-    -- parses a
-    noDot          = integer <* notFollowedBy anyChar
+    addLeadingZero = (++) <$> return "0." <*> many1 digit <* char ';'
     -- with a separating dot but no fractional part (eg 100.)
-    noFractional   = integer <* char '.' <* notFollowedBy anyChar
+    noFractional   = integer <* char '.' <* char ';'
     -- typical float representation (eg 10.52)
     middleDot      = (++) <$> integer <*> fractional
-    integer        = (:) <$> option ' ' (char '-') <*> many1 digit
+    integer        = (:) <$> option ' ' (char '-') <*> many1 digit 
     fractional     = (:) <$> char '.' <*> many1 digit
     -- parses scientific notation (eg e-23)
-    scientific     = (:) <$> char 'e' <*> integer
-
+    scientific = (++) <$> middleDot <*> exponent 
+    exponent     = (:) <$> char 'e' <*> integer <* char ';'
 
 -- Parses a word16 
 pWord :: Parser (Maybe Word16)
-pWord = Just . read <$> word <|> nothing <?> "Word"
+pWord = Just . read <$> word <|> nothing <?> "Word" 
   where
     word     = minus <|> unsigned <?> "Parse error"
     minus    = char '-' *> fail "only positive numbers"
-    unsigned = many1 digit <* notFollowedBy anyChar <?> "Parse error"
-    nothing  = eof >> return Nothing
+    unsigned = many1 digit <* char ';' <?> "Parse error"
+    nothing  = char ';' >> return Nothing
 
 -- comment is the last fied and so we exclude the check for a semicolon
 pComments :: Parser T.Text
@@ -127,7 +126,7 @@ semicolon :: Parser Char
 semicolon = char ';'
 
 -- Parses text fields
--- Text fiemmds cannot contain newline characters
+-- Text fields cannot contain newline characters
 pText :: Parser T.Text
 pText = T.pack <$> many (noneOf ";\r\n")
 
