@@ -94,10 +94,13 @@ prop_alphabetic_float x y c =
     integer     = insertChar x c
     fractional  = insertChar y c
 
+-- inserts a character in the textual representation of a number
+-- number is inserted in a pseudo random position
+-- eg. insertChar 151 'a' = "1a51"
 insertChar :: Int -> Char -> String
 insertChar x c = intercalate [c] [fst splitted, snd splitted]
   where
-    splitted = splitAt modidx (show x)
-    modidx   = x `mod` length (show x)
-
+    splitted = splitAt modidx x'
+    modidx   = x `mod` length x'
+    x' = show x
 

@@ -75,6 +75,13 @@ pValue = do
         "word"  -> field $ ModWord <$> pWord
         _       -> fail "Parsing Error on data type"
 
+-- Parses a floating point number
+-- number can be in the form
+-- leading dot: eg .24
+-- no dot: eg 100
+-- no fractional: eg 15.
+-- usual representation: eg 10.24
+-- scientific representation: eg 3.24e-12
 pFloat :: Parser (Maybe Float)
 pFloat = Just . read <$> float <|> return Nothing
   where
@@ -86,16 +93,16 @@ pFloat = Just . read <$> float <|> return Nothing
     leadingDot     = char '.' *> addLeadingZero
     addLeadingZero = (++) <$> return "0." <*> many1 digit
     -- parses a
-    noDot = integer <* notFollowedBy anyChar
+    noDot          = integer <* notFollowedBy anyChar
     -- with a separating dot but no fractional part (eg 100.)
-    noFractional = integer <* char '.' <* notFollowedBy anyChar
+    noFractional   = integer <* char '.' <* notFollowedBy anyChar
     -- typical float representation (eg 10.52)
-    middleDot    = (++) <$> integer <*> fractional 
+    middleDot      = (++) <$> integer <*> fractional
     integer        = (:) <$> option ' ' (char '-') <*> many1 digit
-    fractional     =  (:) <$> char '.' <*> many1 digit
+    fractional     = (:) <$> char '.' <*> many1 digit
     -- parses scientific notation (eg e-23)
     scientific     = (:) <$> char 'e' <*> integer
-      
+
 
 pWord :: Parser (Maybe Word16)
 pWord = Just . read <$> many1 digit <|> return Nothing
