@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 8d0ae959776936560c3b9fb280ac77ccb1f2b9b78fe1d0dfdacb8b92aee091d4
+-- hash: 1d249af9ddeff2625fb479a82de9042c5a8e34bad874dcadd6ea37f11b6caa6c
 
 name:           modbus-serve
 version:        0.1.0.0
@@ -35,7 +35,8 @@ library
   hs-source-dirs:
       src
   build-depends:
-      base >=4.7 && <5
+      QuickCheck
+    , base >=4.7 && <5
     , hspec
     , iproute
     , optparse-applicative
@@ -51,7 +52,8 @@ executable modbus-serve-exe
       app
   ghc-options: -threaded -rtsopts -with-rtsopts=-N -fwarn-unused-imports
   build-depends:
-      base >=4.7 && <5
+      QuickCheck
+    , base >=4.7 && <5
     , hspec
     , iproute
     , modbus-serve
@@ -65,13 +67,13 @@ test-suite modbus-serve-test
   main-is: Spec.hs
   other-modules:
       CsvParserSpec
-      OptParserSpec
       Paths_modbus_serve
   hs-source-dirs:
       test
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-      base >=4.7 && <5
+      QuickCheck
+    , base >=4.7 && <5
     , hspec
     , iproute
     , modbus-serve

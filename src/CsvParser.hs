@@ -4,7 +4,11 @@ Description: Defines the parser used for csv files
 
 
 -}
-module CsvParser where
+module CsvParser
+    ( module CsvParser.Spec
+    , module CsvParser
+    )
+where
 
 import           Text.Parsec.Text               ( Parser )
 import           Text.Parsec                    ( char
@@ -18,6 +22,10 @@ import           Text.Parsec                    ( char
                                                 , manyTill
                                                 , endOfLine
                                                 , optional
+                                                , parse
+                                                , option
+                                                , notFollowedBy
+                                                , ParseError
                                                 )
 import           Control.Applicative            ( (<|>) )
 import qualified Data.Text                     as T
@@ -26,6 +34,8 @@ import           Data.Word                      ( Word16 )
 import           Data.Char                      ( toLower )
 import           Control.Monad                  ( void )
 
+testCSVParser :: Parser a -> String -> Either ParseError a
+testCSVParser p s = parse p "" $ T.pack s
 
 pCSV :: Parser [ModDatum]
 pCSV = pLine *> many pModDatum <* eof
@@ -66,11 +76,26 @@ pValue = do
         _       -> fail "Parsing Error on data type"
 
 pFloat :: Parser (Maybe Float)
-pFloat = try (Just . read <$> d) <|> return Nothing
+pFloat = Just . read <$> float <|> return Nothing
   where
-    d          = (++) <$> integer <*> fractional
-    integer    = many1 digit
-    fractional = try ((:) <$> char '.' <*> many1 digit) <|> return []
+    -- optional trailing scientific notation  
+    float          = (++) <$> noScientific <*> option "" scientific
+    -- optional leading dot (eg .2)
+    noScientific   = leadingDot <|> try noDot <|> try noFractional <|> middleDot
+    -- number that starts with a separating dot (eg .5)
+    leadingDot     = char '.' *> addLeadingZero
+    addLeadingZero = (++) <$> return "0." <*> many1 digit
+    -- parses a
+    noDot = integer <* notFollowedBy anyChar
+    -- with a separating dot but no fractional part (eg 100.)
+    noFractional = integer <* char '.' <* notFollowedBy anyChar
+    -- typical float representation (eg 10.52)
+    middleDot    = (++) <$> integer <*> fractional 
+    integer        = (:) <$> option ' ' (char '-') <*> many1 digit
+    fractional     =  (:) <$> char '.' <*> many1 digit
+    -- parses scientific notation (eg e-23)
+    scientific     = (:) <$> char 'e' <*> integer
+      
 
 pWord :: Parser (Maybe Word16)
 pWord = Just . read <$> many1 digit <|> return Nothing
@@ -79,7 +104,7 @@ pWord = Just . read <$> many1 digit <|> return Nothing
 pComments :: Parser T.Text
 pComments = pText
 
--- PArses an inner csv field, discarding the separating semicolon
+-- Parses an inner csv field, discarding the separating semicolon
 field :: Parser a -> Parser a
 field p = p <* semicolon
 

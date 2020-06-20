@@ -1,1 +1,7 @@
-{-# OPTIONS_GHC -F -pgmF hspec-discover #-}
+import           Test.Hspec
+import           CsvParserSpec
+
+main = hspec spec
+
+spec :: Spec
+spec = csvParserSpec

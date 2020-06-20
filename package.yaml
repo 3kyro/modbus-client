@@ -26,6 +26,8 @@ dependencies:
 - hspec
 - parsec
 - text
+- QuickCheck
+
 
 library:
   source-dirs: src
@@ -53,3 +55,4 @@ tests:
     dependencies:
     - modbus-serve
     - hspec
+
