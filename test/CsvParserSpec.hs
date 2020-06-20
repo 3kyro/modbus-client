@@ -5,8 +5,8 @@ import           Test.QuickCheck
 import           CsvParser
 import qualified Data.Text                     as T
 import           Data.Either                    ( isLeft )
-import Data.List (intercalate)
-import Data.Char (isDigit)
+import           Data.List                      ( intercalate )
+import           Data.Char                      ( isDigit )
 
 csvParserSpec :: Spec
 csvParserSpec = do
@@ -53,7 +53,8 @@ pFloatSpec = describe "Parse a float" $ do
     it "parses floats" $ property $ \x ->
         Right (Just x) == testCSVParser pFloat (show x)
     it "parses integers as floats" $ property prop_ints_as_floats
-    it "parses floats with no fractional (eg 100.)" $ property prop_no_fractional
+    it "parses floats with no fractional (eg 100.)"
+        $ property prop_no_fractional
     it "parses floats with a leading dot (eg .5)" $ property prop_leading_dot
     it "fails on alphabetic input" $ property prop_alphabetic_float
 
@@ -65,25 +66,38 @@ testFunctionFailure x =
     where s = show x
 
 prop_ints_as_floats :: Int -> Bool
-prop_ints_as_floats x = Right (Just (fromIntegral x)) == testCSVParser pFloat (show x)
+prop_ints_as_floats x =
+    Right (Just (fromIntegral x)) == testCSVParser pFloat (show x)
 
 prop_no_fractional :: Int -> Bool
 prop_no_fractional x = Right (Just x') == testCSVParser pFloat (show x <> ".")
     where x' = fromIntegral x
 
 prop_leading_dot :: Int -> Property
-prop_leading_dot x = x > 0 ==> Right (Just x') == testCSVParser pFloat ("." <> show x)
+prop_leading_dot x = x > 0 ==> Right (Just x') == testCSVParser
+    pFloat
+    ("." <> show x)
     where x' = read $ "0." <> show x
-    
+
 prop_alphabetic_float :: Int -> Int -> Char -> Property
-prop_alphabetic_float x y c = not (isDigit c) && c /= 'e' && y > 0 ==> Right Nothing == parseResult || isLeft parseResult 
-    where parseResult = testCSVParser pFloat (integer ++ "." ++ fractional)
-          integer = insertChar x c
-          fractional = insertChar y c  
+prop_alphabetic_float x y c =
+    not (isDigit c)
+        &&  c
+        /=  'e'
+        &&  y
+        >   0
+        ==> Right Nothing
+        ==  parseResult
+        ||  isLeft parseResult
+  where
+    parseResult = testCSVParser pFloat (integer ++ "." ++ fractional)
+    integer     = insertChar x c
+    fractional  = insertChar y c
 
 insertChar :: Int -> Char -> String
 insertChar x c = intercalate [c] [fst splitted, snd splitted]
-    where splitted = splitAt modidx (show x)
-          modidx = x `mod` length (show x)  
+  where
+    splitted = splitAt modidx (show x)
+    modidx   = x `mod` length (show x)
 
 
