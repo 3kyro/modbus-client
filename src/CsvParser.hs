@@ -1,38 +1,20 @@
-{-|
-Module : CsvParser
-Description: Defines the parser used for csv files
-
-
--}
+-- |
+-- Module : CsvParser
+-- Description: Defines the parser used for csv files
 module CsvParser
-    ( module CsvParser.Spec
-    , module CsvParser
-    )
+  ( module CsvParser.Spec,
+    module CsvParser,
+  )
 where
 
-import           Text.Parsec.Text               ( Parser )
-import           Text.Parsec                    ( char
-                                                , many
-                                                , noneOf
-                                                , digit
-                                                , many1
-                                                , try
-                                                , eof
-                                                , anyChar
-                                                , manyTill
-                                                , endOfLine
-                                                , optional
-                                                , parse
-                                                , option
-                                                , (<?>)
-                                                , ParseError
-                                                )
-import           Control.Applicative            ( (<|>) )
-import qualified Data.Text                     as T
-import           CsvParser.Spec
-import           Data.Word                      ( Word16 )
-import           Data.Char                      ( toLower )
-import           Control.Monad                  ( void )
+import Control.Applicative ((<|>))
+import Control.Monad (void)
+import CsvParser.Spec
+import Data.Char (toLower)
+import qualified Data.Text as T
+import Data.Word (Word16)
+import Text.Parsec hiding ((<|>))
+import Text.Parsec.Text (Parser)
 
 testCSVParser :: Parser a -> String -> Either ParseError a
 testCSVParser p s = parse p "" $ T.pack s
@@ -43,26 +25,26 @@ pCSV = pLine *> many pModDatum <* eof
 -- Parses a ModDatum
 pModDatum :: Parser ModDatum
 pModDatum =
-    modData
-        <$> pDescription
-        <*> pFunction
-        <*> pRegister
-        <*> pValue
-        <*> pComments
-        <*  optional endOfLine
+  modData
+    <$> pDescription
+    <*> pFunction
+    <*> pRegister
+    <*> pValue
+    <*> pComments
+    <* optional endOfLine
 
 pDescription :: Parser T.Text
 pDescription = field pText
 
 pFunction :: Parser ModFunction
 pFunction = do
-    code <- field $ many digit
-    case code of
-        "3"  -> return ReadInput
-        "4"  -> return ReadMultHolding
-        "6"  -> return WriteSingleHolding
-        "16" -> return WriteMultHolding
-        _    -> fail "Parse error on Modbus function call"
+  code <- field $ many digit
+  case code of
+    "3" -> return ReadInput
+    "4" -> return ReadMultHolding
+    "6" -> return WriteSingleHolding
+    "16" -> return WriteMultHolding
+    _ -> fail "Parse error on Modbus function call"
 
 pRegister :: Parser Word16
 pRegister = field $ read <$> many digit
@@ -71,11 +53,11 @@ pRegister = field $ read <$> many digit
 -- the correct value field
 pValue :: Parser ModType
 pValue = do
-    dataType <- T.map toLower <$> field pText
-    case T.unpack dataType of
-        "float" -> ModFloat <$> pFloat
-        "word"  -> ModWord <$> pWord
-        _       -> fail "Parsing Error on data type"
+  dataType <- T.map toLower <$> field pText
+  case T.unpack dataType of
+    "float" -> ModFloat <$> pFloat
+    "word" -> ModWord <$> pWord
+    _ -> fail "Parsing Error on data type"
 
 -- Parses a floating point number
 -- number can be in the form
@@ -87,37 +69,38 @@ pValue = do
 pFloat :: Parser (Maybe Float)
 pFloat = Just . read <$> float <|> nothing <?> "Float"
   where
-    nothing        = char ';' >> return Nothing
-    -- optional trailing scientific notation  
-    float          = try noScientific <|> scientific
+    nothing = char ';' >> return Nothing
+    -- optional trailing scientific notation
+    float = try noScientific <|> scientific
     -- optional leading dot (eg .2)
-    noScientific   = leadingDot <|> try noDot <|> try noFractional <|> middleDot <* char ';'
+    noScientific = leadingDot <|> try noDot <|> try noFractional <|> middleDot <* char ';'
     noDot = integer <* char ';'
     -- number that starts with a separating dot (eg .5)
-    leadingDot     = char '.' *> addLeadingZero
+    leadingDot = char '.' *> addLeadingZero
     addLeadingZero = (++) <$> return "0." <*> many1 digit <* char ';'
     -- with a separating dot but no fractional part (eg 100.)
-    noFractional   = integer <* char '.' <* char ';'
+    noFractional = integer <* char '.' <* char ';'
     -- typical float representation (eg 10.52)
-    middleDot      = (++) <$> integer <*> fractional
-    integer        = (:) <$> option ' ' (char '-') <*> many1 digit 
-    fractional     = (:) <$> char '.' <*> many1 digit
+    middleDot = (++) <$> integer <*> fractional
+    integer = (:) <$> option ' ' (char '-') <*> many1 digit
+    fractional = (:) <$> char '.' <*> many1 digit
     -- parses scientific notation (eg e-23)
-    scientific = (++) <$> middleDot <*> exponent 
-    exponent     = (:) <$> char 'e' <*> integer <* char ';'
+    scientific = (++) <$> middleDot <*> exponent
+    exponent = (:) <$> char 'e' <*> integer <* char ';'
 
--- Parses a word16 
+-- Parses a word16
 pWord :: Parser (Maybe Word16)
-pWord = Just . read <$> word <|> nothing <?> "Word" 
+pWord = Just . read <$> word <|> nothing <?> "Word"
   where
-    word     = minus <|> unsigned <?> "Parse error"
-    minus    = char '-' *> fail "only positive numbers"
+    word = minus <|> unsigned <?> "Parse error"
+    minus = char '-' *> fail "only positive numbers"
     unsigned = many1 digit <* char ';' <?> "Parse error"
-    nothing  = char ';' >> return Nothing
+    nothing = char ';' >> return Nothing
 
--- comment is the last fied and so we exclude the check for a semicolon
+-- comment is the last field, so we keep newlines unparsed
+-- for consistency we don't allow semicolons in comment fields
 pComments :: Parser T.Text
-pComments = pText
+pComments = T.pack <$> many (noneOf ";\r\n") <* notFollowedBy (char ';')
 
 -- Parses an inner csv field, discarding the separating semicolon
 field :: Parser a -> Parser a
