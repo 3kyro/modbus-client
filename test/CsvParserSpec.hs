@@ -81,8 +81,8 @@ pValueSpec = describe "Parse a modbus value" $ do
     it "return Nothing on floats" $ testCSVParser pValue "float;;" == Right (ModFloat Nothing)
     it "fails on bad data type" $ property $ \x ->
         isLeft $ testCSVParser pValue $ x ++ ";;"
-    it "fails on non numeric inputs - word" $ property $ prop_non_numeric_pvalue_word 
-    it "fails on non numeric inputs - float" $ property $ prop_non_numeric_pvalue_float 
+    it "fails on non numeric inputs - word" $ property prop_non_numeric_pvalue_word 
+    it "fails on non numeric inputs - float" $ property prop_non_numeric_pvalue_float 
     
 testFunctionFailure :: Int -> SpecWith (Arg Expectation)
 testFunctionFailure x =
