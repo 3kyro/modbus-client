@@ -27,7 +27,7 @@ data ModDatum = ModDatum {
 
 
 data ModType = ModWord (Maybe Word16) | ModFloat (Maybe Float)
-    deriving (Show)
+    deriving (Show, Eq)
 
 data ModFunction = ReadInput | ReadMultHolding | WriteSingleHolding | WriteMultHolding
     deriving (Show, Eq)

@@ -24,7 +24,6 @@ import           Text.Parsec                    ( char
                                                 , optional
                                                 , parse
                                                 , option
-                                                , notFollowedBy
                                                 , (<?>)
                                                 , ParseError
                                                 )
@@ -68,6 +67,8 @@ pFunction = do
 pRegister :: Parser Word16
 pRegister = field $ read <$> many digit
 
+-- Parses a modbus value by associating the datatype field with
+-- the correct value field
 pValue :: Parser ModType
 pValue = do
     dataType <- T.map toLower <$> field pText
