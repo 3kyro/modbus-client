@@ -36,6 +36,7 @@ pModDatum =
 pDescription :: Parser T.Text
 pDescription = field pText
 
+-- Parses a function code
 pFunction :: Parser ModFunction
 pFunction = do
   code <- field $ many digit

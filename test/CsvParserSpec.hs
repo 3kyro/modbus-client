@@ -42,9 +42,8 @@ pCommentSpec = describe "Parse a comment field" $ do
 
 pFunctionSpec :: Spec
 pFunctionSpec = describe "Parse a function code" $ do
-  it "fails on non numeric inputs" $
-    testCSVParser pFunction "3non_°numeric"
-      `shouldSatisfy` isLeft
+  it "fails on non numeric inputs" $ property prop_non_numeric_function_code
+  it "fails at non implemented function codes" $ property prop_non_function_code
   context "it correctly assigns functions codes" $ do
     it "at read input" $
       testCSVParser pFunction "3;"
@@ -58,10 +57,6 @@ pFunctionSpec = describe "Parse a function code" $ do
     it "at write multiple holding registers" $
       testCSVParser pFunction "16;"
         `shouldBe` Right WriteMultHolding
-  context "it fails at non implemented function codes" $
-    mapM_
-      testFunctionFailure
-      [1, 2, 5, 15, 23, 22, 24, 20, 21, 07, 08, 11, 12, 17, 43]
 
 pFloatSpec :: Spec
 pFloatSpec = describe "Parse a float" $ do
@@ -113,14 +108,6 @@ pValueSpec = describe "Parse a modbus value" $ do
   it "fails on non numeric inputs - float" $
     property prop_non_numeric_pvalue_float
 
-testFunctionFailure :: Int -> SpecWith (Arg Expectation)
-testFunctionFailure x =
-  it ("fails for function code " <> s) $
-    testCSVParser pFunction (s <> ";")
-      `shouldSatisfy` isLeft
-  where
-    s = show x
-
 prop_description_text :: String -> Property
 prop_description_text s =
   valid s ==> Right (T.pack s)
@@ -134,6 +121,12 @@ prop_comment_text :: String -> Property
 prop_comment_text s = valid s ==> Right (T.pack s) == testCSVParser pComments s
   where
     valid = all (`notElem` ";\n\r")
+
+prop_non_function_code :: Int -> Property
+prop_non_function_code x = x `notElem` [3,4,6,16] ==> isLeft $ testCSVParser pFunction (show x ++ ";")
+
+prop_non_numeric_function_code :: String -> Property
+prop_non_numeric_function_code s = notElem ';' s ==> isLeft $ testCSVParser pFunction (s ++ ";")
 
 prop_ints_as_floats :: Int -> Bool
 prop_ints_as_floats x =
