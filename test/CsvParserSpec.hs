@@ -5,11 +5,13 @@ import Data.Char
   ( isDigit,
     toUpper,
   )
-import Data.Either (isLeft)
+import Data.Either (isLeft, isRight)
 import Data.List (intercalate)
 import qualified Data.Text as T
+import Data.Word (Word16)
 import Test.Hspec
-import Test.QuickCheck
+import Test.QuickCheck hiding (function)
+import Text.Parsec (ParseError)
 
 csvParserSpec :: Spec
 csvParserSpec = do
@@ -19,6 +21,7 @@ csvParserSpec = do
   pWordSpec
   pValueSpec
   pCommentSpec
+  pModDatumSpec
 
 pDescriptionSpec :: Spec
 pDescriptionSpec = describe "Parse a description field" $ do
@@ -108,6 +111,21 @@ pValueSpec = describe "Parse a modbus value" $ do
   it "fails on non numeric inputs - float" $
     property prop_non_numeric_pvalue_float
 
+pModDatumSpec :: Spec
+pModDatumSpec = describe "Parse a ModDatum" $ do
+  it "parses a valid line" $ property prop_valid_datum
+  -- check valid values that will be used in following tests
+  it "parses valid values" $ property prop_datum_check_valid_values
+  it "fails on wrong description" $ property prop_datum_fail_description
+  it "fails on wrong function" $ property prop_datum_fail_function
+  it "fails on wrong register" $ property prop_datum_fail_register
+  it "fails on wrong value" $ property prop_datum_fail_value
+  it "fails on wrong comment" $ property prop_datum_fail_comment
+
+--------------------------------------------------------------------------
+-- Property functions
+--------------------------------------------------------------------------
+
 prop_description_text :: String -> Property
 prop_description_text s =
   valid s ==> Right (T.pack s)
@@ -123,7 +141,7 @@ prop_comment_text s = valid s ==> Right (T.pack s) == testCSVParser pComments s
     valid = all (`notElem` ";\n\r")
 
 prop_non_function_code :: Int -> Property
-prop_non_function_code x = x `notElem` [3,4,6,16] ==> isLeft $ testCSVParser pFunction (show x ++ ";")
+prop_non_function_code x = x `notElem` [3, 4, 6, 16] ==> isLeft $ testCSVParser pFunction (show x ++ ";")
 
 prop_non_numeric_function_code :: String -> Property
 prop_non_numeric_function_code s = notElem ';' s ==> isLeft $ testCSVParser pFunction (s ++ ";")
@@ -189,6 +207,84 @@ prop_non_numeric_pvalue_float s =
       ++ s
       ++ ";"
 
+prop_valid_datum :: String -> ModFunction -> Word16 -> ModType -> String -> Property
+prop_valid_datum desc fun reg val com =
+  validText desc && validText com
+    ==> Right
+      ( ModDatum
+          { description = T.pack desc,
+            function = fun,
+            register = reg,
+            value = val,
+            comments = T.pack com
+          }
+      )
+      == testCSVParser
+        pModDatum
+        ( desc ++ ";"
+            <> show fun ++ ";"
+            <> show reg ++ ";"
+            <> show val ++ ";"
+            <> com
+        )
+  where
+    validText = all (`notElem` ";\n\r")
+
+-- typical valid values, to be used in ModDatum fail tests
+validDesc = "description"
+
+validFun = "3"
+
+validReg = "3000"
+
+validVal = "word;1"
+
+validCom = "comment"
+
+prop_datum_check_valid_values :: Bool
+prop_datum_check_valid_values =
+  isRight $ checkModDatum validDesc validFun validReg validVal validCom
+
+prop_datum_fail_description :: Bool
+prop_datum_fail_description =
+  isLeft $ checkModDatum desc validFun validReg validVal validCom
+  where
+    desc = "foo\nbar"
+
+prop_datum_fail_function :: Bool
+prop_datum_fail_function =
+  isLeft $ checkModDatum validDesc fun validReg validVal validCom
+  where
+    fun = "wrong function"
+
+prop_datum_fail_register :: Bool
+prop_datum_fail_register =
+  isLeft $ checkModDatum validDesc validFun reg validVal validCom
+  where
+    reg = "wrong register"
+
+prop_datum_fail_value :: Bool
+prop_datum_fail_value =
+  isLeft $ checkModDatum validDesc validFun validReg val validCom
+  where
+    val = "wrong;value"
+
+prop_datum_fail_comment :: Bool
+prop_datum_fail_comment =
+  isLeft $ checkModDatum validDesc validFun validReg validVal com
+  where
+    com = "wrong ; comment"
+
+--------------------------------------------------------------------------
+-- Helper functions
+--------------------------------------------------------------------------
+
+instance Arbitrary ModFunction where
+  arbitrary = elements [ReadInput, ReadMultHolding, WriteSingleHolding, WriteMultHolding]
+
+instance Arbitrary ModType where
+  arbitrary = oneof [ModWord <$> arbitrary, ModFloat <$> arbitrary]
+
 -- inserts a character in the textual representation of a number
 -- number is inserted in a pseudo random position
 -- eg. insertChar 151 'a' = "1a51"
@@ -209,3 +305,15 @@ capitalizeLetter s x = cap $ splitAt modidx s
     cap ([x], y) = toUpper x : y
     cap (x, y) = init x ++ [toUpper $ last x] ++ y
     modidx = x `mod` length s
+
+-- Used for checking ModDatum data types
+checkModDatum :: String -> String -> String -> String -> String -> Either ParseError ModDatum
+checkModDatum desc fun reg val com =
+  testCSVParser
+    pModDatum
+    ( desc ++ ";"
+        <> fun ++ ";"
+        <> reg ++ ";"
+        <> val ++ ";"
+        <> com
+    )

@@ -23,14 +23,25 @@ data ModDatum = ModDatum {
     register :: Word16,
     value :: ModType,
     comments :: T.Text
-} deriving (Show)
-
+} deriving (Show, Eq)
 
 data ModType = ModWord (Maybe Word16) | ModFloat (Maybe Float)
-    deriving (Show, Eq)
+    deriving (Eq)
 
+instance Show ModType where 
+    show (ModWord (Just x)) = "word;" ++ show x
+    show (ModWord Nothing) = "word;"
+    show (ModFloat (Just x)) = "float;" ++ show x
+    show (ModFloat Nothing) = "float;"
+    
 data ModFunction = ReadInput | ReadMultHolding | WriteSingleHolding | WriteMultHolding
-    deriving (Show, Eq)
+    deriving (Eq)
+
+instance Show ModFunction where
+    show ReadInput = "3"
+    show ReadMultHolding = "4"
+    show WriteSingleHolding = "6"
+    show WriteMultHolding = "16"
 
 isFnRead :: ModFunction -> Bool
 isFnRead fn | fn == ReadInput || fn == ReadMultHolding = True

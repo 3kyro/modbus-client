@@ -16,6 +16,7 @@ import Data.Word (Word16)
 import Text.Parsec hiding ((<|>))
 import Text.Parsec.Text (Parser)
 
+-- test runner, mainly used for testing
 testCSVParser :: Parser a -> String -> Either ParseError a
 testCSVParser p s = parse p "" $ T.pack s
 
