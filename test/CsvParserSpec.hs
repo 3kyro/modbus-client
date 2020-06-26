@@ -249,36 +249,36 @@ validCom = "comment"
 
 prop_datum_check_valid_values :: Bool
 prop_datum_check_valid_values =
-  isRight $ checkModData validDesc validFun validReg validVal validCom
+  isRight $ makeModData validDesc validFun validReg validVal validCom
 
 prop_datum_fail_description :: Bool
 
 prop_datum_fail_description =
-  isLeft $ checkModData desc validFun validReg validVal validCom
+  isLeft $ makeModData desc validFun validReg validVal validCom
   where
     desc = "foo\nbar"
 
 prop_datum_fail_function :: Bool
 prop_datum_fail_function =
-  isLeft $ checkModData validDesc fun validReg validVal validCom
+  isLeft $ makeModData validDesc fun validReg validVal validCom
   where
     fun = "wrong function"
 
 prop_datum_fail_register :: Bool
 prop_datum_fail_register =
-  isLeft $ checkModData validDesc validFun reg validVal validCom
+  isLeft $ makeModData validDesc validFun reg validVal validCom
   where
     reg = "wrong register"
 
 prop_datum_fail_value :: Bool
 prop_datum_fail_value =
-  isLeft $ checkModData validDesc validFun validReg val validCom
+  isLeft $ makeModData validDesc validFun validReg val validCom
   where
     val = "wrong;value"
 
 prop_datum_fail_comment :: Bool
 prop_datum_fail_comment =
-  isLeft $ checkModData validDesc validFun validReg validVal com
+  isLeft $ makeModData validDesc validFun validReg validVal com
   where
     com = "wrong ; comment"
 
@@ -347,8 +347,8 @@ capitalizeLetter s x = cap $ splitAt modidx s
     modidx = x `mod` length s
 
 -- Used for checking ModData data types
-checkModData :: String -> String -> String -> String -> String -> Either ParseError ModData
-checkModData desc fun reg val com =
+makeModData :: String -> String -> String -> String -> String -> Either ParseError ModData
+makeModData desc fun reg val com =
   testCSVParser
     pModData
     ( desc ++ ";"
