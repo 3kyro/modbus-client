@@ -20,6 +20,8 @@ import Text.Parsec.Text (Parser)
 testCSVParser :: Parser a -> String -> Either ParseError a
 testCSVParser p s = parse p "" $ T.pack s
 
+-- Parses a CSV text, ignoring the first line that will be used for describing
+-- the fields
 pCSV :: Parser [ModData]
 pCSV = pLine *> many pModData <* eof
 
@@ -117,7 +119,7 @@ pText :: Parser T.Text
 pText = T.pack <$> many (noneOf ";\r\n")
 
 pLine :: Parser T.Text
-pLine = T.pack <$> manyTill anyChar endOfLine 
+pLine = T.pack <$> manyTill anyChar endOfLine
 
 discardField :: Parser ()
 discardField = void $ field $ manyTill anyChar semicolon
