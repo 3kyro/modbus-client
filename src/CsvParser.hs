@@ -20,12 +20,12 @@ import Text.Parsec.Text (Parser)
 testCSVParser :: Parser a -> String -> Either ParseError a
 testCSVParser p s = parse p "" $ T.pack s
 
-pCSV :: Parser [ModDatum]
-pCSV = pLine *> many pModDatum <* eof
+pCSV :: Parser [ModData]
+pCSV = pLine *> many pModData <* eof
 
--- Parses a ModDatum
-pModDatum :: Parser ModDatum
-pModDatum =
+-- Parses a ModData
+pModData :: Parser ModData
+pModData =
   modData
     <$> pDescription
     <*> pFunction
@@ -117,7 +117,7 @@ pText :: Parser T.Text
 pText = T.pack <$> many (noneOf ";\r\n")
 
 pLine :: Parser T.Text
-pLine = T.pack <$> manyTill anyChar endOfLine
+pLine = T.pack <$> manyTill anyChar endOfLine 
 
 discardField :: Parser ()
 discardField = void $ field $ manyTill anyChar semicolon

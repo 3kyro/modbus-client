@@ -17,38 +17,26 @@ module CsvParser.Spec where
 import           Data.Text                     as T
 import           Data.Word                      ( Word16 )
 
-data ModDatum = ModDatum {
+data ModData = ModData {
     description :: T.Text,
     function :: ModFunction,
     register :: Word16,
     value :: ModType,
     comments :: T.Text
-} deriving (Show, Eq)
+} deriving (Show,Eq)
 
 data ModType = ModWord (Maybe Word16) | ModFloat (Maybe Float)
-    deriving (Eq)
+    deriving (Show,Eq)
 
-instance Show ModType where 
-    show (ModWord (Just x)) = "word;" ++ show x
-    show (ModWord Nothing) = "word;"
-    show (ModFloat (Just x)) = "float;" ++ show x
-    show (ModFloat Nothing) = "float;"
-    
 data ModFunction = ReadInput | ReadMultHolding | WriteSingleHolding | WriteMultHolding
-    deriving (Eq)
-
-instance Show ModFunction where
-    show ReadInput = "3"
-    show ReadMultHolding = "4"
-    show WriteSingleHolding = "6"
-    show WriteMultHolding = "16"
+    deriving (Show, Eq)
 
 isFnRead :: ModFunction -> Bool
 isFnRead fn | fn == ReadInput || fn == ReadMultHolding = True
             | otherwise = False
 
-modData :: T.Text -> ModFunction -> Word16 -> ModType -> T.Text -> ModDatum
-modData d f r v c = ModDatum { description = d
+modData :: T.Text -> ModFunction -> Word16 -> ModType -> T.Text -> ModData
+modData d f r v c = ModData { description = d
                              , function    = f
                              , register    = r
                              , value       = v
