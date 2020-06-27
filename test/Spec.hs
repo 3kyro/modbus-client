@@ -1,5 +1,5 @@
-import           Test.Hspec
-import           CsvParserSpec
+import CsvParserSpec
+import Test.Hspec
 
 main = hspec spec
 

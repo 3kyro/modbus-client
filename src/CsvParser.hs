@@ -13,6 +13,15 @@ import CsvParser.Spec
 import Data.Char (toLower)
 import qualified Data.Text as T
 import Data.Word (Word16)
+import System.Modbus.TCP
+  ( FunctionCode
+      ( ReadHoldingRegisters,
+        ReadInputRegisters,
+        WriteMultipleRegisters,
+        WriteSingleRegister
+      ),
+    RegAddress (..),
+  )
 import Text.Parsec hiding ((<|>))
 import Text.Parsec.Text (Parser)
 
@@ -40,18 +49,18 @@ pDescription :: Parser T.Text
 pDescription = field pText
 
 -- Parses a function code
-pFunction :: Parser ModFunction
+pFunction :: Parser FunctionCode
 pFunction = do
   code <- field $ many digit
   case code of
-    "3" -> return ReadInput
-    "4" -> return ReadMultHolding
-    "6" -> return WriteSingleHolding
-    "16" -> return WriteMultHolding
+    "3" -> return ReadInputRegisters
+    "4" -> return ReadHoldingRegisters
+    "6" -> return WriteSingleRegister
+    "16" -> return WriteMultipleRegisters
     _ -> fail "Parse error on Modbus function call"
 
-pRegister :: Parser Word16
-pRegister = field $ read <$> many digit
+pRegister :: Parser RegAddress
+pRegister = field $ RegAddress . read <$> many digit
 
 -- Parses a modbus value by associating the datatype field with
 -- the correct value field
@@ -77,7 +86,8 @@ pFloat = Just . read <$> float <|> nothing <?> "Float"
     -- optional trailing scientific notation
     float = try noScientific <|> scientific
     -- optional leading dot (eg .2)
-    noScientific = leadingDot <|> try noDot <|> try noFractional <|> middleDot <* char ';'
+    noScientific =
+      leadingDot <|> try noDot <|> try noFractional <|> middleDot <* char ';'
     noDot = integer <* char ';'
     -- number that starts with a separating dot (eg .5)
     leadingDot = char '.' *> addLeadingZero

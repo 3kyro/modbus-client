@@ -27,6 +27,7 @@ dependencies:
 - parsec
 - text
 - QuickCheck
+- modbus-tcp
 
 
 library:
@@ -43,6 +44,7 @@ executables:
     - -fwarn-unused-imports
     dependencies:
     - modbus-serve
+
 
 tests:
   modbus-serve-test:

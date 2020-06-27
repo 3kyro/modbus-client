@@ -3,7 +3,14 @@
 # For more information, please see the documentation at:
 #   https://docs.haskellstack.org/en/stable/lock_files
 
-packages: []
+packages:
+- completed:
+    hackage: modbus-tcp-0.5@sha256:26d927e57d06adac8c046275cc9588583313fe67c2c675c5b92c4593bc5c49f0,1065
+    pantry-tree:
+      size: 220
+      sha256: a110d71c17a24a1abc68f06f1e7a344a9a1db0d1a24e0fa12f76cec918eaac57
+  original:
+    hackage: modbus-tcp-0.5
 snapshots:
 - completed:
     size: 531237
