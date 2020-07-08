@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 311b1d8883acad2f6e3fda27cc46b3beb0d2ad6a1eab4b4e645c505b1d4b3251
+-- hash: c1caf2c573ee349d0337880fdd221466f626ebffef92d4d58c9efc951576fe0d
 
 name:           modbus-serve
 version:        0.1.0.0
@@ -27,8 +27,10 @@ source-repository head
 
 library
   exposed-modules:
+      App
       CsvParser
       CsvParser.Spec
+      Modbus
       OptParser
   other-modules:
       Paths_modbus_serve
@@ -40,6 +42,8 @@ library
     , hspec
     , iproute
     , modbus-tcp
+    , mtl
+    , network
     , optparse-applicative
     , parsec
     , text
@@ -59,6 +63,8 @@ executable modbus-serve-exe
     , iproute
     , modbus-serve
     , modbus-tcp
+    , mtl
+    , network
     , optparse-applicative
     , parsec
     , text
@@ -80,6 +86,8 @@ test-suite modbus-serve-test
     , iproute
     , modbus-serve
     , modbus-tcp
+    , mtl
+    , network
     , optparse-applicative
     , parsec
     , text

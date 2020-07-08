@@ -28,7 +28,7 @@ import Text.Parsec (ParseError)
 csvParserSpec :: Spec
 csvParserSpec = do
   pDescriptionSpec
-  pFunctionSpec
+  pRegisterSpec
   pFloatSpec
   pWordSpec
   pValueSpec
@@ -232,8 +232,8 @@ prop_non_numeric_pvalue_float s =
       ++ ";"
 
 prop_valid_datum ::
-  String -> FunctionCode -> RegAddress -> ModType -> String -> Property
-prop_valid_datum desc fun reg val com =
+  String -> FunctionCode -> RegAddress -> Word16 -> ModType -> String -> Property
+prop_valid_datum desc fun reg num val com =
   validText desc
     && validText com
     ==> Right
@@ -241,6 +241,7 @@ prop_valid_datum desc fun reg val com =
           { description = T.pack desc,
             function = fun,
             register = reg,
+            numReg = num,
             value = val,
             comments = T.pack com
           }
@@ -252,6 +253,8 @@ prop_valid_datum desc fun reg val com =
           <> tShow fun
           ++ ";"
           <> tShow reg
+          ++ ";"
+          <> show num
           ++ ";"
           <> tShow val
           ++ ";"
@@ -350,7 +353,7 @@ instance Arbitrary ModType where
 
 instance Arbitrary ModData where
   arbitrary =
-    modData <$> arbText <*> arbitrary <*> arbitrary <*> arbitrary <*> arbText
+    modData <$> arbText <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary <*> arbText
     where
       arbText = oneof [return (T.pack ""), T.cons <$> validChar <*> arbText]
       validChar = elements $ ['a' .. 'z'] ++ ['A' .. 'Z'] ++ "&éèçà$=:"
@@ -377,12 +380,14 @@ instance TestShow RegAddress where
   tShow = show . unRegAddress
 
 instance TestShow ModData where
-  tShow (ModData desc fun reg val com) =
+  tShow (ModData desc fun reg num val com) =
     T.unpack desc
       ++ ";"
       ++ tShow fun
       ++ ";"
       ++ tShow reg
+      ++ ";"
+      ++ show num
       ++ ";"
       ++ tShow val
       ++ ";"

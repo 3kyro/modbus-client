@@ -1,28 +1,16 @@
--- |
--- Module : CsvParser
--- Description: Defines the parser used for csv files
 module CsvParser
   ( module CsvParser.Spec,
     module CsvParser,
   )
 where
 
-import Control.Applicative ((<|>))
 import Control.Monad (void)
 import CsvParser.Spec
 import Data.Char (toLower)
 import qualified Data.Text as T
 import Data.Word (Word16)
-import System.Modbus.TCP
-  ( FunctionCode
-      ( ReadHoldingRegisters,
-        ReadInputRegisters,
-        WriteMultipleRegisters,
-        WriteSingleRegister
-      ),
-    RegAddress (..),
-  )
-import Text.Parsec hiding ((<|>))
+import System.Modbus.TCP (RegAddress (..))
+import Text.Parsec 
 import Text.Parsec.Text (Parser)
 
 -- test runner, mainly used for testing
@@ -39,28 +27,31 @@ pModData :: Parser ModData
 pModData =
   modData
     <$> pDescription
-    <*> pFunction
-    <*> pRegister
+    <*> pRegType
+    <*> pRegAddr
     <*> pValue
     <*> pComments
     <* optional endOfLine
 
+-- Parses a description cell
 pDescription :: Parser T.Text
 pDescription = field pText
 
--- Parses a function code
-pFunction :: Parser FunctionCode
-pFunction = do
-  code <- field $ many digit
-  case code of
-    "3" -> return ReadInputRegisters
-    "4" -> return ReadHoldingRegisters
-    "6" -> return WriteSingleRegister
-    "16" -> return WriteMultipleRegisters
-    _ -> fail "Parse error on Modbus function call"
+-- Parses a regiter type
+pRegType :: Parser RegType
+pRegType = do
+  rt <- T.map toLower <$> field pText
+  case T.unpack rt of
+    "discrete input" -> return DiscreteInput
+    "coil" -> return Coil
+    "input register" -> return InputRegister
+    "holding register" -> return HoldingRegister
+    _ -> fail "Parse error on register type"
 
-pRegister :: Parser RegAddress
-pRegister = field $ RegAddress . read <$> many digit
+
+-- Parses a register address
+pRegAddr :: Parser RegAddress
+pRegAddr = field $ RegAddress . read <$> many digit
 
 -- Parses a modbus value by associating the datatype field with
 -- the correct value field
