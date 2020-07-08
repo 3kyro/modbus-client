@@ -12,23 +12,16 @@ import Data.Either
 import Data.List (intercalate)
 import qualified Data.Text as T
 import Data.Word (Word16)
-import System.Modbus.TCP
-  ( FunctionCode
-      ( ReadHoldingRegisters,
-        ReadInputRegisters,
-        WriteMultipleRegisters,
-        WriteSingleRegister
-      ),
-    RegAddress (..),
-  )
+import System.Modbus.TCP (RegAddress (..))
 import Test.Hspec
-import Test.QuickCheck hiding (function)
+import Test.QuickCheck 
 import Text.Parsec (ParseError)
 
 csvParserSpec :: Spec
 csvParserSpec = do
   pDescriptionSpec
-  pRegisterSpec
+  pRegTypeSpec
+  pRegAddrSpec
   pFloatSpec
   pWordSpec
   pValueSpec
@@ -46,6 +39,19 @@ pDescriptionSpec = describe "Parse a description field" $ do
     testCSVParser pDescription "Μια περιγραφή;"
       `shouldBe` Right (T.pack "Μια περιγραφή")
 
+pRegTypeSpec :: Spec
+pRegTypeSpec = describe "Parse a register type field" $ do
+  it "ignores capitalisation on valid inputs" $ property prop_valid_regType
+  it "fails on invalid input" $ property $ \x ->
+    isLeft $ testCSVParser pRegType (x ++ ";")
+
+pRegAddrSpec :: Spec
+pRegAddrSpec = describe "Parse a register address field" $ do
+  it "parses numeric fields" $ property $ \x ->
+    Right x == testCSVParser pRegAddr (tShow x ++ ";")
+  it "fails on invalid input" $ property $ \x ->
+    isLeft $ testCSVParser pRegAddr (x ++ ";")  
+
 pCommentSpec :: Spec
 pCommentSpec = describe "Parse a comment field" $ do
   it "parses text" $ property prop_comment_text
@@ -55,24 +61,6 @@ pCommentSpec = describe "Parse a comment field" $ do
   it "parses unicode comments" $
     testCSVParser pComments "Ένα σχόλιο"
       `shouldBe` Right (T.pack "Ένα σχόλιο")
-
-pFunctionSpec :: Spec
-pFunctionSpec = describe "Parse a function code" $ do
-  it "fails on non numeric inputs" $ property prop_non_numeric_function_code
-  it "fails at non implemented function codes" $ property prop_non_function_code
-  context "it correctly assigns functions codes" $ do
-    it "at read input" $
-      testCSVParser pFunction "3;"
-        `shouldBe` Right ReadInputRegisters
-    it "at read multiple holding registers" $
-      testCSVParser pFunction "4;"
-        `shouldBe` Right ReadHoldingRegisters
-    it "at write single holding registers" $
-      testCSVParser pFunction "6;"
-        `shouldBe` Right WriteSingleRegister
-    it "at write multiple holding registers" $
-      testCSVParser pFunction "16;"
-        `shouldBe` Right WriteMultipleRegisters
 
 pFloatSpec :: Spec
 pFloatSpec = describe "Parse a float" $ do
@@ -126,7 +114,7 @@ pValueSpec = describe "Parse a modbus value" $ do
 pModDataSpec :: Spec
 pModDataSpec = describe "Parse a ModData" $ do
   it "parses a valid line" $ property prop_valid_datum
-  -- check valid values that will be used in following tests
+  -- check all valid values that will be used in following tests
   it "parses valid values" $ property prop_datum_check_valid_values
   it "fails on wrong description" $ property prop_datum_fail_description
   it "fails on wrong function" $ property prop_datum_fail_function
@@ -144,6 +132,10 @@ pCSVSpec = describe "Parse a CSV text" $ do
 -- Property functions
 --------------------------------------------------------------------------
 
+prop_valid_regType :: RegType -> Int -> Bool
+prop_valid_regType rt n = let rts = capitalizeLetter (tShow rt) n ++ ";"
+  in Right rt == testCSVParser pRegType rts
+
 prop_description_text :: String -> Property
 prop_description_text s =
   valid s ==> Right (T.pack s)
@@ -157,17 +149,6 @@ prop_comment_text :: String -> Property
 prop_comment_text s = valid s ==> Right (T.pack s) == testCSVParser pComments s
   where
     valid = all (`notElem` ";\n\r")
-
-prop_non_function_code :: Int -> Property
-prop_non_function_code x =
-  x `notElem` [3, 4, 6, 16] ==> isLeft $ testCSVParser pFunction (show x ++ ";")
-
-prop_non_numeric_function_code :: String -> Property
-prop_non_numeric_function_code s =
-  not (any isDigit s) && notElem ';' s ==> isLeft $
-    testCSVParser
-      pFunction
-      (s ++ ";")
 
 prop_ints_as_floats :: Int -> Bool
 prop_ints_as_floats x =
@@ -232,16 +213,15 @@ prop_non_numeric_pvalue_float s =
       ++ ";"
 
 prop_valid_datum ::
-  String -> FunctionCode -> RegAddress -> Word16 -> ModType -> String -> Property
-prop_valid_datum desc fun reg num val com =
+  String -> RegType -> RegAddress -> ModType -> String -> Property
+prop_valid_datum desc rt reg val com =
   validText desc
     && validText com
     ==> Right
       ( ModData
           { description = T.pack desc,
-            function = fun,
+            regType = rt,
             register = reg,
-            numReg = num,
             value = val,
             comments = T.pack com
           }
@@ -250,11 +230,9 @@ prop_valid_datum desc fun reg num val com =
       pModData
       ( desc
           ++ ";"
-          <> tShow fun
+          <> tShow rt
           ++ ";"
           <> tShow reg
-          ++ ";"
-          <> show num
           ++ ";"
           <> tShow val
           ++ ";"
@@ -266,7 +244,7 @@ prop_valid_datum desc fun reg num val com =
 -- typical valid values, to be used in ModData fail tests
 validDesc = "description"
 
-validFun = "3"
+validRegType = "Input Register"
 
 validReg = "3000"
 
@@ -276,40 +254,40 @@ validCom = "comment"
 
 prop_datum_check_valid_values :: Bool
 prop_datum_check_valid_values =
-  isRight $ makeModData validDesc validFun validReg validVal validCom
+  isRight $ makeModData validDesc validRegType validReg validVal validCom
 
 prop_datum_fail_description :: Bool
 prop_datum_fail_description =
   isLeft $
-    makeModData desc validFun validReg validVal validCom
+    makeModData desc validRegType validReg validVal validCom
   where
     desc = "foo\nbar"
 
 prop_datum_fail_function :: Bool
 prop_datum_fail_function =
   isLeft $
-    makeModData validDesc fun validReg validVal validCom
+    makeModData validDesc rt validReg validVal validCom
   where
-    fun = "wrong function"
+    rt = "wrong register type"
 
 prop_datum_fail_register :: Bool
 prop_datum_fail_register =
   isLeft $
-    makeModData validDesc validFun reg validVal validCom
+    makeModData validDesc validRegType reg validVal validCom
   where
     reg = "wrong register"
 
 prop_datum_fail_value :: Bool
 prop_datum_fail_value =
   isLeft $
-    makeModData validDesc validFun validReg val validCom
+    makeModData validDesc validRegType validReg val validCom
   where
     val = "wrong;value"
 
 prop_datum_fail_comment :: Bool
 prop_datum_fail_comment =
   isLeft $
-    makeModData validDesc validFun validReg validVal com
+    makeModData validDesc validRegType validReg validVal com
   where
     com = "wrong ; comment"
 
@@ -319,13 +297,13 @@ prop_valid_csv xs = Right xs == testCSVParser pCSV (firstLineDesc ++ csvs)
     firstLineDesc = "First line description; incuding; multiple; semicolons\n"
     csvs = intercalate "\n" $ tShow <$> xs
 
-prop_invalid_csv :: String -> Int -> Word16 -> String -> String -> Bool
+prop_invalid_csv :: String -> RegType -> Word16 -> String -> String -> Bool
 prop_invalid_csv desc fun reg typ com =
   -- make sure we create an invalid ModData
   let invalidData =
         desc
           ++ ";"
-          ++ show fun
+          ++ tShow fun
           ++ ";"
           ++ show reg
           ++ ";"
@@ -339,24 +317,18 @@ prop_invalid_csv desc fun reg typ com =
 -- Helper functions
 --------------------------------------------------------------------------
 
-instance Arbitrary FunctionCode where
-  arbitrary =
-    elements
-      [ ReadInputRegisters,
-        ReadHoldingRegisters,
-        WriteSingleRegister,
-        WriteMultipleRegisters
-      ]
-
 instance Arbitrary ModType where
   arbitrary = oneof [ModWord <$> arbitrary, ModFloat <$> arbitrary]
 
 instance Arbitrary ModData where
   arbitrary =
-    modData <$> arbText <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary <*> arbText
+    modData <$> arbText <*> arbitrary <*> arbitrary <*> arbitrary <*> arbText
     where
       arbText = oneof [return (T.pack ""), T.cons <$> validChar <*> arbText]
       validChar = elements $ ['a' .. 'z'] ++ ['A' .. 'Z'] ++ "&éèçà$=:"
+
+instance Arbitrary RegType where
+  arbitrary = elements [DiscreteInput, Coil, InputRegister, HoldingRegister]
 
 instance Arbitrary RegAddress where
   arbitrary = RegAddress <$> arbitrary
@@ -370,24 +342,22 @@ instance TestShow ModType where
   tShow (ModFloat (Just x)) = "float;" ++ show x
   tShow (ModFloat Nothing) = "float;"
 
-instance TestShow FunctionCode where
-  tShow ReadInputRegisters = "3"
-  tShow ReadHoldingRegisters = "4"
-  tShow WriteSingleRegister = "6"
-  tShow WriteMultipleRegisters = "16"
+instance TestShow RegType where
+  tShow DiscreteInput = "Discrete Input"
+  tShow Coil = "Coil"
+  tShow InputRegister = "Input Register"
+  tShow HoldingRegister = "Holding Register"
 
 instance TestShow RegAddress where
   tShow = show . unRegAddress
 
 instance TestShow ModData where
-  tShow (ModData desc fun reg num val com) =
+  tShow (ModData desc rt reg val com) =
     T.unpack desc
       ++ ";"
-      ++ tShow fun
+      ++ tShow rt
       ++ ";"
       ++ tShow reg
-      ++ ";"
-      ++ show num
       ++ ";"
       ++ tShow val
       ++ ";"

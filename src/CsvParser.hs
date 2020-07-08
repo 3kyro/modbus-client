@@ -51,7 +51,7 @@ pRegType = do
 
 -- Parses a register address
 pRegAddr :: Parser RegAddress
-pRegAddr = field $ RegAddress . read <$> many digit
+pRegAddr = field $ RegAddress . read <$> many1 digit
 
 -- Parses a modbus value by associating the datatype field with
 -- the correct value field
