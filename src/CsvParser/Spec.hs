@@ -10,11 +10,19 @@
 -- - Register addresses above 65535 are truncated
 -- - Order of fields is the following:
 --     Description;Register Type;Register Address;Data Type; Value;Comments
-module CsvParser.Spec where
+module CsvParser.Spec
+       ( 
+         ModData (..)
+       , RegType (..)
+       , ModType (..)
+       , modData
+       )
+       where
 
-import qualified Data.Text as T
 import Data.Word (Word16)
 import System.Modbus.TCP (RegAddress)
+
+import qualified Data.Text as T
 
 -- Modbus Register type:
 -- Discrete Input, single bit, read only
@@ -25,11 +33,11 @@ data RegType = DiscreteInput | Coil | InputRegister | HoldingRegister
   deriving (Show, Eq)
 
 data ModData = ModData
-  { description :: T.Text,
-    regType :: RegType,
-    register :: RegAddress,
-    value :: ModType,
-    comments :: T.Text
+  { description :: !T.Text,
+    regType :: !RegType,
+    register :: !RegAddress,
+    value :: !ModType,
+    comments :: !T.Text
   }
   deriving (Show, Eq)
 
@@ -45,4 +53,3 @@ modData d rt r v c =
       value = v,
       comments = c
     }
-
