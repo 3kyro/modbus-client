@@ -30,12 +30,14 @@ import Options.Applicative
        , auto  
        )   
 
+import CsvParser (ByteOrder (..))
 
 data Opt = Opt
     { inputTemplate :: !FilePath
     , outputFile    :: !FilePath
     , ipAddr        :: !IPv4
     , port          :: !Int
+    , floatRepr     :: !ByteOrder
 }
 
 -- | Executes the options parser
@@ -48,7 +50,12 @@ runOpts = execParser opts
         (fullDesc <> progDesc "A modbus CLI and web server")
 
 opt :: Parser Opt
-opt = Opt <$> parseTemplate <*> parseOutputFile <*> parseIPAddr <*> parsePort
+opt = Opt 
+    <$> parseTemplate 
+    <*> parseOutputFile 
+    <*> parseIPAddr 
+    <*> parsePort 
+    <*> parseFloatRepr
 
 parseTemplate :: Parser String
 parseTemplate = strOption
@@ -80,4 +87,13 @@ parsePort = option auto
     <> metavar  "PORT" 
     <> value    502
     <> help     "Port number of the modbus master"
+    )
+
+parseFloatRepr :: Parser ByteOrder
+parseFloatRepr = option auto
+    (  long     "order"
+    <> short    'o'
+    <> metavar  "BYTE_ORDER"
+    <> value    LE
+    <> help     "Data items byte order"
     )

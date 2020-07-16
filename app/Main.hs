@@ -12,10 +12,11 @@ main :: IO ()
 main = greet =<< runOpts
 
 greet :: Opt -> IO ()
-greet (Opt input output ip port) = do
-    putStrLn "Opts parsing:"
-    putStrLn $ "input: " <> input
-    putStrLn $ "output: " <> output
-    putStrLn $ "ip: " <> show ip
-    putStrLn $ "port: " <> show port
+greet (Opt input output ip port order) = do
+    putStrLn    "Opts parsing:"
+    putStrLn $  "input: "       <> input
+    putStrLn $  "output: "      <> output
+    putStrLn $  "ip: "          <> show ip
+    putStrLn $  "port: "        <> show port
+    putStrLn $  "byte order: "  <> show order
     
