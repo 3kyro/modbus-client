@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: c1caf2c573ee349d0337880fdd221466f626ebffef92d4d58c9efc951576fe0d
+-- hash: 090775b8d5289f4305acd3eceb19d745b758bb16d1a821a177c3cb26b22f7489
 
 name:           modbus-serve
 version:        0.1.0.0
@@ -46,6 +46,7 @@ library
     , network
     , optparse-applicative
     , parsec
+    , process
     , text
   default-language: Haskell2010
 
@@ -67,6 +68,7 @@ executable modbus-serve-exe
     , network
     , optparse-applicative
     , parsec
+    , process
     , text
   default-language: Haskell2010
 
@@ -75,6 +77,8 @@ test-suite modbus-serve-test
   main-is: Spec.hs
   other-modules:
       CsvParserSpec
+      ModbusSpec
+      TestHelper
       Paths_modbus_serve
   hs-source-dirs:
       test
@@ -90,5 +94,6 @@ test-suite modbus-serve-test
     , network
     , optparse-applicative
     , parsec
+    , process
     , text
   default-language: Haskell2010
