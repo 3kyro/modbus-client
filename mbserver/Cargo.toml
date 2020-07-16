@@ -1,0 +1,14 @@
+[package]
+name = "mbserver"
+version = "0.1.0"
+authors = ["3kyro <k.papachrisanthou@gmail.com>"]
+edition = "2018"
+description = "A modbus server executable, used for testing purposes"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+tokio-modbus = { version = "0.4.0", default-features = true, features = ["tcp", "server", "tcp-server-unstable"] }
+futures = "0.3.5"
+tempfile = "3.1.0"
+parse_int = "0.4.0"
