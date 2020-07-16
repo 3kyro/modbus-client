@@ -12,7 +12,7 @@
 --     Description;Register Type;Register Address;Data Type; Value;Comments
 module CsvParser.Spec where
 
-import Data.Text as T
+import qualified Data.Text as T
 import Data.Word (Word16)
 import System.Modbus.TCP (RegAddress)
 
@@ -45,3 +45,4 @@ modData d rt r v c =
       value = v,
       comments = c
     }
+
