@@ -30,6 +30,7 @@ dependencies:
 - modbus-tcp
 - network
 - mtl
+- process
 
 
 library:
