@@ -38,6 +38,7 @@ data Opt = Opt
     , ipAddr        :: !IPv4
     , port          :: !Int
     , floatRepr     :: !ByteOrder
+    , repl          :: !Bool
 }
 
 -- | Executes the options parser
@@ -56,6 +57,7 @@ opt = Opt
     <*> parseIPAddr 
     <*> parsePort 
     <*> parseFloatRepr
+    <*> parseRepl
 
 parseTemplate :: Parser String
 parseTemplate = strOption
@@ -96,4 +98,13 @@ parseFloatRepr = option auto
     <> metavar  "BYTE_ORDER"
     <> value    LE
     <> help     "Data items byte order"
+    )
+
+parseRepl :: Parser Bool
+parseRepl = option auto 
+    ( long      "repl"
+    <> short    'r'
+    <> metavar  "REPL"
+    <> value    False
+    <> help     "Starts an interactive Modbus client"
     )
