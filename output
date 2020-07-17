@@ -1,0 +1,1 @@
+[ModData {description = "Device status", regType = InputRegister, register = RegAddress {unRegAddress = 10}, value = ModWord (Just 1500), comments = "0 = Device stopped, 1 = Device running"},ModData {description = "Power", regType = HoldingRegister, register = RegAddress {unRegAddress = 15}, value = ModFloat (Just (-2.9259688e-17)), comments = "Power in Watts"}]

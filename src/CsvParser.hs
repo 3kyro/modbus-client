@@ -17,6 +17,10 @@ import Text.Parsec.Text (Parser)
 testCSVParser :: Parser a -> String -> Either ParseError a
 testCSVParser p s = parse p "" $ T.pack s
 
+-- run a pCSV parser
+runpCSV :: T.Text -> Either ParseError [ModData]
+runpCSV = parse pCSV "" 
+
 -- Parses a CSV text, ignoring the first line that will be used for describing
 -- the fields
 pCSV :: Parser [ModData]
