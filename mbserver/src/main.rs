@@ -19,7 +19,7 @@ fn main() {
         .expect("mbserver: error reading register file");
     std::mem::drop(file);
 
-    let registers = parse_registers(contents);
+    let registers = parse_registers(&contents);
     let mbserver = create_server(registers);
 
     let socket_addr = "127.0.0.1:5502".parse().unwrap();
@@ -81,6 +81,7 @@ impl Clone for MbServer {
     }
 }
 
+#[allow(dead_code)]
 #[derive(Debug, PartialEq)]
 enum Register {
     Coil(Address, Coil),
@@ -89,7 +90,7 @@ enum Register {
     Holding(Address, Word),
 }
 
-fn parse_registers(content: String) -> Vec<Register> {
+fn parse_registers(content: &str) -> Vec<Register> {
     content
         .lines()
         .map(|line| {
@@ -101,18 +102,32 @@ fn parse_registers(content: String) -> Vec<Register> {
                 .expect("mbserver: Error parsing register value");
             match reg_type {
                 "input_register" => Register::Input(
-                    reg_addr
-                        .parse()
-                        .expect("mbserver: Error parsing input register addr"),
-                    parse_int::parse(reg_value)
-                        .expect("mbserver: Error parsing input register value"),
+                    parse_int::parse(reg_addr).unwrap_or_else(|_| {
+                        panic!(
+                            "mbserver: Error parsing input register address ({})",
+                            reg_addr
+                        )
+                    }),
+                    parse_int::parse(reg_value).unwrap_or_else(|_| {
+                        panic!(
+                            "mbserver: Error parsing input register value ({})",
+                            reg_value
+                        )
+                    }),
                 ),
                 "holding_register" => Register::Holding(
-                    reg_addr
-                        .parse()
-                        .expect("mbserver: Error parsing holding register addr"),
-                    parse_int::parse(reg_value)
-                        .expect("mbserver: Error parsing holding register value"),
+                    parse_int::parse(reg_addr).unwrap_or_else(|_| {
+                        panic!(
+                            "mbserver: Error parsing holding register address ({})",
+                            reg_addr
+                        )
+                    }),
+                    parse_int::parse(reg_value).unwrap_or_else(|_| {
+                        panic!(
+                            "mbserver: Error parsing holding register value ({})",
+                            reg_value
+                        )
+                    }),
                 ),
                 _ => unimplemented!(),
             }
@@ -155,7 +170,7 @@ mod tests {
         let mut content = String::new();
         tmpfile.read_to_string(&mut content).unwrap();
 
-        parse_registers(content)
+        parse_registers(&content)
     }
 
     #[test]
