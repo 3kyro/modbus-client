@@ -1,53 +1,14 @@
 use futures::future;
-use std::env::args;
-use std::fs::File;
 use std::io::prelude::*;
 use std::io::Result;
-use std::sync::{Arc, Mutex};
-use std::thread;
-use std::time::Duration;
 use tokio_modbus::prelude::*;
 use tokio_modbus::server::*;
-
-fn main() {
-    // Since the server will only be used within a testing enviroment, simply panic on each fault
-    let filename = args().nth(1).expect("mbserver: no register file given");
-
-    // read thje template file
-    let mut file = File::open(filename).expect("mbserver: error opening register file");
-    let mut contents = String::new();
-    file.read_to_string(&mut contents)
-        .expect("mbserver: error reading register file");
-    std::mem::drop(file);
-
-    // parse registers and create the server
-    let registers = parse_registers(&contents);
-    let mbserver = create_server(registers);
-
-    // the test server is always running on localhost:5502 to avoid the need to be
-    // run as super user
-    let socket_addr = "127.0.0.1:5502".parse().unwrap();
-
-    let server = Arc::new(Mutex::new(mbserver));
-
-    // spawn the serever in a dedicated thread
-    thread::spawn(move || {
-        server::tcp::Server::new(socket_addr)
-            .serve(move || Ok(Arc::clone(&server).lock().unwrap().clone()));
-    });
-    // Give the server some time for stating up
-    thread::sleep(Duration::from_secs(1));
-
-    loop {
-        // give the thread something to do :)
-        thread::sleep(Duration::from_millis(30));
-    }
-}
 
 type Address = u16;
 type Coil = bool;
 type Word = u16;
-struct MbServer {
+
+pub struct MbServer {
     pub coils: Vec<Coil>,
     pub discrete_inputs: Vec<Coil>,
     pub input_registers: Vec<Word>,
@@ -88,14 +49,14 @@ impl Clone for MbServer {
 
 #[allow(dead_code)]
 #[derive(Debug, PartialEq)]
-enum Register {
+pub enum Register {
     Coil(Address, Coil),
     DiscreteInput(Address, Coil),
     Input(Address, Word),
     Holding(Address, Word),
 }
 
-fn parse_registers(content: &str) -> Vec<Register> {
+pub fn parse_registers(content: &str) -> Vec<Register> {
     content
         .lines()
         .map(|line| {
@@ -140,7 +101,7 @@ fn parse_registers(content: &str) -> Vec<Register> {
         .collect()
 }
 
-fn create_server(registers: Vec<Register>) -> MbServer {
+pub fn create_server(registers: Vec<Register>) -> MbServer {
     let mut server = MbServer {
         coils: vec![false; 0xFFFF],
         discrete_inputs: vec![false; 0xFFFF],
@@ -190,6 +151,8 @@ mod tests {
 
     #[test]
     fn respond_to_modbus_requests() {
+        use std::thread;
+
         let socket_addr = "127.0.0.1:5502".parse().unwrap();
 
         let registers = tmp_registe_file();
