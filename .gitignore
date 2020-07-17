@@ -2,4 +2,5 @@ dev-docs
 mbserver/Cargo.lock
 mbserver/target
 .stack-work/
+.history
 *~
