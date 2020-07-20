@@ -16,27 +16,28 @@ import qualified Data.Text.IO as T
 import qualified Network.Socket as S
 import qualified System.Modbus.TCP as MB
 
-import Modbus (modSession)
+import Modbus (modSession, Config (..))
 import CsvParser (ByteOrder (..), ModData, runpCSV)
-
-
+import Repl (runRepl)
 
 main :: IO ()
-main = greet =<< runOpts
+main = runApp =<< runOpts
 
-greet :: Opt -> IO ()
-greet (Opt input output ip port order) = do
-    putStrLn "Parsing register file"
-    contents <- T.readFile input
-    let md = runpCSV contents
-    case md of
-        Left err -> fail "Parse error"
-        Right md' -> do
-            resp <- runApp (getAddr ip port) order md'
-            writeFile output (show resp) 
+runApp :: Opt -> IO ()
+runApp (Opt input output ip portNum order r) = 
+    if r then runReplApp (getAddr ip portNum) order
+    else do  
+        putStrLn "Parsing register file"
+        contents <- T.readFile input
+        let md = runpCSV contents
+        case md of
+            Left _ -> fail "Parse error"
+            Right md' -> do
+                resp <- runModDataApp (getAddr ip portNum) order md'
+                writeFile output (show resp) 
 
 getAddr :: IPv4 -> Int -> S.SockAddr
-getAddr ip port = S.SockAddrInet (fromIntegral port) (toHostAddress ip)
+getAddr ip portNum = S.SockAddrInet (fromIntegral portNum) (toHostAddress ip)
 
 local :: S.Socket -> MB.Connection
 local s =
@@ -44,16 +45,26 @@ local s =
     { MB.connWrite          = send s
     , MB.connRead           = recv s
     , MB.connCommandTimeout = 1000
-    , MB.connRetryWhen      = \e n -> False
+    , MB.connRetryWhen      = \_ _ -> False
     }
 
-runApp :: S.SockAddr -> ByteOrder -> [ModData] -> IO [ModData]
-runApp addr order md = do
-    putStrLn ("Connecting to " ++ show addr ++ "...")
-    s <- S.socket S.AF_INET S.Stream S.defaultProtocol
-    S.connect s addr
-    putStrLn "connected"
+runModDataApp :: S.SockAddr -> ByteOrder -> [ModData] -> IO [ModData]
+runModDataApp addr order md = do
+    s <- connect addr
     resp <- runExceptT $ MB.runSession (local s) (modSession md order)
     case resp of
         Left err -> fail $ "Modbus error: " ++ show err
         Right resp' -> return resp'
+
+runReplApp :: S.SockAddr -> ByteOrder -> IO ()
+runReplApp addr order = do
+    s <- connect addr
+    runRepl $ Config (local s) order
+
+connect :: S.SockAddr -> IO S.Socket
+connect addr = do
+    putStrLn ("Connecting to " ++ show addr ++ "...")
+    s <- S.socket S.AF_INET S.Stream S.defaultProtocol
+    S.connect s addr
+    putStrLn "connected"
+    return s

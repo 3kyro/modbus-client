@@ -63,7 +63,7 @@ pValue :: Parser ModType
 pValue = do
   dataType <- T.map toLower <$> field pText
   case T.unpack dataType of
-    "float" -> ModFloat <$> pFloat
+    "float" -> ModFloat <$> field pFloat 
     "word" -> ModWord <$> pWord
     _ -> fail "Parsing Error on data type"
 
@@ -75,27 +75,25 @@ pValue = do
 -- usual representation: eg 10.24
 -- scientific representation: eg 3.24e-12
 pFloat :: Parser (Maybe Float)
-pFloat = Just . read <$> float <|> nothing <?> "Float"
+pFloat = (Just . read <$> float) <|> nothing <?> "Float"
   where
-    nothing = char ';' >> return Nothing
+    nothing = pure Nothing
     -- optional trailing scientific notation
     float = try noScientific <|> scientific
-    -- optional leading dot (eg .2)
-    noScientific =
-      leadingDot <|> try noDot <|> try noFractional <|> middleDot <* char ';'
-    noDot = integer <* char ';'
+    noScientific = try leadingDot <|> try noDot <|> try noFractional <|> middleDot 
     -- number that starts with a separating dot (eg .5)
     leadingDot = char '.' *> addLeadingZero
-    addLeadingZero = (++) <$> return "0." <*> many1 digit <* char ';'
+    addLeadingZero = (++) <$> return "0." <*> many1 digit 
+    noDot = integer 
     -- with a separating dot but no fractional part (eg 100.)
-    noFractional = integer <* char '.' <* char ';'
+    noFractional = integer <* char '.' 
     -- typical float representation (eg 10.52)
     middleDot = (++) <$> integer <*> fractional
     integer = (:) <$> option ' ' (char '-') <*> many1 digit
     fractional = (:) <$> char '.' <*> many1 digit
     -- parses scientific notation (eg e-23)
-    scientific = (++) <$> middleDot <*> exponent
-    exponent = (:) <$> char 'e' <*> integer <* char ';'
+    scientific = (++) <$> middleDot <*> pExponent
+    pExponent = (:) <$> char 'e' <*> integer 
 
 -- Parses a word16
 pWord :: Parser (Maybe Word16)

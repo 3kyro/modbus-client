@@ -32,6 +32,8 @@ dependencies:
 - mtl
 - process
 - binary
+- repline
+- Cabal
 
 
 library:
@@ -46,6 +48,7 @@ executables:
     - -rtsopts
     - -with-rtsopts=-N
     - -fwarn-unused-imports
+    - -Wall
     dependencies:
     - modbus-serve
 

@@ -246,14 +246,19 @@ prop_valid_datum desc rt reg val com =
     validText = all (`notElem` ";\n\r")
 
 -- typical valid values, to be used in ModData fail tests
+validDesc :: String
 validDesc = "description"
 
+validRegType :: String
 validRegType = "Input Register"
 
+validReg :: String
 validReg = "3000"
 
+validVal :: String
 validVal = "word;1"
 
+validCom :: String
 validCom = "comment"
 
 prop_datum_check_valid_values :: Bool
@@ -340,8 +345,8 @@ capitalizeLetter :: String -> Int -> String
 capitalizeLetter s x = cap $ splitAt modidx s
   where
     cap ([], y) = y
-    cap ([x], y) = toUpper x : y
-    cap (x, y) = init x ++ [toUpper $ last x] ++ y
+    cap ([x'], y') = toUpper x' : y'
+    cap (x', y') = init x' ++ [toUpper $ last x'] ++ y'
     modidx = x `mod` length s
 
 -- Used for checking ModData data types

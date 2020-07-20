@@ -27,7 +27,8 @@ import Options.Applicative
        , value
        , help
        , option
-       , auto  
+       , auto 
+       , switch 
        )   
 
 import CsvParser (ByteOrder (..))
@@ -69,16 +70,20 @@ parseTemplate = strOption
     )
 
 parseOutputFile :: Parser String
-parseOutputFile =
-    strOption
-        (long "output" <> short 'o' <> metavar "OUTPUT" <> help "Output file")
+parseOutputFile = strOption
+    ( long      "output" 
+    <> short    'o' 
+    <> metavar  "OUTPUT" 
+    <> value    "output"
+    <> help     "Output file"
+    )
 
 parseIPAddr :: Parser IPv4
 parseIPAddr = option auto
     (  long     "ip"
     <> short    'i'
     <> metavar  "IPADDRESS"
-    <> value    (read "192.168.2.1")
+    <> value    (read "127.0.0.1")
     <> help     "IP address of the modbus master"
     )
 
@@ -87,7 +92,7 @@ parsePort = option auto
     ( long      "port" 
     <> short    'p' 
     <> metavar  "PORT" 
-    <> value    502
+    <> value    5502
     <> help     "Port number of the modbus master"
     )
 
@@ -101,10 +106,8 @@ parseFloatRepr = option auto
     )
 
 parseRepl :: Parser Bool
-parseRepl = option auto 
+parseRepl = switch 
     ( long      "repl"
     <> short    'r'
-    <> metavar  "REPL"
-    <> value    False
     <> help     "Starts an interactive Modbus client"
     )

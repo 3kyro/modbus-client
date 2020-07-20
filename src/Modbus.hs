@@ -1,4 +1,4 @@
-module Modbus (modSession) where
+module Modbus (modSession, Config (..), word2Float) where
 
 import Control.Monad.Except (throwError)
 import Data.Maybe (listToMaybe)
@@ -9,6 +9,11 @@ import Data.Binary.Get (runGet, getFloatbe, getFloatle)
 import CsvParser (ModData (..), ModType (..), RegType (..), ByteOrder (..))
 
 import qualified System.Modbus.TCP as MB
+
+data Config = Config {
+      conn :: MB.Connection
+    , ord :: ByteOrder
+}
 
 modSession :: [ModData] -> ByteOrder -> MB.Session [ModData]
 modSession md order =
@@ -36,7 +41,7 @@ readInputModData md idx order =
         ModFloat _ -> do
             xs <- MB.readInputRegisters (MB.TransactionId idx) 0 255 reg_address 2
             case xs of
-                [msw,lsw] -> return md {value = ModFloat $ getFloat order (msw,lsw)} 
+                [msw,lsw] -> return md {value = ModFloat $ Just $ word2Float order (msw,lsw)} 
                 _ -> throwError $ MB.OtherException $ 
                             "Error reading Float from input register address: "
                             ++ show reg_address
@@ -55,7 +60,7 @@ readHoldingModData md idx order =
         ModFloat _ -> do
             xs <- MB.readHoldingRegisters (MB.TransactionId idx) 0 255 reg_address 2
             case xs of
-                [msw,lsw] -> return md {value = ModFloat $ getFloat order (msw,lsw)} 
+                [msw,lsw] -> return md {value = ModFloat $ Just $ word2Float order (msw,lsw)} 
                 _ -> throwError $ MB.OtherException $ 
                             "Error reading Float from holding register address: "
                             ++ show reg_address
@@ -64,10 +69,10 @@ readHoldingModData md idx order =
   where 
     reg_address = register md
 
-getFloat :: ByteOrder -> (Word16, Word16) -> Maybe Float
-getFloat order ws
-    | order == LE = Just $ le2float ws
-    | order == BE = Just $ be2float ws 
+word2Float :: ByteOrder -> (Word16, Word16) -> Float
+word2Float order ws
+    | order == LE = le2float ws
+    | order == BE = be2float ws 
 
 le2float :: (Word16, Word16) -> Float
 le2float (f, s)= runGet getFloatle $ runPut putWords 
