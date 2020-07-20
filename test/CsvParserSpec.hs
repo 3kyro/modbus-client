@@ -50,7 +50,10 @@ pRegAddrSpec :: Spec
 pRegAddrSpec = describe "Parse a register address field" $ do
   it "parses numeric fields" $ property $ \x ->
     Right x == testCSVParser pRegAddr (tShow x ++ ";")
-  it "fails on invalid input" $ property $ \x ->
+  it "fails on invalid input" $ property $ \x -> 
+    not (all isDigit x) 
+    && notElem ';' x
+    ==>
     isLeft $ testCSVParser pRegAddr (x ++ ";")  
 
 pCommentSpec :: Spec
@@ -92,7 +95,7 @@ pValueSpec = describe "Parse a modbus value" $ do
       == testCSVParser
         pValue
         (capitalizeLetter "word;" (fromIntegral x) ++ show x ++ ";")
-  it "ignores upper case floats" $ property $ \x ->
+  it "ignores upper case floats" $ property $ \x -> 
     Right (ModFloat (Just x))
       == testCSVParser
         pValue
