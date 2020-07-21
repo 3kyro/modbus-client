@@ -9,7 +9,6 @@ import CsvParser.Spec
 import Data.Char (toLower)
 import qualified Data.Text as T
 import Data.Word (Word16)
-import System.Modbus.TCP (RegAddress (..))
 import Text.Parsec 
 import Text.Parsec.Text (Parser)
 
@@ -54,8 +53,8 @@ pRegType = do
 
 
 -- Parses a register address
-pRegAddr :: Parser RegAddress
-pRegAddr = field $ RegAddress . read <$> many1 digit
+pRegAddr :: Parser Word16
+pRegAddr = field $ read <$> many1 digit
 
 -- Parses a modbus value by associating the datatype field with
 -- the correct value field
@@ -63,7 +62,7 @@ pValue :: Parser ModType
 pValue = do
   dataType <- T.map toLower <$> field pText
   case T.unpack dataType of
-    "float" -> ModFloat <$> field pFloat 
+    "float" -> ModFloat <$> pFloat 
     "word" -> ModWord <$> pWord
     _ -> fail "Parsing Error on data type"
 
@@ -75,25 +74,25 @@ pValue = do
 -- usual representation: eg 10.24
 -- scientific representation: eg 3.24e-12
 pFloat :: Parser (Maybe Float)
-pFloat = (Just . read <$> float) <|> nothing <?> "Float"
+pFloat = Just . read <$> float <|> nothing <?> "Float"
   where
-    nothing = pure Nothing
+    nothing = char ';' >> pure Nothing
     -- optional trailing scientific notation
     float = try noScientific <|> scientific
-    noScientific = try leadingDot <|> try noDot <|> try noFractional <|> middleDot 
+    noScientific = leadingDot <|> try noDot <|> try noFractional <|> middleDot <* char ';'
     -- number that starts with a separating dot (eg .5)
     leadingDot = char '.' *> addLeadingZero
-    addLeadingZero = (++) <$> return "0." <*> many1 digit 
-    noDot = integer 
+    addLeadingZero = (++) <$> return "0." <*> many1 digit <* char ';'
+    noDot = integer <* char ';'
     -- with a separating dot but no fractional part (eg 100.)
-    noFractional = integer <* char '.' 
+    noFractional = integer <* char '.' <* char ';'
     -- typical float representation (eg 10.52)
     middleDot = (++) <$> integer <*> fractional
     integer = (:) <$> option ' ' (char '-') <*> many1 digit
     fractional = (:) <$> char '.' <*> many1 digit
     -- parses scientific notation (eg e-23)
-    scientific = (++) <$> middleDot <*> pExponent
-    pExponent = (:) <$> char 'e' <*> integer 
+    scientific = (++) <$> middleDot <*> pExponent 
+    pExponent = (:) <$> char 'e' <*> integer <* char ';'
 
 -- Parses a word16
 pWord :: Parser (Maybe Word16)

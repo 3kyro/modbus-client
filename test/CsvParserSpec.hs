@@ -1,7 +1,5 @@
 module CsvParserSpec where
 
-import TestHelper
-import CsvParser
 import Data.Char
   ( isDigit,
     toUpper,
@@ -11,12 +9,15 @@ import Data.Either
     isRight,
   )
 import Data.List (intercalate)
-import qualified Data.Text as T
 import Data.Word (Word16)
-import System.Modbus.TCP (RegAddress (..))
 import Test.Hspec
 import Test.QuickCheck 
 import Text.Parsec (ParseError)
+
+import qualified Data.Text as T
+
+import CsvParser
+import TestHelper
 
 csvParserSpec :: Spec
 csvParserSpec = do
@@ -49,7 +50,7 @@ pRegTypeSpec = describe "Parse a register type field" $ do
 pRegAddrSpec :: Spec
 pRegAddrSpec = describe "Parse a register address field" $ do
   it "parses numeric fields" $ property $ \x ->
-    Right x == testCSVParser pRegAddr (tShow x ++ ";")
+    Right x == testCSVParser pRegAddr (show x ++ ";")
   it "fails on invalid input" $ property $ \x -> 
     not (all isDigit x) 
     && notElem ';' x
@@ -217,7 +218,7 @@ prop_non_numeric_pvalue_float s =
       ++ ";"
 
 prop_valid_datum ::
-  String -> RegType -> RegAddress -> ModType -> String -> Property
+  String -> RegType -> Word16 -> ModType -> String -> Property
 prop_valid_datum desc rt reg val com =
   validText desc
     && validText com
@@ -236,7 +237,7 @@ prop_valid_datum desc rt reg val com =
           ++ ";"
           <> tShow rt
           ++ ";"
-          <> tShow reg
+          <> show reg
           ++ ";"
           <> tShow val
           ++ ";"

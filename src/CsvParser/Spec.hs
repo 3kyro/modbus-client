@@ -11,17 +11,23 @@
 -- - Order of fields is the following:
 --     Description;Register Type;Register Address;Data Type; Value;Comments
 module CsvParser.Spec
-       ( 
-         ModData (..)
-       , RegType (..)
-       , ModType (..)
-       , ByteOrder (..)
-       , modData
-       )
-       where
+    ( 
+        ModData (..)
+    , RegType (..)
+    , ModType (..)
+    , ByteOrder (..)
+    , modData
+    )
+    where
 
 import Data.Word (Word16)
-import System.Modbus.TCP (RegAddress)
+import Test.QuickCheck 
+    ( 
+      Arbitrary
+    , arbitrary
+    , oneof
+    , elements
+    )
 
 import qualified Data.Text as T
 
@@ -40,7 +46,7 @@ data RegType
 data ModData = ModData
     { description   :: !T.Text
     , regType       :: !RegType
-    ,  register     :: !RegAddress
+    ,  register     :: !Word16
     ,  value        :: !ModType
     ,  comments     :: !T.Text
     }
@@ -66,7 +72,7 @@ data ByteOrder
     deriving (Show, Read, Eq)
 
 -- ModData constructor
-modData :: T.Text -> RegType -> RegAddress -> ModType -> T.Text -> ModData
+modData :: T.Text -> RegType -> Word16 -> ModType -> T.Text -> ModData
 modData d rt r v c = 
     ModData
     { description = d
@@ -75,3 +81,17 @@ modData d rt r v c =
     , value = v
     , comments = c
     }
+
+instance Arbitrary ModType where
+  arbitrary = oneof [ModWord <$> arbitrary, ModFloat <$> arbitrary]
+
+instance Arbitrary ModData where
+  arbitrary =
+    modData <$> arbText <*> arbitrary <*> arbitrary <*> arbitrary <*> arbText
+    where
+      arbText = oneof [return (T.pack ""), T.cons <$> validChar <*> arbText]
+      validChar = elements $ ['a' .. 'z'] ++ ['A' .. 'Z'] ++ "&éèçà$=:"
+
+instance Arbitrary RegType where
+  arbitrary = elements [DiscreteInput, Coil, InputRegister, HoldingRegister]
+

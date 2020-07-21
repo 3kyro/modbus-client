@@ -36,38 +36,38 @@ readInputModData :: ModData -> Word16 -> ByteOrder -> MB.Session ModData
 readInputModData md idx order = 
     case value md of
         ModWord _ -> do
-            resp <- listToMaybe <$> MB.readInputRegisters (MB.TransactionId idx) 0 255 reg_address 1
+            resp <- listToMaybe <$> MB.readInputRegisters (MB.TransactionId idx) 0 255 addr 1
             return md {value = ModWord resp}
         ModFloat _ -> do
-            xs <- MB.readInputRegisters (MB.TransactionId idx) 0 255 reg_address 2
+            xs <- MB.readInputRegisters (MB.TransactionId idx) 0 255 addr 2
             case xs of
                 [msw,lsw] -> return md {value = ModFloat $ Just $ word2Float order (msw,lsw)} 
                 _ -> throwError $ MB.OtherException $ 
-                            "Error reading Float from input register address: "
-                            ++ show reg_address
+                            "Error reading Float from input register addr: "
+                            ++ show addr
                             ++ ", "
-                            ++ show (reg_address + 1)
+                            ++ show (addr + 1)
   where 
-    reg_address = register md
+    addr = MB.RegAddress $ register md
             
             
 readHoldingModData :: ModData -> Word16 -> ByteOrder -> MB.Session ModData
 readHoldingModData md idx order = 
     case value md of
         ModWord _ -> do
-            resp <- listToMaybe <$> MB.readHoldingRegisters (MB.TransactionId idx) 0 255 (register md) 1
+            resp <- listToMaybe <$> MB.readHoldingRegisters (MB.TransactionId idx) 0 255 addr 1
             return md {value = ModWord resp}
         ModFloat _ -> do
-            xs <- MB.readHoldingRegisters (MB.TransactionId idx) 0 255 reg_address 2
+            xs <- MB.readHoldingRegisters (MB.TransactionId idx) 0 255 addr 2
             case xs of
                 [msw,lsw] -> return md {value = ModFloat $ Just $ word2Float order (msw,lsw)} 
                 _ -> throwError $ MB.OtherException $ 
                             "Error reading Float from holding register address: "
-                            ++ show reg_address
+                            ++ show addr
                             ++ ", "
-                            ++ show (reg_address + 1)
+                            ++ show (addr + 1)
   where 
-    reg_address = register md
+    addr = MB.RegAddress $ register md
 
 word2Float :: ByteOrder -> (Word16, Word16) -> Float
 word2Float order ws
