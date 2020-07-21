@@ -24,8 +24,8 @@ main :: IO ()
 main = runApp =<< runOpts
 
 runApp :: Opt -> IO ()
-runApp (Opt input output ip portNum order r) = 
-    if r then runReplApp (getAddr ip portNum) order
+runApp (Opt input output ip portNum order bRepl) = 
+    if bRepl then runReplApp (getAddr ip portNum) order
     else do  
         putStrLn "Parsing register file"
         contents <- T.readFile input
@@ -39,8 +39,8 @@ runApp (Opt input output ip portNum order r) =
 getAddr :: IPv4 -> Int -> S.SockAddr
 getAddr ip portNum = S.SockAddrInet (fromIntegral portNum) (toHostAddress ip)
 
-local :: S.Socket -> MB.Connection
-local s =
+getConnection :: S.Socket -> MB.Connection
+getConnection s =
     MB.Connection
     { MB.connWrite          = send s
     , MB.connRead           = recv s
@@ -51,7 +51,7 @@ local s =
 runModDataApp :: S.SockAddr -> ByteOrder -> [ModData] -> IO [ModData]
 runModDataApp addr order md = do
     s <- connect addr
-    resp <- runExceptT $ MB.runSession (local s) (modSession md order)
+    resp <- runExceptT $ MB.runSession (getConnection s) (modSession md order)
     case resp of
         Left err -> fail $ "Modbus error: " ++ show err
         Right resp' -> return resp'
@@ -59,7 +59,7 @@ runModDataApp addr order md = do
 runReplApp :: S.SockAddr -> ByteOrder -> IO ()
 runReplApp addr order = do
     s <- connect addr
-    runRepl $ Config (local s) order
+    runRepl $ Config (getConnection s) order
 
 connect :: S.SockAddr -> IO S.Socket
 connect addr = do

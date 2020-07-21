@@ -1,4 +1,4 @@
-module Repl (runRepl, pWord, pFloat) where
+module Repl (runRepl) where
 
 import System.Console.Repline (HaskelineT, evalRepl, WordCompleter, CompleterStyle( Word ))
 import Control.Monad.Trans (liftIO)
@@ -15,7 +15,7 @@ import Control.Monad.Except (runExceptT)
 
 import qualified System.Modbus.TCP as MB
 
-import Modbus
+import Modbus (Config (..), word2Float)
 import CsvParser (ByteOrder)
 
 type Repl a = HaskelineT (ReaderT Config IO) a
