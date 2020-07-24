@@ -63,12 +63,17 @@ data ModType
     deriving (Show, Eq)
 
 -- Byte order of data types
--- Eg: when receiving two words MSW and LSW
--- LE - MSW LSW
--- BE - LSW MSW 
+-- Eg: when receiving two two-byte words AB and CD
+-- LE   - AB CD
+-- BE   - CD AB
+-- LESW - BA DC
+-- BESW - DC BA       
 data ByteOrder
     = LE    -- Little Endian
     | BE    -- Big Endian
+    | LESW  -- Little Endiann, byte swap for each word
+    | BESW  -- Big Endian, byte swap for each word
+
     deriving (Show, Read, Eq)
 
 -- ModData constructor

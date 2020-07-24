@@ -4,7 +4,13 @@ import Control.Monad.Except (throwError)
 import Data.Maybe (listToMaybe)
 import Data.Word (Word16)
 import Data.Binary.Put (runPut, putWord16le)
-import Data.Binary.Get (runGet, getFloatbe, getFloatle)
+import Data.Binary.Get 
+    (
+      runGet
+    , getFloatbe
+    , getFloatle
+    , getWord16be
+    )
 
 import CsvParser (ModData (..), ModType (..), RegType (..), ByteOrder (..))
 
@@ -70,9 +76,11 @@ readHoldingModData md idx order =
     addr = MB.RegAddress $ register md
 
 word2Float :: ByteOrder -> (Word16, Word16) -> Float
-word2Float order ws
+word2Float order ws@(f,s)
     | order == LE = le2float ws
-    | order == BE = be2float ws 
+    | order == BE = be2float ws
+    | order == LESW = le2float (swappWord f, swappWord s)
+    | order == BESW = be2float (swappWord f, swappWord s)
 
 le2float :: (Word16, Word16) -> Float
 le2float (f, s)= runGet getFloatle $ runPut putWords 
@@ -83,3 +91,7 @@ be2float :: (Word16, Word16) -> Float
 be2float (f, s)= runGet getFloatbe $ runPut putWords 
   where
     putWords = putWord16le f >> putWord16le s
+
+-- Swaps the two bytes of the provided Word16
+swappWord :: Word16 -> Word16
+swappWord w = runGet getWord16be $ runPut $ putWord16le w
