@@ -11,6 +11,13 @@ packages:
       sha256: a110d71c17a24a1abc68f06f1e7a344a9a1db0d1a24e0fa12f76cec918eaac57
   original:
     hackage: modbus-tcp-0.5
+- completed:
+    hackage: either-5.0.1.1@sha256:41167573bf575b7e0e24283a52fba8ce7bed5a7cc2984bba0dce305a0ab66f0d,1973
+    pantry-tree:
+      size: 657
+      sha256: f4355cd0091ec38301af2b98729fe2d6eb0a41bd7f01cc66be8202da90a6cb0e
+  original:
+    hackage: either-5.0.1.1
 snapshots:
 - completed:
     size: 531237

@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleInstances #-}
 module Repl (runRepl) where
 
 import System.Console.Repline (HaskelineT, evalRepl, WordCompleter, CompleterStyle( Word ))
@@ -7,11 +8,11 @@ import Data.Maybe (fromJust)
 import Data.Word (Word16)
 import Control.Monad.Reader (ReaderT, runReaderT, ask)
 import Text.Parsec (ParseError, parse, eof, option, string)
-import Text.Parsec.String (Parser)
 import Text.Parsec.Token (float, decimal, makeTokenParser)
 import Text.Parsec.Language (haskellDef)
-import Control.Monad.Except (runExceptT)
-
+import Control.Monad.Trans.Except (runExceptT, ExceptT, except, mapExceptT)
+import Data.Either.Combinators (mapLeft)
+import Control.Monad.IO.Class ()
 
 import qualified System.Modbus.TCP as MB
 
@@ -19,6 +20,11 @@ import Modbus (Config (..), word2Float)
 import CsvParser (ByteOrder)
 
 type Repl a = HaskelineT (ReaderT Config IO) a
+
+data ReplError = 
+    ReplParseError ParseError
+    | ReplModbusError MB.ModbusException
+    deriving (Show)
 
 runRepl :: Config -> IO ()
 runRepl  = runReaderT $ evalRepl (pure ">") cmd options (Just ':') (Word completer) ini
@@ -61,43 +67,50 @@ commands = [
     ]
 
 readInputRegisterWord :: [String] -> Repl ()
-readInputRegisterWord [] = liftIO $ putStrLn "Invalid command arguments"
-readInputRegisterWord [a, n] = do
-    let pReturn = getAddressNumber a n
-    case pReturn of
-        Left err -> liftIO $ print err
-        Right (addr, num) -> do
-            Config c _ <- ask
-            results <- liftIO $ runExceptT $ MB.runSession c $ MB.readInputRegisters 0 0 255 (MB.RegAddress addr) num 
-            case results of
-                Left mdError -> liftIO $ print mdError
-                Right mdData -> do
-                    liftIO $ putStrLn $ "Reading " ++ show num ++ " registers from address " ++ show addr
-                    liftIO $ mapM_ print mdData
-readInputRegisterWord (_:_:_) = liftIO $ putStrLn "Invalid command arguments"
+readInputRegisterWord [address, num] = do
+    Config connection _ <- ask
+    let wrapped = replReadRegisters address num connection MB.readInputRegisters
+    unwrapped <- liftIO $ runExceptT wrapped    
+    case unwrapped of
+        Left mdError -> liftIO $ print mdError
+        Right mdData -> liftIO $ mapM_ print mdData
+readInputRegisterWord _ = liftIO $ putStrLn "Invalid command arguments"
 
 readInputRegisterFloat :: [String] -> Repl ()
-readInputRegisterFloat [] = liftIO $ putStrLn "Invalid command arguments"
-readInputRegisterFloat [a, n] = do
-    let pReturn = getAddressNumber a n
-    case pReturn of
-        Left err -> liftIO $ print err
-        Right (addr, num) -> do
-            Config c o <- ask
-            results <- liftIO $ runExceptT $ MB.runSession c $ MB.readInputRegisters 0 0 255 (MB.RegAddress addr) (num*2) 
-            case results of
-                Left mdError -> liftIO $ print mdError
-                Right mdData -> do
-                    liftIO $ putStrLn $ "Reading " ++ show num ++ " registers from address " ++ show addr
-                    liftIO $ mapM_ print (getFloats mdData o)
-readInputRegisterFloat (_:_:_) = liftIO $ putStrLn "Invalid command arguments"
+readInputRegisterFloat [address, number] = do
+    Config connection order <- ask
+    let wrapped = replReadRegisters address number connection MB.readInputRegisters
+    unwrapped <- liftIO $ runExceptT wrapped    
+    case unwrapped of
+        Left mdError -> liftIO $ print mdError
+        Right mdData -> liftIO $ mapM_ print (getFloats mdData order)
+readInputRegisterFloat _ = liftIO $ putStrLn "Invalid command arguments"
 
+-- Run a modbus session, converting the left part to ReplError
+runReplSession :: MB.Connection -> MB.Session a -> ExceptT ReplError IO a
+runReplSession c s= mapExceptT toReplExcepT $  MB.runSession c s
 
+-- Converts a ModbusException wrapped in IO to a ReplError
+toReplExcepT :: IO (Either MB.ModbusException a) -> IO (Either ReplError a)
+toReplExcepT mb = mapLeft ReplModbusError <$> mb
 
-getAddressNumber :: String -> String-> Either ParseError (Word16, Word16)
-getAddressNumber a n = do
-    address <- getWord a
-    number <- getWord n
+-- Parses the applied address and number of registers strings and applies the given
+-- read modbus register function
+replReadRegisters :: String 
+               -> String 
+               -> MB.Connection 
+               -> (MB.TransactionId -> MB.ProtocolId -> MB.UnitId -> MB.RegAddress -> Word16 -> MB.Session [Word16])
+               -> ExceptT ReplError IO [Word16]
+replReadRegisters a n connection f = do
+    (addr, num) <- pAddressNumber a n
+    liftIO $ putStrLn $ "Reading " ++ show num ++ " registers from address " ++ show addr
+    runReplSession connection $ f 0 0 255 (MB.RegAddress addr) num
+
+-- Parse address and number of register strings 
+pAddressNumber :: String -> String-> ExceptT ReplError IO (Word16, Word16)
+pAddressNumber a n = do
+    address <- except $ pWord a
+    number <- except $ pWord n
     return (address, number)
 
 getFloats :: [Word16] -> ByteOrder -> [Float]
@@ -105,20 +118,18 @@ getFloats [] _ = []
 getFloats [_] _ = []
 getFloats (x:y:ys) bo = word2Float bo (x,y) : getFloats ys bo 
 
-pFloat :: Parser Float
-pFloat = read <$> ((++) <$> sign <*> pf)
-  where
-      sign = option "" (string "-")
-      pf = show <$> float (makeTokenParser haskellDef)   
-
-getFloat :: String -> Either ParseError Float
-getFloat = parse (pFloat <* eof) ""
+pFloat :: String -> Either ReplError Float
+pFloat s = mapLeft ReplParseError parseResult
+  where 
+    parseResult = parse (pRawFloat <* eof) "" s
+    pRawFloat = read <$> ((++) <$> sign <*> pf)
+    sign = option "" (string "-")
+    pf = show <$> float (makeTokenParser haskellDef)   
         
-pWord :: Parser Word16
-pWord = fromInteger <$> decimal (makeTokenParser haskellDef)
-
-getWord :: String -> Either ParseError Word16
-getWord = parse (pWord <* eof) ""
-
+pWord :: String -> Either ReplError Word16
+pWord s = mapLeft ReplParseError parseResult  
+  where
+    parseResult = parse (pRawWord <* eof) "" s
+    pRawWord = fromInteger <$> decimal (makeTokenParser haskellDef)
 
 

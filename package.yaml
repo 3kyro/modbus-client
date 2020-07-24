@@ -34,7 +34,8 @@ dependencies:
 - binary
 - repline
 - Cabal
-
+- either
+- transformers
 
 library:
   source-dirs: src
