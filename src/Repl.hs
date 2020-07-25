@@ -1,18 +1,17 @@
-{-# LANGUAGE FlexibleInstances #-}
 module Repl (runRepl) where
 
-import System.Console.Repline (HaskelineT, evalRepl, WordCompleter, CompleterStyle( Word ))
 import Control.Monad.Trans (liftIO)
+import Control.Monad.Reader (ReaderT, runReaderT, ask)
+import Control.Monad.Trans.Except (runExceptT, ExceptT, except, mapExceptT)
+import Control.Monad.IO.Class ()
 import Data.List (isPrefixOf, uncons)
 import Data.Maybe (fromJust)
 import Data.Word (Word16)
-import Control.Monad.Reader (ReaderT, runReaderT, ask)
+import Data.Either.Combinators (mapLeft)
+import System.Console.Repline (HaskelineT, evalRepl, WordCompleter, CompleterStyle( Word ))
 import Text.Parsec (ParseError, parse, eof, option, string)
 import Text.Parsec.Token (float, decimal, makeTokenParser)
 import Text.Parsec.Language (haskellDef)
-import Control.Monad.Trans.Except (runExceptT, ExceptT, except, mapExceptT)
-import Data.Either.Combinators (mapLeft)
-import Control.Monad.IO.Class ()
 
 import qualified System.Modbus.TCP as MB
 
@@ -20,6 +19,8 @@ import Modbus (Config (..), word2Float)
 import CsvParser (ByteOrder)
 
 type Repl a = HaskelineT (ReaderT Config IO) a
+
+type ReadRegsFun =  MB.TransactionId -> MB.ProtocolId -> MB.UnitId -> MB.RegAddress -> Word16 -> MB.Session [Word16]
 
 data ReplError = 
     ReplParseError ParseError
@@ -37,8 +38,10 @@ cmd input =
   let 
     (command, args) = (fromJust . uncons . words) input
   in case command of
-        "readInputRegisterWord" -> readInputRegisterWord args
-        "readInputRegisterFloat" -> readInputRegisterFloat args
+        "readInputRegisterWord" -> readRegistersWord MB.readInputRegisters args
+        "readInputRegisterFloat" -> readRegistersFloat MB.readInputRegisters args
+        "readHoldingRegisterWord" -> readRegistersWord MB.readHoldingRegisters args
+        "readHoldingRegisterFloat" -> readRegistersFloat MB.readHoldingRegisters args
         _ -> liftIO $ putStrLn ("command not found: " ++ command)
 
 -- Tab Completion: return a completion for partial words entered
@@ -64,27 +67,29 @@ commands :: [String]
 commands = [
       "readInputRegisterWord"
     , "readInputRegisterFloat"
+    , "readHoldingRegisterWord"
+    , "readHoldingRegisterFloat"
     ]
 
-readInputRegisterWord :: [String] -> Repl ()
-readInputRegisterWord [address, num] = do
+readRegistersWord :: ReadRegsFun -> [String] -> Repl ()
+readRegistersWord f [address, num] = do
     Config connection _ <- ask
-    let wrapped = replReadRegisters address num connection MB.readInputRegisters
+    let wrapped = replReadRegisters address num connection f
     unwrapped <- liftIO $ runExceptT wrapped    
     case unwrapped of
         Left mdError -> liftIO $ print mdError
         Right mdData -> liftIO $ mapM_ print mdData
-readInputRegisterWord _ = liftIO $ putStrLn "Invalid command arguments"
+readRegistersWord _ _ = liftIO $ putStrLn "Invalid command arguments"
 
-readInputRegisterFloat :: [String] -> Repl ()
-readInputRegisterFloat [address, number] = do
+readRegistersFloat :: ReadRegsFun -> [String] -> Repl ()
+readRegistersFloat f [address, number] = do
     Config connection order <- ask
-    let wrapped = replReadRegisters address number connection MB.readInputRegisters
-    unwrapped <- liftIO $ runExceptT wrapped    
+    let wrapped = replReadRegisters address number connection f
+    unwrapped <- liftIO $ runExceptT wrapped 
     case unwrapped of
         Left mdError -> liftIO $ print mdError
         Right mdData -> liftIO $ mapM_ print (getFloats mdData order)
-readInputRegisterFloat _ = liftIO $ putStrLn "Invalid command arguments"
+readRegistersFloat _ _ = liftIO $ putStrLn "Invalid command arguments"
 
 -- Run a modbus session, converting the left part to ReplError
 runReplSession :: MB.Connection -> MB.Session a -> ExceptT ReplError IO a
@@ -99,7 +104,7 @@ toReplExcepT mb = mapLeft ReplModbusError <$> mb
 replReadRegisters :: String 
                -> String 
                -> MB.Connection 
-               -> (MB.TransactionId -> MB.ProtocolId -> MB.UnitId -> MB.RegAddress -> Word16 -> MB.Session [Word16])
+               -> ReadRegsFun
                -> ExceptT ReplError IO [Word16]
 replReadRegisters a n connection f = do
     (addr, num) <- pAddressNumber a n
