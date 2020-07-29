@@ -43,10 +43,10 @@ cmd input =
   let 
     (command, args) = (fromJust . uncons . words) input
   in case command of
-        "readInputRegisterWord" -> readRegistersWord MB.readInputRegisters args
-        "readInputRegisterFloat" -> readRegistersFloat MB.readInputRegisters args
-        "readHoldingRegisterWord" -> readRegistersWord MB.readHoldingRegisters args
-        "readHoldingRegisterFloat" -> readRegistersFloat MB.readHoldingRegisters args
+        "readInputRegistersWord" -> readRegistersWord MB.readInputRegisters args
+        "readInputRegistersFloat" -> readRegistersFloat MB.readInputRegisters args
+        "readHoldingRegistersWord" -> readRegistersWord MB.readHoldingRegisters args
+        "readHoldingRegistersFloat" -> readRegistersFloat MB.readHoldingRegisters args
         "writeSingleRegisterWord" -> writeSingleRegisterWord args
         "writeMultipleRegistersWord" -> writeMultipleRegistersWord args
         "writeSingleRegisterFloat" -> writeSingleRegisterFloat args
@@ -74,11 +74,11 @@ options = [
 
 commands :: [String]
 commands = [
-      "readInputRegisterWord"
-    , "readInputRegisterFloat"
-    , "readHoldingRegisterWord"
-    , "readHoldingRegisterFloat"
-    , "writeSingleRegisterWord"
+      "readInputRegistersWord"
+    , "readInputRegistersFloat"
+    , "readHoldingRegistersWord"
+    , "readHoldingRegistersFloat"
+    , "writeSingleRegistersWord"
     , "writeMultipleRegistersWord"
     , "writeSingleRegisterFloat"
     , "writeMultipleRegistersFloat"
@@ -134,9 +134,9 @@ replReadRegisters ::
 replReadRegisters a n m connection f = do
     let mult = getModTypeMult m
     let wrapped = do 
-        (addr, num) <- pAddressNumber a n
-        liftIO $ putStrLn $ "Reading " ++ show (mult * num) ++ " register(s) from address " ++ show addr
-        runReplSession connection $ f 0 0 255 (MB.RegAddress addr) (mult * num)
+            (addr, num) <- pAddressNumber a n 
+            liftIO $ putStrLn $ "Reading " ++ show (mult * num) ++ " register(s) from address " ++ show addr
+            runReplSession connection $ f 0 0 255 (MB.RegAddress addr) (mult * num)
     unwrapped <- liftIO $ runExceptT wrapped
     case unwrapped of
         Left mdError -> liftIO $ print mdError >> return []
@@ -152,12 +152,12 @@ replWriteRegisters ::
     -> Repl ()
 replWriteRegisters address values modtype connection = do
     let wrapped = do
-        addr <- except $ pWord address
-        val <- case modtype of
-            ModWord _ -> except $ mapM pWord values
-            ModFloat _ -> except $ fromFloats <$> mapM pFloat values
-        liftIO $ putStrLn $ "Writing " ++ show (length val) ++ " register(s) at address " ++ show addr
-        runReplSession connection $ MB.writeMultipleRegisters 0 0 255 (MB.RegAddress addr) val
+            addr <- except $ pWord address
+            val <- case modtype of
+                ModWord _ -> except $ mapM pWord values
+                ModFloat _ -> except $ fromFloats <$> mapM pFloat values
+            liftIO $ putStrLn $ "Writing " ++ show (length val) ++ " register(s) at address " ++ show addr
+            runReplSession connection $ MB.writeMultipleRegisters 0 0 255 (MB.RegAddress addr) val
     unwrapped <- liftIO $ runExceptT wrapped    
     case unwrapped of
         Left mdError -> liftIO $ print mdError
