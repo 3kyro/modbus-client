@@ -33,7 +33,7 @@ data ReplError =
     deriving (Show)
 
 runRepl :: Config -> IO ()
-runRepl  = runReaderT $ evalRepl (pure ">") cmd options (Just ':') (Word completer) ini
+runRepl  = runReaderT $ evalRepl (pure "> ") cmd options (Just ':') (Word completer) ini
 
 ini :: Repl ()
 ini = liftIO $ putStrLn "ModBus interactive client\r\nType ':help' for a list of commands, Ctr+D to exit"
@@ -156,12 +156,16 @@ replWriteRegisters address values modtype connection = do
             val <- case modtype of
                 ModWord _ -> except $ mapM pWord values
                 ModFloat _ -> except $ fromFloats <$> mapM pFloat values
-            liftIO $ putStrLn $ "Writing " ++ show (length val) ++ " register(s) at address " ++ show addr
+            liftIO $ putStrLn $ "Writing " ++ regsWritten val ++ " register(s) at address " ++ show addr
             runReplSession connection $ MB.writeMultipleRegisters 0 0 255 (MB.RegAddress addr) val
     unwrapped <- liftIO $ runExceptT wrapped    
     case unwrapped of
         Left mdError -> liftIO $ print mdError
-        Right response -> liftIO $ putStrLn $ show response ++ " register(s) written"
+        Right response -> liftIO $ putStrLn $ responseWritten response ++ " register(s) written"
+  where
+    regsWritten val = show $ divbyModtype $ length val
+    responseWritten resp = show $ divbyModtype resp   
+    divbyModtype num = num `div` fromIntegral (toInteger (getModTypeMult modtype)) 
 
 -- Run a modbus session, converting the left part to ReplError
 runReplSession :: MB.Connection -> MB.Session a -> ExceptT ReplError IO a
