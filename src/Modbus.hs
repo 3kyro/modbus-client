@@ -13,7 +13,7 @@ import Data.Binary.Put
     (
        runPut
      , putWord16le
-     , putFloatbe
+     , putFloatle
      )
 import Data.Binary.Get 
     (
@@ -21,6 +21,7 @@ import Data.Binary.Get
     , getFloatbe
     , getFloatle
     , getWord16be
+    , getWord16le
     )
 
 import CsvParser (ModData (..), ModType (..), RegType (..), ByteOrder (..))
@@ -110,9 +111,9 @@ word2Float order ws@(f,s)
     | order == BESW = be2float (swappWord f, swappWord s)
 
 float2Word :: Float -> (Word16, Word16)
-float2Word fl = runGet getWords $ runPut $ putFloatbe fl
+float2Word fl = runGet getWords $ runPut $ putFloatle fl
   where
-      getWords = (,) <$> getWord16be <*> getWord16be
+      getWords = (,) <$> getWord16le <*> getWord16le
 
 le2float :: (Word16, Word16) -> Float
 le2float (f, s)= runGet getFloatle $ runPut putWords 

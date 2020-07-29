@@ -101,7 +101,7 @@ parseFloatRepr = option auto
     (  long     "order"
     <> short    'o'
     <> metavar  "BYTE_ORDER"
-    <> value    LESW
+    <> value    LE
     <> help     "Data items byte order"
     )
 

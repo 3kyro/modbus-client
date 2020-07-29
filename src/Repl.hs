@@ -135,7 +135,7 @@ replReadRegisters a n m connection f = do
     let mult = getModTypeMult m
     let wrapped = do 
             (addr, num) <- pAddressNumber a n 
-            liftIO $ putStrLn $ "Reading " ++ show (mult * num) ++ " register(s) from address " ++ show addr
+            liftIO $ putStrLn $ "Reading " ++ show num ++ " register(s) from address " ++ show addr
             runReplSession connection $ f 0 0 255 (MB.RegAddress addr) (mult * num)
     unwrapped <- liftIO $ runExceptT wrapped
     case unwrapped of
