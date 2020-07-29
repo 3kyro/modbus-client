@@ -24,7 +24,6 @@ impl Service for MbServer {
     type Future = future::Ready<Result<Self::Response>>;
 
     fn call(&self, req: Self::Request) -> Self::Future {
-        dbg!(&req);
         match req {
             Request::ReadInputRegisters(addr, cnt) => {
                 let split = &self.input_registers[addr as usize..(addr + cnt) as usize];
