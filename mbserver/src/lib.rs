@@ -3,6 +3,8 @@ use std::io::prelude::*;
 use std::io::Result;
 use tokio_modbus::prelude::*;
 use tokio_modbus::server::*;
+use std::sync::{Arc, Mutex};
+
 
 type Address = u16;
 type Coil = bool;
@@ -12,7 +14,7 @@ pub struct MbServer {
     pub coils: Vec<Coil>,
     pub discrete_inputs: Vec<Coil>,
     pub input_registers: Vec<Word>,
-    pub holding_registers: Vec<Word>,
+    pub holding_registers: Arc<Mutex<Vec<Word>>>,
 }
 
 impl Service for MbServer {
@@ -22,16 +24,38 @@ impl Service for MbServer {
     type Future = future::Ready<Result<Self::Response>>;
 
     fn call(&self, req: Self::Request) -> Self::Future {
+        dbg!(&req);
         match req {
             Request::ReadInputRegisters(addr, cnt) => {
                 let split = &self.input_registers[addr as usize..(addr + cnt) as usize];
                 future::ready(Ok(Response::ReadInputRegisters(split.to_owned())))
             }
             Request::ReadHoldingRegisters(addr, cnt) => {
-                let split = &self.holding_registers[addr as usize..(addr + cnt) as usize];
-                future::ready(Ok(Response::ReadHoldingRegisters(split.to_owned())))
+                let split = 
+                    self.holding_registers.lock().unwrap().clone().split_off(addr as usize);
+                future::ready(Ok(Response::ReadHoldingRegisters(
+                    split.iter().take(cnt as usize).copied().collect()
+                )))
             }
-            _ => unimplemented!(),
+            Request::WriteSingleRegister(addr, m_word) => {
+                self.holding_registers.lock().unwrap().clone()[addr as usize] = m_word;
+                let rsp = Response::WriteSingleRegister(
+                    addr,
+                    self.holding_registers.lock().unwrap()[addr as usize],
+                );
+                future::ok(rsp)
+            }
+            Request::WriteMultipleRegisters(addr, regs) => {
+                for i in 0..regs.len() {
+                    self.holding_registers.lock().unwrap()[addr as usize + i as usize] =
+                        regs[i as usize];
+                }
+                let rsp = Response::WriteMultipleRegisters(addr, regs.len() as u16);
+                future::ok(rsp)
+            }
+            _ => {
+                unimplemented!()
+            }
         }
     }
 }
@@ -106,13 +130,13 @@ pub fn create_server(registers: Vec<Register>) -> MbServer {
         coils: vec![false; 0xFFFF],
         discrete_inputs: vec![false; 0xFFFF],
         input_registers: vec![0; 0xFFFF],
-        holding_registers: vec![0; 0xFFFF],
+        holding_registers: Arc::new(Mutex::new(vec![0; 0xFFFF])),
     };
 
     for reg in registers {
         match reg {
             Register::Input(addr, word) => server.input_registers[addr as usize] = word,
-            Register::Holding(addr, word) => server.holding_registers[addr as usize] = word,
+            Register::Holding(addr, word) => server.holding_registers.lock().unwrap().clone()[addr as usize] = word,
             _ => unimplemented!(),
         }
     }

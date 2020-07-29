@@ -15,8 +15,13 @@ import Text.Parsec.Language (haskellDef)
 
 import qualified System.Modbus.TCP as MB
 
-import Modbus (Config (..), word2Float)
-import CsvParser (ByteOrder)
+import Modbus 
+    (
+      Config (..)
+    , getFloats
+    , fromFloats
+    )
+import CsvParser (ModType (..))
 
 type Repl a = HaskelineT (ReaderT Config IO) a
 
@@ -42,6 +47,10 @@ cmd input =
         "readInputRegisterFloat" -> readRegistersFloat MB.readInputRegisters args
         "readHoldingRegisterWord" -> readRegistersWord MB.readHoldingRegisters args
         "readHoldingRegisterFloat" -> readRegistersFloat MB.readHoldingRegisters args
+        "writeSingleRegisterWord" -> writeSingleRegisterWord args
+        "writeMultipleRegistersWord" -> writeMultipleRegistersWord args
+        "writeSingleRegisterFloat" -> writeSingleRegisterFloat args
+        "writeMultipleRegistersFloat" -> writeMultipleRegistersFloat args
         _ -> liftIO $ putStrLn ("command not found: " ++ command)
 
 -- Tab Completion: return a completion for partial words entered
@@ -69,27 +78,90 @@ commands = [
     , "readInputRegisterFloat"
     , "readHoldingRegisterWord"
     , "readHoldingRegisterFloat"
+    , "writeSingleRegisterWord"
+    , "writeMultipleRegistersWord"
+    , "writeSingleRegisterFloat"
+    , "writeMultipleRegistersFloat"
     ]
 
 readRegistersWord :: ReadRegsFun -> [String] -> Repl ()
-readRegistersWord f [address, num] = do
+readRegistersWord f [address, number] = do
     Config connection _ <- ask
-    let wrapped = replReadRegisters address num connection f
-    unwrapped <- liftIO $ runExceptT wrapped    
-    case unwrapped of
-        Left mdError -> liftIO $ print mdError
-        Right mdData -> liftIO $ mapM_ print mdData
+    response <- replReadRegisters address number (ModWord Nothing) connection f
+    liftIO $ print response
 readRegistersWord _ _ = liftIO $ putStrLn "Invalid command arguments"
 
 readRegistersFloat :: ReadRegsFun -> [String] -> Repl ()
 readRegistersFloat f [address, number] = do
     Config connection order <- ask
-    let wrapped = replReadRegisters address number connection f
-    unwrapped <- liftIO $ runExceptT wrapped 
+    response <- replReadRegisters address number (ModFloat Nothing) connection f
+    liftIO $ print (getFloats response order)
+readRegistersFloat _ _ = liftIO $ putStrLn "Invalid command arguments"
+
+writeSingleRegisterWord :: [String] -> Repl ()
+writeSingleRegisterWord [address, value] = do
+    Config connection _ <- ask
+    replWriteRegisters address [value] (ModWord Nothing) connection
+writeSingleRegisterWord _ = liftIO $ print "Invalid command arguments"
+
+writeMultipleRegistersWord :: [String] -> Repl ()
+writeMultipleRegistersWord (address:values) = do
+    Config connection _ <- ask
+    replWriteRegisters address values (ModWord Nothing) connection
+writeMultipleRegistersWord _ = liftIO $ print "Invalid command arguments"
+
+writeSingleRegisterFloat :: [String] -> Repl ()
+writeSingleRegisterFloat [address, value] = do
+    Config connection _ <- ask
+    replWriteRegisters address [value] (ModFloat Nothing) connection
+writeSingleRegisterFloat _ = liftIO $ print "Invalid command arguments"
+
+writeMultipleRegistersFloat :: [String] -> Repl ()
+writeMultipleRegistersFloat (address:values) = do
+    Config connection _ <- ask
+    replWriteRegisters address values (ModFloat Nothing) connection
+writeMultipleRegistersFloat _ = liftIO $ print "Invalid command arguments"
+
+-- Parses the address and number of registers strings and applies the given
+-- read modbus register function
+replReadRegisters :: 
+       String   -- address
+    -> String   -- number of registers
+    -> ModType
+    -> MB.Connection 
+    -> ReadRegsFun
+    -> Repl [Word16]
+replReadRegisters a n m connection f = do
+    let mult = getModTypeMult m
+    let wrapped = do 
+        (addr, num) <- pAddressNumber a n
+        liftIO $ putStrLn $ "Reading " ++ show (mult * num) ++ " register(s) from address " ++ show addr
+        runReplSession connection $ f 0 0 255 (MB.RegAddress addr) (mult * num)
+    unwrapped <- liftIO $ runExceptT wrapped
+    case unwrapped of
+        Left mdError -> liftIO $ print mdError >> return []
+        Right mdData -> return mdData
+
+-- Parses the address and values list and applies them
+-- to a read holding registers modbus command
+replWriteRegisters :: 
+       String  -- address
+    -> [String] -- values
+    -> ModType
+    -> MB.Connection
+    -> Repl ()
+replWriteRegisters address values modtype connection = do
+    let wrapped = do
+        addr <- except $ pWord address
+        val <- case modtype of
+            ModWord _ -> except $ mapM pWord values
+            ModFloat _ -> except $ fromFloats <$> mapM pFloat values
+        liftIO $ putStrLn $ "Writing " ++ show (length val) ++ " register(s) at address " ++ show addr
+        runReplSession connection $ MB.writeMultipleRegisters 0 0 255 (MB.RegAddress addr) val
+    unwrapped <- liftIO $ runExceptT wrapped    
     case unwrapped of
         Left mdError -> liftIO $ print mdError
-        Right mdData -> liftIO $ mapM_ print (getFloats mdData order)
-readRegistersFloat _ _ = liftIO $ putStrLn "Invalid command arguments"
+        Right response -> liftIO $ putStrLn $ show response ++ " register(s) written"
 
 -- Run a modbus session, converting the left part to ReplError
 runReplSession :: MB.Connection -> MB.Session a -> ExceptT ReplError IO a
@@ -99,29 +171,12 @@ runReplSession c s= mapExceptT toReplExcepT $  MB.runSession c s
 toReplExcepT :: IO (Either MB.ModbusException a) -> IO (Either ReplError a)
 toReplExcepT mb = mapLeft ReplModbusError <$> mb
 
--- Parses the applied address and number of registers strings and applies the given
--- read modbus register function
-replReadRegisters :: String 
-               -> String 
-               -> MB.Connection 
-               -> ReadRegsFun
-               -> ExceptT ReplError IO [Word16]
-replReadRegisters a n connection f = do
-    (addr, num) <- pAddressNumber a n
-    liftIO $ putStrLn $ "Reading " ++ show num ++ " registers from address " ++ show addr
-    runReplSession connection $ f 0 0 255 (MB.RegAddress addr) num
-
 -- Parse address and number of register strings 
 pAddressNumber :: String -> String-> ExceptT ReplError IO (Word16, Word16)
 pAddressNumber a n = do
     address <- except $ pWord a
     number <- except $ pWord n
     return (address, number)
-
-getFloats :: [Word16] -> ByteOrder -> [Float]
-getFloats [] _ = []
-getFloats [_] _ = []
-getFloats (x:y:ys) bo = word2Float bo (x,y) : getFloats ys bo 
 
 pFloat :: String -> Either ReplError Float
 pFloat s = mapLeft ReplParseError parseResult
@@ -137,4 +192,6 @@ pWord s = mapLeft ReplParseError parseResult
     parseResult = parse (pRawWord <* eof) "" s
     pRawWord = fromInteger <$> decimal (makeTokenParser haskellDef)
 
-
+getModTypeMult :: ModType -> Word16
+getModTypeMult (ModWord _) = 1
+getModTypeMult (ModFloat _) = 2

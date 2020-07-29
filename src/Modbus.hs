@@ -1,9 +1,20 @@
-module Modbus (modSession, Config (..), word2Float) where
+module Modbus 
+    (
+      modSession
+    , Config (..)
+    , getFloats
+    , fromFloats
+    ) where
 
 import Control.Monad.Except (throwError)
 import Data.Maybe (listToMaybe)
 import Data.Word (Word16)
-import Data.Binary.Put (runPut, putWord16le)
+import Data.Binary.Put 
+    (
+       runPut
+     , putWord16le
+     , putFloatbe
+     )
 import Data.Binary.Get 
     (
       runGet
@@ -75,12 +86,33 @@ readHoldingModData md idx order =
   where 
     addr = MB.RegAddress $ register md
 
+-- Converts a list of words to a list of floats 
+getFloats :: [Word16] -> ByteOrder -> [Float]
+getFloats [] _ = []
+getFloats [_] _ = []
+getFloats (x:y:ys) bo = word2Float bo (x,y) : getFloats ys bo
+
+-- Converts a list of floats to a list of words
+-- uses the default modbus protocol big-endian byte order
+fromFloats :: [Float] -> [Word16]
+fromFloats [] = []
+fromFloats (x:xs) = 
+  let
+      (msw,lsw) = float2Word x
+  in
+      [msw,lsw] ++ fromFloats xs  
+
 word2Float :: ByteOrder -> (Word16, Word16) -> Float
 word2Float order ws@(f,s)
     | order == LE = le2float ws
     | order == BE = be2float ws
     | order == LESW = le2float (swappWord f, swappWord s)
     | order == BESW = be2float (swappWord f, swappWord s)
+
+float2Word :: Float -> (Word16, Word16)
+float2Word fl = runGet getWords $ runPut $ putFloatbe fl
+  where
+      getWords = (,) <$> getWord16be <*> getWord16be
 
 le2float :: (Word16, Word16) -> Float
 le2float (f, s)= runGet getFloatle $ runPut putWords 
@@ -95,3 +127,4 @@ be2float (f, s)= runGet getFloatbe $ runPut putWords
 -- Swaps the two bytes of the provided Word16
 swappWord :: Word16 -> Word16
 swappWord w = runGet getWord16be $ runPut $ putWord16le w
+
