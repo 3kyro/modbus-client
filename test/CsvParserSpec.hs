@@ -21,7 +21,7 @@ import TestHelper
 
 csvParserSpec :: Spec
 csvParserSpec = do
-  pDescriptionSpec
+  pNameSpec
   pRegTypeSpec
   pRegAddrSpec
   pFloatSpec
@@ -31,15 +31,12 @@ csvParserSpec = do
   pModDataSpec
   pCSVSpec
 
-pDescriptionSpec :: Spec
-pDescriptionSpec = describe "Parse a description field" $ do
-  it "parses text" $ property prop_description_text
+pNameSpec :: Spec
+pNameSpec = describe "Parse a name field" $ do
+  it "parses valid names" $ property prop_valid_name
   it "fails on newlines" $
-    testCSVParser pDescription "description with \n newline;"
+    testCSVParser pName "description with \n newline;"
       `shouldSatisfy` isLeft
-  it "parses unicode descriptioons" $
-    testCSVParser pDescription "Μια περιγραφή;"
-      `shouldBe` Right (T.pack "Μια περιγραφή")
 
 pRegTypeSpec :: Spec
 pRegTypeSpec = describe "Parse a register type field" $ do
@@ -141,15 +138,20 @@ prop_valid_regType :: RegType -> Int -> Bool
 prop_valid_regType rt n = let rts = capitalizeLetter (tShow rt) n ++ ";"
   in Right rt == testCSVParser pRegType rts
 
-prop_description_text :: String -> Property
-prop_description_text s =
-  valid s ==> Right (T.pack s)
-    == testCSVParser
-      pDescription
-      (s ++ ";")
+prop_valid_name :: NameArb -> Bool
+prop_valid_name s = Right str == testCSVParser pName (str ++ ";")
   where
-    valid = all (`notElem` ";\n\r")
+      str = unNA s
 
+validName :: String -> Bool
+validName str = 
+        not (null str)
+    && head str `elem` validHead   
+    && all (`elem` validTail) (tail str)
+  where
+    validHead = ['a'..'z'] ++ ['A'..'Z'] ++ "_"
+    validTail = ['a'..'z'] ++ ['A'..'Z'] ++ ['0'..'9'] ++ "_"
+    
 prop_comment_text :: String -> Property
 prop_comment_text s = valid s ==> Right (T.pack s) == testCSVParser pComments s
   where
@@ -175,13 +177,10 @@ prop_leading_dot x =
 
 prop_alphabetic_float :: Int -> Int -> Char -> Property
 prop_alphabetic_float x y c =
-  not (isDigit c)
-    && c
-    /= 'e'
-    && c
-    `notElem` "-.;"
-    && y
-    > 0
+       not (isDigit c)
+    && c /= 'e'
+    && c `notElem` "-.;"
+    && y > 0
     ==> isLeft parseResult
   where
     parseResult = testCSVParser pFloat (integer ++ "." ++ fractional)
@@ -218,22 +217,27 @@ prop_non_numeric_pvalue_float s =
       ++ ";"
 
 prop_valid_datum ::
-  String -> RegType -> Word16 -> ModType -> String -> Property
-prop_valid_datum desc rt reg val com =
-  validText desc
-    && validText com
+       NameArb 
+    -> RegType 
+    -> Word16 
+    -> ModType 
+    -> String 
+    -> Property
+prop_valid_datum nameArb rt reg val desc =
+    validText desc
     ==> Right
-      ( ModData
-          { description = T.pack desc,
-            regType = rt,
-            register = reg,
-            value = val,
-            comments = T.pack com
+        ( ModData
+          { 
+            name = nm
+          , regType = rt
+          , register = reg
+          , value = val
+          , description = T.pack desc
           }
-      )
+        )
     == testCSVParser
-      pModData
-      ( desc
+        pModData
+        ( nm
           ++ ";"
           <> tShow rt
           ++ ";"
@@ -241,14 +245,15 @@ prop_valid_datum desc rt reg val com =
           ++ ";"
           <> tShow val
           ++ ";"
-          <> com
-      )
+          <> desc
+        )
   where
     validText = all (`notElem` ";\n\r")
+    nm = unNA nameArb
 
 -- typical valid values, to be used in ModData fail tests
 validDesc :: String
-validDesc = "description"
+validDesc = "name"
 
 validRegType :: String
 validRegType = "Input Register"

@@ -29,16 +29,17 @@ pCSV = pLine *> many pModData <* eof
 pModData :: Parser ModData
 pModData =
   modData
-    <$> pDescription
+    <$> pName
     <*> pRegType
     <*> pRegAddr
     <*> pValue
     <*> pComments
     <* optional endOfLine
 
--- Parses a description cell
-pDescription :: Parser T.Text
-pDescription = field pText
+-- Parses a name cell
+pName :: Parser String
+pName = field $ (:) <$> oneOf (['A'..'Z'] ++ ['a'..'z'] ++ "_") <*> many (oneOf $ ['A'..'Z'] ++ ['a'..'z'] ++ ['0'..'9'] ++ "_")  
+
 
 -- Parses a regiter type
 pRegType :: Parser RegType

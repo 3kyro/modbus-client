@@ -7,16 +7,19 @@
 -- - Cells are delimited by a semicolon
 -- - Decimal nummbers are dot seperated (eg 1.5)
 -- - Text fields cannot contain newline characters
+-- - The name field must start with either an alphabetic character or an underscore
+-- - The name field can contain only alphanumeric characters and underscore.
 -- - Register addresses above 65535 are truncated
 -- - Order of fields is the following:
---     Description;Register Type;Register Address;Data Type; Value;Comments
+--   Name;Register Type;Register Address;Data Type; Value;Descriprtion
 module CsvParser.Spec
     ( 
-        ModData (..)
+      ModData (..)
     , RegType (..)
     , ModType (..)
     , ByteOrder (..)
     , modData
+    , NameArb (..)
     )
     where
 
@@ -27,6 +30,7 @@ import Test.QuickCheck
     , arbitrary
     , oneof
     , elements
+    , frequency
     )
 
 import qualified Data.Text as T
@@ -44,11 +48,12 @@ data RegType
     deriving (Show, Eq)
 
 data ModData = ModData
-    { description   :: !T.Text
+    { 
+      name          :: !String
     , regType       :: !RegType
-    ,  register     :: !Word16
-    ,  value        :: !ModType
-    ,  comments     :: !T.Text
+    , register      :: !Word16
+    , value         :: !ModType
+    , description   :: !T.Text
     }
     deriving (Show, Eq)
 
@@ -77,14 +82,15 @@ data ByteOrder
     deriving (Show, Read, Eq)
 
 -- ModData constructor
-modData :: T.Text -> RegType -> Word16 -> ModType -> T.Text -> ModData
-modData d rt r v c = 
+modData :: String -> RegType -> Word16 -> ModType -> T.Text -> ModData
+modData n rt r v c = 
     ModData
-    { description = d
+    { 
+      name = n
     , regType = rt
     , register = r
     , value = v
-    , comments = c
+    , description = c
     }
 
 instance Arbitrary ModType where
@@ -92,11 +98,30 @@ instance Arbitrary ModType where
 
 instance Arbitrary ModData where
   arbitrary =
-    modData <$> arbText <*> arbitrary <*> arbitrary <*> arbitrary <*> arbText
+    modData <$> (unNA <$> arbitrary) <*> arbitrary <*> arbitrary <*> arbitrary <*> arbText
     where
-      arbText = oneof [return (T.pack ""), T.cons <$> validChar <*> arbText]
-      validChar = elements $ ['a' .. 'z'] ++ ['A' .. 'Z'] ++ "&éèçà$=:"
+      arbText = frequency [end,rest]
+      end = (1, return (T.pack ""))
+      rest = (10, T.cons <$> descValidChar <*> arbText)
+      descValidChar = elements $ ['a'..'z'] ++ ['A'..'Z'] ++ " &éèçà$=:"
 
 instance Arbitrary RegType where
   arbitrary = elements [DiscreteInput, Coil, InputRegister, HoldingRegister]
 
+-- Helper type to better produce arbitrary name values
+newtype NameArb = NA  {
+    unNA :: String
+}
+
+instance Show NameArb where
+    show (NA str) = str
+
+instance Arbitrary NameArb where
+    arbitrary = go 
+        where
+      go = NA <$> ((:) <$> validStartChars <*> tailArb)      
+      validStartChars = elements $ ['A'..'Z'] ++ ['a'..'z'] ++ "_"
+      tailArb = frequency [end, rest]
+      end = (1, return "")
+      rest = (7, (:) <$> nameValidChars <*> (unNA <$> go))
+      nameValidChars = elements $ ['a'..'z'] ++ ['A'..'Z'] ++ ['0'..'9'] ++ "_"
