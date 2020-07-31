@@ -4,8 +4,8 @@ import Control.Monad.Trans (liftIO)
 import Control.Monad.Reader (ReaderT, runReaderT, ask)
 import Control.Monad.Trans.Except (runExceptT, ExceptT, except, mapExceptT)
 import Control.Monad.IO.Class ()
-import Data.List (isPrefixOf, uncons)
-import Data.Maybe (fromJust)
+import Data.List (isPrefixOf, uncons, find)
+import Data.Maybe (fromJust, listToMaybe)
 import Data.Word (Word16)
 import Data.Either.Combinators (mapLeft)
 import System.Console.Repline (HaskelineT, evalRepl, WordCompleter, CompleterStyle( Word ))
@@ -14,22 +14,33 @@ import Text.Parsec.Token (float, decimal, makeTokenParser)
 import Text.Parsec.Language (haskellDef)
 
 import qualified System.Modbus.TCP as MB
+import qualified Data.Text as T
 
 import Modbus 
     (
       Config (..)
     , getFloats
     , fromFloats
+    , word2Float
     )
-import CsvParser (ModType (..))
+import CsvParser 
+    (
+      ModType (..)
+    , ModData (..)
+    , RegType (..)
+    , ByteOrder
+    , pName
+    )
 
 type Repl a = HaskelineT (ReaderT Config IO) a
+
 
 type ReadRegsFun =  MB.TransactionId -> MB.ProtocolId -> MB.UnitId -> MB.RegAddress -> Word16 -> MB.Session [Word16]
 
 data ReplError = 
-    ReplParseError ParseError
+      ReplParseError ParseError
     | ReplModbusError MB.ModbusException
+    | ReplCommandError String
     deriving (Show)
 
 runRepl :: Config -> IO ()
@@ -51,6 +62,7 @@ cmd input =
         "writeMultipleRegistersWord" -> writeMultipleRegistersWord args
         "writeSingleRegisterFloat" -> writeSingleRegisterFloat args
         "writeMultipleRegistersFloat" -> writeMultipleRegistersFloat args
+        "read" -> readModData args
         _ -> liftIO $ putStrLn ("command not found: " ++ command)
 
 -- Tab Completion: return a completion for partial words entered
@@ -82,46 +94,87 @@ commands = [
     , "writeMultipleRegistersWord"
     , "writeSingleRegisterFloat"
     , "writeMultipleRegistersFloat"
+    , "read"
     ]
 
 readRegistersWord :: ReadRegsFun -> [String] -> Repl ()
 readRegistersWord f [address, number] = do
-    Config connection _ <- ask
+    Config connection _ _ <- ask
     response <- replReadRegisters address number (ModWord Nothing) connection f
     liftIO $ print response
 readRegistersWord _ _ = liftIO $ putStrLn "Invalid command arguments"
 
 readRegistersFloat :: ReadRegsFun -> [String] -> Repl ()
 readRegistersFloat f [address, number] = do
-    Config connection order <- ask
+    Config connection order _ <- ask
     response <- replReadRegisters address number (ModFloat Nothing) connection f
-    liftIO $ print (getFloats response order)
+    liftIO $ print (getFloats order response)
 readRegistersFloat _ _ = liftIO $ putStrLn "Invalid command arguments"
 
 writeSingleRegisterWord :: [String] -> Repl ()
-writeSingleRegisterWord [address, value] = do
-    Config connection _ <- ask
-    replWriteRegisters address [value] (ModWord Nothing) connection
+writeSingleRegisterWord [address, regValue] = do
+    Config connection _ _ <- ask
+    replWriteRegisters address [regValue] (ModWord Nothing) connection
 writeSingleRegisterWord _ = liftIO $ print "Invalid command arguments"
 
 writeMultipleRegistersWord :: [String] -> Repl ()
 writeMultipleRegistersWord (address:values) = do
-    Config connection _ <- ask
+    Config connection _ _ <- ask
     replWriteRegisters address values (ModWord Nothing) connection
 writeMultipleRegistersWord _ = liftIO $ print "Invalid command arguments"
 
 writeSingleRegisterFloat :: [String] -> Repl ()
-writeSingleRegisterFloat [address, value] = do
-    Config connection _ <- ask
-    replWriteRegisters address [value] (ModFloat Nothing) connection
+writeSingleRegisterFloat [address, regValue] = do
+    Config connection _ _ <- ask
+    replWriteRegisters address [regValue] (ModFloat Nothing) connection
 writeSingleRegisterFloat _ = liftIO $ print "Invalid command arguments"
 
 writeMultipleRegistersFloat :: [String] -> Repl ()
 writeMultipleRegistersFloat (address:values) = do
-    Config connection _ <- ask
+    Config connection _ _ <- ask
     replWriteRegisters address values (ModFloat Nothing) connection
 writeMultipleRegistersFloat _ = liftIO $ print "Invalid command arguments"
 
+readModData :: [String] -> Repl ()
+readModData [] = liftIO $ print "Invalid command arguments"
+readModData args = do 
+    Config connection order mdata <- ask
+    let wrapped = do
+            mds <- except $ getModByDescription args mdata
+            replReadModList mds connection order
+    unwrapped <- liftIO $ runExceptT wrapped
+    case unwrapped of
+        Left err -> liftIO $ print err
+        Right response -> liftIO $ print response
+
+getModByDescription :: [String] -> [ModData] -> Either ReplError [ModData]
+getModByDescription [] _ = Right []
+getModByDescription (x:xs) mdata = do
+    parsed <- mapLeft ReplParseError $ parse pName "" $ T.pack (x ++ ";")
+    let maybeHit = find (\d -> name d == parsed) mdata
+    case maybeHit of
+        Nothing -> Left $ ReplCommandError $ "Modbus Register " ++ x ++ " not found on template file." 
+        Just hit -> (:) <$> return hit <*> getModByDescription xs mdata
+            
+replReadModList :: [ModData] -> MB.Connection -> ByteOrder-> ExceptT ReplError IO [ModData]
+replReadModList md connection order = mapM (replReadMod connection order) md 
+
+replReadMod :: MB.Connection -> ByteOrder -> ModData -> ExceptT ReplError IO ModData
+replReadMod connection order md = do
+    response <- runReplSession connection $ function 0 0 255 address mult
+    case value md of
+        ModWord _ -> return md {value = ModWord $ listToMaybe response}
+        ModFloat _ -> return md {value = ModFloat $ floats response}
+  where
+    address = MB.RegAddress $ register md
+    mult = getModTypeMult $ value md
+    function = case regType md of
+            InputRegister -> MB.readInputRegisters
+            HoldingRegister -> MB.readHoldingRegisters
+            _ -> undefined
+    floats response = word2Float order <$> maybeWords response
+    maybeWords response = (,) <$> listToMaybe response <*> listToMaybe (tail response)
+    
 -- Parses the address and number of registers strings and applies the given
 -- read modbus register function
 replReadRegisters :: 
@@ -134,13 +187,14 @@ replReadRegisters ::
 replReadRegisters a n m connection f = do
     let mult = getModTypeMult m
     let wrapped = do 
-            (addr, num) <- pAddressNumber a n 
+            (addr, num) <- except $ pAddressNumber a n 
             liftIO $ putStrLn $ "Reading " ++ show num ++ " register(s) from address " ++ show addr
             runReplSession connection $ f 0 0 255 (MB.RegAddress addr) (mult * num)
     unwrapped <- liftIO $ runExceptT wrapped
     case unwrapped of
         Left mdError -> liftIO $ print mdError >> return []
         Right mdData -> return mdData
+
 
 -- Parses the address and values list and applies them
 -- to a read holding registers modbus command
@@ -176,11 +230,8 @@ toReplExcepT :: IO (Either MB.ModbusException a) -> IO (Either ReplError a)
 toReplExcepT mb = mapLeft ReplModbusError <$> mb
 
 -- Parse address and number of register strings 
-pAddressNumber :: String -> String-> ExceptT ReplError IO (Word16, Word16)
-pAddressNumber a n = do
-    address <- except $ pWord a
-    number <- except $ pWord n
-    return (address, number)
+pAddressNumber :: String -> String-> Either ReplError (Word16, Word16)
+pAddressNumber a n = (,) <$> pWord a <*> pWord n
 
 pFloat :: String -> Either ReplError Float
 pFloat s = mapLeft ReplParseError parseResult
@@ -199,3 +250,5 @@ pWord s = mapLeft ReplParseError parseResult
 getModTypeMult :: ModType -> Word16
 getModTypeMult (ModWord _) = 1
 getModTypeMult (ModFloat _) = 2
+
+

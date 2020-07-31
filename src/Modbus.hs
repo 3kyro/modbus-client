@@ -4,6 +4,7 @@ module Modbus
     , Config (..)
     , getFloats
     , fromFloats
+    , word2Float
     ) where
 
 import Control.Monad.Except (throwError)
@@ -31,6 +32,7 @@ import qualified System.Modbus.TCP as MB
 data Config = Config {
       conn :: MB.Connection
     , ord :: ByteOrder
+    , modData :: [ModData]
 }
 
 modSession :: [ModData] -> ByteOrder -> MB.Session [ModData]
@@ -88,10 +90,10 @@ readHoldingModData md idx order =
     addr = MB.RegAddress $ register md
 
 -- Converts a list of words to a list of floats 
-getFloats :: [Word16] -> ByteOrder -> [Float]
-getFloats [] _ = []
-getFloats [_] _ = []
-getFloats (x:y:ys) bo = word2Float bo (x,y) : getFloats ys bo
+getFloats :: ByteOrder -> [Word16] -> [Float]
+getFloats _ []  = []
+getFloats _ [_] = []
+getFloats bo (x:y:ys) = word2Float bo (x,y) : getFloats bo ys
 
 -- Converts a list of floats to a list of words
 -- uses the default modbus protocol big-endian byte order
@@ -104,7 +106,7 @@ fromFloats (x:xs) =
       [msw,lsw] ++ fromFloats xs  
 
 word2Float :: ByteOrder -> (Word16, Word16) -> Float
-word2Float order ws@(f,s)
+word2Float order ws@(f,s) 
     | order == LE = le2float ws
     | order == BE = be2float ws
     | order == LESW = le2float (swappWord f, swappWord s)
