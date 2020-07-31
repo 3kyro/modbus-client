@@ -151,7 +151,7 @@ getModByDescription :: [String] -> [ModData] -> Either ReplError [ModData]
 getModByDescription [] _ = Right []
 getModByDescription (x:xs) mdata = do
     parsed <- mapLeft ReplParseError $ parse pName "" $ T.pack (x ++ ";")
-    let maybeHit = find (\d -> name d == parsed) mdata
+    let maybeHit = find (\d -> modName d == parsed) mdata
     case maybeHit of
         Nothing -> Left $ ReplCommandError $ "Modbus Register " ++ x ++ " not found on template file." 
         Just hit -> (:) <$> return hit <*> getModByDescription xs mdata
@@ -162,13 +162,13 @@ replReadModList md connection order = mapM (replReadMod connection order) md
 replReadMod :: MB.Connection -> ByteOrder -> ModData -> ExceptT ReplError IO ModData
 replReadMod connection order md = do
     response <- runReplSession connection $ function 0 0 255 address mult
-    case value md of
-        ModWord _ -> return md {value = ModWord $ listToMaybe response}
-        ModFloat _ -> return md {value = ModFloat $ floats response}
+    case modValue md of
+        ModWord _ -> return md {modValue = ModWord $ listToMaybe response}
+        ModFloat _ -> return md {modValue = ModFloat $ floats response}
   where
-    address = MB.RegAddress $ register md
-    mult = getModTypeMult $ value md
-    function = case regType md of
+    address = MB.RegAddress $ modAddress md
+    mult = getModTypeMult $ modValue md
+    function = case modRegType md of
             InputRegister -> MB.readInputRegisters
             HoldingRegister -> MB.readHoldingRegisters
             _ -> undefined

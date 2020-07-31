@@ -49,11 +49,11 @@ data RegType
 
 data ModData = ModData
     { 
-      name          :: !String  -- Variable name
-    , regType       :: !RegType -- Type (Holdin Register - Input Register)
-    , register      :: !Word16  -- Address
-    , value         :: !ModType -- Value (incluting value type)
-    , description   :: !T.Text  -- Description
+      modName           :: !String  -- Variable name
+    , modRegType        :: !RegType -- Type (Holdin Register - Input Register)
+    , modAddress        :: !Word16  -- Address
+    , modValue          :: !ModType -- Value (incluting value type)
+    , modDescription    :: !T.Text  -- Description
     }
     deriving (Show, Eq)
 
@@ -86,11 +86,11 @@ modData :: String -> RegType -> Word16 -> ModType -> T.Text -> ModData
 modData n rt r v c = 
     ModData
     { 
-      name = n      
-    , regType = rt
-    , register = r
-    , value = v
-    , description = c
+      modName = n      
+    , modRegType = rt
+    , modAddress = r
+    , modValue = v
+    , modDescription = c
     }
 
 instance Arbitrary ModType where

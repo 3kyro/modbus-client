@@ -228,11 +228,11 @@ prop_valid_datum nameArb rt reg val desc =
     ==> Right
         ( ModData
           { 
-            name = nm
-          , regType = rt
-          , register = reg
-          , value = val
-          , description = T.pack desc
+            modName = nm
+          , modRegType = rt
+          , modAddress = reg
+          , modValue = val
+          , modDescription = T.pack desc
           }
         )
     == testCSVParser
