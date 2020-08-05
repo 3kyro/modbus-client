@@ -116,6 +116,8 @@ newtype NameArb = NA  {
 instance Show NameArb where
     show (NA str) = str
 
+-- Produce pairs of characters to make sure starting char is 
+-- a correct one
 instance Arbitrary NameArb where
     arbitrary = go 
         where
