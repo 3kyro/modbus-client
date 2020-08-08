@@ -102,7 +102,7 @@ parseFloatRepr = option auto
     <> short    'o'
     <> metavar  "BYTE_ORDER"
     <> value    LE
-    <> help     "Data items byte order"
+    <> help     "Server byte order"
     )
 
 parseRepl :: Parser Bool
