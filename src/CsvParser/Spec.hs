@@ -20,6 +20,7 @@ module CsvParser.Spec
     , ByteOrder (..)
     , modData
     , NameArb (..)
+    , getModTypeMult
     )
     where
 
@@ -127,3 +128,8 @@ instance Arbitrary NameArb where
       end = (1, return "")
       rest = (7, (:) <$> nameValidChars <*> (unNA <$> go))
       nameValidChars = elements $ ['a'..'z'] ++ ['A'..'Z'] ++ ['0'..'9'] ++ "_"
+
+
+getModTypeMult :: ModType -> Word16
+getModTypeMult (ModWord _) = 1
+getModTypeMult (ModFloat _) = 2
