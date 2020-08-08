@@ -14,8 +14,8 @@ import Modbus (Config (..))
 
 
 import Repl.Types (Repl)
-import Repl.Commands (cmd, commands)
-import Repl.Help (help)
+import Repl.Commands (cmd, commandsCompl, list)
+import Repl.Help (help, helpCompl)
 
 runRepl :: Config -> IO ()
 runRepl  = runReaderT $ evalRepl (pure "> ") cmd options (Just ':') (Word completer) ini
@@ -25,11 +25,12 @@ ini = liftIO $ putStrLn "ModBus interactive client\r\nType ':help' for a list of
 
 -- Tab Completion: return a completion for partial words entered
 completer :: Monad m => WordCompleter m
-completer n = return $ filter (isPrefixOf n) commands
+completer n = return $ filter (isPrefixOf n) (commandsCompl ++ helpCompl)
 
 options :: [(String, [String] -> Repl ())] 
 options = [
     ("help", help)  -- :help
+    , ("list", list)  -- :help
   ]
 
 

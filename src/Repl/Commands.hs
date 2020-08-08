@@ -52,8 +52,8 @@ cmd input =
         "write" -> writeModData args
         _ -> liftIO $ putStrLn ("command not found: " ++ command)
 
-commands :: [String]
-commands = [
+commandsCompl :: [String]
+commandsCompl = [
       "readInputRegistersWord"
     , "readInputRegistersFloat"
     , "readHoldingRegistersWord"
@@ -65,6 +65,15 @@ commands = [
     , "read"
     , "write"
     ]
+
+list :: a -> Repl ()
+list _ = liftIO $ do
+        putStrLn ""
+        mapM_ putStrLn commandsCompl
+        putStrLn ""
+        putStrLn "For help type \":help [command]\""
+        putStrLn ""
+
     
 ------------------------------------------------------------------------------------------
 -- User commands

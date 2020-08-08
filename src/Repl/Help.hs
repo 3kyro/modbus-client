@@ -1,8 +1,9 @@
-module Repl.Help (help) where
+module Repl.Help (help, helpCompl) where
 
 import Control.Monad.Trans (liftIO)
 
 import Repl.Types (Repl)
+import Repl.Commands (commandsCompl)
 
 -- Top level help command
 help :: [String] -> Repl ()
@@ -97,3 +98,6 @@ hWrite =
     ++ "Multiple, space separated, descriptions can be written\n"
     ++ "Usage: write [descriptions] [values]\n"
     ++ "e.g. write status 1 power 15.1\n"
+
+helpCompl :: [String]
+helpCompl = map (":help " ++) commandsCompl
