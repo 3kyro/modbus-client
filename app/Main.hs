@@ -6,6 +6,7 @@ Modbus-serve is a Modbus TCP command line communication tool and web server.
 -}
 module Main where
 
+import Control.Concurrent (myThreadId)
 import Control.Monad.Except (runExceptT)
 import OptParser (Opt(..), runOpts)
 import Data.IP (IPv4, toHostAddress)
@@ -17,9 +18,9 @@ import qualified Data.Text.IO as T
 import qualified Network.Socket as S
 import qualified System.Modbus.TCP as MB
 
-import Modbus (modSession, Config (..))
+import Modbus (modSession)
 import CsvParser (ByteOrder (..), ModData, runpCSV)
-import Repl (runRepl)
+import Repl (runRepl, ReplConfig(..), ReplState(..))
 
 main :: IO ()
 main = runApp =<< runOpts
@@ -73,7 +74,8 @@ runModDataApp addr order md = do
 runReplApp :: S.SockAddr -> ByteOrder -> [ModData] ->IO ()
 runReplApp addr order mdata = do
     s <- connect addr
-    runRepl $ Config (getConnection s) order mdata
+    myId <- myThreadId
+    runRepl (Config (getConnection s) order) (ReplState myId mdata)
 
 connect :: S.SockAddr -> IO S.Socket
 connect addr = do

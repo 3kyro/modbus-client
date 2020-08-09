@@ -1,9 +1,9 @@
 module Repl.Commands where
 
-import Control.Monad.Trans (liftIO)
-import Control.Monad.Reader (zipWithM, ask)
+import Control.Monad (zipWithM)
+import Control.Monad.Trans (liftIO, lift)
 import Control.Monad.Trans.Except (except)
-import Control.Monad.IO.Class ()
+import Control.Monad.Trans.State.Strict (get)
 import Data.List (find, uncons)
 import Data.Maybe (fromJust, listToMaybe)
 import Data.Word (Word16)
@@ -15,8 +15,7 @@ import qualified Data.Text as T
 
 import Modbus 
     (
-      Config (..)
-    , getFloats
+      getFloats
     , fromFloats
     , word2Float
     )
@@ -30,9 +29,12 @@ import CsvParser
     
     )
 
-import Repl.Types (Repl, ReadRegsFun)
+import Repl.Types (replAsk, Repl, ReadRegsFun, ReplConfig (..), ReplState(..))
 import Repl.Error (runReplSession, ReplError (..), replRunExceptT)
 import Repl.Parser (pReplAddrNum, pReplFloat, pReplWord)
+import Control.Concurrent (threadDelay, forkIO)
+import Control.Monad.Except (runExceptT)
+import Control.Monad.Trans.Reader (ask)
 
 -- Top level command function
 cmd :: String -> Repl ()
@@ -50,6 +52,7 @@ cmd input =
         "writeMultipleRegistersFloat" -> writeMultipleRegistersFloat args
         "read" -> readModData args
         "write" -> writeModData args
+        "watchdog" -> watchdog args
         _ -> liftIO $ putStrLn ("command not found: " ++ command)
 
 commandsCompl :: [String]
@@ -64,6 +67,7 @@ commandsCompl = [
     , "writeMultipleRegistersFloat"
     , "read"
     , "write"
+    , "watchdog"
     ]
 
 list :: a -> Repl ()
@@ -74,7 +78,6 @@ list _ = liftIO $ do
         putStrLn "For help type \":help [command]\""
         putStrLn ""
 
-    
 ------------------------------------------------------------------------------------------
 -- User commands
 ------------------------------------------------------------------------------------------
@@ -87,7 +90,7 @@ readRegistersWord _ _ = invalidCmd
 
 readRegistersFloat :: ReadRegsFun -> [String] -> Repl ()
 readRegistersFloat f [address, number] = do
-    Config _ order _ <- ask
+    Config _ order <- lift $ lift $ ask
     response <- replReadRegisters address number (ModFloat Nothing) f
     liftIO $ print (getFloats order response)
 readRegistersFloat _ _ = invalidCmd
@@ -115,7 +118,7 @@ writeMultipleRegistersFloat _ = invalidCmd
 readModData :: [String] -> Repl ()
 readModData [] = invalidCmd
 readModData args = do 
-    Config _ _ mdata <- ask
+    ReplState _ mdata <- lift $ get
     let wrapped = except $ getModByDescription args mdata
     mds <- replRunExceptT wrapped (const [])
     response <- mapM readMod mds
@@ -124,7 +127,7 @@ readModData args = do
 writeModData :: [String] -> Repl ()
 writeModData [] = invalidCmd
 writeModData args = do
-    Config _ _ mdata <- ask
+    ReplState _ mdata <- lift $ get
     let mPairs = getPairs args
     case mPairs of
         Nothing -> invalidCmd
@@ -134,6 +137,20 @@ writeModData args = do
             written <- mapM writeMod mds  
             liftIO $ putStrLn $ show (sum written) ++ " value(s) written" 
 
+watchdog :: [String] -> Repl ()
+watchdog _ = do
+    Config connection _ <- replAsk
+    thread <- liftIO $ forkIO $ heartbeat 0 connection 
+    liftIO $ putStrLn $ show thread
+
+heartbeat :: Word16 -> MB.Connection -> IO ()
+heartbeat acc connection= do
+    let acc' = acc + 1
+    threadDelay 500000
+    wrapped <- runExceptT $ runReplSession connection $ MB.writeSingleRegister 0 0 255 10 acc'
+    case wrapped of
+        Left err -> putStrLn $ show err
+        Right _ -> heartbeat acc' connection
 -------------------------------------------------------------------------------------
 -- Helper functions
 -------------------------------------------------------------------------------------
@@ -171,7 +188,7 @@ writeMod md = do
 -- Returns the number of ModWords written
 writeModWord :: ModType -> Word16 -> Repl Word16
 writeModWord (ModWord (Just word)) address = do
-    Config connection _ _ <- ask
+    Config connection _  <- replAsk
     let addr = MB.RegAddress address
     let writeSession = runReplSession connection $ MB.writeMultipleRegisters 0 0 255 addr [word]
     replRunExceptT writeSession (const 0)  
@@ -181,7 +198,7 @@ writeModWord (ModWord _) _ = return 0
 -- Returns the number of ModFloats written
 writeModFloat :: ModType -> Word16 -> Repl Word16
 writeModFloat (ModFloat (Just fl)) address = do
-    Config connection _ _ <- ask
+    Config connection _ <- replAsk
     let addr = MB.RegAddress address
     let ordWords = fromFloats [fl]
     let writeSession = runReplSession connection $ MB.writeMultipleRegisters 0 0 255 addr ordWords
@@ -219,10 +236,11 @@ insertValue md val = do
             parsedV <- pReplFloat val
             return $ md {modValue = ModFloat (Just parsedV)}
 
+
 -- Reads a ModData from the server
 readMod :: ModData -> Repl ModData
 readMod md = do
-    Config connection order _ <- ask
+    Config connection order <- replAsk
     let modbusResp = runReplSession connection $ function 0 0 255 address mult
     resp <- replRunExceptT modbusResp (const [])
     case modValue md of
@@ -238,6 +256,7 @@ readMod md = do
     floats response order = word2Float order <$> maybeWords response
     maybeWords response = (,) <$> listToMaybe response <*> listToMaybe (tail response)
 
+
 -- Parses the address and number of registers strings and applies the given
 -- read modbus register function
 replReadRegisters :: 
@@ -247,7 +266,7 @@ replReadRegisters ::
     -> ReadRegsFun
     -> Repl [Word16]
 replReadRegisters a n m f = do
-    Config connection _ _ <- ask
+    Config connection _ <- replAsk
     let mult = getModTypeMult m
     let wrapped = do 
             (addr, num) <- except $ pReplAddrNum a n 
@@ -263,7 +282,7 @@ replWriteRegisters ::
     -> ModType
     -> Repl ()
 replWriteRegisters address values modtype = do
-    Config connection _ _ <- ask
+    Config connection _ <- replAsk
     let wrapped = do
             addr <- except $ pReplWord address
             val <- case modtype of

@@ -1,7 +1,6 @@
 module Modbus 
     (
       modSession
-    , Config (..)
     , getFloats
     , fromFloats
     , word2Float
@@ -28,12 +27,6 @@ import Data.Binary.Get
 import CsvParser (ModData (..), ModType (..), RegType (..), ByteOrder (..))
 
 import qualified System.Modbus.TCP as MB
-
-data Config = Config {
-      conn :: MB.Connection
-    , ord :: ByteOrder
-    , modData :: [ModData]
-}
 
 modSession :: [ModData] -> ByteOrder -> MB.Session [ModData]
 modSession md order =
