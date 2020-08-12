@@ -76,7 +76,7 @@ pFloatSpec = describe "Parse a float" $ do
 pWordSpec :: Spec
 pWordSpec = describe "Parse a word" $ do
   it "parses integers" $ property $ \x ->
-    Right (Just x) == testCSVParser pWord (show x ++ ";")
+    Right (Just x) == testCSVParser pMaybeWord (show x ++ ";")
   it "fails on floating points" $ property prop_floats_as_words
   it "fails on alphabetic input" $ property prop_alphabetic_word
 
@@ -188,11 +188,11 @@ prop_alphabetic_float x y c =
     fractional = insertChar y c
 
 prop_floats_as_words :: Float -> Bool
-prop_floats_as_words x = isLeft $ testCSVParser pWord (show x ++ ";")
+prop_floats_as_words x = isLeft $ testCSVParser pMaybeWord (show x ++ ";")
 
 prop_alphabetic_word :: Int -> Char -> Property
 prop_alphabetic_word x c =
-  not (isDigit c) && c /= ';' ==> isLeft $ testCSVParser pWord charWord
+  not (isDigit c) && c /= ';' ==> isLeft $ testCSVParser pMaybeWord charWord
   where
     charWord = insertChar x c ++ ";"
 

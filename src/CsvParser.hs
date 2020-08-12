@@ -64,7 +64,7 @@ pValue = do
   dataType <- T.map toLower <$> field pText
   case T.unpack dataType of
     "float" -> ModFloat <$> pFloat 
-    "word" -> ModWord <$> pWord
+    "word" -> ModWord <$> pMaybeWord
     _ -> fail "Parsing Error on data type"
 
 -- Parses a floating point number
@@ -95,14 +95,18 @@ pFloat = Just . read <$> float <|> nothing <?> "Float"
     scientific = (++) <$> middleDot <*> pExponent 
     pExponent = (:) <$> char 'e' <*> integer <* char ';'
 
--- Parses a word16
-pWord :: Parser (Maybe Word16)
-pWord = Just . read <$> word <|> nothing <?> "Word"
+-- Parses a word16, return Nothing if only a ";" is found
+pMaybeWord :: Parser (Maybe Word16)
+pMaybeWord = Just <$> pWord <|> nothing <?> "Word"
   where
-    word = minus <|> unsigned <?> "Parse error"
+    nothing = char ';' >> return Nothing
+
+-- Parses a Word16
+pWord :: Parser Word16
+pWord = read <$> (minus <|> unsigned <?> "Parse error")
+  where
     minus = char '-' *> fail "only positive numbers"
     unsigned = many1 digit <* char ';' <?> "Parse error"
-    nothing = char ';' >> return Nothing
 
 -- comment is the last field, so we keep newlines unparsed
 -- for consistency we don't allow semicolons in comment fields
