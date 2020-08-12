@@ -35,7 +35,7 @@ pNameSpec :: Spec
 pNameSpec = describe "Parse a name field" $ do
   it "parses valid names" $ property prop_valid_name
   it "fails on newlines" $
-    testCSVParser pName "description with \n newline;"
+    testCSVParser (field pName) "description with \n newline;"
       `shouldSatisfy` isLeft
 
 pRegTypeSpec :: Spec
@@ -47,12 +47,11 @@ pRegTypeSpec = describe "Parse a register type field" $ do
 pRegAddrSpec :: Spec
 pRegAddrSpec = describe "Parse a register address field" $ do
   it "parses numeric fields" $ property $ \x ->
-    Right x == testCSVParser pRegAddr (show x ++ ";")
+    Right x == testCSVParser pWord16 (show x)
   it "fails on invalid input" $ property $ \x -> 
     not (all isDigit x) 
-    && notElem ';' x
     ==>
-    isLeft $ testCSVParser pRegAddr (x ++ ";")  
+    isLeft $ testCSVParser (only pWord16) x  
 
 pCommentSpec :: Spec
 pCommentSpec = describe "Parse a comment field" $ do
@@ -67,7 +66,7 @@ pCommentSpec = describe "Parse a comment field" $ do
 pFloatSpec :: Spec
 pFloatSpec = describe "Parse a float" $ do
   it "parses floats" $ property $ \x ->
-    Right (Just x) == testCSVParser pFloat (show x ++ ";")
+    Right (Just x) == testCSVParser pMaybeFloat (show x ++ ";")
   it "parses integers as floats" $ property prop_ints_as_floats
   it "parses floats with no fractional (eg 100.)" $ property prop_no_fractional
   it "parses floats with a leading dot (eg .5)" $ property prop_leading_dot
@@ -159,10 +158,10 @@ prop_comment_text s = valid s ==> Right (T.pack s) == testCSVParser pComments s
 
 prop_ints_as_floats :: Int -> Bool
 prop_ints_as_floats x =
-  Right (Just (fromIntegral x)) == testCSVParser pFloat (show x ++ ";")
+  Right (Just (fromIntegral x)) == testCSVParser pMaybeFloat (show x ++ ";")
 
 prop_no_fractional :: Int -> Bool
-prop_no_fractional x = Right (Just x') == testCSVParser pFloat (show x ++ ".;")
+prop_no_fractional x = Right (Just x') == testCSVParser pMaybeFloat (show x ++ ".;")
   where
     x' = fromIntegral x
 
@@ -170,7 +169,7 @@ prop_leading_dot :: Int -> Property
 prop_leading_dot x =
   x > 0 ==> Right (Just x')
     == testCSVParser
-      pFloat
+      pMaybeFloat
       ("." ++ show x ++ ";")
   where
     x' = read $ "0." ++ show x
@@ -183,7 +182,7 @@ prop_alphabetic_float x y c =
     && y > 0
     ==> isLeft parseResult
   where
-    parseResult = testCSVParser pFloat (integer ++ "." ++ fractional)
+    parseResult = testCSVParser (only pFloat) (integer ++ "." ++ fractional)
     integer = insertChar x c
     fractional = insertChar y c
 
@@ -331,8 +330,6 @@ prop_invalid_csv desc fun reg typ com =
 --------------------------------------------------------------------------
 -- Helper functions
 --------------------------------------------------------------------------
-
-
 
 -- inserts a character in the textual representation of a number
 -- number is inserted in a pseudo random position

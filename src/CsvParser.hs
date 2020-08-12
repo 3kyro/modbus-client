@@ -12,6 +12,7 @@ import Data.Word (Word16)
 import Text.Parsec 
 import Text.Parsec.Text (Parser)
 
+
 -- test runner, mainly used for testing
 testCSVParser :: Parser a -> String -> Either ParseError a
 testCSVParser p s = parse p "" $ T.pack s
@@ -29,17 +30,16 @@ pCSV = pLine *> many pModData <* eof
 pModData :: Parser ModData
 pModData =
   modData
-    <$> pName
+    <$> field pName
     <*> pRegType
-    <*> pRegAddr
+    <*> field pWord16
     <*> pValue
     <*> pComments
     <* optional endOfLine
 
 -- Parses a name cell
 pName :: Parser String
-pName = field $ (:) <$> oneOf (['A'..'Z'] ++ ['a'..'z'] ++ "_") <*> many (oneOf $ ['A'..'Z'] ++ ['a'..'z'] ++ ['0'..'9'] ++ "_")  
-
+pName = (:) <$> oneOf (['A'..'Z'] ++ ['a'..'z'] ++ "_") <*> many (oneOf $ ['A'..'Z'] ++ ['a'..'z'] ++ ['0'..'9'] ++ "_")  
 
 -- Parses a regiter type
 pRegType :: Parser RegType
@@ -52,10 +52,9 @@ pRegType = do
     "holding register" -> return HoldingRegister
     _ -> fail "Parse error on register type"
 
-
 -- Parses a register address
-pRegAddr :: Parser Word16
-pRegAddr = field $ read <$> many1 digit
+pWord16 :: Parser Word16
+pWord16 = read <$> many1 digit
 
 -- Parses a modbus value by associating the datatype field with
 -- the correct value field
@@ -63,9 +62,21 @@ pValue :: Parser ModType
 pValue = do
   dataType <- T.map toLower <$> field pText
   case T.unpack dataType of
-    "float" -> ModFloat <$> pFloat 
+    "float" -> ModFloat <$> pMaybeFloat 
     "word" -> ModWord <$> pMaybeWord
     _ -> fail "Parsing Error on data type"
+
+-- Parses a float field, returns Nothing if field is empty
+pMaybeFloat :: Parser (Maybe Float)
+pMaybeFloat = Just <$> combinations <|> nothing <?> "Float"
+  where
+    combinations = field pFloatLeadingDot <|> noDot <|> noFractional <|> dotted <|> scientific
+    noDot = try $ fromIntegral <$> field pInt
+    noFractional = try $ field pFloatNoFractional
+    dotted = try $ field pFloatDotted
+    scientific = try $ field pFloatScientific
+    nothing = char ';' >> pure Nothing
+
 
 -- Parses a floating point number
 -- number can be in the form
@@ -74,40 +85,54 @@ pValue = do
 -- no fractional: eg 15.
 -- usual representation: eg 10.24
 -- scientific representation: eg 3.24e-12
-pFloat :: Parser (Maybe Float)
-pFloat = Just . read <$> float <|> nothing <?> "Float"
-  where
-    nothing = char ';' >> pure Nothing
-    -- optional trailing scientific notation
-    float = try noScientific <|> scientific
-    noScientific = leadingDot <|> try noDot <|> try noFractional <|> middleDot <* char ';'
-    -- number that starts with a separating dot (eg .5)
-    leadingDot = char '.' *> addLeadingZero
-    addLeadingZero = (++) <$> return "0." <*> many1 digit <* char ';'
-    noDot = integer <* char ';'
-    -- with a separating dot but no fractional part (eg 100.)
-    noFractional = integer <* char '.' <* char ';'
-    -- typical float representation (eg 10.52)
-    middleDot = (++) <$> integer <*> fractional
-    integer = (:) <$> option ' ' (char '-') <*> many1 digit
-    fractional = (:) <$> char '.' <*> many1 digit
-    -- parses scientific notation (eg e-23)
-    scientific = (++) <$> middleDot <*> pExponent 
-    pExponent = (:) <$> char 'e' <*> integer <* char ';'
+pFloat :: Parser Float
+pFloat = 
+        pFloatLeadingDot 
+    <|> try (fromIntegral <$> pInt) 
+    <|> try pFloatNoFractional 
+    <|> try pFloatDotted 
+    <|> pFloatScientific
 
--- Parses a word16, return Nothing if only a ";" is found
+-- Parses a word16, returns Nothing if field is empty
 pMaybeWord :: Parser (Maybe Word16)
-pMaybeWord = Just <$> pWord <|> nothing <?> "Word"
+pMaybeWord = Just <$> field pWord16 <|> nothing <?> "Word"
   where
     nothing = char ';' >> return Nothing
 
--- Parses a Word16
-pWord :: Parser Word16
-pWord = read <$> (minus <|> unsigned <?> "Parse error")
-  where
-    minus = char '-' *> fail "only positive numbers"
-    unsigned = many1 digit <* char ';' <?> "Parse error"
+-- Parses a Word
+pWord :: Parser Word
+pWord = read <$> many1 digit
 
+-- PArses an Int
+pInt :: Parser Int
+pInt = read <$> ((:) <$> option ' ' (char '-') <*> many1 digit)
+
+-- Parses a float in leading dot format (eg .2)
+pFloatLeadingDot :: Parser Float
+pFloatLeadingDot = read <$> (char '.' *> addLeadingZero)
+  where 
+    addLeadingZero = (++) <$> return "0." <*> many1 digit
+
+-- Parses a float when no fractional is given
+pFloatNoFractional :: Parser Float
+pFloatNoFractional = read <$> show <$> pInt <* char '.'
+
+-- Parses a float in the normal (integer dot fractional) representation
+pFloatDotted :: Parser Float
+pFloatDotted = read <$> ((:) <$> option ' ' (char '-') <*> float)
+  where 
+      float = (++) <$> integer <*> fractional
+      integer = many1 digit
+      fractional = (:) <$> char '.' <*> many1 digit
+
+-- Parses a float in scientific format eg 1.3e-2
+pFloatScientific :: Parser Float
+pFloatScientific = read <$> ((++) <$> dotted <*> expo)
+  where
+      dotted = show <$> pFloatDotted
+      expo = (:) <$> char 'e' <*> integer
+      integer = (:) <$> option ' ' (char '-') <*> many1 digit
+      
 -- comment is the last field, so we keep newlines unparsed
 -- for consistency we don't allow semicolons in comment fields
 pComments :: Parser T.Text
@@ -116,6 +141,9 @@ pComments = T.pack <$> many (noneOf ";\r\n") <* notFollowedBy (char ';')
 -- Parses an inner csv field, discarding the separating semicolon
 field :: Parser a -> Parser a
 field p = p <* semicolon
+
+only :: Parser a -> Parser a
+only p = p <* eof
 
 semicolon :: Parser Char
 semicolon = char ';'
