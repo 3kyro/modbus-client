@@ -37,7 +37,7 @@ impl Service for MbServer {
                 )))
             }
             Request::WriteSingleRegister(addr, m_word) => {
-                self.holding_registers.lock().unwrap().clone()[addr as usize] = m_word;
+                self.holding_registers.lock().unwrap()[addr as usize] = m_word;
                 let rsp = Response::WriteSingleRegister(
                     addr,
                     self.holding_registers.lock().unwrap()[addr as usize],
