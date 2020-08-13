@@ -5,6 +5,7 @@ module Repl.Types
     , ReplError (..)
     , ReplConfig (..)
     , ReplState (..)
+    , ReplIdent (..)
     , replAsk
     ) 
     where
@@ -12,7 +13,6 @@ module Repl.Types
 import Control.Monad.IO.Class ()
 import Control.Monad.Trans.State.Strict (StateT)
 import Control.Monad.Trans.Reader (ReaderT)
-import Control.Concurrent (ThreadId)
 import Control.Monad.Trans.Reader (ask)
 import Control.Monad.Writer (MonadTrans(lift))
 import Data.Word (Word16)
@@ -42,6 +42,10 @@ data ReplConfig = Config {
 }
 
 data ReplState = ReplState {
-    threadId :: ThreadId
-    , modData :: [ModData]
+    modData :: [ModData]
 }
+
+data ReplIdent =
+      ReplDesc String
+    | ReplAddr Word16
+    deriving Show

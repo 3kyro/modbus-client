@@ -24,6 +24,7 @@ helpCmd arg =
         "writeMultipleRegistersFloat" -> hWriteMultipleRegistersFloat
         "read" -> hRead
         "write" -> hWrite
+        "watchdog" -> hWatchdog
         _ -> "Command \"" ++ arg ++"\" not found" 
   in
     putStrLn command
@@ -98,6 +99,16 @@ hWrite =
     ++ "Multiple, space separated, descriptions can be written\n"
     ++ "Usage: write [descriptions] [values]\n"
     ++ "e.g. write status 1 power 15.1\n"
+
+hWatchdog :: String
+hWatchdog = 
+    "watchdog:\n"
+    ++ "Create a heartbeat like function that increments a counter at a specified interval.\n"
+    ++ "Once activated, the watchdog registers will be written continuously until modbus-serve terminates.\n"
+    ++ "Multiple watchdogs can be spawned together by providing space separated identifier - timer pairs\n"
+    ++ "Both a register addrress as well as a ModData description can be used as identifiers\n"
+    ++ "Usage: watchdog [identifier] [timer(ms)]\n"
+    ++ "e.g. watchdog 10 1000000 watch_reg 500000"
 
 helpCompl :: [String]
 helpCompl = map (":help " ++) commandsCompl

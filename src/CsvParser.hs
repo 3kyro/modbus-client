@@ -5,12 +5,14 @@ module CsvParser
 where
 
 import Control.Monad (void)
-import CsvParser.Spec
 import Data.Char (toLower)
-import qualified Data.Text as T
 import Data.Word (Word16)
 import Text.Parsec 
 import Text.Parsec.Text (Parser)
+
+import qualified Data.Text as T
+
+import CsvParser.Spec
 
 
 -- test runner, mainly used for testing
@@ -68,7 +70,7 @@ pValue = do
 
 -- Parses a float field, returns Nothing if field is empty
 pMaybeFloat :: Parser (Maybe Float)
-pMaybeFloat = Just <$> combinations <|> nothing <?> "Float"
+pMaybeFloat = Just <$> combinations <|> nothing 
   where
     combinations = field pFloatLeadingDot <|> noDot <|> noFractional <|> dotted <|> scientific
     noDot = try $ fromIntegral <$> field pInt
@@ -76,7 +78,6 @@ pMaybeFloat = Just <$> combinations <|> nothing <?> "Float"
     dotted = try $ field pFloatDotted
     scientific = try $ field pFloatScientific
     nothing = char ';' >> pure Nothing
-
 
 -- Parses a floating point number
 -- number can be in the form
@@ -88,9 +89,9 @@ pMaybeFloat = Just <$> combinations <|> nothing <?> "Float"
 pFloat :: Parser Float
 pFloat = 
         pFloatLeadingDot 
-    <|> try (fromIntegral <$> pInt) 
-    <|> try pFloatNoFractional 
-    <|> try pFloatDotted 
+    <|> try (only $ fromIntegral <$> pInt) 
+    <|> try (only pFloatNoFractional) 
+    <|> try (only pFloatDotted) 
     <|> pFloatScientific
 
 -- Parses a word16, returns Nothing if field is empty
@@ -119,7 +120,10 @@ pFloatNoFractional = read <$> show <$> pInt <* char '.'
 
 -- Parses a float in the normal (integer dot fractional) representation
 pFloatDotted :: Parser Float
-pFloatDotted = read <$> ((:) <$> option ' ' (char '-') <*> float)
+pFloatDotted = read <$> pFloatDottedRaw
+
+pFloatDottedRaw :: Parser String
+pFloatDottedRaw = (:) <$> option ' ' (char '-') <*> float
   where 
       float = (++) <$> integer <*> fractional
       integer = many1 digit
@@ -129,7 +133,7 @@ pFloatDotted = read <$> ((:) <$> option ' ' (char '-') <*> float)
 pFloatScientific :: Parser Float
 pFloatScientific = read <$> ((++) <$> dotted <*> expo)
   where
-      dotted = show <$> pFloatDotted
+      dotted = pFloatDottedRaw
       expo = (:) <$> char 'e' <*> integer
       integer = (:) <$> option ' ' (char '-') <*> many1 digit
       

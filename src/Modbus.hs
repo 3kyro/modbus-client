@@ -1,3 +1,4 @@
+
 module Modbus 
     (
       modSession
@@ -24,9 +25,10 @@ import Data.Binary.Get
     , getWord16le
     )
 
+import qualified System.Modbus.TCP as MB
+
 import CsvParser (ModData (..), ModType (..), RegType (..), ByteOrder (..))
 
-import qualified System.Modbus.TCP as MB
 
 modSession :: [ModData] -> ByteOrder -> MB.Session [ModData]
 modSession md order =
