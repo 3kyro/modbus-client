@@ -18,8 +18,9 @@ import qualified Network.Socket as S
 import qualified System.Modbus.TCP as MB
 
 import Modbus (modSession)
-import CsvParser (ByteOrder (..), ModData, runpCSV)
-import Repl (runRepl, ReplConfig(..), ReplState(..))
+import CsvParser (runpCSV)
+import Types (ByteOrder (..), ModData, ReplConfig(..), ReplState(..))
+import Repl (runRepl)
 
 main :: IO ()
 main = runApp =<< runOpts

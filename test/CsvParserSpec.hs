@@ -17,6 +17,7 @@ import Text.Parsec (ParseError)
 import qualified Data.Text as T
 
 import CsvParser
+import Types
 import TestHelper
 
 csvParserSpec :: Spec

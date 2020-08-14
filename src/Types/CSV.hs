@@ -1,19 +1,5 @@
--- |
--- Module : CsvParser.Spec
--- Description: Specifications for the csv files parsed by modbus-serve
---
--- Modbus-serve can use input in the form of a csv file. This module defines the specifications of this csv file.
--- - The first line of the document contains field descriptions and will be ignored by the parser
--- - Cells are delimited by a semicolon
--- - Decimal nummbers are dot seperated (eg 1.5)
--- - Text fields cannot contain newline characters
--- - The name field must start with either an alphabetic character or an underscore
--- - The name field can contain only alphanumeric characters and underscore.
--- - Register addresses above 65535 are truncated
--- - Order of fields is the following:
---   Name;Register Type;Register Address;Data Type; Value;Descriprtion
-module CsvParser.Spec
-    ( 
+module Types.CSV
+    (
       ModData (..)
     , RegType (..)
     , ModType (..)
@@ -23,7 +9,7 @@ module CsvParser.Spec
     , getModTypeMult
     )
     where
-
+        
 import Data.Word (Word16)
 import Test.QuickCheck 
     ( 

@@ -19,26 +19,11 @@ import Modbus
     , word2Float
     )
     
-import CsvParser 
-    (getModTypeMult 
-    ,  ModType (..)
-    , ModData (..)
-    , RegType (..)
-    )
-
 import Types 
-    (
-      replAsk
-    , Repl
-    , ReadRegsFun
-    , ReplConfig (..)
-    , ReplState(..)
-    , ReplIdent (..)
-    )
+
 import Repl.Error 
     (
       runReplSession
-    , AppError (..)
     , replRunExceptT
     )
 import Repl.Parser 

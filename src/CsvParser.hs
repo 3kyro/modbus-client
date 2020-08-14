@@ -1,8 +1,4 @@
-module CsvParser
-  ( module CsvParser.Spec,
-    module CsvParser,
-  )
-where
+module CsvParser where
 
 import Control.Monad (void)
 import Data.Char (toLower)
@@ -12,7 +8,7 @@ import Text.Parsec.Text (Parser)
 
 import qualified Data.Text as T
 
-import CsvParser.Spec
+import Types
 
 
 -- test runner, mainly used for testing

@@ -27,7 +27,7 @@ import Data.Binary.Get
 
 import qualified System.Modbus.TCP as MB
 
-import CsvParser (ModData (..), ModType (..), RegType (..), ByteOrder (..))
+import Types 
 
 
 modSession :: [ModData] -> ByteOrder -> MB.Session [ModData]

@@ -9,7 +9,6 @@ module Repl.Parser
     ) 
     where
 
-
 import Control.Monad.IO.Class ()
 import Data.Word (Word16)
 import Data.Either.Combinators (mapLeft)

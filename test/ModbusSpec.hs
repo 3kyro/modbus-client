@@ -5,7 +5,7 @@ module ModbusSpec
 import Test.Hspec
 import Test.QuickCheck
 
-import CsvParser
+import Types
 import TestHelper ()
 
 modbusSpec :: IO ()

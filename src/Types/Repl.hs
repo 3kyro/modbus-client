@@ -1,6 +1,6 @@
 module Types.Repl 
     (
-      Repl
+      Repl 
     , ReplState (..)
     , ReplConfig (..)
     , ReplIdent (..)
@@ -18,12 +18,12 @@ import System.Console.Repline (HaskelineT)
 
 import qualified System.Modbus.TCP as MB
 
-import CsvParser (ModData (..), ByteOrder (..))
+import Types.CSV (ModData (..), ByteOrder (..))
 
 type Repl a = HaskelineT (StateT ReplState (ReaderT ReplConfig IO)) a 
 
 data ReplState = ReplState {
-    modData :: [ModData]
+    replModData :: [ModData]
 }
 
 data ReplConfig = Config {

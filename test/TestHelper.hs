@@ -1,6 +1,6 @@
 module TestHelper where
 
-import CsvParser
+import Types
 import qualified Data.Text as T
 
 class TestShow a where

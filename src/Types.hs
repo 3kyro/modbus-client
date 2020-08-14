@@ -1,6 +1,7 @@
 module Types 
     (
       module Types.Repl  
+    , module Types.CSV  
     , ReadRegsFun 
     , AppError (..)
     ) 
@@ -13,6 +14,7 @@ import Text.Parsec (ParseError)
 import qualified System.Modbus.TCP as MB
 
 import Types.Repl
+import Types.CSV
 
 type ReadRegsFun =  MB.TransactionId -> MB.ProtocolId -> MB.UnitId -> MB.RegAddress -> Word16 -> MB.Session [Word16]
 

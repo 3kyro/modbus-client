@@ -31,7 +31,7 @@ import Options.Applicative
        , switch 
        )   
 
-import CsvParser (ByteOrder (..))
+import Types 
 
 data Opt = Opt
     { inputTemplate :: !FilePath
