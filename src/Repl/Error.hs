@@ -1,6 +1,6 @@
 module Repl.Error 
     (
-      ReplError (..)
+      AppError (..)
     , runReplSession
     , replRunExceptT    
     ) 
@@ -18,15 +18,15 @@ import Data.Either.Combinators (mapLeft)
 
 import qualified System.Modbus.TCP as MB
 
-import Types (Repl, ReplError (..))
+import Types (Repl, AppError (..))
 
--- Run a modbus session, converting the left part to ReplError
-runReplSession :: MB.Connection -> MB.Session a -> ExceptT ReplError IO a
+-- Run a modbus session, converting the left part to AppError
+runReplSession :: MB.Connection -> MB.Session a -> ExceptT AppError IO a
 runReplSession c s= mapExceptT toReplExcepT $  MB.runSession c s
 
--- Converts a ModbusException wrapped in IO to a ReplError
-toReplExcepT :: IO (Either MB.ModbusException a) -> IO (Either ReplError a)
-toReplExcepT mb = mapLeft ReplModbusError <$> mb
+-- Converts a ModbusException wrapped in IO to a AppError
+toReplExcepT :: IO (Either MB.ModbusException a) -> IO (Either AppError a)
+toReplExcepT mb = mapLeft AppModbusError <$> mb
 
 -- Rus an ExceptT converting a possible Left return
 replRunExceptT :: Show b =>  ExceptT b IO a -> (b -> a) -> Repl a

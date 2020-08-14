@@ -38,7 +38,7 @@ import Types
 import Repl.Error 
     (
       runReplSession
-    , ReplError (..)
+    , AppError (..)
     , replRunExceptT
     )
 import Repl.Parser 
@@ -256,21 +256,21 @@ writeModFloat (ModFloat (Just fl)) address = do
 -- Checks if a list of descriptions are all valid when
 -- checked against a list of ModData    
 -- All descriptions must exist in the provided list
--- If a description does not exist, a ReplError is returned
-getModByDescription :: [ModData] -> String -> Either ReplError ModData
+-- If a description does not exist, a AppError is returned
+getModByDescription :: [ModData] -> String -> Either AppError ModData
 getModByDescription mdata x = do
     parsed <- pReplDesc x
     findModByDesc mdata parsed
     
-findModByDesc :: [ModData] -> String -> Either ReplError ModData
+findModByDesc :: [ModData] -> String -> Either AppError ModData
 findModByDesc mdata x = do 
     let maybeHit = find (\d -> modName d == x) mdata
     case maybeHit of
-        Nothing -> Left $ ReplCommandError $ "Modbus Register " ++ x ++ " not found on template file." 
+        Nothing -> Left $ AppCommandError $ "Modbus Register " ++ x ++ " not found on template file." 
         Just hit -> Right hit
 
 -- Generate a list of Moddata from pairs of Description and values
-getModByPair :: [(String, String)] -> [ModData] -> Either ReplError [ModData]
+getModByPair :: [(String, String)] -> [ModData] -> Either AppError [ModData]
 getModByPair [] _ = Right []
 getModByPair ((desc,val):xs) mds = do
     validMd <- getModByDescription mds desc
@@ -278,7 +278,7 @@ getModByPair ((desc,val):xs) mds = do
     (:) <$> return inserted <*> getModByPair xs mds
 
 -- Parses and inserts a value to a ModData
-insertValue :: ModData -> String -> Either ReplError ModData
+insertValue :: ModData -> String -> Either AppError ModData
 insertValue md val = do
     case modValue md of
         ModWord _ -> do

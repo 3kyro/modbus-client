@@ -2,7 +2,7 @@ module Types
     (
       Repl
     , ReadRegsFun 
-    , ReplError (..)
+    , AppError (..)
     , ReplConfig (..)
     , ReplState (..)
     , ReplIdent (..)
@@ -30,10 +30,10 @@ replAsk = lift $ lift $ ask
 
 type ReadRegsFun =  MB.TransactionId -> MB.ProtocolId -> MB.UnitId -> MB.RegAddress -> Word16 -> MB.Session [Word16]
 
-data ReplError = 
-      ReplParseError ParseError
-    | ReplModbusError MB.ModbusException
-    | ReplCommandError String
+data AppError = 
+      AppParseError ParseError
+    | AppModbusError MB.ModbusException
+    | AppCommandError String
     deriving (Show)
 
 data ReplConfig = Config {
@@ -49,3 +49,4 @@ data ReplIdent =
       ReplDesc String
     | ReplAddr Word16
     deriving Show
+
