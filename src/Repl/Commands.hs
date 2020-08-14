@@ -26,7 +26,7 @@ import CsvParser
     , RegType (..)
     )
 
-import Repl.Types 
+import Types 
     (
       replAsk
     , Repl

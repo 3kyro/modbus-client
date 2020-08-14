@@ -32,9 +32,11 @@ runApp (Opt input output ip portNum order bRepl) = do
   then 
     case parseResult of
         Left err -> do 
+            putStrLn "Modbus-Serve Repl"
             putStrLn "Error parsing CSV file" 
             print err
             putStrLn "Running Repl without CSV Data"
+            putStrLn "Use the import command to import a valid CSV file"
             runReplApp (getAddr ip portNum) order [] 
         Right mdata -> runReplApp (getAddr ip portNum) order mdata
   else   

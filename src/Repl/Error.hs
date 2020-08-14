@@ -18,7 +18,7 @@ import Data.Either.Combinators (mapLeft)
 
 import qualified System.Modbus.TCP as MB
 
-import Repl.Types (Repl, ReplError (..))
+import Types (Repl, ReplError (..))
 
 -- Run a modbus session, converting the left part to ReplError
 runReplSession :: MB.Connection -> MB.Session a -> ExceptT ReplError IO a

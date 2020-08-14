@@ -20,7 +20,7 @@ import qualified Data.Text as T
 
 import CsvParser (pInt, pFloat, only, pName, pWord16)
 import Repl.Error (ReplError (..))
-import Repl.Types (ReplIdent (..))
+import Types (ReplIdent (..))
 
     
 -- Parse address and number of register strings 

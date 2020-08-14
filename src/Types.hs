@@ -1,4 +1,4 @@
-module Repl.Types 
+module Types 
     (
       Repl
     , ReadRegsFun 

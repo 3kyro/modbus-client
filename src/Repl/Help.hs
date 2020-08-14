@@ -2,7 +2,7 @@ module Repl.Help (help, helpCompl) where
 
 import Control.Monad.Trans (liftIO)
 
-import Repl.Types (Repl)
+import Types (Repl)
 import Repl.Commands (commandsCompl)
 
 -- Top level help command
