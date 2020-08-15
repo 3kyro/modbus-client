@@ -12,12 +12,20 @@ import OptParser (Opt(..), runOpts)
 import Data.IP (IPv4, toHostAddress)
 import Network.Socket.ByteString (recv, send)
 
+import qualified Data.Text.IO as T
 import qualified Network.Socket as S
 import qualified System.Modbus.TCP as MB
 
 import Modbus (modSession)
 import CsvParser (parseCSVFile)
-import Types (ByteOrder (..), ModData, ReplConfig(..), ReplState(..))
+import Types 
+    (
+      serializeModData
+    , ByteOrder (..)
+    , ModData
+    , ReplConfig(..)
+    , ReplState(..)
+    )
 import Repl (runRepl)
 
 main :: IO ()
@@ -33,7 +41,7 @@ runApp (Opt input output ip portNum order bRepl) = do
         Left _ -> putStrLn "Error Parsing CSV file"
         Right md' -> do
             resp <- runModDataApp (getAddr ip portNum) order md'
-            writeFile output (show resp) 
+            T.writeFile output (serializeModData resp) 
 
 getAddr :: IPv4 -> Int -> S.SockAddr
 getAddr ip portNum = S.SockAddrInet (fromIntegral portNum) (toHostAddress ip)
