@@ -6,7 +6,7 @@ import qualified Data.Text as T
 class TestShow a where
   tShow :: a -> String
 
-instance TestShow ModType where
+instance TestShow ModValue where
   tShow (ModWord (Just x)) = "word;" ++ show x
   tShow (ModWord Nothing) = "word;"
   tShow (ModFloat (Just x)) = "float;" ++ show x

@@ -2,11 +2,11 @@ module Types.CSV
     (
       ModData (..)
     , RegType (..)
-    , ModType (..)
+    , ModValue (..)
     , ByteOrder (..)
     , modData
     , NameArb (..)
-    , getModTypeMult
+    , getModValueMult
     , serializeModData
     )
     where
@@ -41,7 +41,7 @@ data ModData = ModData
       modName           :: !String  -- Variable name
     , modRegType        :: !RegType -- Type (Holdin Register - Input Register)
     , modAddress        :: !Word16  -- Address
-    , modValue          :: !ModType -- Value (incluting value type)
+    , modValue          :: !ModValue -- Value (incluting value type)
     , modDescription    :: !T.Text  -- Description
     }
     deriving (Show, Eq)
@@ -51,7 +51,7 @@ data ModData = ModData
 -- transmitted, th most significant byte is sent first.
 -- In order to transmit a 32 bit float value, two consecutive registers
 -- will be used. 
-data ModType 
+data ModValue 
     = ModWord   (Maybe Word16) 
     | ModFloat  (Maybe Float)
     deriving (Show, Eq)
@@ -71,7 +71,7 @@ data ByteOrder
     deriving (Show, Read, Eq)
 
 -- ModData constructor
-modData :: String -> RegType -> Word16 -> ModType -> T.Text -> ModData
+modData :: String -> RegType -> Word16 -> ModValue -> T.Text -> ModData
 modData n rt r v c = 
     ModData
     { 
@@ -82,7 +82,7 @@ modData n rt r v c =
     , modDescription = c
     }
 
-instance Arbitrary ModType where
+instance Arbitrary ModValue where
   arbitrary = oneof [ModWord <$> arbitrary, ModFloat <$> arbitrary]
 
 instance Arbitrary ModData where
@@ -118,9 +118,9 @@ instance Arbitrary NameArb where
       nameValidChars = elements $ ['a'..'z'] ++ ['A'..'Z'] ++ ['0'..'9'] ++ "_"
 
 
-getModTypeMult :: ModType -> Word16
-getModTypeMult (ModWord _) = 1
-getModTypeMult (ModFloat _) = 2
+getModValueMult :: ModValue -> Word16
+getModValueMult (ModWord _) = 1
+getModValueMult (ModFloat _) = 2
 
 -- Serialize ModData, including the necessary header for
 -- modbus table parsing
@@ -151,7 +151,7 @@ serializeRegType rt =
         InputRegister -> "input register"
         HoldingRegister -> "holding register"
 
-serializeModValue :: ModType -> String
+serializeModValue :: ModValue -> String
 serializeModValue mt = 
     case mt of
         ModWord mv -> "word;" ++ serMaybe mv ++ ";"

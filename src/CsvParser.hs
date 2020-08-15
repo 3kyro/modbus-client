@@ -100,7 +100,7 @@ pWord16 = read <$> many1 digit
 
 -- Parses a modbus value by associating the datatype field with
 -- the correct value field
-pValue :: Parser ModType
+pValue :: Parser ModValue
 pValue = do
   dataType <- T.map toLower <$> field pText
   case T.unpack dataType of

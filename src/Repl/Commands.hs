@@ -249,7 +249,7 @@ writeMod md = do
 
 -- Write a ModWord to the modbus server.
 -- Returns the number of ModWords written
-writeModWord :: ModType -> Word16 -> Repl Word16
+writeModWord :: ModValue -> Word16 -> Repl Word16
 writeModWord (ModWord (Just word)) address = do
     Config connection _  <- replAsk
     let addr = MB.RegAddress address
@@ -259,7 +259,7 @@ writeModWord (ModWord _) _ = return 0
 
 -- Write a ModFloat to the modbus server.
 -- Returns the number of ModFloats written
-writeModFloat :: ModType -> Word16 -> Repl Word16
+writeModFloat :: ModValue -> Word16 -> Repl Word16
 writeModFloat (ModFloat (Just fl)) address = do
     Config connection _ <- replAsk
     let addr = MB.RegAddress address
@@ -314,7 +314,7 @@ readMod md = do
         ModFloat _ -> return md {modValue = ModFloat $ floats resp order}
   where
     address = MB.RegAddress $ modAddress md
-    mult = getModTypeMult $ modValue md
+    mult = getModValueMult $ modValue md
     function = case modRegType md of
             InputRegister -> MB.readInputRegisters
             HoldingRegister -> MB.readHoldingRegisters
@@ -327,12 +327,12 @@ readMod md = do
 replReadRegisters :: 
        String   -- address
     -> String   -- number of registers
-    -> ModType
+    -> ModValue
     -> ReadRegsFun
     -> Repl [Word16]
 replReadRegisters a n m f = do
     Config connection _ <- replAsk
-    let mult = getModTypeMult m
+    let mult = getModValueMult m
     let wrapped = do 
             (addr, num) <- except $ pReplAddrNum a n 
             liftIO $ putStrLn $ "Reading " ++ show num ++ " register(s) from address " ++ show addr
@@ -344,13 +344,13 @@ replReadRegisters a n m f = do
 replWriteRegisters :: 
        String  -- address
     -> [String] -- values
-    -> ModType
+    -> ModValue
     -> Repl ()
-replWriteRegisters address values modtype = do
+replWriteRegisters address values mValue = do
     Config connection _ <- replAsk
     let wrapped = do
             addr <- except $ pReplWord address
-            val <- case modtype of
+            val <- case mValue of
                 ModWord _ -> except $ mapM pReplWord values
                 ModFloat _ -> except $ fromFloats <$> mapM pReplFloat values
             liftIO $ putStrLn $ "Writing " ++ regsWritten val ++ " register(s) at address " ++ show addr
@@ -358,9 +358,9 @@ replWriteRegisters address values modtype = do
     response <- replRunExceptT wrapped (const 0) 
     liftIO $ putStrLn $ responseWritten response ++ " register(s) written"
   where
-    regsWritten val = show $ divbyModtype $ length val
-    responseWritten resp = show $ divbyModtype resp   
-    divbyModtype num = num `div` fromIntegral (toInteger (getModTypeMult modtype)) 
+    regsWritten val = show $ divbyModValue $ length val
+    responseWritten resp = show $ divbyModValue resp   
+    divbyModValue num = num `div` fromIntegral (toInteger (getModValueMult mValue)) 
 
 invalidCmd :: Repl ()
 invalidCmd = liftIO $ putStrLn "Invalid Command argument"

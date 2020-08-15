@@ -220,7 +220,7 @@ prop_valid_datum ::
        NameArb 
     -> RegType 
     -> Word16 
-    -> ModType 
+    -> ModValue 
     -> String 
     -> Property
 prop_valid_datum nameArb rt reg val desc =
