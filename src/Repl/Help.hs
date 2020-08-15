@@ -25,6 +25,7 @@ helpCmd arg =
         "read" -> hRead
         "write" -> hWrite
         "watchdog" -> hWatchdog
+        "import" -> hImport
         _ -> "Command \"" ++ arg ++"\" not found" 
   in
     putStrLn command
@@ -109,6 +110,15 @@ hWatchdog =
     ++ "Both a register addrress as well as a ModData description can be used as identifiers\n"
     ++ "Usage: watchdog [identifier] [timer(ms)]\n"
     ++ "e.g. watchdog 10 1000000 watch_reg 500000"
+
+hImport :: String
+hImport =
+    "import:\n"
+    ++ "Import a Modbus Table from a valid CSV file\n"
+    ++ "Warning: importing a new modbus table will overwrite the current table\n"
+    ++ "Use export before importing to save any changes\n"
+    ++ "Usage: import path-to-csv-file\n"
+    ++ "e.g. import ~/path/to/file.csv\n"
 
 helpCompl :: [String]
 helpCompl = map (":help " ++) commandsCompl
