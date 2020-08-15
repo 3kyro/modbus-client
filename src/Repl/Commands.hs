@@ -2,7 +2,7 @@ module Repl.Commands where
 
 import Control.Monad.Trans (liftIO, lift)
 import Control.Monad.Trans.Except (except)
-import Control.Monad.Trans.State.Strict (get)
+import Control.Monad.Trans.State.Strict (get, put)
 import Control.Concurrent (threadDelay, forkIO)
 import Control.Monad.Except (runExceptT)
 import Control.Monad.Trans.Reader (ask)
@@ -12,15 +12,14 @@ import Data.Word (Word16)
 
 import qualified System.Modbus.TCP as MB
 
+import CsvParser (parseCSVFile)
 import Modbus 
     (
       getFloats
     , fromFloats
     , word2Float
     )
-    
 import Types 
-
 import Repl.Error 
     (
       runReplSession
@@ -54,6 +53,7 @@ cmd input =
         "read" -> readModData args
         "write" -> writeModData args
         "watchdog" -> watchdog args
+        "import" -> replImport args
         _ -> liftIO $ putStrLn ("command not found: " ++ command)
 
 commandsCompl :: [String]
@@ -69,6 +69,7 @@ commandsCompl = [
     , "read"
     , "write"
     , "watchdog"
+    , "import"
     ]
 
 list :: a -> Repl ()
@@ -147,7 +148,19 @@ watchdog args = do
             addrTimer <- mapM replGetAddrTimer pairs
             mapM_ spawnWatchdogThread addrTimer 
 
-            
+replImport :: [String] -> Repl ()
+replImport [] = liftIO $ do 
+    putStrLn "Usage: import path-to-csv-file"
+    putStrLn "e.g. import ~/path/to/file.csv"
+    putStrLn "Type \":help import\" for more information"
+replImport [filename] = do
+    contents <- liftIO $ parseCSVFile filename
+    mdata <- replRunExceptT (except contents) (const [])
+    state <- lift $ get
+    lift $ put state {replModData = mdata}
+    liftIO $ putStrLn $ show (length mdata) ++ " registers updated"
+replImport _ = invalidCmd    
+
 -------------------------------------------------------------------------------------
 -- Helper functions
 -------------------------------------------------------------------------------------
