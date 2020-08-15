@@ -38,7 +38,7 @@ runApp (Opt input output ip portNum order bRepl) = do
   else do  
     parseResult <- parseCSVFile input  
     case parseResult of
-        Left _ -> putStrLn "Error Parsing CSV file"
+        Left err -> print err
         Right md' -> do
             resp <- runModDataApp (getAddr ip portNum) order md'
             T.writeFile output (serializeModData resp) 
