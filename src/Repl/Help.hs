@@ -26,6 +26,7 @@ helpCmd arg =
         "write" -> hWrite
         "watchdog" -> hWatchdog
         "import" -> hImport
+        "export" -> hExport
         _ -> "Command \"" ++ arg ++"\" not found" 
   in
     putStrLn command
@@ -119,6 +120,13 @@ hImport =
     ++ "Use export before importing to save any changes\n"
     ++ "Usage: import path-to-csv-file\n"
     ++ "e.g. import ~/path/to/file.csv\n"
+
+hExport :: String
+hExport =
+    "export:\n"
+    ++ "Export the current Modbus Table to a file\n"
+    ++ "Usage: export path-to-csv-file\n"
+    ++ "e.g. export ~/path/to/file.csv\n"
 
 helpCompl :: [String]
 helpCompl = map (":help " ++) commandsCompl

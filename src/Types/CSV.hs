@@ -7,10 +7,12 @@ module Types.CSV
     , modData
     , NameArb (..)
     , getModTypeMult
+    , serializeModData
     )
     where
         
 import Data.Word (Word16)
+import Data.List (foldl')
 import Test.QuickCheck 
     ( 
       Arbitrary
@@ -119,3 +121,41 @@ instance Arbitrary NameArb where
 getModTypeMult :: ModType -> Word16
 getModTypeMult (ModWord _) = 1
 getModTypeMult (ModFloat _) = 2
+
+-- Serialize ModData, including the necessary header for
+-- modbus table parsing
+serializeModData :: [ModData] -> T.Text
+serializeModData md = T.append header packed
+  where 
+      header = T.pack "Name;Register Type;Register Address;Data type;Value;Description\n"
+      packed = foldl' append (T.pack "") md
+      append acc md' = T.append acc (serializeModDatum md') `T.append` (T.pack "\n")
+
+-- Serialize a single ModData
+serializeModDatum :: ModData -> T.Text
+serializeModDatum md = 
+    T.pack 
+        (
+        modName md ++ ";"
+        ++ serializeRegType (modRegType md) ++ ";"
+        ++ show (modAddress md) ++ ";"
+        ++ serializeModValue (modValue md) 
+        )
+    `T.append` (modDescription md) 
+
+serializeRegType :: RegType -> String
+serializeRegType rt = 
+    case rt of
+        DiscreteInput -> "discrete input"
+        Coil -> "coil"
+        InputRegister -> "input register"
+        HoldingRegister -> "holding register"
+
+serializeModValue :: ModType -> String
+serializeModValue mt = 
+    case mt of
+        ModWord mv -> "word;" ++ serMaybe mv ++ ";"
+        ModFloat fl -> "float;" ++ serMaybe fl ++ ";"
+  where
+      serMaybe (Just x) = show x
+      serMaybe Nothing = ""

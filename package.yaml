@@ -36,6 +36,7 @@ dependencies:
 - Cabal
 - either
 - transformers
+- directory >= 1.3.6 && < 2
 
 library:
   source-dirs: src

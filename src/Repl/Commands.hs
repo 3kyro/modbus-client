@@ -12,12 +12,13 @@ import Data.Word (Word16)
 
 import qualified System.Modbus.TCP as MB
 
-import CsvParser (parseCSVFile)
+import CsvParser (serializeCSVFile, parseCSVFile)
 import Modbus 
     (
       getFloats
     , fromFloats
     , word2Float
+    , modSession
     )
 import Types 
 import Repl.Error 
@@ -54,6 +55,7 @@ cmd input =
         "write" -> writeModData args
         "watchdog" -> watchdog args
         "import" -> replImport args
+        "export" -> replExport args
         _ -> liftIO $ putStrLn ("command not found: " ++ command)
 
 commandsCompl :: [String]
@@ -70,6 +72,7 @@ commandsCompl = [
     , "write"
     , "watchdog"
     , "import"
+    , "export"
     ]
 
 list :: a -> Repl ()
@@ -159,7 +162,21 @@ replImport [filename] = do
     state <- lift $ get
     lift $ put state {replModData = mdata}
     liftIO $ putStrLn $ show (length mdata) ++ " registers updated"
-replImport _ = invalidCmd    
+replImport _ = invalidCmd 
+
+replExport :: [String] -> Repl ()
+replExport [] = liftIO $ do
+    putStrLn "Usage: export path-to-csv-file"
+    putStrLn "e.g. export ~/path/to/file.csv"
+    putStrLn "Type \":help export\" for more information"
+replExport [filename] = do
+    ReplState mdata <- lift $ get
+    Config connection order <- replAsk
+    let exportSession = modSession mdata order
+    currentMdata <- liftIO $ runExceptT $ runReplSession connection exportSession
+    mdata' <- replRunExceptT (except currentMdata) (const [])
+    liftIO $ serializeCSVFile filename mdata'
+    return ()
 
 -------------------------------------------------------------------------------------
 -- Helper functions

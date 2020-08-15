@@ -3,6 +3,7 @@ module CsvParser where
 import Control.Monad (void)
 import Data.Char (toLower)
 import Data.Word (Word16)
+import System.Directory (doesFileExist)
 import Text.Parsec 
 import Text.Parsec.Text (Parser)
 
@@ -12,17 +13,47 @@ import qualified Data.Text as T
 
 import Types
 import Data.Either.Combinators (mapLeft)
+import System.IO (hFlush)
+import System.Directory.Internal.Prelude (stdout)
 
-
--- Parse a CSV file from the disk
+-- Read and parse a CSV file from the disk
 parseCSVFile :: FilePath -> IO (Either AppError [ModData])
 parseCSVFile path = do
-        putStrLn "Parsing register file"
+        putStrLn "Parsing Modbus register table"
         ioContents <- E.try $ T.readFile path
         let result = do
                 contents <- mapLeft AppIOError ioContents
                 runpCSV contents
         return result
+
+-- Serialize ModData on the disk
+serializeCSVFile :: FilePath -> [ModData] -> IO (Either AppError ())
+serializeCSVFile _ [] = do
+    putStrLn "Empty table; register table not exported"
+    return $ Right () 
+serializeCSVFile filename mdata = do
+    exists <- doesFileExist filename
+    if exists 
+    then do 
+        putStrLn $ "file: " ++ filename ++ " already exists"
+        putStr "Type [Y/y] to overwrite: "
+        hFlush stdout
+        overwrite <- T.toUpper <$> T.getLine
+        case T.unpack overwrite of
+            "Y" -> overwriteCSVFile filename mdata
+            _ -> do
+                putStrLn "Register table not exported"
+                return $ Right () 
+    else overwriteCSVFile filename mdata
+
+-- Writes a modbus table to the disk, overwritting the given file
+-- if it already exists
+overwriteCSVFile :: FilePath -> [ModData] -> IO (Either AppError ())    
+overwriteCSVFile filename mdata = do
+    putStrLn "Serializing Modbus register table"
+    let text = serializeModData mdata
+    ioresult <- E.try $ T.writeFile filename text
+    return $ mapLeft AppIOError ioresult
 
 -- test runner, mainly used for testing
 testCSVParser :: Parser a -> String -> Either ParseError a
