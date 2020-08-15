@@ -25,20 +25,10 @@ main = runApp =<< runOpts
 
 runApp :: Opt -> IO ()
 runApp (Opt input output ip portNum order bRepl) = do
-  parseResult <- parseCSVFile input  
-  if 
-    bRepl 
-  then 
-    case parseResult of
-        Left err -> do 
-            putStrLn "Modbus-Serve Repl"
-            putStrLn "Error parsing CSV file" 
-            print err
-            putStrLn "Running Repl without CSV Data"
-            putStrLn "Use the import command to import a valid CSV file"
-            runReplApp (getAddr ip portNum) order [] 
-        Right mdata -> runReplApp (getAddr ip portNum) order mdata
-  else   
+  if bRepl 
+  then runReplApp (getAddr ip portNum) order []
+  else do  
+    parseResult <- parseCSVFile input  
     case parseResult of
         Left _ -> putStrLn "Error Parsing CSV file"
         Right md' -> do
