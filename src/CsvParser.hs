@@ -6,18 +6,31 @@ import Data.Word (Word16)
 import Text.Parsec 
 import Text.Parsec.Text (Parser)
 
+import qualified Control.Exception as E
+import qualified Data.Text.IO as T
 import qualified Data.Text as T
 
 import Types
+import Data.Either.Combinators (mapLeft)
 
+
+-- Parse a CSV file from the disk
+parseCSVFile :: FilePath -> IO (Either AppError [ModData])
+parseCSVFile path = do
+        putStrLn "Parsing register file"
+        ioContents <- E.try $ T.readFile path
+        let result = do
+                contents <- mapLeft AppIOError ioContents
+                runpCSV contents
+        return result
 
 -- test runner, mainly used for testing
 testCSVParser :: Parser a -> String -> Either ParseError a
 testCSVParser p s = parse p "" $ T.pack s
 
 -- run a pCSV parser
-runpCSV :: T.Text -> Either ParseError [ModData]
-runpCSV = parse pCSV "" 
+runpCSV :: T.Text -> Either AppError [ModData]
+runpCSV t = mapLeft AppParseError (parse pCSV "" t) 
 
 -- Parses a CSV text, ignoring the first line that will be used for describing
 -- the fields

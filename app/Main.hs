@@ -1,3 +1,4 @@
+{-# LANGUAGE ScopedTypeVariables #-}
 {-|
 Module : Main
 Description: A Modbus TCP CLI and web server
@@ -9,16 +10,13 @@ module Main where
 import Control.Monad.Except (runExceptT)
 import OptParser (Opt(..), runOpts)
 import Data.IP (IPv4, toHostAddress)
-import Text.Parsec.Error (ParseError)
 import Network.Socket.ByteString (recv, send)
 
-
-import qualified Data.Text.IO as T
 import qualified Network.Socket as S
 import qualified System.Modbus.TCP as MB
 
 import Modbus (modSession)
-import CsvParser (runpCSV)
+import CsvParser (parseCSVFile)
 import Types (ByteOrder (..), ModData, ReplConfig(..), ReplState(..))
 import Repl (runRepl)
 
@@ -46,12 +44,6 @@ runApp (Opt input output ip portNum order bRepl) = do
         Right md' -> do
             resp <- runModDataApp (getAddr ip portNum) order md'
             writeFile output (show resp) 
-
-parseCSVFile :: FilePath -> IO (Either ParseError [ModData])
-parseCSVFile path = do
-        putStrLn "Parsing register file"
-        contents <- T.readFile path
-        return $ runpCSV contents
 
 getAddr :: IPv4 -> Int -> S.SockAddr
 getAddr ip portNum = S.SockAddrInet (fromIntegral portNum) (toHostAddress ip)
