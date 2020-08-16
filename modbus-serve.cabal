@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: b76451b7288bfcd5775db836e8fd499d3bbd06a03266fabbc4282b4c986910ae
+-- hash: e0447b308d043d3eaf1501f54764b7e0a93e54586c1894f984faf92fff48b087
 
 name:           modbus-serve
 version:        0.1.0.0
@@ -27,6 +27,7 @@ source-repository head
 
 library
   exposed-modules:
+      AppError
       CsvParser
       Modbus
       OptParser
@@ -45,6 +46,7 @@ library
   build-depends:
       Cabal
     , QuickCheck
+    , ansi-terminal >=0.10.3 && <1
     , base >=4.7 && <5
     , binary
     , directory >=1.3.6 && <2
@@ -72,6 +74,7 @@ executable modbus-serve-exe
   build-depends:
       Cabal
     , QuickCheck
+    , ansi-terminal >=0.10.3 && <1
     , base >=4.7 && <5
     , binary
     , directory >=1.3.6 && <2
@@ -104,6 +107,7 @@ test-suite modbus-serve-test
   build-depends:
       Cabal
     , QuickCheck
+    , ansi-terminal >=0.10.3 && <1
     , base >=4.7 && <5
     , binary
     , directory >=1.3.6 && <2

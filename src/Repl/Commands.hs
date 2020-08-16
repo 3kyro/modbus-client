@@ -125,7 +125,7 @@ readModData [] = invalidCmd
 readModData args = do 
     ReplState mdata <- lift $ get
     let wrapped = except $ mapM (getModByDescription mdata) args
-    mds <- replRunExceptT wrapped (const [])
+    mds <- replRunExceptT wrapped []
     response <- mapM readMod mds
     liftIO $ mapM_ print response
 
@@ -138,7 +138,7 @@ writeModData args = do
         Nothing -> invalidCmd
         Just pairs -> do
             let wrapped = except $ getModByPair pairs mdata
-            mds <- replRunExceptT wrapped  (const [])
+            mds <- replRunExceptT wrapped []
             written <- mapM writeMod mds  
             liftIO $ putStrLn $ show (sum written) ++ " value(s) written" 
 
@@ -158,11 +158,11 @@ replImport [] = liftIO $ do
     putStrLn "Type \":help import\" for more information"
 replImport [filename] = do
     contents <- liftIO $ parseCSVFile filename
-    mdata <- replRunExceptT (except contents) (const [])
+    mdata <- replRunExceptT (except contents) []
     state <- lift $ get
     lift $ put state {replModData = mdata}
     liftIO $ putStrLn $ show (length mdata) ++ " registers updated"
-replImport _ = invalidCmd 
+replImport _ = invalidCmd
 
 replExport :: [String] -> Repl ()
 replExport [] = liftIO $ do
@@ -174,9 +174,10 @@ replExport [filename] = do
     Config connection order <- replAsk
     let exportSession = modSession mdata order
     currentMdata <- liftIO $ runExceptT $ runReplSession connection exportSession
-    mdata' <- replRunExceptT (except currentMdata) (const [])
+    mdata' <- replRunExceptT (except currentMdata) []
     liftIO $ serializeCSVFile filename mdata'
     return ()
+replExport _ = invalidCmd
 
 -------------------------------------------------------------------------------------
 -- Helper functions
@@ -211,7 +212,7 @@ replGetAddrTimer (x,y) = do
                     md <- findModByDesc mdata name
                     return (modAddress md, timer)
                 ReplAddr addr -> return (addr, timer)
-    replRunExceptT (except wrapped) (const (0,0))
+    replRunExceptT (except wrapped) (0,0)
 
 -- Spawns a watchdog thread
 spawnWatchdogThread :: (Word16, Int) -> Repl ()
@@ -254,7 +255,7 @@ writeModWord (ModWord (Just word)) address = do
     Config connection _  <- replAsk
     let addr = MB.RegAddress address
     let writeSession = runReplSession connection $ MB.writeMultipleRegisters 0 0 255 addr [word]
-    replRunExceptT writeSession (const 0)  
+    replRunExceptT writeSession 0
 writeModWord (ModWord _) _ = return 0
 
 -- Write a ModFloat to the modbus server.
@@ -265,7 +266,7 @@ writeModFloat (ModFloat (Just fl)) address = do
     let addr = MB.RegAddress address
     let ordWords = fromFloats [fl]
     let writeSession = runReplSession connection $ MB.writeMultipleRegisters 0 0 255 addr ordWords
-    wordsWritten <- replRunExceptT writeSession (const 0)
+    wordsWritten <- replRunExceptT writeSession 0
     return $ wordsWritten `div` 2
     
 -- Checks if a list of descriptions are all valid when
@@ -308,7 +309,7 @@ readMod :: ModData -> Repl ModData
 readMod md = do
     Config connection order <- replAsk
     let modbusResp = runReplSession connection $ function 0 0 255 address mult
-    resp <- replRunExceptT modbusResp (const [])
+    resp <- replRunExceptT modbusResp []
     case modValue md of
         ModWord _ -> return md {modValue = ModWord $ listToMaybe resp}
         ModFloat _ -> return md {modValue = ModFloat $ floats resp order}
@@ -337,7 +338,7 @@ replReadRegisters a n m f = do
             (addr, num) <- except $ pReplAddrNum a n 
             liftIO $ putStrLn $ "Reading " ++ show num ++ " register(s) from address " ++ show addr
             runReplSession connection $ f 0 0 255 (MB.RegAddress addr) (mult * num)
-    replRunExceptT wrapped (const [])
+    replRunExceptT wrapped []
 
 -- Parses the address and values list and applies them
 -- to a read holding registers modbus command
@@ -355,7 +356,7 @@ replWriteRegisters address values mValue = do
                 ModFloat _ -> except $ fromFloats <$> mapM pReplFloat values
             liftIO $ putStrLn $ "Writing " ++ regsWritten val ++ " register(s) at address " ++ show addr
             runReplSession connection $ MB.writeMultipleRegisters 0 0 255 (MB.RegAddress addr) val
-    response <- replRunExceptT wrapped (const 0) 
+    response <- replRunExceptT wrapped 0
     liftIO $ putStrLn $ responseWritten response ++ " register(s) written"
   where
     regsWritten val = show $ divbyModValue $ length val

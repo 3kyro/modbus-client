@@ -16,9 +16,10 @@ import qualified Data.Text.IO as T
 import qualified Network.Socket as S
 import qualified System.Modbus.TCP as MB
 
+import AppError (printError)
 import Modbus (modSession)
 import CsvParser (parseCSVFile)
-import Types 
+import Types
     (
       serializeModData
     , ByteOrder (..)
@@ -28,20 +29,21 @@ import Types
     )
 import Repl (runRepl)
 
+
 main :: IO ()
 main = runApp =<< runOpts
 
 runApp :: Opt -> IO ()
 runApp (Opt input output ip portNum order bRepl) = do
-  if bRepl 
+  if bRepl
   then runReplApp (getAddr ip portNum) order []
-  else do  
-    parseResult <- parseCSVFile input  
+  else do
+    parseResult <- parseCSVFile input
     case parseResult of
-        Left err -> print err
+        Left err -> printError err
         Right md' -> do
             resp <- runModDataApp (getAddr ip portNum) order md'
-            T.writeFile output (serializeModData resp) 
+            T.writeFile output (serializeModData resp)
 
 getAddr :: IPv4 -> Int -> S.SockAddr
 getAddr ip portNum = S.SockAddrInet (fromIntegral portNum) (toHostAddress ip)

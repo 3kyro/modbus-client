@@ -3,7 +3,7 @@ module CsvParser where
 import Control.Monad (void)
 import Data.Char (toLower)
 import Data.Word (Word16)
-import System.Directory (doesFileExist)
+import System.Directory (doesDirectoryExist, doesFileExist)
 import Text.Parsec 
 import Text.Parsec.Text (Parser)
 
@@ -11,6 +11,7 @@ import qualified Control.Exception as E
 import qualified Data.Text.IO as T
 import qualified Data.Text as T
 
+import AppError (putStrError, putStrWarning)
 import Types
 import Data.Either.Combinators (mapLeft)
 import System.IO (hFlush)
@@ -19,7 +20,7 @@ import System.Directory.Internal.Prelude (stdout)
 -- Read and parse a CSV file from the disk
 parseCSVFile :: FilePath -> IO (Either AppError [ModData])
 parseCSVFile path = do
-        putStrLn "Parsing Modbus register table"
+        putStrLn "Parsing Modbus register table..."
         ioContents <- E.try $ T.readFile path
         let result = do
                 contents <- mapLeft AppIOError ioContents
@@ -29,22 +30,28 @@ parseCSVFile path = do
 -- Serialize ModData on the disk
 serializeCSVFile :: FilePath -> [ModData] -> IO (Either AppError ())
 serializeCSVFile _ [] = do
-    putStrLn "Empty table; register table not exported"
-    return $ Right () 
+    putStrWarning "Empty Modbus register table\nTable not exported"
+    return $ Right ()
 serializeCSVFile filename mdata = do
-    exists <- doesFileExist filename
-    if exists 
-    then do 
-        putStrLn $ "file: " ++ filename ++ " already exists"
-        putStr "Type [Y/y] to overwrite: "
-        hFlush stdout
-        overwrite <- T.toUpper <$> T.getLine
-        case T.unpack overwrite of
-            "Y" -> overwriteCSVFile filename mdata
-            _ -> do
-                putStrLn "Register table not exported"
-                return $ Right () 
-    else overwriteCSVFile filename mdata
+    dir <- doesDirectoryExist filename
+    if dir
+    then do
+        putStrError $ show filename ++ " is an existing directory\nRegister table not exported"
+        return $ Right ()
+    else do
+        exists <- doesFileExist filename
+        if exists
+        then do
+            putStrWarning $ "file: " ++ filename ++ " already exists"
+            putStr "Type [Y/y] to overwrite: "
+            hFlush stdout
+            overwrite <- T.toUpper <$> T.getLine
+            case T.unpack overwrite of
+                "Y" -> overwriteCSVFile filename mdata
+                _ -> do
+                    putStrLn "Register table not exported"
+                    return $ Right ()
+        else overwriteCSVFile filename mdata
 
 -- Writes a modbus table to the disk, overwritting the given file
 -- if it already exists
@@ -75,16 +82,20 @@ pCSV = (++) <$> firstLine <*> (many pModData <* eof)
 pModData :: Parser ModData
 pModData =
   modData
-    <$> field pName
-    <*> pRegType
-    <*> field pWord16
-    <*> pValue
-    <*> pComments
+    <$> parseWithMsg (field pName) "register name"
+    <*> parseWithMsg pRegType "regiter Type"
+    <*> parseWithMsg (field pWord16) "register address"
+    <*> parseWithMsg pValue "register value"
+    <*> parseWithMsg pDesc "description"
     <* optional endOfLine
+
+-- Apply parser, replacing the error messages with msg when it fails
+parseWithMsg :: Parser a -> String -> Parser a
+parseWithMsg p msg = try p <?> msg
 
 -- Parses a name cell
 pName :: Parser String
-pName = (:) <$> oneOf (['A'..'Z'] ++ ['a'..'z'] ++ "_") <*> many (oneOf $ ['A'..'Z'] ++ ['a'..'z'] ++ ['0'..'9'] ++ "_")  
+pName = (:) <$> oneOf (['A'..'Z'] ++ ['a'..'z'] ++ "_") <*> many (oneOf $ ['A'..'Z'] ++ ['a'..'z'] ++ ['0'..'9'] ++ "_")
 
 -- Parses a regiter type
 pRegType :: Parser RegType
@@ -95,7 +106,7 @@ pRegType = do
     "coil" -> return Coil
     "input register" -> return InputRegister
     "holding register" -> return HoldingRegister
-    _ -> fail "Parse error on register type"
+    _ -> fail ""
 
 -- Parses a register address
 pWord16 :: Parser Word16
@@ -109,11 +120,11 @@ pValue = do
   case T.unpack dataType of
     "float" -> ModFloat <$> pMaybeFloat 
     "word" -> ModWord <$> pMaybeWord
-    _ -> fail "Parsing Error on data type"
+    _ -> fail ""
 
 -- Parses a float field, returns Nothing if field is empty
 pMaybeFloat :: Parser (Maybe Float)
-pMaybeFloat = Just <$> combinations <|> nothing 
+pMaybeFloat = Just <$> combinations <|> nothing
   where
     combinations = field pFloatLeadingDot <|> noDot <|> noFractional <|> dotted <|> scientific
     noDot = try $ fromIntegral <$> field pInt
@@ -139,7 +150,7 @@ pFloat =
 
 -- Parses a word16, returns Nothing if field is empty
 pMaybeWord :: Parser (Maybe Word16)
-pMaybeWord = Just <$> field pWord16 <|> nothing <?> "Word"
+pMaybeWord = Just <$> field pWord16 <|> nothing
   where
     nothing = char ';' >> return Nothing
 
@@ -182,8 +193,8 @@ pFloatScientific = read <$> ((++) <$> dotted <*> expo)
       
 -- comment is the last field, so we keep newlines unparsed
 -- for consistency we don't allow semicolons in comment fields
-pComments :: Parser T.Text
-pComments = T.pack <$> many (noneOf ";\r\n") <* notFollowedBy (char ';')
+pDesc :: Parser T.Text
+pDesc = T.pack <$> many (noneOf ";\r\n") <* notFollowedBy (char ';')
 
 -- Parses an inner csv field, discarding the separating semicolon
 field :: Parser a -> Parser a

@@ -58,10 +58,10 @@ pCommentSpec :: Spec
 pCommentSpec = describe "Parse a comment field" $ do
   it "parses text" $ property prop_comment_text
   it "stops parsing on newlines" $
-    testCSVParser pComments "Comment with \n newline"
+    testCSVParser pDesc "Comment with \n newline"
       `shouldBe` Right (T.pack "Comment with ")
   it "parses unicode comments" $
-    testCSVParser pComments "Ένα σχόλιο"
+    testCSVParser pDesc "Ένα σχόλιο"
       `shouldBe` Right (T.pack "Ένα σχόλιο")
 
 pFloatSpec :: Spec
@@ -153,7 +153,7 @@ validName str =
     validTail = ['a'..'z'] ++ ['A'..'Z'] ++ ['0'..'9'] ++ "_"
     
 prop_comment_text :: String -> Property
-prop_comment_text s = valid s ==> Right (T.pack s) == testCSVParser pComments s
+prop_comment_text s = valid s ==> Right (T.pack s) == testCSVParser pDesc s
   where
     valid = all (`notElem` ";\n\r")
 

@@ -4,7 +4,7 @@ module Types
     , module Types.CSV  
     , ReadRegsFun 
     , AppError (..)
-    ) 
+    )
     where
 
 import Control.Monad.IO.Class ()
@@ -24,9 +24,12 @@ data AppError =
     | AppModbusError MB.ModbusException
     | AppCommandError String
     | AppIOError IOException
-    deriving (Show)
 
-
+instance Show AppError where
+    show (AppParseError err) = "Parse error: " ++ show err
+    show (AppModbusError err) = "Modbus error: " ++ show err
+    show (AppCommandError err) = "Command error: " ++ show err
+    show (AppIOError err) = "I/O error " ++ show err
 
 
 

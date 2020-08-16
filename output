@@ -1,0 +1,4 @@
+Name;Register Type;Register Address;Data type;Value;Description
+status;input register;10;word;1500;0 = Device stopped, 1 = Device running
+power;holding register;15;floats;0.0;Power in Watts
+lalal;input register;20;float;0.0;temp unscaled
