@@ -14,7 +14,7 @@ module Types.CSV
 import Data.Word (Word16)
 import Data.List (foldl')
 import Test.QuickCheck 
-    ( 
+    (
       Arbitrary
     , arbitrary
     , oneof
@@ -29,12 +29,18 @@ import qualified Data.Text as T
 -- Coil Single bit, read / write
 -- Input Register, 16-bit word, read only
 -- Holding Register, 16-bit word, read / write
-data RegType 
+data RegType
     = DiscreteInput 
     | Coil 
-    | InputRegister 
+    | InputRegister
     | HoldingRegister
-    deriving (Show, Eq)
+    deriving (Eq)
+
+instance Show RegType where
+    show DiscreteInput = "Discrete Input"
+    show Coil = "Coil"
+    show InputRegister = "Input Register"
+    show HoldingRegister = "Holding Register"
 
 data ModData = ModData
     { 
@@ -46,6 +52,8 @@ data ModData = ModData
     }
     deriving (Show, Eq)
 
+
+
 -- Modbus uses a 'big-Endian' encoding for addresses and data items.
 -- This means that when a numerical quantity larger than a single byte is 
 -- transmitted, th most significant byte is sent first.
@@ -54,14 +62,23 @@ data ModData = ModData
 data ModValue 
     = ModWord   (Maybe Word16) 
     | ModFloat  (Maybe Float)
-    deriving (Show, Eq)
+    deriving (Eq)
+
+instance Show ModValue where
+    show mv =
+        case mv of
+            ModWord value -> showM value ++ " (Word)"
+            ModFloat value -> showM value ++ " (Float)"
+      where
+          showM (Just x) = show x
+          showM Nothing = "No current value"
 
 -- Byte order of data types
 -- Eg: when receiving two two-byte words AB and CD
 -- LE   - AB CD
 -- BE   - CD AB
 -- LESW - BA DC
--- BESW - DC BA       
+-- BESW - DC BA
 data ByteOrder
     = LE    -- Little Endian
     | BE    -- Big Endian

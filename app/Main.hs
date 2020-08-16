@@ -16,7 +16,7 @@ import qualified Data.Text.IO as T
 import qualified Network.Socket as S
 import qualified System.Modbus.TCP as MB
 
-import AppError (printError)
+import PrettyPrint (ppError)
 import Modbus (modSession)
 import CsvParser (parseCSVFile)
 import Types
@@ -30,6 +30,10 @@ import Types
 import Repl (runRepl)
 
 
+
+
+
+
 main :: IO ()
 main = runApp =<< runOpts
 
@@ -40,7 +44,7 @@ runApp (Opt input output ip portNum order bRepl) = do
   else do
     parseResult <- parseCSVFile input
     case parseResult of
-        Left err -> printError err
+        Left err -> ppError err
         Right md' -> do
             resp <- runModDataApp (getAddr ip portNum) order md'
             T.writeFile output (serializeModData resp)

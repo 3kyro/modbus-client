@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: e0447b308d043d3eaf1501f54764b7e0a93e54586c1894f984faf92fff48b087
+-- hash: d4f83dff064155a376ce2b1ec12084389e6a52a5ad736c48ba901720148e41be
 
 name:           modbus-serve
 version:        0.1.0.0
@@ -27,10 +27,10 @@ source-repository head
 
 library
   exposed-modules:
-      AppError
       CsvParser
       Modbus
       OptParser
+      PrettyPrint
       Repl
       Repl.Commands
       Repl.Error

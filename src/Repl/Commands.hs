@@ -20,13 +20,13 @@ import Modbus
     , word2Float
     , modSession
     )
-import Types 
-import Repl.Error 
+import PrettyPrint (ppMultModData, ppStrWarning)
+import Repl.Error
     (
       runReplSession
     , replRunExceptT
     )
-import Repl.Parser 
+import Repl.Parser
     (
       pReplInt
     , pReplId
@@ -34,8 +34,8 @@ import Repl.Parser
     , pReplAddrNum
     , pReplFloat
     , pReplWord
-    
     )
+import Types
 
 -- Top level command function
 cmd :: String -> Repl ()
@@ -127,7 +127,7 @@ readModData args = do
     let wrapped = except $ mapM (getModByDescription mdata) args
     mds <- replRunExceptT wrapped []
     response <- mapM readMod mds
-    liftIO $ mapM_ print response
+    liftIO $ ppMultModData response
 
 writeModData :: [String] -> Repl ()
 writeModData [] = invalidCmd
@@ -139,8 +139,10 @@ writeModData args = do
         Just pairs -> do
             let wrapped = except $ getModByPair pairs mdata
             mds <- replRunExceptT wrapped []
-            written <- mapM writeMod mds  
-            liftIO $ putStrLn $ show (sum written) ++ " value(s) written" 
+            written <- mapM writeMod mds
+            liftIO $ putStrLn $ show (sum written) ++ " value(s) written"
+            readback <- mapM readMod mds
+            liftIO $ ppMultModData readback
 
 watchdog :: [String] -> Repl ()
 watchdog args = do
@@ -243,8 +245,8 @@ writeMod md = do
                 ModWord _ -> writeModWord modVal address
                 ModFloat _ -> writeModFloat modVal address
         _ -> do
-            liftIO $ 
-                putStrLn $  "Invalid register type for value: " 
+            liftIO $
+                ppStrWarning $  "Invalid register type for value: "
                             ++ modName md
             return 0 
 

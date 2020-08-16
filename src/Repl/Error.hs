@@ -18,7 +18,7 @@ import Data.Either.Combinators (mapLeft)
 
 import qualified System.Modbus.TCP as MB
 
-import AppError (printError)
+import PrettyPrint (ppError)
 import Types (Repl, AppError (..))
 
 -- Run a modbus session, converting the left part to AppError
@@ -34,5 +34,5 @@ replRunExceptT :: ExceptT AppError IO a -> a -> Repl a
 replRunExceptT ex rt = do
     unwrapped <- liftIO $ runExceptT ex
     case unwrapped of
-        Left err -> liftIO $ printError err >> return rt
+        Left err -> liftIO $ ppError err >> return rt
         Right x -> return x

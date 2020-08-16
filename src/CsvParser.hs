@@ -11,7 +11,7 @@ import qualified Control.Exception as E
 import qualified Data.Text.IO as T
 import qualified Data.Text as T
 
-import AppError (putStrError, putStrWarning)
+import PrettyPrint (ppStrError, ppStrWarning)
 import Types
 import Data.Either.Combinators (mapLeft)
 import System.IO (hFlush)
@@ -30,19 +30,19 @@ parseCSVFile path = do
 -- Serialize ModData on the disk
 serializeCSVFile :: FilePath -> [ModData] -> IO (Either AppError ())
 serializeCSVFile _ [] = do
-    putStrWarning "Empty Modbus register table\nTable not exported"
+    ppStrWarning "Empty Modbus register table\nTable not exported"
     return $ Right ()
 serializeCSVFile filename mdata = do
     dir <- doesDirectoryExist filename
     if dir
     then do
-        putStrError $ show filename ++ " is an existing directory\nRegister table not exported"
+        ppStrError $ show filename ++ " is an existing directory\nRegister table not exported"
         return $ Right ()
     else do
         exists <- doesFileExist filename
         if exists
         then do
-            putStrWarning $ "file: " ++ filename ++ " already exists"
+            ppStrWarning $ "file: " ++ filename ++ " already exists"
             putStr "Type [Y/y] to overwrite: "
             hFlush stdout
             overwrite <- T.toUpper <$> T.getLine

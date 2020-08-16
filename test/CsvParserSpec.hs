@@ -49,7 +49,7 @@ pRegAddrSpec :: Spec
 pRegAddrSpec = describe "Parse a register address field" $ do
   it "parses numeric fields" $ property $ \x ->
     Right x == testCSVParser pWord16 (show x)
-  it "fails on invalid input" $ property $ \x -> 
+  it "fails on invalid input" $ property $ \x ->
     not (all isDigit x) 
     ==>
     isLeft $ testCSVParser (only pWord16) x  
