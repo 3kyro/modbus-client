@@ -66,7 +66,10 @@ runpCSV t = mapLeft AppParseError (parse pCSV "" t)
 -- Parses a CSV text, ignoring the first line that will be used for describing
 -- the fields
 pCSV :: Parser [ModData]
-pCSV = pLine *> many pModData <* eof
+pCSV = (++) <$> firstLine <*> (many pModData <* eof)
+  where
+      firstLine = try moddata <|> (pLine *> pure [])
+      moddata = pure <$> pModData
 
 -- Parses a ModData
 pModData :: Parser ModData
