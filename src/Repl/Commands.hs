@@ -20,7 +20,7 @@ import Modbus
     , word2Float
     , modSession
     )
-import PrettyPrint (ppMultModData, ppStrWarning)
+import PrettyPrint (ppMultModData, ppStrWarning, ppRegisters)
 import Repl.Error
     (
       runReplSession
@@ -43,10 +43,10 @@ cmd input =
   let 
     (command, args) = (fromJust . uncons . words) input
   in case command of
-        "readInputRegistersWord" -> readRegistersWord MB.readInputRegisters args
-        "readInputRegistersFloat" -> readRegistersFloat MB.readInputRegisters args
-        "readHoldingRegistersWord" -> readRegistersWord MB.readHoldingRegisters args
-        "readHoldingRegistersFloat" -> readRegistersFloat MB.readHoldingRegisters args
+        "readInputRegistersWord" -> readRegistersWord InputRegister args
+        "readInputRegistersFloat" -> readRegistersFloat InputRegister args
+        "readHoldingRegistersWord" -> readRegistersWord HoldingRegister args
+        "readHoldingRegistersFloat" -> readRegistersFloat HoldingRegister args
         "writeSingleRegisterWord" -> writeSingleRegisterWord args
         "writeMultipleRegistersWord" -> writeMultipleRegistersWord args
         "writeSingleRegisterFloat" -> writeSingleRegisterFloat args
@@ -87,26 +87,47 @@ list _ = liftIO $ do
 -- User commands
 ------------------------------------------------------------------------------------------
 
-readRegistersWord :: ReadRegsFun -> [String] -> Repl ()
-readRegistersWord f [address, number] = do
+-- TODO: Untangle this mess
+readRegistersWord :: RegType -> [String] -> Repl ()
+readRegistersWord rt [address, number] = do
+    let f = case rt of
+            InputRegister -> MB.readInputRegisters
+            HoldingRegister -> MB.readHoldingRegisters
     response <- replReadRegisters address number (ModWord Nothing) f
-    liftIO $ print response
+    if null response
+    then return ()
+    else do
+        let zipFun = (,) <$> fst <*> (ModWord . Just . snd)
+        let zips = zipFun <$> response
+        liftIO $ ppRegisters rt zips
 readRegistersWord _ _ = invalidCmd
 
-readRegistersFloat :: ReadRegsFun -> [String] -> Repl ()
-readRegistersFloat f [address, number] = do
+-- TODO: #4 Untangle this mess
+readRegistersFloat :: RegType -> [String] -> Repl ()
+readRegistersFloat rt [address, number] = do
     Config _ order <- lift $ lift $ ask
+    let f = case rt of
+            InputRegister -> MB.readInputRegisters
+            HoldingRegister -> MB.readHoldingRegisters
     response <- replReadRegisters address number (ModFloat Nothing) f
-    liftIO $ print (getFloats order response)
+    if null response
+    then return ()
+    else do
+        let floats = getFloats order (map snd response)
+        let zips = zip (incrBy2 (fst (head response))) (toModFloat floats)
+        liftIO $ ppRegisters rt zips
+  where
+    incrBy2 x = iterate (+2) x
+    toModFloat xs = (ModFloat . Just) <$> xs
 readRegistersFloat _ _ = invalidCmd
 
 writeSingleRegisterWord :: [String] -> Repl ()
-writeSingleRegisterWord [address, regValue] = 
+writeSingleRegisterWord [address, regValue] =
     replWriteRegisters address [regValue] (ModWord Nothing)
 writeSingleRegisterWord _ = invalidCmd
 
 writeMultipleRegistersWord :: [String] -> Repl ()
-writeMultipleRegistersWord (address:values) = 
+writeMultipleRegistersWord (address:values) =
     replWriteRegisters address values (ModWord Nothing) 
 writeMultipleRegistersWord _ = invalidCmd
 
@@ -332,14 +353,15 @@ replReadRegisters ::
     -> String   -- number of registers
     -> ModValue
     -> ReadRegsFun
-    -> Repl [Word16]
+    -> Repl [(Word16, Word16)]
 replReadRegisters a n m f = do
     Config connection _ <- replAsk
     let mult = getModValueMult m
     let wrapped = do 
             (addr, num) <- except $ pReplAddrNum a n 
             liftIO $ putStrLn $ "Reading " ++ show num ++ " register(s) from address " ++ show addr
-            runReplSession connection $ f 0 0 255 (MB.RegAddress addr) (mult * num)
+            mvs <- runReplSession connection $ f 0 0 255 (MB.RegAddress addr) (mult * num)
+            return $ zip [addr..] mvs
     replRunExceptT wrapped []
 
 -- Parses the address and values list and applies them

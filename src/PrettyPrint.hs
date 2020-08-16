@@ -8,14 +8,16 @@ module PrettyPrint
     , ppAndResetLn
     , ppSingleModData
     , ppMultModData
+    , ppRegisters
     )
     where
 
 import System.Console.ANSI
 import Data.Maybe (fromMaybe)
 
-import Types (ModData(..), AppError (..))
+import Types (ModValue(..), RegType(..), ModData(..), AppError (..))
 import qualified Data.Text as T
+import Data.Word (Word16)
 
 ppError :: AppError -> IO ()
 ppError err = do
@@ -77,6 +79,26 @@ ppMultModData :: [ModData] -> IO ()
 ppMultModData mds = do
     width <- ppGetTerminalWidth
     mapM_ (ppModData width) mds
+
+ppRegisters :: RegType -> [(Word16, ModValue)] -> IO ()
+ppRegisters rt mvs = do
+    width <- ppGetTerminalWidth
+    let dashes = take (width) (repeat '-')
+    ppAndResetLn dashes Magenta
+    ppAndReset "Register type: " Blue
+    putStrLn $ show rt
+    ppAndResetLn dashes Magenta
+    mapM_ ppRegister mvs
+    ppAndResetLn dashes Magenta
+
+ppRegister :: (Word16, ModValue) -> IO ()
+ppRegister (address, mv) = do
+    ppAndReset "@address: " Blue
+    putStr $ show address ++ "\t"
+    ppAndReset "Value: " Blue
+    putStrLn $ show mv
+
+
 
 ppAndResetFun :: (String -> IO ()) -> String -> Color -> IO ()
 ppAndResetFun f x color = do
