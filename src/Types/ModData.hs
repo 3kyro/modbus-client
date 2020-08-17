@@ -1,4 +1,4 @@
-module Types.CSV
+module Types.ModData
     (
       ModData (..)
     , RegType (..)
@@ -30,7 +30,7 @@ import qualified Data.Text as T
 -- Input Register, 16-bit word, read only
 -- Holding Register, 16-bit word, read / write
 data RegType
-    = DiscreteInput 
+    = DiscreteInput
     | Coil 
     | InputRegister
     | HoldingRegister

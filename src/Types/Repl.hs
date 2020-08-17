@@ -18,7 +18,7 @@ import System.Console.Repline (HaskelineT)
 
 import qualified System.Modbus.TCP as MB
 
-import Types.CSV (ModData (..), ByteOrder (..))
+import Types.ModData (ModData (..), ByteOrder (..))
 
 type Repl a = HaskelineT (StateT ReplState (ReaderT ReplConfig IO)) a 
 
