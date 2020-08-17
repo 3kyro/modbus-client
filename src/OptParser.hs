@@ -32,6 +32,7 @@ import Options.Applicative
        )   
 
 import Types 
+import Data.Word (Word8)
 
 data Opt = Opt
     { inputTemplate :: !FilePath
@@ -40,6 +41,7 @@ data Opt = Opt
     , port          :: !Int
     , floatRepr     :: !ByteOrder
     , repl          :: !Bool
+    , uId           :: !Word8
 }
 
 -- | Executes the options parser
@@ -59,6 +61,7 @@ opt = Opt
     <*> parsePort 
     <*> parseFloatRepr
     <*> parseRepl
+    <*> parseUid
 
 parseTemplate :: Parser String
 parseTemplate = strOption
@@ -89,7 +92,7 @@ parseIPAddr = option auto
 
 parsePort :: Parser Int
 parsePort = option auto
-    ( long      "port" 
+    ( long      "port"
     <> short    'p' 
     <> metavar  "PORT" 
     <> value    5502
@@ -110,4 +113,13 @@ parseRepl = switch
     ( long      "repl"
     <> short    'r'
     <> help     "Starts an interactive Modbus client"
+    )
+
+parseUid :: Parser Word8
+parseUid = option auto
+    (  long     "id"
+    <> short    'd'
+    <> metavar  "UNIT_ID"
+    <> value    1
+    <> help     "Active Modbus unit id"
     )

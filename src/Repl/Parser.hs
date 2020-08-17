@@ -22,14 +22,14 @@ import Repl.Error (AppError (..))
 
 import Types (ReplArg (..))
 
-    
--- Parse address and number of register strings 
+
+-- Parse address and number of register strings
 pReplAddrNum :: String -> String-> Either AppError (Word16, Word16)
 pReplAddrNum a n = (,) <$> pReplWord a <*> pReplWord n
 
 pReplFloat :: String -> Either AppError Float
 pReplFloat = replConvParser pFloat
-        
+
 pReplWord :: Read a => String -> Either AppError a
 pReplWord = replConvParser pWord
 

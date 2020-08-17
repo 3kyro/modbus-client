@@ -28,19 +28,15 @@ import Types
     , ReplState(..)
     )
 import Repl (runRepl)
-
-
-
-
-
+import Data.Word (Word8)
 
 main :: IO ()
 main = runApp =<< runOpts
 
 runApp :: Opt -> IO ()
-runApp (Opt input output ip portNum order bRepl) = do
+runApp (Opt input output ip portNum order bRepl uid) = do
   if bRepl
-  then runReplApp (getAddr ip portNum) order []
+  then runReplApp (getAddr ip portNum) order [] uid
   else do
     parseResult <- parseCSVFile input
     case parseResult of
@@ -69,10 +65,10 @@ runModDataApp addr order md = do
         Left err -> fail $ "Modbus error: " ++ show err
         Right resp' -> return resp'
 
-runReplApp :: S.SockAddr -> ByteOrder -> [ModData] -> IO ()
-runReplApp addr order mdata = do
+runReplApp :: S.SockAddr -> ByteOrder -> [ModData] -> Word8 -> IO ()
+runReplApp addr order mdata uid = do
     s <- connect addr
-    runRepl (Config (getConnection s) order) (ReplState mdata 1)
+    runRepl (Config (getConnection s) order) (ReplState mdata uid)
 
 connect :: S.SockAddr -> IO S.Socket
 connect addr = do

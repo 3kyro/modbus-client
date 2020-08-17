@@ -9,6 +9,7 @@ module PrettyPrint
     , ppSingleModData
     , ppMultModData
     , ppRegisters
+    , ppUid
     )
     where
 
@@ -17,7 +18,7 @@ import Data.Maybe (fromMaybe)
 
 import Types (ModValue(..), RegType(..), ModData(..), AppError (..))
 import qualified Data.Text as T
-import Data.Word (Word16)
+import Data.Word (Word8, Word16)
 
 ppError :: AppError -> IO ()
 ppError err = do
@@ -98,7 +99,10 @@ ppRegister (address, mv) = do
     ppAndReset "Value: " Blue
     putStrLn $ show mv
 
-
+ppUid :: Word8 -> IO ()
+ppUid w = do
+    ppAndReset "Active unit id: " Blue
+    putStrLn $ show w
 
 ppAndResetFun :: (String -> IO ()) -> String -> Color -> IO ()
 ppAndResetFun f x color = do

@@ -20,7 +20,7 @@ import Modbus
     , word2Float
     , modSession
     )
-import PrettyPrint (ppMultModData, ppStrWarning, ppRegisters)
+import PrettyPrint (ppError, ppUid, ppMultModData, ppStrWarning, ppRegisters)
 import Repl.Error
     (
       runReplSession
@@ -57,6 +57,7 @@ cmd input =
         "watchdog" -> watchdog args
         "import" -> replImport args
         "export" -> replExport args
+        "id" -> replId args
         _ -> liftIO $ putStrLn ("command not found: " ++ command)
 
 commandsCompl :: [String]
@@ -74,6 +75,7 @@ commandsCompl = [
     , "watchdog"
     , "import"
     , "export"
+    , "id"
     ]
 
 list :: a -> Repl ()
@@ -203,10 +205,25 @@ replExport [filename] = do
     return ()
 replExport _ = invalidCmd
 
+replId :: [String] -> Repl ()
+replId [] = do
+    ReplState _ uid <- lift $ get
+    liftIO $ ppUid uid
+replId [uid] = do
+    let uid' = pReplWord uid
+    state <- lift $ get
+    case uid' of
+        Left err -> liftIO $ ppError err
+        Right newid -> do
+                lift $ put (state {replUId = newid})
+                liftIO $ ppUid newid
+replId _ = invalidCmd
+
+
 -------------------------------------------------------------------------------------
 -- Helper functions
 -------------------------------------------------------------------------------------
-            
+
 -- heartbeat function
 heartbeat 
     :: Word16   -- Address of holding register
@@ -229,9 +246,9 @@ replGetAddrTimer
 replGetAddrTimer (x,y) = do
     ReplState mdata _ <- lift $ get
     let wrapped = do
-            replId <- pReplArg x
+            replArg <- pReplArg x
             timer <- pReplInt y
-            case replId of 
+            case replArg of
                 ReplName name -> do
                     md <- findModByDesc mdata name
                     return (modAddress md, timer)
@@ -245,14 +262,15 @@ spawnWatchdogThread (addr, timer)
     | otherwise = do
         Config connection _ <- replAsk
         liftIO $ forkIO $ heartbeat addr timer 0 connection
-        liftIO $ putStrLn $ "Watchdog launched at address: " ++ show addr ++ ", with an interval of " ++ show timer ++ "ms"  
+        liftIO $ putStrLn $ "Watchdog launched at address: " ++ show addr ++ ", with an interval of " ++ show timer ++ "ms"
         
+-- TODO: #5 Simplify with Zip
 -- Returns a pair of successive values
 -- Returns Nothing if the list size is odd
 getPairs :: [a] -> Maybe [(a,a)]
 getPairs [] = Just []
 getPairs [_] = Nothing
-getPairs (x:y:zs) = (:) <$> Just (x,y) <*> getPairs zs 
+getPairs (x:y:zs) = (:) <$> Just (x,y) <*> getPairs zs
 
 -- Writes a ModData to the server
 -- Returns the number of ModData written
@@ -394,6 +412,6 @@ replWriteRegisters address values mValue = do
     divbyModValue num = num `div` fromIntegral (toInteger (getModValueMult mValue)) 
 
 invalidCmd :: Repl ()
-invalidCmd = liftIO $ putStrLn "Invalid Command argument"
+invalidCmd = liftIO $ ppStrWarning "Invalid Command argument"
 
 

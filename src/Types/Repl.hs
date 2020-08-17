@@ -23,8 +23,8 @@ import Types.ModData (ModData (..), ByteOrder (..))
 type Repl a = HaskelineT (StateT ReplState (ReaderT ReplConfig IO)) a 
 
 data ReplState = ReplState {
-     replModData :: ![ModData]
-    ,uId         :: !Word8
+     replModData    :: ![ModData]
+    ,replUId        :: !Word8
 }
 
 data ReplConfig = Config {
