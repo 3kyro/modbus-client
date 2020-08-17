@@ -69,10 +69,10 @@ runModDataApp addr order md = do
         Left err -> fail $ "Modbus error: " ++ show err
         Right resp' -> return resp'
 
-runReplApp :: S.SockAddr -> ByteOrder -> [ModData] ->IO ()
+runReplApp :: S.SockAddr -> ByteOrder -> [ModData] -> IO ()
 runReplApp addr order mdata = do
     s <- connect addr
-    runRepl (Config (getConnection s) order) (ReplState mdata)
+    runRepl (Config (getConnection s) order) (ReplState mdata 1)
 
 connect :: S.SockAddr -> IO S.Socket
 connect addr = do
