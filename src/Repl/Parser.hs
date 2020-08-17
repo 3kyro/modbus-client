@@ -30,7 +30,7 @@ pReplAddrNum a n = (,) <$> pReplWord a <*> pReplWord n
 pReplFloat :: String -> Either AppError Float
 pReplFloat = replConvParser pFloat
         
-pReplWord :: String -> Either AppError Word16
+pReplWord :: Read a => String -> Either AppError a
 pReplWord = replConvParser pWord
 
 pReplInt :: String -> Either AppError Int
