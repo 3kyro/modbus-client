@@ -11,7 +11,7 @@ module Types.ModData
     )
     where
         
-import Data.Word (Word16)
+import Data.Word (Word8, Word16)
 import Data.List (foldl')
 import Test.QuickCheck 
     (
@@ -44,15 +44,14 @@ instance Show RegType where
 
 data ModData = ModData
     { 
-      modName           :: !String  -- Variable name
-    , modRegType        :: !RegType -- Type (Holdin Register - Input Register)
-    , modAddress        :: !Word16  -- Address
-    , modValue          :: !ModValue -- Value (incluting value type)
-    , modDescription    :: !T.Text  -- Description
+      modName           :: !String      -- Variable name
+    , modRegType        :: !RegType     -- Type (Holdin Register - Input Register)
+    , modAddress        :: !Word16      -- Address
+    , modValue          :: !ModValue    -- Value (incluting value type)
+    , modUid            :: !Word8       -- Unit Id value
+    , modDescription    :: !T.Text      -- Description
     }
     deriving (Show, Eq)
-
-
 
 -- Modbus uses a 'big-Endian' encoding for addresses and data items.
 -- This means that when a numerical quantity larger than a single byte is 
@@ -88,14 +87,15 @@ data ByteOrder
     deriving (Show, Read, Eq)
 
 -- ModData constructor
-modData :: String -> RegType -> Word16 -> ModValue -> T.Text -> ModData
-modData n rt r v c = 
+modData :: String -> RegType -> Word16 -> ModValue -> Word8 -> T.Text -> ModData
+modData n rt r v i c =
     ModData
     { 
       modName = n      
     , modRegType = rt
     , modAddress = r
     , modValue = v
+    , modUid = i
     , modDescription = c
     }
 
@@ -104,7 +104,7 @@ instance Arbitrary ModValue where
 
 instance Arbitrary ModData where
   arbitrary =
-    modData <$> (unNA <$> arbitrary) <*> arbitrary <*> arbitrary <*> arbitrary <*> arbText
+    modData <$> (unNA <$> arbitrary) <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary <*> arbText
     where
       arbText = frequency [end,rest]
       end = (1, return (T.pack ""))

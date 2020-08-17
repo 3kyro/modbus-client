@@ -17,7 +17,7 @@ import Text.Parsec.Text (Parser)
 
 import qualified Data.Text as T
 
-import CsvParser (pInt, pFloat, only, pName, pWord16)
+import CsvParser (pInt, pFloat, only, pName, pWord)
 import Repl.Error (AppError (..))
 
 import Types (ReplIdent (..))
@@ -31,7 +31,7 @@ pReplFloat :: String -> Either AppError Float
 pReplFloat = replConvParser pFloat
         
 pReplWord :: String -> Either AppError Word16
-pReplWord = replConvParser pWord16
+pReplWord = replConvParser pWord
 
 pReplInt :: String -> Either AppError Int
 pReplInt = replConvParser pInt
@@ -44,7 +44,7 @@ pReplId = replConvParser parser
   where
       parser = desc <|> addr
       desc = ReplDesc <$> pName
-      addr = ReplAddr <$> pWord16
+      addr = ReplAddr <$> pWord
 
 replConvParser :: Parser a -> String -> Either AppError a
 replConvParser p s = mapLeft AppParseError $ parse (only p) "" $ T.pack s

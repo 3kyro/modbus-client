@@ -84,8 +84,9 @@ pModData =
   modData
     <$> parseWithMsg (field pName) "register name"
     <*> parseWithMsg pRegType "regiter Type"
-    <*> parseWithMsg (field pWord16) "register address"
+    <*> parseWithMsg (field pWord) "register address"
     <*> parseWithMsg pValue "register value"
+    <*> parseWithMsg (field pWord) "unit id"
     <*> parseWithMsg pDesc "description"
     <* optional endOfLine
 
@@ -109,8 +110,8 @@ pRegType = do
     _ -> fail ""
 
 -- Parses a register address
-pWord16 :: Parser Word16
-pWord16 = read <$> many1 digit
+pWord :: Read a => Parser a
+pWord = read <$> many1 digit
 
 -- Parses a modbus value by associating the datatype field with
 -- the correct value field
@@ -150,13 +151,9 @@ pFloat =
 
 -- Parses a word16, returns Nothing if field is empty
 pMaybeWord :: Parser (Maybe Word16)
-pMaybeWord = Just <$> field pWord16 <|> nothing
+pMaybeWord = Just <$> field pWord <|> nothing
   where
     nothing = char ';' >> return Nothing
-
--- Parses a Word
-pWord :: Parser Word
-pWord = read <$> many1 digit
 
 -- PArses an Int
 pInt :: Parser Int
