@@ -240,7 +240,7 @@ heartbeat address timer acc connection= do
         Right _ -> heartbeat address timer acc' connection
 
 -- get a watchdog register address and a timer
-replGetAddrTimer 
+replGetAddrTimer
     :: (String, String) -- (ModName or address, timer)
     -> Repl (Word16, Int)
 replGetAddrTimer (x,y) = do

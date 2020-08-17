@@ -8,6 +8,7 @@ Modbus-serve is a Modbus TCP command line communication tool and web server.
 module Main where
 
 import Control.Monad.Except (runExceptT)
+import Data.Word (Word8)
 import OptParser (Opt(..), runOpts)
 import Data.IP (IPv4, toHostAddress)
 import Network.Socket.ByteString (recv, send)
@@ -28,7 +29,6 @@ import Types
     , ReplState(..)
     )
 import Repl (runRepl)
-import Data.Word (Word8)
 
 main :: IO ()
 main = runApp =<< runOpts
