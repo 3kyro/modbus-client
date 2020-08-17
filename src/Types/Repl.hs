@@ -3,7 +3,7 @@ module Types.Repl
       Repl 
     , ReplState (..)
     , ReplConfig (..)
-    , ReplIdent (..)
+    , ReplArg (..)
     , replAsk
     )
     where
@@ -32,9 +32,10 @@ data ReplConfig = Config {
     , ord :: ByteOrder
 }
 
-data ReplIdent =
-      ReplDesc String
-    | ReplAddr Word16
+-- Defines the type of an argument in certain repl commands
+data ReplArg =
+      ReplName String   -- Argument is a name
+    | ReplAddr Word16   -- Argument is an address
     deriving Show
 
 replAsk :: Repl ReplConfig

@@ -29,7 +29,7 @@ import Repl.Error
 import Repl.Parser
     (
       pReplInt
-    , pReplId
+    , pReplArg
     , pReplDesc
     , pReplAddrNum
     , pReplFloat
@@ -229,10 +229,10 @@ replGetAddrTimer
 replGetAddrTimer (x,y) = do
     ReplState mdata _ <- lift $ get
     let wrapped = do
-            replId <- pReplId x
+            replId <- pReplArg x
             timer <- pReplInt y
             case replId of 
-                ReplDesc name -> do
+                ReplName name -> do
                     md <- findModByDesc mdata name
                     return (modAddress md, timer)
                 ReplAddr addr -> return (addr, timer)

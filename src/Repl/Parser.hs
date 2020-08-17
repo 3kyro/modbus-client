@@ -3,8 +3,8 @@ module Repl.Parser
       pReplAddrNum
     , pReplFloat
     , pReplWord    
-    , pReplDesc  
-    , pReplId
+    , pReplDesc
+    , pReplArg
     , pReplInt
     ) 
     where
@@ -20,7 +20,7 @@ import qualified Data.Text as T
 import CsvParser (pInt, pFloat, only, pName, pWord)
 import Repl.Error (AppError (..))
 
-import Types (ReplIdent (..))
+import Types (ReplArg (..))
 
     
 -- Parse address and number of register strings 
@@ -39,11 +39,11 @@ pReplInt = replConvParser pInt
 pReplDesc :: String -> Either AppError String
 pReplDesc = replConvParser (only pName)
 
-pReplId :: String -> Either AppError ReplIdent
-pReplId = replConvParser parser 
+pReplArg :: String -> Either AppError ReplArg
+pReplArg = replConvParser parser
   where
-      parser = desc <|> addr
-      desc = ReplDesc <$> pName
+      parser = name <|> addr
+      name = ReplName <$> pName
       addr = ReplAddr <$> pWord
 
 replConvParser :: Parser a -> String -> Either AppError a
