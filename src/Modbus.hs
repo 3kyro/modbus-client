@@ -16,7 +16,7 @@ import Data.Binary.Put
      , putWord16le
      , putFloatle
      )
-import Data.Binary.Get 
+import Data.Binary.Get
     (
       runGet
     , getFloatbe
@@ -51,10 +51,10 @@ readInputModData :: ModData -> Word16 -> ByteOrder -> MB.Session ModData
 readInputModData md idx order = 
     case modValue md of
         ModWord _ -> do
-            resp <- listToMaybe <$> MB.readInputRegisters (MB.TransactionId idx) 0 255 addr 1
+            resp <- listToMaybe <$> MB.readInputRegisters (MB.TransactionId idx) 0 uid addr 1
             return md {modValue = ModWord resp}
         ModFloat _ -> do
-            xs <- MB.readInputRegisters (MB.TransactionId idx) 0 255 addr 2
+            xs <- MB.readInputRegisters (MB.TransactionId idx) 0 uid addr 2
             case xs of
                 [msw,lsw] -> return md {modValue = ModFloat $ Just $ word2Float order (msw,lsw)} 
                 _ -> throwError $ MB.OtherException $ 
@@ -62,18 +62,19 @@ readInputModData md idx order =
                             ++ show addr
                             ++ ", "
                             ++ show (addr + 1)
-  where 
+  where
     addr = MB.RegAddress $ modAddress md
+    uid = MB.UnitId $ modUid md
             
             
 readHoldingModData :: ModData -> Word16 -> ByteOrder -> MB.Session ModData
 readHoldingModData md idx order = 
     case modValue md of
         ModWord _ -> do
-            resp <- listToMaybe <$> MB.readHoldingRegisters (MB.TransactionId idx) 0 255 addr 1
+            resp <- listToMaybe <$> MB.readHoldingRegisters (MB.TransactionId idx) 0 uid addr 1
             return md {modValue = ModWord resp}
         ModFloat _ -> do
-            xs <- MB.readHoldingRegisters (MB.TransactionId idx) 0 255 addr 2
+            xs <- MB.readHoldingRegisters (MB.TransactionId idx) 0 uid addr 2
             case xs of
                 [msw,lsw] -> return md {modValue = ModFloat $ Just $ word2Float order (msw,lsw)} 
                 _ -> throwError $ MB.OtherException $ 
@@ -83,6 +84,8 @@ readHoldingModData md idx order =
                             ++ show (addr + 1)
   where 
     addr = MB.RegAddress $ modAddress md
+    uid = MB.UnitId $ modUid md
+
 
 -- Converts a list of words to a list of floats 
 getFloats :: ByteOrder -> [Word16] -> [Float]
