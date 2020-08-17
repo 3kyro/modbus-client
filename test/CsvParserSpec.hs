@@ -4,12 +4,9 @@ import Data.Char
   ( isDigit,
     toUpper,
   )
-import Data.Either
-  ( isLeft,
-    isRight,
-  )
+import Data.Either (isLeft,)
 import Data.List (intercalate)
-import Data.Word (Word16)
+import Data.Word (Word8, Word16)
 import Test.Hspec
 import Test.QuickCheck 
 import Text.Parsec (ParseError)
@@ -19,6 +16,7 @@ import qualified Data.Text as T
 import CsvParser
 import Types
 import TestHelper
+import Text.Parsec.Text (Parser)
 
 csvParserSpec :: Spec
 csvParserSpec = do
@@ -48,11 +46,11 @@ pRegTypeSpec = describe "Parse a register type field" $ do
 pRegAddrSpec :: Spec
 pRegAddrSpec = describe "Parse a register address field" $ do
   it "parses numeric fields" $ property $ \x ->
-    Right x == testCSVParser pWord16 (show x)
+    Right (x :: Word16) == testCSVParser pWord (show x)
   it "fails on invalid input" $ property $ \x ->
     not (all isDigit x) 
     ==>
-    isLeft $ testCSVParser (only pWord16) x  
+    isLeft $ testCSVParser ( (only pWord) :: Parser Word16) x
 
 pCommentSpec :: Spec
 pCommentSpec = describe "Parse a comment field" $ do
@@ -116,13 +114,6 @@ pValueSpec = describe "Parse a modbus value" $ do
 pModDataSpec :: Spec
 pModDataSpec = describe "Parse a ModData" $ do
   it "parses a valid line" $ property prop_valid_datum
-  -- check all valid values that will be used in following tests
-  it "parses valid values" $ property prop_datum_check_valid_values
-  it "fails on wrong description" $ property prop_datum_fail_description
-  it "fails on wrong function" $ property prop_datum_fail_function
-  it "fails on wrong register" $ property prop_datum_fail_register
-  it "fails on wrong value" $ property prop_datum_fail_value
-  it "fails on wrong comment" $ property prop_datum_fail_comment
 
 pCSVSpec :: Spec
 pCSVSpec = describe "Parse a CSV text" $ do
@@ -217,94 +208,21 @@ prop_non_numeric_pvalue_float s =
       ++ ";"
 
 prop_valid_datum ::
-       NameArb 
-    -> RegType 
-    -> Word16 
-    -> ModValue 
-    -> String 
+       NameArb
+    -> RegType
+    -> Word16
+    -> ModValue
+    -> Word8
+    -> String
     -> Property
-prop_valid_datum nameArb rt reg val desc =
+prop_valid_datum nameArb rt reg val uid desc =
     validText desc
-    ==> Right
-        ( ModData
-          { 
-            modName = nm
-          , modRegType = rt
-          , modAddress = reg
-          , modValue = val
-          , modDescription = T.pack desc
-          }
-        )
-    == testCSVParser
-        pModData
-        ( nm
-          ++ ";"
-          <> tShow rt
-          ++ ";"
-          <> show reg
-          ++ ";"
-          <> tShow val
-          ++ ";"
-          <> desc
-        )
+    ==> Right (mdata)
+    == testCSVParser pModData (tShow mdata)
   where
+    mdata = modData nm rt reg val uid (T.pack desc)
     validText = all (`notElem` ";\n\r")
     nm = unNA nameArb
-
--- typical valid values, to be used in ModData fail tests
-validDesc :: String
-validDesc = "name"
-
-validRegType :: String
-validRegType = "Input Register"
-
-validReg :: String
-validReg = "3000"
-
-validVal :: String
-validVal = "word;1"
-
-validCom :: String
-validCom = "comment"
-
-prop_datum_check_valid_values :: Bool
-prop_datum_check_valid_values =
-  isRight $ makeModData validDesc validRegType validReg validVal validCom
-
-prop_datum_fail_description :: Bool
-prop_datum_fail_description =
-  isLeft $
-    makeModData desc validRegType validReg validVal validCom
-  where
-    desc = "foo\nbar"
-
-prop_datum_fail_function :: Bool
-prop_datum_fail_function =
-  isLeft $
-    makeModData validDesc rt validReg validVal validCom
-  where
-    rt = "wrong register type"
-
-prop_datum_fail_register :: Bool
-prop_datum_fail_register =
-  isLeft $
-    makeModData validDesc validRegType reg validVal validCom
-  where
-    reg = "wrong register"
-
-prop_datum_fail_value :: Bool
-prop_datum_fail_value =
-  isLeft $
-    makeModData validDesc validRegType validReg val validCom
-  where
-    val = "wrong;value"
-
-prop_datum_fail_comment :: Bool
-prop_datum_fail_comment =
-  isLeft $
-    makeModData validDesc validRegType validReg validVal com
-  where
-    com = "wrong ; comment"
 
 prop_valid_csv :: [ModData] -> Bool
 prop_valid_csv xs = Right xs == testCSVParser pCSV (firstLineDesc ++ csvs)

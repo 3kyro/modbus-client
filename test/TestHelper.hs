@@ -19,7 +19,7 @@ instance TestShow RegType where
   tShow HoldingRegister = "Holding Register"
 
 instance TestShow ModData where
-  tShow (ModData nm rt reg val com) =
+  tShow (ModData nm rt reg val uid com) =
          nm
       ++ ";"
       ++ tShow rt
@@ -27,6 +27,8 @@ instance TestShow ModData where
       ++ show reg
       ++ ";"
       ++ tShow val
+      ++ ";"
+      ++ show uid
       ++ ";"
       ++ T.unpack com
 
