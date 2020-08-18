@@ -53,7 +53,7 @@ getConnection s =
     MB.Connection
     { MB.connWrite          = send s
     , MB.connRead           = recv s
-    , MB.connCommandTimeout = 1000
+    , MB.connCommandTimeout = 1000000
     , MB.connRetryWhen      = \_ _ -> False
     }
 
