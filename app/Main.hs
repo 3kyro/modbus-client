@@ -34,7 +34,7 @@ main :: IO ()
 main = runApp =<< runOpts
 
 runApp :: Opt -> IO ()
-runApp (Opt input output ip portNum order bRepl uid) = do
+runApp (Opt input output ip portNum order bRepl uid) =
   if bRepl
   then runReplApp (getAddr ip portNum) order [] uid
   else do
