@@ -1,7 +1,8 @@
 module CsvParser where
 
-import Control.Monad (void)
 import Data.Char (toLower)
+import Data.Functor (($>))
+import Control.Monad (void)
 import Data.Word (Word16)
 import System.Directory (doesDirectoryExist, doesFileExist)
 import Text.Parsec 
@@ -75,7 +76,7 @@ runpCSV t = mapLeft AppParseError (parse pCSV "" t)
 pCSV :: Parser [ModData]
 pCSV = (++) <$> firstLine <*> (many pModData <* eof)
   where
-      firstLine = try moddata <|> (pLine *> pure [])
+      firstLine = try moddata <|> (pLine $> [])
       moddata = pure <$> pModData
 
 -- Parses a ModData
@@ -167,7 +168,7 @@ pFloatLeadingDot = read <$> (char '.' *> addLeadingZero)
 
 -- Parses a float when no fractional is given
 pFloatNoFractional :: Parser Float
-pFloatNoFractional = read <$> show <$> pInt <* char '.'
+pFloatNoFractional = read . show <$> pInt <* char '.'
 
 -- Parses a float in the normal (integer dot fractional) representation
 pFloatDotted :: Parser Float

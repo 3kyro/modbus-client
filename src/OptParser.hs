@@ -57,7 +57,7 @@ opt :: Parser Opt
 opt = Opt 
     <$> parseTemplate 
     <*> parseOutputFile 
-    <*> parseIPAddr 
+    <*> parseIPAddr
     <*> parsePort 
     <*> parseFloatRepr
     <*> parseRepl

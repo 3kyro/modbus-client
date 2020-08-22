@@ -103,11 +103,12 @@ fromFloats (x:xs) =
       [msw,lsw] ++ fromFloats xs  
 
 word2Float :: ByteOrder -> (Word16, Word16) -> Float
-word2Float order ws@(f,s) 
-    | order == LE = le2float ws
-    | order == BE = be2float ws
-    | order == LESW = le2float (swappWord f, swappWord s)
-    | order == BESW = be2float (swappWord f, swappWord s)
+word2Float order ws@(f,s) =
+    case order of
+        LE -> le2float ws
+        BE -> be2float ws
+        LESW -> le2float (swappWord f, swappWord s)
+        BESW -> be2float (swappWord f, swappWord s)
 
 float2Word :: Float -> (Word16, Word16)
 float2Word fl = runGet getWords $ runPut $ putFloatle fl
@@ -115,12 +116,12 @@ float2Word fl = runGet getWords $ runPut $ putFloatle fl
       getWords = (,) <$> getWord16le <*> getWord16le
 
 le2float :: (Word16, Word16) -> Float
-le2float (f, s)= runGet getFloatle $ runPut putWords 
+le2float (f, s)= runGet getFloatle $ runPut putWords
   where
     putWords = putWord16le f >> putWord16le s
 
 be2float :: (Word16, Word16) -> Float
-be2float (f, s)= runGet getFloatbe $ runPut putWords 
+be2float (f, s)= runGet getFloatbe $ runPut putWords
   where
     putWords = putWord16le f >> putWord16le s
 

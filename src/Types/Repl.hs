@@ -10,8 +10,7 @@ module Types.Repl
 
 import Control.Monad.IO.Class ()
 import Control.Monad.Trans.State.Strict (StateT)
-import Control.Monad.Trans.Reader (ReaderT)
-import Control.Monad.Trans.Reader (ask)
+import Control.Monad.Trans.Reader (ReaderT, ask)
 import Control.Monad.Writer (MonadTrans(lift))
 import Data.Word (Word8, Word16)
 import System.Console.Repline (HaskelineT)
@@ -39,4 +38,4 @@ data ReplArg =
     deriving Show
 
 replAsk :: Repl ReplConfig
-replAsk = lift $ lift $ ask
+replAsk = lift $ lift ask

@@ -10,7 +10,7 @@ module Types.ModData
     , serializeModData
     )
     where
-        
+
 import Data.Word (Word8, Word16)
 import Data.List (foldl')
 import Test.QuickCheck 
@@ -57,7 +57,7 @@ data ModData = ModData
 -- This means that when a numerical quantity larger than a single byte is 
 -- transmitted, th most significant byte is sent first.
 -- In order to transmit a 32 bit float value, two consecutive registers
--- will be used. 
+-- will be used.
 data ModValue 
     = ModWord   (Maybe Word16) 
     | ModFloat  (Maybe Float)
@@ -143,10 +143,10 @@ getModValueMult (ModFloat _) = 2
 -- modbus table parsing
 serializeModData :: [ModData] -> T.Text
 serializeModData md = T.append header packed
-  where 
+  where
       header = T.pack "Name;Register Type;Register Address;Data type;Value;Description\n"
       packed = foldl' append (T.pack "") md
-      append acc md' = T.append acc (serializeModDatum md') `T.append` (T.pack "\n")
+      append acc md' = T.append acc (serializeModDatum md') `T.append` T.pack "\n"
 
 -- Serialize a single ModData
 serializeModDatum :: ModData -> T.Text
@@ -158,7 +158,7 @@ serializeModDatum md =
         ++ show (modAddress md) ++ ";"
         ++ serializeModValue (modValue md) 
         )
-    `T.append` (modDescription md) 
+    `T.append` modDescription md
 
 serializeRegType :: RegType -> String
 serializeRegType rt = 
@@ -169,7 +169,7 @@ serializeRegType rt =
         HoldingRegister -> "holding register"
 
 serializeModValue :: ModValue -> String
-serializeModValue mt = 
+serializeModValue mt =
     case mt of
         ModWord mv -> "word;" ++ serMaybe mv ++ ";"
         ModFloat fl -> "float;" ++ serMaybe fl ++ ";"
