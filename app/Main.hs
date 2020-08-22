@@ -34,41 +34,41 @@ main :: IO ()
 main = runApp =<< runOpts
 
 runApp :: Opt -> IO ()
-runApp (Opt input output ip portNum order bRepl uid) =
+runApp (Opt input output ip portNum order bRepl uid tm) =
   if bRepl
-  then runReplApp (getAddr ip portNum) order [] uid
+  then runReplApp (getAddr ip portNum) tm order [] uid
   else do
     parseResult <- parseCSVFile input
     case parseResult of
         Left err -> ppError err
         Right md' -> do
-            resp <- runModDataApp (getAddr ip portNum) order md'
+            resp <- runModDataApp (getAddr ip portNum) tm order md'
             T.writeFile output (serializeModData resp)
 
 getAddr :: IPv4 -> Int -> S.SockAddr
 getAddr ip portNum = S.SockAddrInet (fromIntegral portNum) (toHostAddress ip)
 
-getConnection :: S.Socket -> MB.Connection
-getConnection s =
+getConnection :: S.Socket -> Int -> MB.Connection
+getConnection s tm =
     MB.Connection
     { MB.connWrite          = send s
     , MB.connRead           = recv s
-    , MB.connCommandTimeout = 1000000
+    , MB.connCommandTimeout = tm * 1000
     , MB.connRetryWhen      = \_ _ -> False
     }
 
-runModDataApp :: S.SockAddr -> ByteOrder -> [ModData] -> IO [ModData]
-runModDataApp addr order md = do
+runModDataApp :: S.SockAddr -> Int -> ByteOrder -> [ModData] -> IO [ModData]
+runModDataApp addr tm order md = do
     s <- connect addr
-    resp <- runExceptT $ MB.runSession (getConnection s) (modSession md order)
+    resp <- runExceptT $ MB.runSession (getConnection s tm) (modSession md order)
     case resp of
         Left err -> fail $ "Modbus error: " ++ show err
         Right resp' -> return resp'
 
-runReplApp :: S.SockAddr -> ByteOrder -> [ModData] -> Word8 -> IO ()
-runReplApp addr order mdata uid = do
+runReplApp :: S.SockAddr -> Int -> ByteOrder -> [ModData] -> Word8 -> IO ()
+runReplApp addr tm order mdata uid = do
     s <- connect addr
-    runRepl (Config (getConnection s) order) (ReplState mdata uid)
+    runRepl (Config (getConnection s tm) order) (ReplState mdata uid)
 
 connect :: S.SockAddr -> IO S.Socket
 connect addr = do

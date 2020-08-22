@@ -42,6 +42,7 @@ data Opt = Opt
     , floatRepr     :: !ByteOrder
     , repl          :: !Bool
     , uId           :: !Word8
+    , timeout       :: !Int
 }
 
 -- | Executes the options parser
@@ -62,6 +63,7 @@ opt = Opt
     <*> parseFloatRepr
     <*> parseRepl
     <*> parseUid
+    <*> parseTimeout
 
 parseTemplate :: Parser String
 parseTemplate = strOption
@@ -122,4 +124,12 @@ parseUid = option auto
     <> metavar  "UNIT_ID"
     <> value    1
     <> help     "Active Modbus unit id"
+    )
+
+parseTimeout :: Parser Int
+parseTimeout = option auto
+    (  long     "timeout"
+    <> metavar  "TIMEOUT"
+    <> value    1000
+    <> help     "Timeout in ms"
     )
