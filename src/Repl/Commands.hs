@@ -96,6 +96,7 @@ readRegistersWord rt [address, number] = do
     let f = case rt of
             InputRegister -> MB.readInputRegisters
             HoldingRegister -> MB.readHoldingRegisters
+            _ -> MB.readInputRegisters
     response <- replReadRegisters address number (ModWord Nothing) f
     if null response
     then return ()
@@ -112,6 +113,7 @@ readRegistersFloat rt [address, number] = do
     let f = case rt of
             InputRegister -> MB.readInputRegisters
             HoldingRegister -> MB.readHoldingRegisters
+            _ -> MB.readInputRegisters
     response <- replReadRegisters address number (ModFloat Nothing) f
     if null response
     then return ()
@@ -201,7 +203,7 @@ replExport [filename] = do
     let exportSession = modSession mdata order
     currentMdata <- liftIO $ runExceptT $ runReplSession connection exportSession
     mdata' <- replRunExceptT (except currentMdata) []
-    liftIO $ serializeCSVFile filename mdata'
+    _ <- liftIO $ serializeCSVFile filename mdata'
     return ()
 replExport _ = invalidCmd
 
@@ -261,7 +263,7 @@ spawnWatchdogThread (addr, timer)
     | timer <= 0 = return ()
     | otherwise = do
         Config connection _ <- replAsk
-        liftIO $ forkIO $ heartbeat addr timer 0 connection
+        _ <- liftIO $ forkIO $ heartbeat addr timer 0 connection
         liftIO $ putStrLn $ "Watchdog launched at address: " ++ show addr ++ ", with an interval of " ++ show timer ++ "ms"
         
 -- TODO: #5 Simplify with Zip
