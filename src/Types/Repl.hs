@@ -1,13 +1,14 @@
 module Types.Repl 
-    (
-      Repl 
+    ( Repl
     , ReplState (..)
     , ReplConfig (..)
     , ReplArg (..)
+    , ThreadState (..)
     , replAsk
-    )
-    where
+    ) where
 
+import Control.Concurrent (MVar, ThreadId)
+import Control.Exception (SomeException)
 import Control.Monad.IO.Class ()
 import Control.Monad.Trans.State.Strict (StateT)
 import Control.Monad.Trans.Reader (ReaderT, ask)
@@ -15,27 +16,45 @@ import Control.Monad.Writer (MonadTrans(lift))
 import Data.Word (Word8, Word16)
 import System.Console.Repline (HaskelineT)
 
+import qualified Network.Socket as S
 import qualified System.Modbus.TCP as MB
 
 import Types.ModData (ModData (..), ByteOrder (..))
 
-type Repl a = HaskelineT (StateT ReplState (ReaderT ReplConfig IO)) a 
+type Repl a = HaskelineT (StateT ReplState (ReaderT ReplConfig IO)) a
 
-data ReplState = ReplState {
-     replModData    :: ![ModData]
-    ,replUId        :: !Word8
-}
+-- The state of active heartbeat threads.
+-- threadAddr = The register address of a current active heartbeat
+-- threadId = Thread id for the active heartbeat
+-- threadMVar = MVar showing the status of the thread:
+--      Empty -> thread is still running
+--      SomeException -> thread has encoutered some exception
+data ThreadState = ThreadState
+    { threadAddr :: Word16
+    , threadInterv :: Int
+    , threadId :: ThreadId
+    , threadMVar :: MVar SomeException
+    } deriving (Eq)
 
-data ReplConfig = Config {
-      conn :: MB.Connection
-    , ord :: ByteOrder
-}
+data ReplState = ReplState
+    { replModData    :: ![ModData]
+    , replUId        :: !Word8
+    , replPool       :: ![ThreadState]
+    }
+
+data ReplConfig = Config
+    { replConn       :: !MB.Connection
+    , replSockAddr   :: !S.SockAddr
+    , replOrd        :: !ByteOrder
+    , replTimeout    :: !Int
+    }
 
 -- Defines the type of an argument in certain repl commands
-data ReplArg =
-      ReplName String   -- Argument is a name
+data ReplArg
+    = ReplName String   -- Argument is a name
     | ReplAddr Word16   -- Argument is an address
     deriving Show
 
 replAsk :: Repl ReplConfig
 replAsk = lift $ lift ask
+

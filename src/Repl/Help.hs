@@ -1,4 +1,7 @@
-module Repl.Help (help, helpCompl) where
+module Repl.Help
+    ( help
+    , helpCompl
+    ) where
 
 import Control.Monad.Trans (liftIO)
 
@@ -24,7 +27,9 @@ helpCmd arg =
         "writeMultipleRegistersFloat" -> hWriteMultipleRegistersFloat
         "read" -> hRead
         "write" -> hWrite
-        "watchdog" -> hWatchdog
+        "heartbeat" -> hHeartbeat
+        "stopHeartbeat" -> hStopHeartbeat
+        "listHeartbeat" -> hListHeartbeat
         "import" -> hImport
         "export" -> hExport
         "id" -> hId
@@ -103,15 +108,31 @@ hWrite =
     ++ "Usage: write [descriptions] [values]\n"
     ++ "e.g. write status 1 power 15.1\n"
 
-hWatchdog :: String
-hWatchdog = 
-    "watchdog:\n"
-    ++ "Create a heartbeat like function that increments a counter at a specified interval.\n"
-    ++ "Once activated, the watchdog registers will be written continuously until modbus-serve terminates.\n"
-    ++ "Multiple watchdogs can be spawned together by providing space separated identifier - timer pairs\n"
-    ++ "Both a register addrress as well as a ModData description can be used as identifiers\n"
-    ++ "Usage: watchdog [identifier] [timer(ms)]\n"
-    ++ "e.g. watchdog 10 1000000 watch_reg 500000"
+hHeartbeat :: String
+hHeartbeat =
+    "heartbeat:\n"
+    ++ "Create a heartbeat signal that increments a counter at a specified interval.\n"
+    ++ "Once activated, the selected registers will be written continuously until the signal is stopped.\n"
+    ++ "Multiple signals can be spawned together by providing space separated identifier - timer pairs\n"
+    ++ "Both a register addrress as well as a ModData description can be used as an identifier\n"
+    ++ "Usage: heartbeat [identifier] [timer(ms)]\n"
+    ++ "e.g. heartbeat 10 1000 watch_reg 5000"
+
+hStopHeartbeat :: String
+hStopHeartbeat =
+    "stopHeartbeat:\n"
+    ++ "Stop a currently active heartbeat signal.\n"
+    ++ "In order to see all active heartbeat signal, you can use the \"listHeartbeat\" command.\n"
+    ++ "Multiple signals can be stopped at the same time by providing space separated identifiers\n"
+    ++ "Both a register addrress as well as a ModData description can be used as an identifier\n"
+    ++ "Usage: stopHeartbeat [identifier]\n"
+    ++ "e.g. stopHeartbeat 10 watch_reg"
+
+hListHeartbeat :: String
+hListHeartbeat =
+    "listHeartbeat:\n"
+    ++ "List all currently active heartbeat signals.\n"
+    ++ "Usage: listHeartbeat\n"
 
 hImport :: String
 hImport =

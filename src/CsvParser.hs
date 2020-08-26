@@ -82,7 +82,7 @@ pCSV = (++) <$> firstLine <*> (many pModData <* eof)
 -- Parses a ModData
 pModData :: Parser ModData
 pModData =
-  modData
+  ModData
     <$> parseWithMsg (field pName) "register name"
     <*> parseWithMsg pRegType "regiter Type"
     <*> parseWithMsg (field pWord) "register address"

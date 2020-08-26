@@ -50,7 +50,7 @@ pRegAddrSpec = describe "Parse a register address field" $ do
   it "fails on invalid input" $ property $ \x ->
     not (all isDigit x) 
     ==>
-    isLeft $ testCSVParser ( (only pWord) :: Parser Word16) x
+    isLeft $ testCSVParser ( only pWord :: Parser Word16) x
 
 pCommentSpec :: Spec
 pCommentSpec = describe "Parse a comment field" $ do
@@ -112,7 +112,7 @@ pValueSpec = describe "Parse a modbus value" $ do
     property prop_non_numeric_pvalue_float
 
 pModDataSpec :: Spec
-pModDataSpec = describe "Parse a ModData" $ do
+pModDataSpec = describe "Parse a ModData" $
   it "parses a valid line" $ property prop_valid_datum
 
 pCSVSpec :: Spec
@@ -217,10 +217,10 @@ prop_valid_datum ::
     -> Property
 prop_valid_datum nameArb rt reg val uid desc =
     validText desc
-    ==> Right (mdata)
+    ==> Right mdata
     == testCSVParser pModData (tShow mdata)
   where
-    mdata = modData nm rt reg val uid (T.pack desc)
+    mdata = ModData nm rt reg val uid (T.pack desc)
     validText = all (`notElem` ";\n\r")
     nm = unNA nameArb
 

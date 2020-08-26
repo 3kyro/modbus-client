@@ -1,10 +1,8 @@
 module Types.ModData
-    (
-      ModData (..)
+    ( ModData (..)
     , RegType (..)
     , ModValue (..)
     , ByteOrder (..)
-    , modData
     , NameArb (..)
     , getModValueMult
     , serializeModData
@@ -14,8 +12,7 @@ module Types.ModData
 import Data.Word (Word8, Word16)
 import Data.List (foldl')
 import Test.QuickCheck 
-    (
-      Arbitrary
+    ( Arbitrary
     , arbitrary
     , oneof
     , elements
@@ -37,21 +34,19 @@ data RegType
     deriving (Eq)
 
 instance Show RegType where
-    show DiscreteInput = "Discrete Input"
-    show Coil = "Coil"
-    show InputRegister = "Input Register"
+    show DiscreteInput   = "Discrete Input"
+    show Coil            = "Coil"
+    show InputRegister   = "Input Register"
     show HoldingRegister = "Holding Register"
 
 data ModData = ModData
-    { 
-      modName           :: !String      -- Variable name
+    { modName           :: !String      -- Variable name
     , modRegType        :: !RegType     -- Type (Holdin Register - Input Register)
     , modAddress        :: !Word16      -- Address
     , modValue          :: !ModValue    -- Value (incluting value type)
     , modUid            :: !Word8       -- Unit Id value
     , modDescription    :: !T.Text      -- Description
-    }
-    deriving (Show, Eq)
+    } deriving (Show, Eq)
 
 -- Modbus uses a 'big-Endian' encoding for addresses and data items.
 -- This means that when a numerical quantity larger than a single byte is 
@@ -86,30 +81,17 @@ data ByteOrder
 
     deriving (Show, Read, Eq)
 
--- ModData constructor
-modData :: String -> RegType -> Word16 -> ModValue -> Word8 -> T.Text -> ModData
-modData n rt r v i c =
-    ModData
-    { 
-      modName = n      
-    , modRegType = rt
-    , modAddress = r
-    , modValue = v
-    , modUid = i
-    , modDescription = c
-    }
-
 instance Arbitrary ModValue where
-  arbitrary = oneof [ModWord <$> arbitrary, ModFloat <$> arbitrary]
+    arbitrary = oneof [ModWord <$> arbitrary, ModFloat <$> arbitrary]
 
 instance Arbitrary ModData where
-  arbitrary =
-    modData <$> (unNA <$> arbitrary) <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary <*> arbText
-    where
-      arbText = frequency [end,rest]
-      end = (1, return (T.pack ""))
-      rest = (10, T.cons <$> descValidChar <*> arbText)
-      descValidChar = elements $ ['a'..'z'] ++ ['A'..'Z'] ++ " &éèçà$=:"
+    arbitrary =
+        ModData <$> (unNA <$> arbitrary) <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary <*> arbText
+      where
+        arbText = frequency [end,rest]
+        end = (1, return (T.pack ""))
+        rest = (10, T.cons <$> descValidChar <*> arbText)
+        descValidChar = elements $ ['a'..'z'] ++ ['A'..'Z'] ++ " &éèçà$=:"
 
 instance Arbitrary RegType where
   arbitrary = elements [DiscreteInput, Coil, InputRegister, HoldingRegister]
@@ -126,13 +108,13 @@ instance Show NameArb where
 -- a correct one
 instance Arbitrary NameArb where
     arbitrary = go 
-        where
-      go = NA <$> ((:) <$> validStartChars <*> tailArb)      
-      validStartChars = elements $ ['A'..'Z'] ++ ['a'..'z'] ++ "_"
-      tailArb = frequency [end, rest]
-      end = (1, return "")
-      rest = (7, (:) <$> nameValidChars <*> (unNA <$> go))
-      nameValidChars = elements $ ['a'..'z'] ++ ['A'..'Z'] ++ ['0'..'9'] ++ "_"
+      where
+        go = NA <$> ((:) <$> validStartChars <*> tailArb)
+        validStartChars = elements $ ['A'..'Z'] ++ ['a'..'z'] ++ "_"
+        tailArb = frequency [end, rest]
+        end = (1, return "")
+        rest = (7, (:) <$> nameValidChars <*> (unNA <$> go))
+        nameValidChars = elements $ ['a'..'z'] ++ ['A'..'Z'] ++ ['0'..'9'] ++ "_"
 
 
 getModValueMult :: ModValue -> Word16
@@ -144,16 +126,15 @@ getModValueMult (ModFloat _) = 2
 serializeModData :: [ModData] -> T.Text
 serializeModData md = T.append header packed
   where
-      header = T.pack "Name;Register Type;Register Address;Data type;Value;Description\n"
-      packed = foldl' append (T.pack "") md
-      append acc md' = T.append acc (serializeModDatum md') `T.append` T.pack "\n"
+    header = T.pack "Name;Register Type;Register Address;Data type;Value;Description\n"
+    packed = foldl' append (T.pack "") md
+    append acc md' = T.append acc (serializeModDatum md') `T.append` T.pack "\n"
 
 -- Serialize a single ModData
 serializeModDatum :: ModData -> T.Text
 serializeModDatum md = 
     T.pack 
-        (
-        modName md ++ ";"
+        (  modName md ++ ";"
         ++ serializeRegType (modRegType md) ++ ";"
         ++ show (modAddress md) ++ ";"
         ++ serializeModValue (modValue md) 
@@ -163,16 +144,17 @@ serializeModDatum md =
 serializeRegType :: RegType -> String
 serializeRegType rt = 
     case rt of
-        DiscreteInput -> "discrete input"
-        Coil -> "coil"
-        InputRegister -> "input register"
+        DiscreteInput   -> "discrete input"
+        Coil            -> "coil"
+        InputRegister   -> "input register"
         HoldingRegister -> "holding register"
 
 serializeModValue :: ModValue -> String
 serializeModValue mt =
     case mt of
-        ModWord mv -> "word;" ++ serMaybe mv ++ ";"
+        ModWord mv  -> "word;" ++ serMaybe mv ++ ";"
         ModFloat fl -> "float;" ++ serMaybe fl ++ ";"
   where
-      serMaybe (Just x) = show x
-      serMaybe Nothing = ""
+    serMaybe (Just x) = show x
+    serMaybe Nothing = ""
+

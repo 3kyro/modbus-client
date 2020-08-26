@@ -1,12 +1,11 @@
 module Types 
-    (
-      module Types.Repl
+    ( module Types.Repl
     , module Types.ModData
-    , ReadRegsFun 
+    , ReadRegsFun
     , AppError (..)
-    )
-    where
+    ) where
 
+import Control.Exception (Exception, IOException)
 import Control.Monad.IO.Class ()
 import Data.Word (Word16)
 import Text.Parsec (ParseError)
@@ -15,7 +14,6 @@ import qualified System.Modbus.TCP as MB
 
 import Types.Repl
 import Types.ModData
-import Control.Exception (IOException)
 
 type ReadRegsFun =  MB.TransactionId -> MB.ProtocolId -> MB.UnitId -> MB.RegAddress -> Word16 -> MB.Session [Word16]
 
@@ -24,6 +22,8 @@ data AppError =
     | AppModbusError MB.ModbusException
     | AppCommandError String
     | AppIOError IOException
+
+instance Exception AppError
 
 instance Show AppError where
     show (AppParseError err) = "Parse error: " ++ show err
