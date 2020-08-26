@@ -17,6 +17,7 @@ import qualified Data.Text.IO as T
 import qualified Network.Socket as S
 import qualified System.Modbus.TCP as MB
 
+
 import PrettyPrint (ppError)
 import Modbus (modSession)
 import CsvParser (parseCSVFile)
@@ -68,7 +69,7 @@ runModDataApp addr tm order md = do
 runReplApp :: S.SockAddr -> Int -> ByteOrder -> [ModData] -> Word8 -> IO ()
 runReplApp addr tm order mdata uid = do
     s <- connect addr
-    runRepl (Config (getConnection s tm) order) (ReplState mdata uid)
+    runRepl (Config (getConnection s tm) order tm) (ReplState mdata uid [])
 
 connect :: S.SockAddr -> IO S.Socket
 connect addr = do
