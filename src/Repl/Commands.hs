@@ -3,17 +3,15 @@ module Repl.Commands where
 import Control.Monad.Trans (liftIO, lift)
 import Control.Monad.Trans.Except (except)
 import Control.Monad.Trans.State.Strict (get, put)
-import Control.Concurrent (threadDelay, forkIO)
 import Control.Monad.Except (runExceptT)
-import Control.Monad.Trans.Reader (ask)
-import Data.List (find, uncons)
+import Data.List (uncons)
 import Data.Maybe (fromJust, listToMaybe)
 import Data.Word (Word16)
 
 import qualified System.Modbus.TCP as MB
 
 import CsvParser (serializeCSVFile, parseCSVFile)
-import Modbus 
+import Modbus
     (
       getFloats
     , fromFloats
@@ -21,22 +19,16 @@ import Modbus
     , modSession
     )
 import PrettyPrint (ppError, ppUid, ppMultModData, ppStrWarning, ppRegisters)
-import Repl.Error
-    (
-      runReplSession
-    , replRunExceptT
-    )
+import Repl.Error ( runReplSession, replRunExceptT)
 import Repl.Parser
     (
-      pReplInt
-    , pReplArg
-    , pReplDesc
-    , pReplAddrNum
+      pReplAddrNum
     , pReplFloat
     , pReplWord
     )
+import Repl.Heartbeat (heartbeat, stopHeartbeat, listHeartbeat)
+import Repl.HelpFun (invalidCmd, getModByPair, getPairs, getModByName)
 import Types
-import System.Modbus.TCP (UnitId(UnitId))
 
 -- Top level command function
 cmd :: String -> Repl ()
@@ -54,7 +46,9 @@ cmd input =
         "writeMultipleRegistersFloat" -> writeMultipleRegistersFloat args
         "read" -> readModData args
         "write" -> writeModData args
-        "watchdog" -> watchdog args
+        "heartbeat" -> heartbeat args
+        "stopHeartbeat" -> stopHeartbeat args
+        "listHeartbeat" -> listHeartbeat args
         "import" -> replImport args
         "export" -> replExport args
         "id" -> replId args
@@ -72,7 +66,9 @@ commandsCompl = [
     , "writeMultipleRegistersFloat"
     , "read"
     , "write"
-    , "watchdog"
+    , "heartbeat"
+    , "stopHeartbeat"
+    , "listHeartbeat"
     , "import"
     , "export"
     , "id"
@@ -80,6 +76,7 @@ commandsCompl = [
 
 list :: a -> Repl ()
 list _ = liftIO $ do
+        putStrLn "List of commands:"
         putStrLn ""
         mapM_ putStrLn commandsCompl
         putStrLn ""
@@ -90,13 +87,9 @@ list _ = liftIO $ do
 -- User commands
 ------------------------------------------------------------------------------------------
 
--- TODO: Untangle this mess
 readRegistersWord :: RegType -> [String] -> Repl ()
 readRegistersWord rt [address, number] = do
-    let f = case rt of
-            InputRegister -> MB.readInputRegisters
-            HoldingRegister -> MB.readHoldingRegisters
-            _ -> MB.readInputRegisters
+    let f = getReadFunction rt
     response <- replReadRegisters address number (ModWord Nothing) f
     if null response
     then return ()
@@ -106,14 +99,10 @@ readRegistersWord rt [address, number] = do
         liftIO $ ppRegisters rt zips
 readRegistersWord _ _ = invalidCmd
 
--- TODO: #4 Untangle this mess
 readRegistersFloat :: RegType -> [String] -> Repl ()
 readRegistersFloat rt [address, number] = do
-    Config _ order <- lift $ lift ask
-    let f = case rt of
-            InputRegister -> MB.readInputRegisters
-            HoldingRegister -> MB.readHoldingRegisters
-            _ -> MB.readInputRegisters
+    order <- replOrd <$> replAsk
+    let f = getReadFunction rt
     response <- replReadRegisters address number (ModFloat Nothing) f
     if null response
     then return ()
@@ -138,19 +127,19 @@ writeMultipleRegistersWord _ = invalidCmd
 
 writeSingleRegisterFloat :: [String] -> Repl ()
 writeSingleRegisterFloat [address, regValue] = 
-    replWriteRegisters address [regValue] (ModFloat Nothing) 
+    replWriteRegisters address [regValue] (ModFloat Nothing)
 writeSingleRegisterFloat _ = invalidCmd
 
 writeMultipleRegistersFloat :: [String] -> Repl ()
 writeMultipleRegistersFloat (address:values) = 
-    replWriteRegisters address values (ModFloat Nothing) 
+    replWriteRegisters address values (ModFloat Nothing)
 writeMultipleRegistersFloat _ = invalidCmd
 
 readModData :: [String] -> Repl ()
 readModData [] = invalidCmd
 readModData args = do 
-    ReplState mdata _ <- lift get
-    let wrapped = except $ mapM (getModByDescription mdata) args
+    ReplState mdata _ _ <- lift get
+    let wrapped = except $ mapM (getModByName mdata) args
     mds <- replRunExceptT wrapped []
     response <- mapM readMod mds
     liftIO $ ppMultModData response
@@ -158,7 +147,7 @@ readModData args = do
 writeModData :: [String] -> Repl ()
 writeModData [] = invalidCmd
 writeModData args = do
-    ReplState mdata _ <- lift get
+    ReplState mdata _ _ <- lift get
     let mPairs = getPairs args
     case mPairs of
         Nothing -> invalidCmd
@@ -169,15 +158,6 @@ writeModData args = do
             liftIO $ putStrLn $ show (sum written) ++ " value(s) written"
             readback <- mapM readMod mds
             liftIO $ ppMultModData readback
-
-watchdog :: [String] -> Repl ()
-watchdog args = do
-    let mPairs = getPairs args
-    case mPairs of
-        Nothing -> invalidCmd
-        Just pairs -> do
-            addrTimer <- mapM replGetAddrTimer pairs
-            mapM_ spawnWatchdogThread addrTimer 
 
 replImport :: [String] -> Repl ()
 replImport [] = liftIO $ do 
@@ -198,8 +178,8 @@ replExport [] = liftIO $ do
     putStrLn "e.g. export ~/path/to/file.csv"
     putStrLn "Type \":help export\" for more information"
 replExport [filename] = do
-    ReplState mdata _ <- lift get
-    Config connection order <- replAsk
+    ReplState mdata _ _ <- lift get
+    Config connection _ order _ <- replAsk
     let exportSession = modSession mdata order
     currentMdata <- liftIO $ runExceptT $ runReplSession connection exportSession
     mdata' <- replRunExceptT (except currentMdata) []
@@ -209,7 +189,7 @@ replExport _ = invalidCmd
 
 replId :: [String] -> Repl ()
 replId [] = do
-    ReplState _ uid <- lift get
+    ReplState _ uid _ <- lift get
     liftIO $ ppUid uid
 replId [uid] = do
     let uid' = pReplWord uid
@@ -221,61 +201,8 @@ replId [uid] = do
                 liftIO $ ppUid newid
 replId _ = invalidCmd
 
-
--------------------------------------------------------------------------------------
--- Helper functions
--------------------------------------------------------------------------------------
-
--- heartbeat function
-heartbeat 
-    :: Word16   -- Address of holding register
-    -> Int      -- heartbeat period in ms
-    -> Word16   -- starting value for accumulator
-    ->MB.Connection 
-    -> IO ()
-heartbeat address timer acc connection= do
-    let acc' = acc + 1
-    threadDelay timer
-    wrapped <- runExceptT $ runReplSession connection $ MB.writeSingleRegister 0 0 255 (MB.RegAddress address) acc'
-    case wrapped of
-        Left err -> print err
-        Right _ -> heartbeat address timer acc' connection
-
--- get a watchdog register address and a timer
-replGetAddrTimer
-    :: (String, String) -- (ModName or address, timer)
-    -> Repl (Word16, Int)
-replGetAddrTimer (x,y) = do
-    ReplState mdata _ <- lift  get
-    let wrapped = do
-            replArg <- pReplArg x
-            timer <- pReplInt y
-            case replArg of
-                ReplName name -> do
-                    md <- findModByDesc mdata name
-                    return (modAddress md, timer)
-                ReplAddr addr -> return (addr, timer)
-    replRunExceptT (except wrapped) (0,0)
-
--- Spawns a watchdog thread
-spawnWatchdogThread :: (Word16, Int) -> Repl ()
-spawnWatchdogThread (addr, timer)
-    | timer <= 0 = return ()
-    | otherwise = do
-        Config connection _ <- replAsk
-        _ <- liftIO $ forkIO $ heartbeat addr timer 0 connection
-        liftIO $ putStrLn $ "Watchdog launched at address: " ++ show addr ++ ", with an interval of " ++ show timer ++ "ms"
-        
--- TODO: #5 Simplify with Zip
--- Returns a pair of successive values
--- Returns Nothing if the list size is odd
-getPairs :: [a] -> Maybe [(a,a)]
-getPairs [] = Just []
-getPairs [_] = Nothing
-getPairs (x:y:zs) = (:) <$> Just (x,y) <*> getPairs zs
-
--- Writes a ModData to the server
--- Returns the number of ModData written
+-- Write a ModData to the server
+-- Return the number of ModData written
 writeMod :: ModData -> Repl Word16
 writeMod md = do
     let address = modAddress md
@@ -284,70 +211,36 @@ writeMod md = do
     case regType of
         HoldingRegister -> writeModType modVal address
         _ -> do
-            liftIO $
-                ppStrWarning $  "Invalid register type for value: "
-                            ++ modName md
+            liftIO $ ppStrWarning $
+                    "Invalid register type for value: "
+                    ++ modName md
             return 0
 
 -- Write a ModValue to the modbus server.
--- Returns the number of items written
+-- Return the number of items written
 writeModType :: ModValue -> Word16 -> Repl Word16
 writeModType value address = do
-    Config connection _  <- replAsk
-    ReplState _ uid <- lift get
+    connection <- replConn <$> replAsk
+    ReplState _ uid _<- lift get
     let addr = MB.RegAddress address
     case value of
         ModWord (Just word) -> do
-            let writeSession = runReplSession connection $ MB.writeMultipleRegisters 0 0 (UnitId uid) addr [word]
+            let writeSession = runReplSession connection $ MB.writeMultipleRegisters 0 0 (MB.UnitId uid) addr [word]
             replRunExceptT writeSession 0
         ModFloat (Just float) -> do
             let ordWords = fromFloats [float]
-            let writeSession = runReplSession connection $ MB.writeMultipleRegisters 0 0 (UnitId uid) addr ordWords
+            let writeSession = runReplSession connection $ MB.writeMultipleRegisters 0 0 (MB.UnitId uid) addr ordWords
             wordsWritten <- replRunExceptT writeSession 0
             return $ wordsWritten `div` 2
         _ -> return 0
 
--- Checks if a list of descriptions are all valid when
--- checked against a list of ModData
--- All descriptions must exist in the provided list
--- If a description does not exist, a AppError is returned
-getModByDescription :: [ModData] -> String -> Either AppError ModData
-getModByDescription mdata x = do
-    parsed <- pReplDesc x
-    findModByDesc mdata parsed
-    
-findModByDesc :: [ModData] -> String -> Either AppError ModData
-findModByDesc mdata x = do 
-    let maybeHit = find (\d -> modName d == x) mdata
-    case maybeHit of
-        Nothing -> Left $ AppCommandError $ "Modbus Register " ++ x ++ " not found on template file." 
-        Just hit -> Right hit
-
--- Generate a list of Moddata from pairs of Description and values
-getModByPair :: [(String, String)] -> [ModData] -> Either AppError [ModData]
-getModByPair [] _ = Right []
-getModByPair ((desc,val):xs) mds = do
-    validMd <- getModByDescription mds desc
-    inserted <- insertValue validMd val
-    (:) <$> return inserted <*> getModByPair xs mds
-
--- Parses and inserts a value to a ModData
-insertValue :: ModData -> String -> Either AppError ModData
-insertValue md val =
-    case modValue md of
-        ModWord _ -> do
-            parsedV <- pReplWord val
-            return $ md {modValue = ModWord (Just parsedV)}
-        ModFloat _ -> do
-            parsedV <- pReplFloat val
-            return $ md {modValue = ModFloat (Just parsedV)}
-
 -- Reads a ModData from the server
 readMod :: ModData -> Repl ModData
 readMod md = do
-    Config connection order <- replAsk
-    ReplState _ uid <- lift get
-    let modbusResp = runReplSession connection $ function 0 0 (UnitId uid) address mult
+    Config connection _ order _ <- replAsk
+    state <- lift get
+    let uid = replUId state
+    let modbusResp = runReplSession connection $ function 0 0 (MB.UnitId uid) address mult
     resp <- replRunExceptT modbusResp []
     case modValue md of
         ModWord _ -> return md {modValue = ModWord $ listToMaybe resp}
@@ -355,57 +248,57 @@ readMod md = do
   where
     address = MB.RegAddress $ modAddress md
     mult = getModValueMult $ modValue md
-    function = case modRegType md of
-            InputRegister -> MB.readInputRegisters
-            HoldingRegister -> MB.readHoldingRegisters
-            _ -> undefined
+    function = getReadFunction $ modRegType md
     floats response order = word2Float order <$> maybeWords response
     maybeWords response = (,) <$> listToMaybe response <*> listToMaybe (tail response)
 
+-- get the proper modbus read function
+getReadFunction :: RegType -> ReadRegsFun
+getReadFunction rt = case rt of
+    InputRegister -> MB.readInputRegisters
+    HoldingRegister -> MB.readHoldingRegisters
+    _ -> undefined
+
 -- Parses the address and number of registers strings and applies the given
 -- read modbus register function
-replReadRegisters :: 
-       String   -- address
-    -> String   -- number of registers
-    -> ModValue
-    -> ReadRegsFun
-    -> Repl [(Word16, Word16)]
+replReadRegisters :: String   -- address
+                  -> String   -- number of registers
+                  -> ModValue
+                  -> ReadRegsFun
+                  -> Repl [(Word16, Word16)]
 replReadRegisters a n m f = do
-    Config connection _ <- replAsk
-    ReplState _ uid <- lift get
+    connection <- replConn <$> replAsk
+    uid <- replUId <$> lift get
     let mult = getModValueMult m
     let wrapped = do 
             (addr, num) <- except $ pReplAddrNum a n 
             liftIO $ putStrLn $ "Reading " ++ show num ++ " register(s) from address " ++ show addr
-            mvs <- runReplSession connection $ f 0 0 (UnitId uid) (MB.RegAddress addr) (mult * num)
+            mvs <- runReplSession connection $ f 0 0 (MB.UnitId uid) (MB.RegAddress addr) (mult * num)
             return $ zip [addr..] mvs
     replRunExceptT wrapped []
 
--- Parses the address and values list and applies them
+-- Parse the address and values of a list and apply them
 -- to a read holding registers modbus command
-replWriteRegisters :: 
-       String  -- address
-    -> [String] -- values
-    -> ModValue
-    -> Repl ()
+replWriteRegisters :: String  -- address
+                   -> [String] -- values
+                   -> ModValue
+                   -> Repl ()
 replWriteRegisters address values mValue = do
-    Config connection _ <- replAsk
-    ReplState _ uid <- lift get
+    connection <- replConn <$> replAsk
+    uid <- replUId <$> lift get
     let wrapped = do
             addr <- except $ pReplWord address
             val <- case mValue of
                 ModWord _ -> except $ mapM pReplWord values
                 ModFloat _ -> except $ fromFloats <$> mapM pReplFloat values
             liftIO $ putStrLn $ "Writing " ++ regsWritten val ++ " register(s) at address " ++ show addr
-            runReplSession connection $ MB.writeMultipleRegisters 0 0 (UnitId uid) (MB.RegAddress addr) val
+            runReplSession connection $ MB.writeMultipleRegisters 0 0 (MB.UnitId uid) (MB.RegAddress addr) val
     response <- replRunExceptT wrapped 0
     liftIO $ putStrLn $ responseWritten response ++ " register(s) written"
   where
     regsWritten val = show $ divbyModValue $ length val
-    responseWritten resp = show $ divbyModValue resp   
-    divbyModValue num = num `div` fromIntegral (toInteger (getModValueMult mValue)) 
+    responseWritten resp = show $ divbyModValue resp
+    divbyModValue num = num `div` fromIntegral (toInteger (getModValueMult mValue))
 
-invalidCmd :: Repl ()
-invalidCmd = liftIO $ ppStrWarning "Invalid Command argument"
 
 

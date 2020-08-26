@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 5f9971a9a442c9d2514f3058ef3f9cee3743ce2696ba01c9dd64afa3cc46c2c2
+-- hash: d9e9260e9ec0c39494ccdb7e28fad40ee8bc37d80c66605df890d564c979e8f8
 
 name:           modbus-serve
 version:        0.1.0.0
@@ -34,7 +34,9 @@ library
       Repl
       Repl.Commands
       Repl.Error
+      Repl.Heartbeat
       Repl.Help
+      Repl.HelpFun
       Repl.Parser
       Types
       Types.ModData
@@ -60,6 +62,7 @@ library
     , parsec
     , process
     , repline
+    , safe-exceptions >=0.1.6 && <0.2
     , text
     , transformers
   default-language: Haskell2010
@@ -89,6 +92,7 @@ executable modbus-serve-exe
     , parsec
     , process
     , repline
+    , safe-exceptions >=0.1.6 && <0.2
     , text
     , transformers
   default-language: Haskell2010
@@ -122,6 +126,7 @@ test-suite modbus-serve-test
     , parsec
     , process
     , repline
+    , safe-exceptions >=0.1.6 && <0.2
     , text
     , transformers
   default-language: Haskell2010

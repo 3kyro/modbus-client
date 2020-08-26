@@ -10,16 +10,19 @@ module PrettyPrint
     , ppMultModData
     , ppRegisters
     , ppUid
+    , ppMultThreadState
+    , ppThreadError
     )
     where
 
 import Data.Maybe (fromMaybe)
 import Data.Word (Word8, Word16)
+import Control.Exception (SomeException)
 import System.Console.ANSI
 
 import qualified Data.Text as T
 
-import Types (ModValue(..), RegType(..), ModData(..), AppError (..))
+import Types
 
 ppErrReset :: IO ()
 ppErrReset = do
@@ -120,3 +123,27 @@ ppAndReset = ppAndResetFun putStr
 
 ppAndResetLn :: String -> Color -> IO ()
 ppAndResetLn = ppAndResetFun putStrLn
+
+ppThreadState :: ThreadState -> IO ()
+ppThreadState state = do
+    ppAndReset "@address: " Blue
+    putStr $ show (threadAddr state) ++ "\t"
+    ppAndReset "Interval: " Blue
+    putStrLn $ show (threadInterv state) ++ "ms"
+
+ppMultThreadState :: [ThreadState] -> IO ()
+ppMultThreadState [] = putStrLn "No active heartbeat signals"
+ppMultThreadState xs = do
+    width <- ppGetTerminalWidth
+    let dashes = replicate width '-'
+    ppAndResetLn dashes Magenta
+    mapM_ ppThreadState xs
+    ppAndResetLn dashes Magenta
+
+ppThreadError :: ThreadState -> SomeException -> IO ()
+ppThreadError thread exc = ppStrError $
+    "A heartbeat signal was previously running at address "
+    ++  show (threadAddr thread)
+    ++ ", but it has stopped after the following exception occured:\n"
+    ++ show exc
+    ++ "\nThe signal has been removed from the active list"
