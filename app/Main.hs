@@ -8,6 +8,7 @@ Modbus-serve is a Modbus TCP command line communication tool and web server.
 module Main where
 
 import Control.Monad.Except (runExceptT)
+import Control.Exception.Safe (bracket)
 import Data.Word (Word8)
 import OptParser (Opt(..), runOpts)
 import Data.IP (IPv4, toHostAddress)
@@ -59,17 +60,22 @@ getConnection s tm =
     }
 
 runModDataApp :: S.SockAddr -> Int -> ByteOrder -> [ModData] -> IO [ModData]
-runModDataApp addr tm order md = do
-    s <- connect addr
-    resp <- runExceptT $ MB.runSession (getConnection s tm) (modSession md order)
-    case resp of
-        Left err -> fail $ "Modbus error: " ++ show err
-        Right resp' -> return resp'
+runModDataApp addr tm order md =
+    bracket (connect addr) close run
+  where
+    close s = S.gracefulClose s 1000
+    run s = do
+        resp <- runExceptT $ MB.runSession (getConnection s tm) (modSession md order)
+        case resp of
+            Left err -> fail $ "Modbus error: " ++ show err
+            Right resp' -> return resp'
 
 runReplApp :: S.SockAddr -> Int -> ByteOrder -> [ModData] -> Word8 -> IO ()
-runReplApp addr tm order mdata uid = do
-    s <- connect addr
-    runRepl (Config (getConnection s tm) order tm) (ReplState mdata uid [])
+runReplApp addr tm order mdata uid =
+    bracket (connect addr) close run
+  where
+    close s = S.gracefulClose s 1000
+    run s = runRepl (Config (getConnection s tm) order tm) (ReplState mdata uid [])
 
 connect :: S.SockAddr -> IO S.Socket
 connect addr = do
@@ -78,3 +84,4 @@ connect addr = do
     S.connect s addr
     putStrLn "connected"
     return s
+
