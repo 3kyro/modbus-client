@@ -5147,18 +5147,24 @@ var $elm$browser$Browser$element = _Browser_element;
 var $elm$core$Platform$Cmd$batch = _Platform_batch;
 var $elm$core$Platform$Cmd$none = $elm$core$Platform$Cmd$batch(_List_Nil);
 var $author$project$App$initCmd = $elm$core$Platform$Cmd$none;
-var $author$project$Types$InputRegister = {$: 'InputRegister'};
+var $author$project$Types$InputRegister = function (a) {
+	return {$: 'InputRegister', a: a};
+};
 var $author$project$Types$ModWord = function (a) {
 	return {$: 'ModWord', a: a};
 };
-var $author$project$App$initModel = {
-	address: 3000,
-	description: 'A register for tesing purposes',
-	name: 'test',
-	regType: $author$project$Types$InputRegister,
-	value: $author$project$Types$ModWord(
-		$elm$core$Maybe$Just(1))
-};
+var $author$project$App$initModData = _List_fromArray(
+	[
+		{
+		address: 3000,
+		description: 'A register for tesing purposes',
+		name: 'test',
+		register: $author$project$Types$InputRegister(
+			$author$project$Types$ModWord(
+				$elm$core$Maybe$Just(1)))
+	}
+	]);
+var $author$project$App$initModel = {holdingRegisters: _List_Nil, inputRegisters: _List_Nil, modData: $author$project$App$initModData};
 var $elm$core$Platform$Sub$batch = _Platform_batch;
 var $elm$core$Platform$Sub$none = $elm$core$Platform$Sub$batch(_List_Nil);
 var $author$project$Update$update = F2(
@@ -5175,17 +5181,21 @@ var $elm$html$Html$Attributes$stringProperty = F2(
 	});
 var $elm$html$Html$Attributes$class = $elm$html$Html$Attributes$stringProperty('className');
 var $elm$html$Html$div = _VirtualDom_node('div');
+var $author$project$Types$getValue = function (reg) {
+	if (reg.$ === 'InputRegister') {
+		var v = reg.a;
+		return v;
+	} else {
+		var v = reg.a;
+		return v;
+	}
+};
 var $elm$html$Html$label = _VirtualDom_node('label');
-var $author$project$Types$showRegType = function (rt) {
-	switch (rt.$) {
-		case 'DiscreteInput':
-			return 'Discrete Input';
-		case 'Coil':
-			return 'Coil';
-		case 'InputRegister':
-			return 'Input Register';
-		default:
-			return 'Holding Register';
+var $author$project$Types$showRegister = function (rt) {
+	if (rt.$ === 'InputRegister') {
+		return 'Input Register';
+	} else {
+		return 'Holding Register';
 	}
 };
 var $elm$virtual_dom$VirtualDom$text = _VirtualDom_text;
@@ -5249,7 +5259,7 @@ var $author$project$View$viewModValue = function (value) {
 			return _List_Nil;
 		}());
 };
-var $author$project$View$view = function (model) {
+var $author$project$View$viewModData = function (data) {
 	return A2(
 		$elm$html$Html$div,
 		_List_fromArray(
@@ -5266,7 +5276,7 @@ var $author$project$View$view = function (model) {
 					]),
 				_List_fromArray(
 					[
-						$elm$html$Html$text(model.name)
+						$elm$html$Html$text(data.name)
 					])),
 				A2(
 				$elm$html$Html$label,
@@ -5277,7 +5287,7 @@ var $author$project$View$view = function (model) {
 				_List_fromArray(
 					[
 						$elm$html$Html$text(
-						$author$project$Types$showRegType(model.regType))
+						$author$project$Types$showRegister(data.register))
 					])),
 				A2(
 				$elm$html$Html$label,
@@ -5288,10 +5298,12 @@ var $author$project$View$view = function (model) {
 				_List_fromArray(
 					[
 						$elm$html$Html$text(
-						$elm$core$String$fromInt(model.address))
+						$elm$core$String$fromInt(data.address))
 					])),
-				$author$project$View$viewModType(model.value),
-				$author$project$View$viewModValue(model.value),
+				$author$project$View$viewModType(
+				$author$project$Types$getValue(data.register)),
+				$author$project$View$viewModValue(
+				$author$project$Types$getValue(data.register)),
 				A2(
 				$elm$html$Html$label,
 				_List_fromArray(
@@ -5300,9 +5312,18 @@ var $author$project$View$view = function (model) {
 					]),
 				_List_fromArray(
 					[
-						$elm$html$Html$text(model.description)
+						$elm$html$Html$text(data.description)
 					]))
 			]));
+};
+var $author$project$View$view = function (model) {
+	return A2(
+		$elm$html$Html$div,
+		_List_fromArray(
+			[
+				$elm$html$Html$Attributes$class('modData')
+			]),
+		A2($elm$core$List$map, $author$project$View$viewModData, model.modData));
 };
 var $author$project$App$main = $elm$browser$Browser$element(
 	{

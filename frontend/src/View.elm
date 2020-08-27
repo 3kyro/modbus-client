@@ -7,17 +7,22 @@ import Types exposing (..)
 
 view : Model -> Html Msg
 view model =
+    div [ class "modData"] (List.map viewModData model.modData)
+
+
+viewModData : ModData -> Html Msg
+viewModData data =
     div [ class "modData"]
         [ label [ class "modName" ]
-            [ text model.name ]
+            [ text data.name ]
         , label [ class "modRegType" ]
-            [ text <| showRegType model.regType ]
+            [ text <| showRegister data.register ]
         , label [ class "modAddress" ]
-            [ text <| String.fromInt model.address ]
-        , viewModType model.value
-        , viewModValue model.value
+            [ text <| String.fromInt data.address ]
+        , viewModType <| getValue data.register
+        , viewModValue <| getValue data.register
         , label [ class "modDescription" ]
-            [ text model.description ]
+            [ text data.description ]
         ]
 
 viewModValue : ModValue -> Html Msg

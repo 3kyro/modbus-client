@@ -15,8 +15,8 @@ help args = liftIO $ putStrLn "" >> mapM_ helpCmd args
 helpCmd :: String -> IO ()
 helpCmd [] = putStrLn helpMessage
 helpCmd arg =
-  let 
-    command = case arg of    
+  let
+    command = case arg of
         "readInputRegistersWord" -> hReadInputRegistersWord
         "readInputRegistersFloat" -> hReadInputRegistersFloat
         "readHoldingRegistersWord" -> hReadHoldingRegistersWord
@@ -33,17 +33,17 @@ helpCmd arg =
         "import" -> hImport
         "export" -> hExport
         "id" -> hId
-        _ -> "Command \"" ++ arg ++"\" not found" 
+        _ -> "Command \"" ++ arg ++"\" not found"
   in
     putStrLn command
 
 helpMessage :: String
-helpMessage = 
+helpMessage =
     "For a list of availiable commands, type \":list\"\n"
     ++ "For help on individual commands, type \":help command\" (e.g. :help list)"
 
 hReadInputRegistersWord :: String
-hReadInputRegistersWord = 
+hReadInputRegistersWord =
     "readInputRegistersWord:\n"
     ++ "Read values of word type from the provided input registers\n"
     ++ "Usage: readInputRegistersWord [Starting address] [Number of registers]\n"

@@ -1,32 +1,39 @@
 module Types exposing
     ( Msg
     , Model
-    , RegType (..)
+    , Register (..)
     , ModValue (..)
     , ModData
-    , showRegType
+    , showRegister
+    , getValue
     )
 
 type alias Msg
     = ModData
 
-type alias Model = ModData
+type alias Model =
+    { modData : List ModData
+    , inputRegisters : List Register
+    , holdingRegisters : List Register
+    }
 
 -- See Types/ModData.hs
-type RegType
-    = DiscreteInput
-    | Coil
-    | InputRegister
-    | HoldingRegister
+type Register
+    = InputRegister ModValue
+    | HoldingRegister ModValue
 
 
-showRegType : RegType -> String
-showRegType rt =
+showRegister : Register -> String
+showRegister rt =
     case rt of
-        DiscreteInput -> "Discrete Input"
-        Coil -> "Coil"
-        InputRegister -> "Input Register"
-        HoldingRegister -> "Holding Register"
+        InputRegister _ -> "Input Register"
+        HoldingRegister _ -> "Holding Register"
+
+getValue : Register -> ModValue
+getValue reg =
+    case reg of
+        InputRegister v -> v
+        HoldingRegister v -> v
 
 type ModValue
     = ModWord (Maybe Int)
@@ -34,8 +41,7 @@ type ModValue
 
 type alias ModData =
     { name : String
-    , regType : RegType
+    , register : Register
     , address : Int
-    , value : ModValue
     , description : String
     }

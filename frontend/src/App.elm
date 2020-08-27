@@ -16,12 +16,21 @@ main = Browser.element
 
 initModel : Model
 initModel =
-    { name = "test"
-    , regType = InputRegister
-    , address = 3000
-    , value = ModWord (Just 1)
-    , description = "A register for tesing purposes"
+    { modData = initModData
+    , inputRegisters = []
+    , holdingRegisters = []
     }
+
 
 initCmd : Cmd Msg
 initCmd = Cmd.none
+
+initModData : List ModData
+initModData =
+    [
+    { name = "test"
+    , register = InputRegister (ModWord (Just 1))
+    , address = 3000
+    , description = "A register for tesing purposes"
+    }
+    ]
