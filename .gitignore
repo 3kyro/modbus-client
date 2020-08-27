@@ -3,4 +3,6 @@ mbserver/Cargo.lock
 mbserver/target
 .stack-work/
 .history
+frontend/elm-stuff
+frontend/repl-temp-*
 *~
