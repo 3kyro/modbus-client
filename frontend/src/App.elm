@@ -2,9 +2,16 @@ module App exposing (main)
 
 import Browser
 
-import Types exposing (..)
 import View exposing (view)
 import Update exposing (update)
+import Types exposing
+    ( Msg (..)
+    , Model
+    , ModData
+    , Register (..)
+    , ModValue (..)
+    , Status (..)
+    )
 
 main : Program () Model Msg
 main = Browser.element
@@ -17,8 +24,8 @@ main = Browser.element
 initModel : Model
 initModel =
     { modData = initModData
-    , inputRegisters = []
-    , holdingRegisters = []
+    , registers = initInputRegisters
+    , status = AllGood
     }
 
 
@@ -33,4 +40,14 @@ initModData =
     , address = 3000
     , description = "A register for tesing purposes"
     }
+    ]
+
+initInputRegisters : List Register
+initInputRegisters =
+    [ InputRegister (ModWord (Just 1))
+    , InputRegister (ModWord (Just 2))
+    , InputRegister (ModWord (Just 3))
+    , InputRegister (ModWord (Just 4))
+    , InputRegister (ModWord (Just 5))
+    , InputRegister (ModWord (Just 6))
     ]

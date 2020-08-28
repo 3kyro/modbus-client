@@ -1,20 +1,25 @@
 module Types exposing
-    ( Msg
+    ( Msg (..)
     , Model
     , Register (..)
     , ModValue (..)
     , ModData
-    , showRegister
-    , getValue
+    , getRegType
+    , getRegValue
+    , showRegValueType
+    , Status (..)
     )
 
-type alias Msg
-    = ModData
+import Http
+
+type Msg
+    = ReadRegisters (Result Http.Error (List Register))
+    | RefreshRequest (List Register)
 
 type alias Model =
     { modData : List ModData
-    , inputRegisters : List Register
-    , holdingRegisters : List Register
+    , registers : List Register
+    , status : Status
     }
 
 -- See Types/ModData.hs
@@ -22,18 +27,28 @@ type Register
     = InputRegister ModValue
     | HoldingRegister ModValue
 
+type Status
+    = AllGood
+    | Loading
+    | Bad String
 
-showRegister : Register -> String
-showRegister rt =
+getRegType : Register -> String
+getRegType rt =
     case rt of
         InputRegister _ -> "Input Register"
         HoldingRegister _ -> "Holding Register"
 
-getValue : Register -> ModValue
-getValue reg =
+getRegValue : Register -> ModValue
+getRegValue reg =
     case reg of
         InputRegister v -> v
         HoldingRegister v -> v
+
+showRegValueType : Register -> String
+showRegValueType reg =
+    case getRegValue reg of
+        ModWord _ -> "word"
+        ModFloat _ -> "float"
 
 type ModValue
     = ModWord (Maybe Int)
