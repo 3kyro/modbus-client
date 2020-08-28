@@ -6,13 +6,14 @@
 module OptParser
        ( 
         Opt (..)
-       , runOpts 
+       , AppMode (..)
+       , runOpts
        )
        where
 
 import Data.IP (IPv4)
 import Options.Applicative 
-       (
+       (flag, (<|>), 
          Parser
        , execParser
        , info
@@ -28,22 +29,27 @@ import Options.Applicative
        , help
        , option
        , auto 
-       , switch 
+        
        )   
 
 import Types 
 import Data.Word (Word8)
 
 data Opt = Opt
-    { inputTemplate :: !FilePath
+    { appMode       :: !AppMode
+    , inputTemplate :: !FilePath
     , outputFile    :: !FilePath
     , ipAddr        :: !IPv4
     , port          :: !Int
     , floatRepr     :: !ByteOrder
-    , repl          :: !Bool
     , uId           :: !Word8
     , timeout       :: !Int
 }
+
+data AppMode
+    = AppTemplate
+    | AppRepl
+    | AppWeb
 
 -- | Executes the options parser
 runOpts :: IO Opt
@@ -55,38 +61,54 @@ runOpts = execParser opts
         (fullDesc <> progDesc "A modbus CLI and web server")
 
 opt :: Parser Opt
-opt = Opt 
-    <$> parseTemplate 
-    <*> parseOutputFile 
+opt = Opt
+    <$> parseAppMode
+    <*> parseInput
+    <*> parseOutput
     <*> parseIPAddr
-    <*> parsePort 
+    <*> parsePort
     <*> parseFloatRepr
-    <*> parseRepl
     <*> parseUid
     <*> parseTimeout
 
-parseTemplate :: Parser String
-parseTemplate = strOption
-    (  long     "template"
-    <> short    't'
-    <> metavar  "TEMPLATE"
-    <> value    "default_template.csv"
-    <> help     "Input template file"
+parseAppMode :: Parser AppMode
+parseAppMode = parseRepl <|> parseServer
+
+parseRepl :: Parser AppMode
+parseRepl = flag AppTemplate AppRepl
+    ( long      "repl"
+    <> short    'r'
+    <> help     "Starts an interactive Modbus client"
     )
 
-parseOutputFile :: Parser String
-parseOutputFile = strOption
-    ( long      "output" 
+parseServer :: Parser AppMode
+parseServer = flag AppTemplate AppWeb
+    ( long      "server"
+    <> short    's'
+    <> help     "Starts the local web server"
+    )
+
+parseInput :: Parser String
+parseInput = strOption
+    (  long     "input"
+    <> short    'i'
+    <> metavar  "INPUT"
+    <> value    "input.csv"
+    <> help     "Input register table"
+    )
+
+parseOutput :: Parser String
+parseOutput = strOption
+    ( long      "output"
     <> short    'o' 
-    <> metavar  "OUTPUT" 
-    <> value    "output"
-    <> help     "Output file"
+    <> metavar  "OUTPUT"
+    <> value    "output.csv"
+    <> help     "Output register table"
     )
 
 parseIPAddr :: Parser IPv4
 parseIPAddr = option auto
     (  long     "ip"
-    <> short    'i'
     <> metavar  "IPADDRESS"
     <> value    (read "127.0.0.1")
     <> help     "IP address of the modbus master"
@@ -108,13 +130,6 @@ parseFloatRepr = option auto
     <> metavar  "BYTE_ORDER"
     <> value    LE
     <> help     "Server byte order"
-    )
-
-parseRepl :: Parser Bool
-parseRepl = switch 
-    ( long      "repl"
-    <> short    'r'
-    <> help     "Starts an interactive Modbus client"
     )
 
 parseUid :: Parser Word8

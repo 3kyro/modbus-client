@@ -5,7 +5,6 @@ import Control.Exception.Safe (bracket)
 import Data.Word (Word8)
 import Data.IP (IPv4, toHostAddress)
 import Network.Socket.ByteString (recv, send)
-import OptParser (Opt(..), runOpts)
 
 import qualified Data.Text.IO as T
 import qualified Network.Socket as S
@@ -13,6 +12,7 @@ import qualified System.Modbus.TCP as MB
 
 import CsvParser (parseCSVFile)
 import Modbus (modSession)
+import OptParser (Opt(..), AppMode (..), runOpts)
 import PrettyPrint (ppError)
 import Repl (runRepl)
 import Types
@@ -21,16 +21,17 @@ main :: IO ()
 main = runApp =<< runOpts
 
 runApp :: Opt -> IO ()
-runApp (Opt input output ip portNum order bRepl uid tm) =
-  if bRepl
-  then runReplApp (getAddr ip portNum) tm order [] uid
-  else do
-    parseResult <- parseCSVFile input
-    case parseResult of
-        Left err -> ppError err
-        Right md' -> do
-            resp <- runModDataApp (getAddr ip portNum) tm order md'
-            T.writeFile output (serializeModData resp)
+runApp (Opt mode input output ip portNum order uid tm) =
+    case mode of
+        AppTemplate -> do
+            parseResult <- parseCSVFile input
+            case parseResult of
+                Left err -> ppError err
+                Right md' -> do
+                    resp <- runModDataApp (getAddr ip portNum) tm order md'
+                    T.writeFile output (serializeModData resp)
+        AppRepl -> runReplApp (getAddr ip portNum) tm order [] uid
+        AppWeb -> putStrLn "Web server - nothing to see here"
 
 getAddr :: IPv4 -> Int -> S.SockAddr
 getAddr ip portNum = S.SockAddrInet (fromIntegral portNum) (toHostAddress ip)
