@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: d9e9260e9ec0c39494ccdb7e28fad40ee8bc37d80c66605df890d564c979e8f8
+-- hash: 257c512e08d50f35c1b6532afd4fb2c55a16d3864a88c2ba7fefab6202a74410
 
 name:           modbus-serve
 version:        0.1.0.0
@@ -38,6 +38,7 @@ library
       Repl.Help
       Repl.HelpFun
       Repl.Parser
+      Server
       Types
       Types.ModData
       Types.Repl
@@ -48,12 +49,14 @@ library
   build-depends:
       Cabal
     , QuickCheck
+    , aeson
     , ansi-terminal >=0.10.3 && <1
     , base >=4.7 && <5
     , binary
     , directory >=1.3.6 && <2
     , either
     , hspec
+    , http-types
     , iproute
     , modbus-tcp
     , mtl
@@ -63,6 +66,7 @@ library
     , process
     , repline
     , safe-exceptions >=0.1.6 && <0.2
+    , scotty
     , text
     , transformers
   default-language: Haskell2010
@@ -77,12 +81,14 @@ executable modbus-serve-exe
   build-depends:
       Cabal
     , QuickCheck
+    , aeson
     , ansi-terminal >=0.10.3 && <1
     , base >=4.7 && <5
     , binary
     , directory >=1.3.6 && <2
     , either
     , hspec
+    , http-types
     , iproute
     , modbus-serve
     , modbus-tcp
@@ -93,6 +99,7 @@ executable modbus-serve-exe
     , process
     , repline
     , safe-exceptions >=0.1.6 && <0.2
+    , scotty
     , text
     , transformers
   default-language: Haskell2010
@@ -111,12 +118,14 @@ test-suite modbus-serve-test
   build-depends:
       Cabal
     , QuickCheck
+    , aeson
     , ansi-terminal >=0.10.3 && <1
     , base >=4.7 && <5
     , binary
     , directory >=1.3.6 && <2
     , either
     , hspec
+    , http-types
     , iproute
     , modbus-serve
     , modbus-tcp
@@ -127,6 +136,7 @@ test-suite modbus-serve-test
     , process
     , repline
     , safe-exceptions >=0.1.6 && <0.2
+    , scotty
     , text
     , transformers
   default-language: Haskell2010

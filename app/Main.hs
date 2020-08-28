@@ -15,6 +15,7 @@ import Modbus (modSession)
 import OptParser (Opt(..), AppMode (..), runOpts)
 import PrettyPrint (ppError)
 import Repl (runRepl)
+import Server (runServer)
 import Types
 
 main :: IO ()
@@ -31,7 +32,7 @@ runApp (Opt mode input output ip portNum order uid tm) =
                     resp <- runModDataApp (getAddr ip portNum) tm order md'
                     T.writeFile output (serializeModData resp)
         AppRepl -> runReplApp (getAddr ip portNum) tm order [] uid
-        AppWeb -> putStrLn "Web server - nothing to see here"
+        AppWeb -> runServer
 
 getAddr :: IPv4 -> Int -> S.SockAddr
 getAddr ip portNum = S.SockAddrInet (fromIntegral portNum) (toHostAddress ip)
