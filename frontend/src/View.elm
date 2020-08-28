@@ -23,17 +23,17 @@ import Html.Events exposing (onClick)
 import Types exposing
     ( Msg (..)
     , Model
-    , Register (..)
+    , RegType (..)
     , getRegType
-    , getRegValue
     , ModValue (..)
     , Status (..)
+    , ModData
     )
 
 view : Model -> Html Msg
 view model =
     div [ class "root" ]
-        [ div [ class "inputRegisters" ] [viewRegisters model.registers]
+        [ div [ class "inputRegisters" ] [viewMultModData model.modData]
         , div [] [text <| showStatus model.status]
         ]
 
@@ -44,49 +44,42 @@ showStatus status =
         Loading -> "getting stuff from the server"
         Bad err -> err
 
-viewRegister : Register -> Html Msg
-viewRegister reg =
-        tr []
-             [ td [] [text <| getRegType reg]
-             , td [] [ viewModType <| getRegValue reg ]
-             , td [] [ viewModValue <| getRegValue reg ]
-             ]
 
-
-viewRegisters : List Register -> Html Msg
-viewRegisters regs =
+viewMultModData : List ModData -> Html Msg
+viewMultModData mds =
     div [ class "registers" ]
         [ table [ class "regTable" ]
             [ thead [] <|
                 [ tr []
-                    [ th [] [ text "Register Type"]
+                    [ th [] [ text "Name"]
+                    , th [] [ text "Type" ]
+                    , th [] [ text "Address" ]
                     , th [] [ text "Value Type" ]
                     , th [] [ text "Value" ]
+                    , th [] [ text "Unit Id" ]
+                    , th [] [ text "Description" ]
                     ]
                 ]
-            , tbody [] (List.map viewRegister regs)
-            , tfoot [onClick <| RefreshRequest regs]
+            , tbody [] (List.map viewModData mds)
+            , tfoot [onClick <| RefreshRequest mds]
                 [ tr []
-                    [ th [scope "row", colspan 3 ] [ text "refresh"]
+                    [ th [scope "row", colspan 7 ] [ text "refresh"]
                     ]
                 ]
             ]
         ]
 
--- viewModData : ModData -> Html Msg
--- viewModData data =
---     div [ class "modDatum"]
---         [ label [ class "modName" ]
---             [ text data.name ]
---         , label [ class "modRegType" ]
---             [ text <| getRegType data.register ]
---         , label [ class "modAddress" ]
---             [ text <| String.fromInt data.address ]
---         , viewModType <| getRegValue data.register
---         , viewModValue <| getRegValue data.register
---         , label [ class "modDescription" ]
---             [ text data.description ]
---         ]
+viewModData : ModData -> Html Msg
+viewModData md =
+    tr []
+        [ td [] [ text md.modName ]
+        , td [] [ text <| getRegType md.modRegType ]
+        , td [] [ text <| String.fromInt md.modAddress ]
+        , td [] [ viewModType md.modValue ]
+        , td [] [ viewModValue md.modValue ]
+        , td [] [ text <| String.fromInt md.modUid ]
+        , td [] [ text md.modDescription ]
+        ]
 
 viewModValue : ModValue -> Html Msg
 viewModValue value =

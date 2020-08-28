@@ -5323,45 +5323,32 @@ var $elm$core$Platform$Cmd$batch = _Platform_batch;
 var $elm$core$Platform$Cmd$none = $elm$core$Platform$Cmd$batch(_List_Nil);
 var $author$project$App$initCmd = $elm$core$Platform$Cmd$none;
 var $author$project$Types$AllGood = {$: 'AllGood'};
-var $author$project$Types$InputRegister = function (a) {
-	return {$: 'InputRegister', a: a};
-};
+var $author$project$Types$InputRegister = {$: 'InputRegister'};
 var $author$project$Types$ModWord = function (a) {
 	return {$: 'ModWord', a: a};
 };
-var $author$project$App$initInputRegisters = _List_fromArray(
-	[
-		$author$project$Types$InputRegister(
-		$author$project$Types$ModWord(
-			$elm$core$Maybe$Just(1))),
-		$author$project$Types$InputRegister(
-		$author$project$Types$ModWord(
-			$elm$core$Maybe$Just(2))),
-		$author$project$Types$InputRegister(
-		$author$project$Types$ModWord(
-			$elm$core$Maybe$Just(3))),
-		$author$project$Types$InputRegister(
-		$author$project$Types$ModWord(
-			$elm$core$Maybe$Just(4))),
-		$author$project$Types$InputRegister(
-		$author$project$Types$ModWord(
-			$elm$core$Maybe$Just(5))),
-		$author$project$Types$InputRegister(
-		$author$project$Types$ModWord(
-			$elm$core$Maybe$Just(6)))
-	]);
 var $author$project$App$initModData = _List_fromArray(
 	[
 		{
-		address: 3000,
-		description: 'A register for tesing purposes',
-		name: 'test',
-		register: $author$project$Types$InputRegister(
-			$author$project$Types$ModWord(
-				$elm$core$Maybe$Just(1)))
+		modAddress: 1,
+		modDescription: 'A register for tesing purposes',
+		modName: 'first',
+		modRegType: $author$project$Types$InputRegister,
+		modUid: 1,
+		modValue: $author$project$Types$ModWord(
+			$elm$core$Maybe$Just(1))
+	},
+		{
+		modAddress: 2,
+		modDescription: 'A register for tesing purposes',
+		modName: 'second',
+		modRegType: $author$project$Types$InputRegister,
+		modUid: 1,
+		modValue: $author$project$Types$ModWord(
+			$elm$core$Maybe$Just(2))
 	}
 	]);
-var $author$project$App$initModel = {modData: $author$project$App$initModData, registers: $author$project$App$initInputRegisters, status: $author$project$Types$AllGood};
+var $author$project$App$initModel = {modData: $author$project$App$initModData, status: $author$project$Types$AllGood};
 var $elm$core$Platform$Sub$batch = _Platform_batch;
 var $elm$core$Platform$Sub$none = $elm$core$Platform$Sub$batch(_List_Nil);
 var $author$project$Types$Bad = function (a) {
@@ -5371,47 +5358,80 @@ var $author$project$Types$Loading = {$: 'Loading'};
 var $author$project$Types$ReadRegisters = function (a) {
 	return {$: 'ReadRegisters', a: a};
 };
-var $elm$json$Json$Encode$float = _Json_wrap;
-var $author$project$Types$getRegValue = function (reg) {
-	if (reg.$ === 'InputRegister') {
-		var v = reg.a;
-		return v;
-	} else {
-		var v = reg.a;
-		return v;
-	}
+var $author$project$Types$ModData = F6(
+	function (modName, modRegType, modAddress, modValue, modUid, modDescription) {
+		return {modAddress: modAddress, modDescription: modDescription, modName: modName, modRegType: modRegType, modUid: modUid, modValue: modValue};
+	});
+var $author$project$Types$ModFloat = function (a) {
+	return {$: 'ModFloat', a: a};
 };
-var $elm$json$Json$Encode$int = _Json_wrap;
-var $elm$json$Json$Encode$null = _Json_encodeNull;
-var $author$project$Update$encodeRegValue = function (reg) {
-	var _v0 = $author$project$Types$getRegValue(reg);
-	_v0$2:
-	while (true) {
-		if (_v0.$ === 'ModWord') {
-			if (_v0.a.$ === 'Just') {
-				var v = _v0.a.a;
-				return $elm$json$Json$Encode$int(v);
-			} else {
-				break _v0$2;
-			}
-		} else {
-			if (_v0.a.$ === 'Just') {
-				var v = _v0.a.a;
-				return $elm$json$Json$Encode$float(v);
-			} else {
-				break _v0$2;
-			}
+var $elm$json$Json$Decode$andThen = _Json_andThen;
+var $elm$json$Json$Decode$fail = _Json_fail;
+var $elm$json$Json$Decode$field = _Json_decodeField;
+var $elm$json$Json$Decode$float = _Json_decodeFloat;
+var $elm$json$Json$Decode$int = _Json_decodeInt;
+var $elm$json$Json$Decode$null = _Json_decodeNull;
+var $elm$json$Json$Decode$oneOf = _Json_oneOf;
+var $elm$json$Json$Decode$nullable = function (decoder) {
+	return $elm$json$Json$Decode$oneOf(
+		_List_fromArray(
+			[
+				$elm$json$Json$Decode$null($elm$core$Maybe$Nothing),
+				A2($elm$json$Json$Decode$map, $elm$core$Maybe$Just, decoder)
+			]));
+};
+var $elm$json$Json$Decode$string = _Json_decodeString;
+var $author$project$Update$decodeModValue = A2(
+	$elm$json$Json$Decode$andThen,
+	function (s) {
+		switch (s) {
+			case 'word':
+				return A2(
+					$elm$json$Json$Decode$map,
+					$author$project$Types$ModWord,
+					A2(
+						$elm$json$Json$Decode$field,
+						'value',
+						$elm$json$Json$Decode$nullable($elm$json$Json$Decode$int)));
+			case 'float':
+				return A2(
+					$elm$json$Json$Decode$map,
+					$author$project$Types$ModFloat,
+					A2(
+						$elm$json$Json$Decode$field,
+						'value',
+						$elm$json$Json$Decode$nullable($elm$json$Json$Decode$float)));
+			default:
+				return $elm$json$Json$Decode$fail('Not a valid ModValue');
 		}
-	}
-	return $elm$json$Json$Encode$null;
-};
-var $author$project$Types$getRegType = function (rt) {
-	if (rt.$ === 'InputRegister') {
-		return 'Input Register';
-	} else {
-		return 'Holding Register';
-	}
-};
+	},
+	A2($elm$json$Json$Decode$field, 'type', $elm$json$Json$Decode$string));
+var $author$project$Types$HoldingRegister = {$: 'HoldingRegister'};
+var $author$project$Update$decodeRegType = A2(
+	$elm$json$Json$Decode$map,
+	function (s) {
+		switch (s) {
+			case 'input register':
+				return $author$project$Types$InputRegister;
+			case 'holding register':
+				return $author$project$Types$HoldingRegister;
+			default:
+				return $author$project$Types$InputRegister;
+		}
+	},
+	$elm$json$Json$Decode$string);
+var $elm$json$Json$Decode$map6 = _Json_map6;
+var $author$project$Update$decodeModData = A7(
+	$elm$json$Json$Decode$map6,
+	$author$project$Types$ModData,
+	A2($elm$json$Json$Decode$field, 'name', $elm$json$Json$Decode$string),
+	A2($elm$json$Json$Decode$field, 'register type', $author$project$Update$decodeRegType),
+	A2($elm$json$Json$Decode$field, 'address', $elm$json$Json$Decode$int),
+	A2($elm$json$Json$Decode$field, 'register value', $author$project$Update$decodeModValue),
+	A2($elm$json$Json$Decode$field, 'uid', $elm$json$Json$Decode$int),
+	A2($elm$json$Json$Decode$field, 'description', $elm$json$Json$Decode$string));
+var $elm$json$Json$Encode$float = _Json_wrap;
+var $elm$json$Json$Encode$int = _Json_wrap;
 var $elm$json$Json$Encode$object = function (pairs) {
 	return _Json_wrap(
 		A3(
@@ -5425,30 +5445,86 @@ var $elm$json$Json$Encode$object = function (pairs) {
 			_Json_emptyObject(_Utils_Tuple0),
 			pairs));
 };
-var $author$project$Types$showRegValueType = function (reg) {
-	var _v0 = $author$project$Types$getRegValue(reg);
-	if (_v0.$ === 'ModWord') {
-		return 'word';
+var $elm$json$Json$Encode$string = _Json_wrap;
+var $author$project$Update$encodeModValue = function (mv) {
+	if (mv.$ === 'ModWord') {
+		if (mv.a.$ === 'Just') {
+			var x = mv.a.a;
+			return $elm$json$Json$Encode$object(
+				_List_fromArray(
+					[
+						_Utils_Tuple2(
+						'type',
+						$elm$json$Json$Encode$string('word')),
+						_Utils_Tuple2(
+						'value',
+						$elm$json$Json$Encode$int(x))
+					]));
+		} else {
+			var _v1 = mv.a;
+			return $elm$json$Json$Encode$object(
+				_List_fromArray(
+					[
+						_Utils_Tuple2(
+						'type',
+						$elm$json$Json$Encode$string('word'))
+					]));
+		}
 	} else {
-		return 'float';
+		if (mv.a.$ === 'Just') {
+			var x = mv.a.a;
+			return $elm$json$Json$Encode$object(
+				_List_fromArray(
+					[
+						_Utils_Tuple2(
+						'type',
+						$elm$json$Json$Encode$string('float')),
+						_Utils_Tuple2(
+						'value',
+						$elm$json$Json$Encode$float(x))
+					]));
+		} else {
+			var _v2 = mv.a;
+			return $elm$json$Json$Encode$object(
+				_List_fromArray(
+					[
+						_Utils_Tuple2(
+						'type',
+						$elm$json$Json$Encode$string('float'))
+					]));
+		}
 	}
 };
-var $elm$json$Json$Encode$string = _Json_wrap;
-var $author$project$Update$encodeRegister = function (reg) {
+var $author$project$Types$getRegType = function (rt) {
+	if (rt.$ === 'InputRegister') {
+		return 'input register';
+	} else {
+		return 'holding register';
+	}
+};
+var $author$project$Update$encodeRegister = function (md) {
 	return $elm$json$Json$Encode$object(
 		_List_fromArray(
 			[
 				_Utils_Tuple2(
-				'regType',
-				$elm$json$Json$Encode$string(
-					$author$project$Types$getRegType(reg))),
+				'name',
+				$elm$json$Json$Encode$string(md.modName)),
 				_Utils_Tuple2(
-				'valueType',
+				'register type',
 				$elm$json$Json$Encode$string(
-					$author$project$Types$showRegValueType(reg))),
+					$author$project$Types$getRegType(md.modRegType))),
 				_Utils_Tuple2(
-				'value',
-				$author$project$Update$encodeRegValue(reg))
+				'address',
+				$elm$json$Json$Encode$int(md.modAddress)),
+				_Utils_Tuple2(
+				'register value',
+				$author$project$Update$encodeModValue(md.modValue)),
+				_Utils_Tuple2(
+				'uid',
+				$elm$json$Json$Encode$int(md.modUid)),
+				_Utils_Tuple2(
+				'description',
+				$elm$json$Json$Encode$string(md.modDescription))
 			]));
 };
 var $elm$json$Json$Decode$decodeString = _Json_runOnString;
@@ -6253,59 +6329,6 @@ var $elm$http$Http$post = function (r) {
 	return $elm$http$Http$request(
 		{body: r.body, expect: r.expect, headers: _List_Nil, method: 'POST', timeout: $elm$core$Maybe$Nothing, tracker: $elm$core$Maybe$Nothing, url: r.url});
 };
-var $author$project$Types$HoldingRegister = function (a) {
-	return {$: 'HoldingRegister', a: a};
-};
-var $elm$json$Json$Decode$andThen = _Json_andThen;
-var $author$project$Types$ModFloat = function (a) {
-	return {$: 'ModFloat', a: a};
-};
-var $elm$json$Json$Decode$fail = _Json_fail;
-var $elm$json$Json$Decode$float = _Json_decodeFloat;
-var $elm$json$Json$Decode$int = _Json_decodeInt;
-var $elm$json$Json$Decode$null = _Json_decodeNull;
-var $elm$json$Json$Decode$oneOf = _Json_oneOf;
-var $elm$json$Json$Decode$nullable = function (decoder) {
-	return $elm$json$Json$Decode$oneOf(
-		_List_fromArray(
-			[
-				$elm$json$Json$Decode$null($elm$core$Maybe$Nothing),
-				A2($elm$json$Json$Decode$map, $elm$core$Maybe$Just, decoder)
-			]));
-};
-var $elm$json$Json$Decode$string = _Json_decodeString;
-var $author$project$Update$decodeModValue = A2(
-	$elm$json$Json$Decode$andThen,
-	function (s) {
-		switch (s) {
-			case 'word':
-				return A2(
-					$elm$json$Json$Decode$map,
-					$author$project$Types$ModWord,
-					$elm$json$Json$Decode$nullable($elm$json$Json$Decode$int));
-			case 'float':
-				return A2(
-					$elm$json$Json$Decode$map,
-					$author$project$Types$ModFloat,
-					$elm$json$Json$Decode$nullable($elm$json$Json$Decode$float));
-			default:
-				return $elm$json$Json$Decode$fail('not a valid ModValue');
-		}
-	},
-	$elm$json$Json$Decode$string);
-var $author$project$Update$registerDecoder = A2(
-	$elm$json$Json$Decode$andThen,
-	function (s) {
-		switch (s) {
-			case 'Input Register':
-				return A2($elm$json$Json$Decode$map, $author$project$Types$InputRegister, $author$project$Update$decodeModValue);
-			case 'Holding Register':
-				return A2($elm$json$Json$Decode$map, $author$project$Types$HoldingRegister, $author$project$Update$decodeModValue);
-			default:
-				return $elm$json$Json$Decode$fail('Not a valid register');
-		}
-	},
-	$elm$json$Json$Decode$string);
 var $author$project$Update$refreshRequest = function (regs) {
 	return $elm$http$Http$post(
 		{
@@ -6314,9 +6337,26 @@ var $author$project$Update$refreshRequest = function (regs) {
 			expect: A2(
 				$elm$http$Http$expectJson,
 				$author$project$Types$ReadRegisters,
-				$elm$json$Json$Decode$list($author$project$Update$registerDecoder)),
+				$elm$json$Json$Decode$list($author$project$Update$decodeModData)),
 			url: 'http://localhost:4000/register'
 		});
+};
+var $author$project$Update$showHttpError = function (err) {
+	switch (err.$) {
+		case 'BadUrl':
+			var s = err.a;
+			return s;
+		case 'Timeout':
+			return 'timeout';
+		case 'NetworkError':
+			return 'Network Error';
+		case 'BadStatus':
+			var s = err.a;
+			return 'Bad status ' + $elm$core$String$fromInt(s);
+		default:
+			var s = err.a;
+			return s;
+	}
 };
 var $author$project$Update$update = F2(
 	function (msg, model) {
@@ -6326,14 +6366,16 @@ var $author$project$Update$update = F2(
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
-						{registers: regs, status: $author$project$Types$AllGood}),
+						{modData: regs, status: $author$project$Types$AllGood}),
 					$elm$core$Platform$Cmd$none);
 			} else {
+				var err = msg.a.a;
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
 						{
-							status: $author$project$Types$Bad('Something bad happened')
+							status: $author$project$Types$Bad(
+								$author$project$Update$showHttpError(err))
 						}),
 					$elm$core$Platform$Cmd$none);
 			}
@@ -6462,7 +6504,7 @@ var $author$project$View$viewModValue = function (value) {
 			return _List_Nil;
 		}());
 };
-var $author$project$View$viewRegister = function (reg) {
+var $author$project$View$viewModData = function (md) {
 	return A2(
 		$elm$html$Html$tr,
 		_List_Nil,
@@ -6473,28 +6515,56 @@ var $author$project$View$viewRegister = function (reg) {
 				_List_Nil,
 				_List_fromArray(
 					[
+						$elm$html$Html$text(md.modName)
+					])),
+				A2(
+				$elm$html$Html$td,
+				_List_Nil,
+				_List_fromArray(
+					[
 						$elm$html$Html$text(
-						$author$project$Types$getRegType(reg))
+						$author$project$Types$getRegType(md.modRegType))
 					])),
 				A2(
 				$elm$html$Html$td,
 				_List_Nil,
 				_List_fromArray(
 					[
-						$author$project$View$viewModType(
-						$author$project$Types$getRegValue(reg))
+						$elm$html$Html$text(
+						$elm$core$String$fromInt(md.modAddress))
 					])),
 				A2(
 				$elm$html$Html$td,
 				_List_Nil,
 				_List_fromArray(
 					[
-						$author$project$View$viewModValue(
-						$author$project$Types$getRegValue(reg))
+						$author$project$View$viewModType(md.modValue)
+					])),
+				A2(
+				$elm$html$Html$td,
+				_List_Nil,
+				_List_fromArray(
+					[
+						$author$project$View$viewModValue(md.modValue)
+					])),
+				A2(
+				$elm$html$Html$td,
+				_List_Nil,
+				_List_fromArray(
+					[
+						$elm$html$Html$text(
+						$elm$core$String$fromInt(md.modUid))
+					])),
+				A2(
+				$elm$html$Html$td,
+				_List_Nil,
+				_List_fromArray(
+					[
+						$elm$html$Html$text(md.modDescription)
 					]))
 			]));
 };
-var $author$project$View$viewRegisters = function (regs) {
+var $author$project$View$viewMultModData = function (mds) {
 	return A2(
 		$elm$html$Html$div,
 		_List_fromArray(
@@ -6526,7 +6596,21 @@ var $author$project$View$viewRegisters = function (regs) {
 										_List_Nil,
 										_List_fromArray(
 											[
-												$elm$html$Html$text('Register Type')
+												$elm$html$Html$text('Name')
+											])),
+										A2(
+										$elm$html$Html$th,
+										_List_Nil,
+										_List_fromArray(
+											[
+												$elm$html$Html$text('Type')
+											])),
+										A2(
+										$elm$html$Html$th,
+										_List_Nil,
+										_List_fromArray(
+											[
+												$elm$html$Html$text('Address')
 											])),
 										A2(
 										$elm$html$Html$th,
@@ -6541,19 +6625,33 @@ var $author$project$View$viewRegisters = function (regs) {
 										_List_fromArray(
 											[
 												$elm$html$Html$text('Value')
+											])),
+										A2(
+										$elm$html$Html$th,
+										_List_Nil,
+										_List_fromArray(
+											[
+												$elm$html$Html$text('Unit Id')
+											])),
+										A2(
+										$elm$html$Html$th,
+										_List_Nil,
+										_List_fromArray(
+											[
+												$elm$html$Html$text('Description')
 											]))
 									]))
 							])),
 						A2(
 						$elm$html$Html$tbody,
 						_List_Nil,
-						A2($elm$core$List$map, $author$project$View$viewRegister, regs)),
+						A2($elm$core$List$map, $author$project$View$viewModData, mds)),
 						A2(
 						$elm$html$Html$tfoot,
 						_List_fromArray(
 							[
 								$elm$html$Html$Events$onClick(
-								$author$project$Types$RefreshRequest(regs))
+								$author$project$Types$RefreshRequest(mds))
 							]),
 						_List_fromArray(
 							[
@@ -6567,7 +6665,7 @@ var $author$project$View$viewRegisters = function (regs) {
 										_List_fromArray(
 											[
 												$elm$html$Html$Attributes$scope('row'),
-												$elm$html$Html$Attributes$colspan(3)
+												$elm$html$Html$Attributes$colspan(7)
 											]),
 										_List_fromArray(
 											[
@@ -6595,7 +6693,7 @@ var $author$project$View$view = function (model) {
 					]),
 				_List_fromArray(
 					[
-						$author$project$View$viewRegisters(model.registers)
+						$author$project$View$viewMultModData(model.modData)
 					])),
 				A2(
 				$elm$html$Html$div,

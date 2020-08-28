@@ -1,3 +1,5 @@
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE OverloadedStrings #-}
 module Types.ModData
     ( ModData (..)
     , RegType (..)
@@ -9,6 +11,7 @@ module Types.ModData
     )
     where
 
+import Data.Aeson
 import Data.Word (Word8, Word16)
 import Data.List (foldl')
 import Test.QuickCheck 
@@ -28,7 +31,7 @@ import qualified Data.Text as T
 -- Holding Register, 16-bit word, read / write
 data RegType
     = DiscreteInput
-    | Coil 
+    | Coil
     | InputRegister
     | HoldingRegister
     deriving (Eq)
@@ -127,17 +130,17 @@ serializeModData :: [ModData] -> T.Text
 serializeModData md = T.append header packed
   where
     header = T.pack "Name;Register Type;Register Address;Data type;Value;Description\n"
-    packed = foldl' append (T.pack "") md
+    packed = foldl' append "" md
     append acc md' = T.append acc (serializeModDatum md') `T.append` T.pack "\n"
 
 -- Serialize a single ModData
 serializeModDatum :: ModData -> T.Text
-serializeModDatum md = 
-    T.pack 
+serializeModDatum md =
+    T.pack
         (  modName md ++ ";"
         ++ serializeRegType (modRegType md) ++ ";"
         ++ show (modAddress md) ++ ";"
-        ++ serializeModValue (modValue md) 
+        ++ serializeModValue (modValue md)
         )
     `T.append` modDescription md
 
@@ -158,3 +161,64 @@ serializeModValue mt =
     serMaybe (Just x) = show x
     serMaybe Nothing = ""
 
+instance FromJSON ModData where
+    parseJSON (Object o)= do
+        name <- o .: "name"
+        regType <- o .: "register type"
+        addr <- o .: "address"
+        value <- o .: "register value"
+        uid <- o .: "uid"
+        desc <- o .: "description"
+        return $ ModData name regType addr value uid desc
+
+instance ToJSON ModData where
+    toJSON md = object
+        [ "name" .= modName md
+        , "register type" .= modRegType md
+        , "address" .= modAddress md
+        , "register value" .= modValue md
+        , "uid" .= modUid md
+        , "description" .= modDescription md
+        ]
+
+instance ToJSON ModValue where
+    toJSON mv =
+        case mv of
+            ModWord (Just x) -> object
+                [ "type" .= String "word"
+                , "value" .= x
+                ]
+            ModWord Nothing -> object ["type" .= String "word"]
+            ModFloat (Just x) -> object
+                [ "type" .= String "float"
+                , "value" .= x
+                ]
+            ModFloat Nothing -> object ["type" .= String "float"]
+
+instance FromJSON ModValue where
+    parseJSON (Object o) = do
+        (valueType :: T.Text) <- o .: "type"
+        case valueType of
+            "word" -> do
+                v <- o .:? "value"
+                return $ ModWord v
+            "float" -> do
+                v <- o .:? "value"
+                return $ ModFloat v
+
+instance ToJSON RegType where
+    toJSON rt =
+        case rt of
+            DiscreteInput -> String "discrete input"
+            Coil -> String "coil"
+            InputRegister -> String "input register"
+            HoldingRegister -> String "holding register"
+
+instance FromJSON RegType where
+    parseJSON (String s) =
+        case s of
+            "dicrete input" -> return DiscreteInput
+            "coil" -> return Coil
+            "input register" -> return InputRegister
+            "holding register" -> return HoldingRegister
+    parseJSON _ = fail "Not a RegType"

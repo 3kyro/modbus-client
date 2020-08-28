@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
+
 module Server (runServer) where
 
-import Data.Aeson (object, (.=))
 import Network.HTTP.Types.Status
 import Web.Scotty
     (ScottyM
@@ -11,7 +11,12 @@ import Web.Scotty
     , ActionM
     , setHeader
     , file
+    
+    , jsonData
+    , json
+    , status
     )
+import Types
 
 runServer :: IO ()
 runServer = scotty 4000 app
@@ -21,7 +26,6 @@ app = do
     get "/" showLandingPage
     get "/app.js" $ file "frontend/app.js"
     get "/style.css" $ file "frontend/style.css"
-
     post "/register" register
 
 showLandingPage :: ActionM ()
@@ -30,4 +34,10 @@ showLandingPage = do
     file "frontend/index.html"
 
 register :: ActionM ()
-register = undefined
+register = do
+    got <- jsonData
+    let changed = map reverseName got
+    json changed
+    status status200
+  where
+      reverseName md = md { modName = reverse (modName md)}

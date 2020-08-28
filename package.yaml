@@ -59,7 +59,6 @@ executables:
     dependencies:
     - modbus-serve
 
-
 tests:
   modbus-serve-test:
     main:                Spec.hs
