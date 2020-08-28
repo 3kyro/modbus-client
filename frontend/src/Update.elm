@@ -29,7 +29,7 @@ update msg model =
 refreshRequest : List Register -> Cmd Msg
 refreshRequest regs =
     Http.post
-        { url = "http://localhost:4000/"
+        { url = "http://localhost:4000/register"
         , body = Http.jsonBody <| E.list encodeRegister regs
         , expect = Http.expectJson ReadRegisters <| D.list registerDecoder
         }

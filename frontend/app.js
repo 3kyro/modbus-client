@@ -6315,7 +6315,7 @@ var $author$project$Update$refreshRequest = function (regs) {
 				$elm$http$Http$expectJson,
 				$author$project$Types$ReadRegisters,
 				$elm$json$Json$Decode$list($author$project$Update$registerDecoder)),
-			url: 'http://localhost:4000/'
+			url: 'http://localhost:4000/register'
 		});
 };
 var $author$project$Update$update = F2(
