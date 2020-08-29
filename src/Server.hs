@@ -19,7 +19,9 @@ import Web.Scotty
 import Types
 
 runServer :: IO ()
-runServer = scotty 4000 app
+runServer = do
+    putStrLn "http://localhost:4000"
+    scotty 4000 app
 
 app :: ScottyM ()
 app = do
@@ -32,6 +34,7 @@ showLandingPage :: ActionM ()
 showLandingPage = do
     setHeader "Content-Type" "text/html"
     file "frontend/index.html"
+
 
 register :: ActionM ()
 register = do

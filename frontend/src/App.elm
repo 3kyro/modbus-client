@@ -11,6 +11,7 @@ import Types exposing
     , ModValue (..)
     , Status (..)
     , RegType (..)
+    , IpAddress
     )
 
 main : Program () Model Msg
@@ -25,6 +26,8 @@ initModel : Model
 initModel =
     { modData = initModData
     , status = AllGood
+    , ipAddress = IpAddress 192 168 1 1
+    , socketPort = 502
     }
 
 

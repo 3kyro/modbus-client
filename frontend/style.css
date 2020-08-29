@@ -1,70 +1,87 @@
 /* spacing */
+html, body {
+    margin: 0px;
+}
+
+.status {
+    background-color: rgb(37, 39, 41);
+    color: whitesmoke;
+    width: 100vw;
+
+    position: fixed;
+    bottom: 0px;
+    font-size: 80%;
+    border: none;
+    padding: 1%;
+}
 
 table {
     table-layout: fixed;
-    width: 100%;
+    width: 70%;
     border-collapse: collapse;
     border: 1px solid;
+    margin: 5px;
   }
 
-  thead th:nth-child(1) {
+thead th:nth-child(1) {
     width: 5%;
   }
 
-  thead th:nth-child(2) {
+thead th:nth-child(2) {
     width: 10%;
   }
 
-  thead th:nth-child(3) {
+thead th:nth-child(3) {
     width: 5%;
   }
 
-  thead th:nth-child(4) {
+thead th:nth-child(4) {
+    width: 10%;
+  }
+
+thead th:nth-child(5) {
     width: 5%;
   }
 
-  thead th:nth-child(5) {
+thead th:nth-child(6) {
     width: 5%;
   }
 
-  thead th:nth-child(6) {
-    width: 5%;
-  }
-
-  th, td {
-    padding: 10px;
+th, td {
+    padding: 1px;
   }
 
   /* typography */
 
-  html {
+html {
     font-family: 'helvetica neue', helvetica, arial, sans-serif;
   }
 
-  th {
-    letter-spacing: 2px;
-  }
-
-  td {
+th {
     letter-spacing: 1px;
   }
 
-  tbody td {
+td {
+    letter-spacing: 1px;
+  }
+
+tbody td {
     text-align: center;
   }
 
-  tfoot th {
+tfoot th {
     text-align: center;
     cursor: pointer;
   }
 
 
-  thead, tfoot {
+thead, tfoot {
       background-color: #587093;
       color: whitesmoke;
   }
 
-  tbody tr:nth-child(even) {
+tbody tr:nth-child(even) {
     background-color: #c0c3c6
   }
-  
+
+

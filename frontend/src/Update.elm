@@ -13,6 +13,10 @@ import Types exposing
     , ModValue (..)
     , Status (..)
     , ModData
+    , IpAddress
+    , IpAddressByte (..)
+    , showIp
+    , changeIpAddressByte
     )
 
 update : Msg -> Model -> ( Model, Cmd Msg)
@@ -22,7 +26,32 @@ update msg model =
             ( { model | modData = regs , status = AllGood } , Cmd.none )
         ReadRegisters (Err err) ->
             ( { model | status = Bad <| showHttpError err }, Cmd.none )
-        RefreshRequest regs -> ( { model | status = Loading } , refreshRequest regs)
+        RefreshRequest regs -> ( { model | status = Loading } , refreshRequest regs )
+        ConnectRequest ipPort -> ( { model | status = Connecting } , connectRequest ipPort )
+        ConnectedResponse (Ok _) ->
+            ( { model | status = Connected } , Cmd.none )
+        ConnectedResponse(Err err) ->
+            ( { model | status = Bad <| showHttpError err }, Cmd.none )
+        ChangeIpAddressByte (NoByte) ->
+            ( { model | status = BadIpAddress }, Cmd.none )
+        ChangeIpAddressByte byte ->
+            ( { model | ipAddress = changeIpAddressByte model.ipAddress byte }, Cmd.none )
+
+
+connectRequest : (IpAddress , Int) -> Cmd Msg
+connectRequest ipPort =
+    Http.post
+        { url = "http://localhost:4000/connect"
+        , body = Http.jsonBody <| encodeIpPort ipPort
+        , expect = Http.expectWhatever ConnectedResponse
+        }
+
+encodeIpPort : (IpAddress, Int) -> E.Value
+encodeIpPort (ip, portNum) =
+    E.object
+        [ ( "ip address", E.string <| showIp ip)
+        , ( "port", E.int portNum )
+        ]
 
 showHttpError : Http.Error -> String
 showHttpError err =

@@ -5323,6 +5323,10 @@ var $elm$core$Platform$Cmd$batch = _Platform_batch;
 var $elm$core$Platform$Cmd$none = $elm$core$Platform$Cmd$batch(_List_Nil);
 var $author$project$App$initCmd = $elm$core$Platform$Cmd$none;
 var $author$project$Types$AllGood = {$: 'AllGood'};
+var $author$project$Types$IpAddress = F4(
+	function (b1, b2, b3, b4) {
+		return {b1: b1, b2: b2, b3: b3, b4: b4};
+	});
 var $author$project$Types$InputRegister = {$: 'InputRegister'};
 var $author$project$Types$ModWord = function (a) {
 	return {$: 'ModWord', a: a};
@@ -5348,89 +5352,51 @@ var $author$project$App$initModData = _List_fromArray(
 			$elm$core$Maybe$Just(2))
 	}
 	]);
-var $author$project$App$initModel = {modData: $author$project$App$initModData, status: $author$project$Types$AllGood};
+var $author$project$App$initModel = {
+	ipAddress: A4($author$project$Types$IpAddress, 192, 168, 1, 1),
+	modData: $author$project$App$initModData,
+	socketPort: 502,
+	status: $author$project$Types$AllGood
+};
 var $elm$core$Platform$Sub$batch = _Platform_batch;
 var $elm$core$Platform$Sub$none = $elm$core$Platform$Sub$batch(_List_Nil);
 var $author$project$Types$Bad = function (a) {
 	return {$: 'Bad', a: a};
 };
+var $author$project$Types$BadIpAddress = {$: 'BadIpAddress'};
+var $author$project$Types$Connected = {$: 'Connected'};
+var $author$project$Types$Connecting = {$: 'Connecting'};
 var $author$project$Types$Loading = {$: 'Loading'};
-var $author$project$Types$ReadRegisters = function (a) {
-	return {$: 'ReadRegisters', a: a};
-};
-var $author$project$Types$ModData = F6(
-	function (modName, modRegType, modAddress, modValue, modUid, modDescription) {
-		return {modAddress: modAddress, modDescription: modDescription, modName: modName, modRegType: modRegType, modUid: modUid, modValue: modValue};
+var $author$project$Types$changeIpAddressByte = F2(
+	function (ip, _byte) {
+		switch (_byte.$) {
+			case 'Byte1':
+				var x = _byte.a;
+				return _Utils_update(
+					ip,
+					{b1: x});
+			case 'Byte2':
+				var x = _byte.a;
+				return _Utils_update(
+					ip,
+					{b2: x});
+			case 'Byte3':
+				var x = _byte.a;
+				return _Utils_update(
+					ip,
+					{b3: x});
+			case 'Byte4':
+				var x = _byte.a;
+				return _Utils_update(
+					ip,
+					{b4: x});
+			default:
+				return ip;
+		}
 	});
-var $author$project$Types$ModFloat = function (a) {
-	return {$: 'ModFloat', a: a};
+var $author$project$Types$ConnectedResponse = function (a) {
+	return {$: 'ConnectedResponse', a: a};
 };
-var $elm$json$Json$Decode$andThen = _Json_andThen;
-var $elm$json$Json$Decode$fail = _Json_fail;
-var $elm$json$Json$Decode$field = _Json_decodeField;
-var $elm$json$Json$Decode$float = _Json_decodeFloat;
-var $elm$json$Json$Decode$int = _Json_decodeInt;
-var $elm$json$Json$Decode$null = _Json_decodeNull;
-var $elm$json$Json$Decode$oneOf = _Json_oneOf;
-var $elm$json$Json$Decode$nullable = function (decoder) {
-	return $elm$json$Json$Decode$oneOf(
-		_List_fromArray(
-			[
-				$elm$json$Json$Decode$null($elm$core$Maybe$Nothing),
-				A2($elm$json$Json$Decode$map, $elm$core$Maybe$Just, decoder)
-			]));
-};
-var $elm$json$Json$Decode$string = _Json_decodeString;
-var $author$project$Update$decodeModValue = A2(
-	$elm$json$Json$Decode$andThen,
-	function (s) {
-		switch (s) {
-			case 'word':
-				return A2(
-					$elm$json$Json$Decode$map,
-					$author$project$Types$ModWord,
-					A2(
-						$elm$json$Json$Decode$field,
-						'value',
-						$elm$json$Json$Decode$nullable($elm$json$Json$Decode$int)));
-			case 'float':
-				return A2(
-					$elm$json$Json$Decode$map,
-					$author$project$Types$ModFloat,
-					A2(
-						$elm$json$Json$Decode$field,
-						'value',
-						$elm$json$Json$Decode$nullable($elm$json$Json$Decode$float)));
-			default:
-				return $elm$json$Json$Decode$fail('Not a valid ModValue');
-		}
-	},
-	A2($elm$json$Json$Decode$field, 'type', $elm$json$Json$Decode$string));
-var $author$project$Types$HoldingRegister = {$: 'HoldingRegister'};
-var $author$project$Update$decodeRegType = A2(
-	$elm$json$Json$Decode$map,
-	function (s) {
-		switch (s) {
-			case 'input register':
-				return $author$project$Types$InputRegister;
-			case 'holding register':
-				return $author$project$Types$HoldingRegister;
-			default:
-				return $author$project$Types$InputRegister;
-		}
-	},
-	$elm$json$Json$Decode$string);
-var $elm$json$Json$Decode$map6 = _Json_map6;
-var $author$project$Update$decodeModData = A7(
-	$elm$json$Json$Decode$map6,
-	$author$project$Types$ModData,
-	A2($elm$json$Json$Decode$field, 'name', $elm$json$Json$Decode$string),
-	A2($elm$json$Json$Decode$field, 'register type', $author$project$Update$decodeRegType),
-	A2($elm$json$Json$Decode$field, 'address', $elm$json$Json$Decode$int),
-	A2($elm$json$Json$Decode$field, 'register value', $author$project$Update$decodeModValue),
-	A2($elm$json$Json$Decode$field, 'uid', $elm$json$Json$Decode$int),
-	A2($elm$json$Json$Decode$field, 'description', $elm$json$Json$Decode$string));
-var $elm$json$Json$Encode$float = _Json_wrap;
 var $elm$json$Json$Encode$int = _Json_wrap;
 var $elm$json$Json$Encode$object = function (pairs) {
 	return _Json_wrap(
@@ -5445,89 +5411,25 @@ var $elm$json$Json$Encode$object = function (pairs) {
 			_Json_emptyObject(_Utils_Tuple0),
 			pairs));
 };
+var $author$project$Types$showIp = function (ip) {
+	return $elm$core$String$fromInt(ip.b1) + ('.' + ($elm$core$String$fromInt(ip.b2) + ('.' + ($elm$core$String$fromInt(ip.b3) + ('.' + $elm$core$String$fromInt(ip.b4))))));
+};
 var $elm$json$Json$Encode$string = _Json_wrap;
-var $author$project$Update$encodeModValue = function (mv) {
-	if (mv.$ === 'ModWord') {
-		if (mv.a.$ === 'Just') {
-			var x = mv.a.a;
-			return $elm$json$Json$Encode$object(
-				_List_fromArray(
-					[
-						_Utils_Tuple2(
-						'type',
-						$elm$json$Json$Encode$string('word')),
-						_Utils_Tuple2(
-						'value',
-						$elm$json$Json$Encode$int(x))
-					]));
-		} else {
-			var _v1 = mv.a;
-			return $elm$json$Json$Encode$object(
-				_List_fromArray(
-					[
-						_Utils_Tuple2(
-						'type',
-						$elm$json$Json$Encode$string('word'))
-					]));
-		}
-	} else {
-		if (mv.a.$ === 'Just') {
-			var x = mv.a.a;
-			return $elm$json$Json$Encode$object(
-				_List_fromArray(
-					[
-						_Utils_Tuple2(
-						'type',
-						$elm$json$Json$Encode$string('float')),
-						_Utils_Tuple2(
-						'value',
-						$elm$json$Json$Encode$float(x))
-					]));
-		} else {
-			var _v2 = mv.a;
-			return $elm$json$Json$Encode$object(
-				_List_fromArray(
-					[
-						_Utils_Tuple2(
-						'type',
-						$elm$json$Json$Encode$string('float'))
-					]));
-		}
-	}
-};
-var $author$project$Types$getRegType = function (rt) {
-	if (rt.$ === 'InputRegister') {
-		return 'input register';
-	} else {
-		return 'holding register';
-	}
-};
-var $author$project$Update$encodeRegister = function (md) {
+var $author$project$Update$encodeIpPort = function (_v0) {
+	var ip = _v0.a;
+	var portNum = _v0.b;
 	return $elm$json$Json$Encode$object(
 		_List_fromArray(
 			[
 				_Utils_Tuple2(
-				'name',
-				$elm$json$Json$Encode$string(md.modName)),
-				_Utils_Tuple2(
-				'register type',
+				'ip address',
 				$elm$json$Json$Encode$string(
-					$author$project$Types$getRegType(md.modRegType))),
+					$author$project$Types$showIp(ip))),
 				_Utils_Tuple2(
-				'address',
-				$elm$json$Json$Encode$int(md.modAddress)),
-				_Utils_Tuple2(
-				'register value',
-				$author$project$Update$encodeModValue(md.modValue)),
-				_Utils_Tuple2(
-				'uid',
-				$elm$json$Json$Encode$int(md.modUid)),
-				_Utils_Tuple2(
-				'description',
-				$elm$json$Json$Encode$string(md.modDescription))
+				'port',
+				$elm$json$Json$Encode$int(portNum))
 			]));
 };
-var $elm$json$Json$Decode$decodeString = _Json_runOnString;
 var $elm$http$Http$BadStatus_ = F2(
 	function (a, b) {
 		return {$: 'BadStatus_', a: a, b: b};
@@ -6075,24 +5977,13 @@ var $elm$core$Basics$composeR = F3(
 		return g(
 			f(x));
 	});
-var $elm$http$Http$expectStringResponse = F2(
+var $elm$http$Http$expectBytesResponse = F2(
 	function (toMsg, toResult) {
 		return A3(
 			_Http_expect,
-			'',
-			$elm$core$Basics$identity,
+			'arraybuffer',
+			_Http_toDataView,
 			A2($elm$core$Basics$composeR, toResult, toMsg));
-	});
-var $elm$core$Result$mapError = F2(
-	function (f, result) {
-		if (result.$ === 'Ok') {
-			var v = result.a;
-			return $elm$core$Result$Ok(v);
-		} else {
-			var e = result.a;
-			return $elm$core$Result$Err(
-				f(e));
-		}
 	});
 var $elm$http$Http$BadBody = function (a) {
 	return {$: 'BadBody', a: a};
@@ -6105,6 +5996,17 @@ var $elm$http$Http$BadUrl = function (a) {
 };
 var $elm$http$Http$NetworkError = {$: 'NetworkError'};
 var $elm$http$Http$Timeout = {$: 'Timeout'};
+var $elm$core$Result$mapError = F2(
+	function (f, result) {
+		if (result.$ === 'Ok') {
+			var v = result.a;
+			return $elm$core$Result$Ok(v);
+		} else {
+			var e = result.a;
+			return $elm$core$Result$Err(
+				f(e));
+		}
+	});
 var $elm$http$Http$resolve = F2(
 	function (toResult, response) {
 		switch (response.$) {
@@ -6128,35 +6030,21 @@ var $elm$http$Http$resolve = F2(
 					toResult(body));
 		}
 	});
-var $elm$http$Http$expectJson = F2(
-	function (toMsg, decoder) {
-		return A2(
-			$elm$http$Http$expectStringResponse,
-			toMsg,
-			$elm$http$Http$resolve(
-				function (string) {
-					return A2(
-						$elm$core$Result$mapError,
-						$elm$json$Json$Decode$errorToString,
-						A2($elm$json$Json$Decode$decodeString, decoder, string));
-				}));
-	});
+var $elm$http$Http$expectWhatever = function (toMsg) {
+	return A2(
+		$elm$http$Http$expectBytesResponse,
+		toMsg,
+		$elm$http$Http$resolve(
+			function (_v0) {
+				return $elm$core$Result$Ok(_Utils_Tuple0);
+			}));
+};
 var $elm$http$Http$jsonBody = function (value) {
 	return A2(
 		_Http_pair,
 		'application/json',
 		A2($elm$json$Json$Encode$encode, 0, value));
 };
-var $elm$json$Json$Decode$list = _Json_decodeList;
-var $elm$json$Json$Encode$list = F2(
-	function (func, entries) {
-		return _Json_wrap(
-			A3(
-				$elm$core$List$foldl,
-				_Json_addEntry(func),
-				_Json_emptyArray(_Utils_Tuple0),
-				entries));
-	});
 var $elm$http$Http$Request = function (a) {
 	return {$: 'Request', a: a};
 };
@@ -6329,6 +6217,204 @@ var $elm$http$Http$post = function (r) {
 	return $elm$http$Http$request(
 		{body: r.body, expect: r.expect, headers: _List_Nil, method: 'POST', timeout: $elm$core$Maybe$Nothing, tracker: $elm$core$Maybe$Nothing, url: r.url});
 };
+var $author$project$Update$connectRequest = function (ipPort) {
+	return $elm$http$Http$post(
+		{
+			body: $elm$http$Http$jsonBody(
+				$author$project$Update$encodeIpPort(ipPort)),
+			expect: $elm$http$Http$expectWhatever($author$project$Types$ConnectedResponse),
+			url: 'http://localhost:4000/connect'
+		});
+};
+var $author$project$Types$ReadRegisters = function (a) {
+	return {$: 'ReadRegisters', a: a};
+};
+var $author$project$Types$ModData = F6(
+	function (modName, modRegType, modAddress, modValue, modUid, modDescription) {
+		return {modAddress: modAddress, modDescription: modDescription, modName: modName, modRegType: modRegType, modUid: modUid, modValue: modValue};
+	});
+var $author$project$Types$ModFloat = function (a) {
+	return {$: 'ModFloat', a: a};
+};
+var $elm$json$Json$Decode$andThen = _Json_andThen;
+var $elm$json$Json$Decode$fail = _Json_fail;
+var $elm$json$Json$Decode$field = _Json_decodeField;
+var $elm$json$Json$Decode$float = _Json_decodeFloat;
+var $elm$json$Json$Decode$int = _Json_decodeInt;
+var $elm$json$Json$Decode$null = _Json_decodeNull;
+var $elm$json$Json$Decode$oneOf = _Json_oneOf;
+var $elm$json$Json$Decode$nullable = function (decoder) {
+	return $elm$json$Json$Decode$oneOf(
+		_List_fromArray(
+			[
+				$elm$json$Json$Decode$null($elm$core$Maybe$Nothing),
+				A2($elm$json$Json$Decode$map, $elm$core$Maybe$Just, decoder)
+			]));
+};
+var $elm$json$Json$Decode$string = _Json_decodeString;
+var $author$project$Update$decodeModValue = A2(
+	$elm$json$Json$Decode$andThen,
+	function (s) {
+		switch (s) {
+			case 'word':
+				return A2(
+					$elm$json$Json$Decode$map,
+					$author$project$Types$ModWord,
+					A2(
+						$elm$json$Json$Decode$field,
+						'value',
+						$elm$json$Json$Decode$nullable($elm$json$Json$Decode$int)));
+			case 'float':
+				return A2(
+					$elm$json$Json$Decode$map,
+					$author$project$Types$ModFloat,
+					A2(
+						$elm$json$Json$Decode$field,
+						'value',
+						$elm$json$Json$Decode$nullable($elm$json$Json$Decode$float)));
+			default:
+				return $elm$json$Json$Decode$fail('Not a valid ModValue');
+		}
+	},
+	A2($elm$json$Json$Decode$field, 'type', $elm$json$Json$Decode$string));
+var $author$project$Types$HoldingRegister = {$: 'HoldingRegister'};
+var $author$project$Update$decodeRegType = A2(
+	$elm$json$Json$Decode$map,
+	function (s) {
+		switch (s) {
+			case 'input register':
+				return $author$project$Types$InputRegister;
+			case 'holding register':
+				return $author$project$Types$HoldingRegister;
+			default:
+				return $author$project$Types$InputRegister;
+		}
+	},
+	$elm$json$Json$Decode$string);
+var $elm$json$Json$Decode$map6 = _Json_map6;
+var $author$project$Update$decodeModData = A7(
+	$elm$json$Json$Decode$map6,
+	$author$project$Types$ModData,
+	A2($elm$json$Json$Decode$field, 'name', $elm$json$Json$Decode$string),
+	A2($elm$json$Json$Decode$field, 'register type', $author$project$Update$decodeRegType),
+	A2($elm$json$Json$Decode$field, 'address', $elm$json$Json$Decode$int),
+	A2($elm$json$Json$Decode$field, 'register value', $author$project$Update$decodeModValue),
+	A2($elm$json$Json$Decode$field, 'uid', $elm$json$Json$Decode$int),
+	A2($elm$json$Json$Decode$field, 'description', $elm$json$Json$Decode$string));
+var $elm$json$Json$Encode$float = _Json_wrap;
+var $author$project$Update$encodeModValue = function (mv) {
+	if (mv.$ === 'ModWord') {
+		if (mv.a.$ === 'Just') {
+			var x = mv.a.a;
+			return $elm$json$Json$Encode$object(
+				_List_fromArray(
+					[
+						_Utils_Tuple2(
+						'type',
+						$elm$json$Json$Encode$string('word')),
+						_Utils_Tuple2(
+						'value',
+						$elm$json$Json$Encode$int(x))
+					]));
+		} else {
+			var _v1 = mv.a;
+			return $elm$json$Json$Encode$object(
+				_List_fromArray(
+					[
+						_Utils_Tuple2(
+						'type',
+						$elm$json$Json$Encode$string('word'))
+					]));
+		}
+	} else {
+		if (mv.a.$ === 'Just') {
+			var x = mv.a.a;
+			return $elm$json$Json$Encode$object(
+				_List_fromArray(
+					[
+						_Utils_Tuple2(
+						'type',
+						$elm$json$Json$Encode$string('float')),
+						_Utils_Tuple2(
+						'value',
+						$elm$json$Json$Encode$float(x))
+					]));
+		} else {
+			var _v2 = mv.a;
+			return $elm$json$Json$Encode$object(
+				_List_fromArray(
+					[
+						_Utils_Tuple2(
+						'type',
+						$elm$json$Json$Encode$string('float'))
+					]));
+		}
+	}
+};
+var $author$project$Types$getRegType = function (rt) {
+	if (rt.$ === 'InputRegister') {
+		return 'input register';
+	} else {
+		return 'holding register';
+	}
+};
+var $author$project$Update$encodeRegister = function (md) {
+	return $elm$json$Json$Encode$object(
+		_List_fromArray(
+			[
+				_Utils_Tuple2(
+				'name',
+				$elm$json$Json$Encode$string(md.modName)),
+				_Utils_Tuple2(
+				'register type',
+				$elm$json$Json$Encode$string(
+					$author$project$Types$getRegType(md.modRegType))),
+				_Utils_Tuple2(
+				'address',
+				$elm$json$Json$Encode$int(md.modAddress)),
+				_Utils_Tuple2(
+				'register value',
+				$author$project$Update$encodeModValue(md.modValue)),
+				_Utils_Tuple2(
+				'uid',
+				$elm$json$Json$Encode$int(md.modUid)),
+				_Utils_Tuple2(
+				'description',
+				$elm$json$Json$Encode$string(md.modDescription))
+			]));
+};
+var $elm$json$Json$Decode$decodeString = _Json_runOnString;
+var $elm$http$Http$expectStringResponse = F2(
+	function (toMsg, toResult) {
+		return A3(
+			_Http_expect,
+			'',
+			$elm$core$Basics$identity,
+			A2($elm$core$Basics$composeR, toResult, toMsg));
+	});
+var $elm$http$Http$expectJson = F2(
+	function (toMsg, decoder) {
+		return A2(
+			$elm$http$Http$expectStringResponse,
+			toMsg,
+			$elm$http$Http$resolve(
+				function (string) {
+					return A2(
+						$elm$core$Result$mapError,
+						$elm$json$Json$Decode$errorToString,
+						A2($elm$json$Json$Decode$decodeString, decoder, string));
+				}));
+	});
+var $elm$json$Json$Decode$list = _Json_decodeList;
+var $elm$json$Json$Encode$list = F2(
+	function (func, entries) {
+		return _Json_wrap(
+			A3(
+				$elm$core$List$foldl,
+				_Json_addEntry(func),
+				_Json_emptyArray(_Utils_Tuple0),
+				entries));
+	});
 var $author$project$Update$refreshRequest = function (regs) {
 	return $elm$http$Http$post(
 		{
@@ -6360,32 +6446,76 @@ var $author$project$Update$showHttpError = function (err) {
 };
 var $author$project$Update$update = F2(
 	function (msg, model) {
-		if (msg.$ === 'ReadRegisters') {
-			if (msg.a.$ === 'Ok') {
-				var regs = msg.a.a;
+		switch (msg.$) {
+			case 'ReadRegisters':
+				if (msg.a.$ === 'Ok') {
+					var regs = msg.a.a;
+					return _Utils_Tuple2(
+						_Utils_update(
+							model,
+							{modData: regs, status: $author$project$Types$AllGood}),
+						$elm$core$Platform$Cmd$none);
+				} else {
+					var err = msg.a.a;
+					return _Utils_Tuple2(
+						_Utils_update(
+							model,
+							{
+								status: $author$project$Types$Bad(
+									$author$project$Update$showHttpError(err))
+							}),
+						$elm$core$Platform$Cmd$none);
+				}
+			case 'RefreshRequest':
+				var regs = msg.a;
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
-						{modData: regs, status: $author$project$Types$AllGood}),
-					$elm$core$Platform$Cmd$none);
-			} else {
-				var err = msg.a.a;
+						{status: $author$project$Types$Loading}),
+					$author$project$Update$refreshRequest(regs));
+			case 'ConnectRequest':
+				var ipPort = msg.a;
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
-						{
-							status: $author$project$Types$Bad(
-								$author$project$Update$showHttpError(err))
-						}),
-					$elm$core$Platform$Cmd$none);
-			}
-		} else {
-			var regs = msg.a;
-			return _Utils_Tuple2(
-				_Utils_update(
-					model,
-					{status: $author$project$Types$Loading}),
-				$author$project$Update$refreshRequest(regs));
+						{status: $author$project$Types$Connecting}),
+					$author$project$Update$connectRequest(ipPort));
+			case 'ConnectedResponse':
+				if (msg.a.$ === 'Ok') {
+					return _Utils_Tuple2(
+						_Utils_update(
+							model,
+							{status: $author$project$Types$Connected}),
+						$elm$core$Platform$Cmd$none);
+				} else {
+					var err = msg.a.a;
+					return _Utils_Tuple2(
+						_Utils_update(
+							model,
+							{
+								status: $author$project$Types$Bad(
+									$author$project$Update$showHttpError(err))
+							}),
+						$elm$core$Platform$Cmd$none);
+				}
+			default:
+				if (msg.a.$ === 'NoByte') {
+					var _v1 = msg.a;
+					return _Utils_Tuple2(
+						_Utils_update(
+							model,
+							{status: $author$project$Types$BadIpAddress}),
+						$elm$core$Platform$Cmd$none);
+				} else {
+					var _byte = msg.a;
+					return _Utils_Tuple2(
+						_Utils_update(
+							model,
+							{
+								ipAddress: A2($author$project$Types$changeIpAddressByte, model.ipAddress, _byte)
+							}),
+						$elm$core$Platform$Cmd$none);
+				}
 		}
 	});
 var $elm$html$Html$Attributes$stringProperty = F2(
@@ -6397,28 +6527,74 @@ var $elm$html$Html$Attributes$stringProperty = F2(
 	});
 var $elm$html$Html$Attributes$class = $elm$html$Html$Attributes$stringProperty('className');
 var $elm$html$Html$div = _VirtualDom_node('div');
-var $author$project$View$showStatus = function (status) {
+var $author$project$Types$showStatus = function (status) {
 	switch (status.$) {
 		case 'AllGood':
 			return 'all good';
 		case 'Loading':
 			return 'getting stuff from the server';
-		default:
+		case 'Bad':
 			var err = status.a;
 			return err;
+		case 'Connecting':
+			return 'connecting';
+		case 'Connected':
+			return 'connected';
+		default:
+			return 'Invalid ip address';
 	}
 };
 var $elm$virtual_dom$VirtualDom$text = _VirtualDom_text;
 var $elm$html$Html$text = $elm$virtual_dom$VirtualDom$text;
-var $author$project$Types$RefreshRequest = function (a) {
-	return {$: 'RefreshRequest', a: a};
+var $author$project$Types$Byte1 = function (a) {
+	return {$: 'Byte1', a: a};
 };
-var $elm$html$Html$Attributes$colspan = function (n) {
-	return A2(
-		_VirtualDom_attribute,
-		'colspan',
-		$elm$core$String$fromInt(n));
+var $author$project$Types$Byte2 = function (a) {
+	return {$: 'Byte2', a: a};
 };
+var $author$project$Types$Byte3 = function (a) {
+	return {$: 'Byte3', a: a};
+};
+var $author$project$Types$Byte4 = function (a) {
+	return {$: 'Byte4', a: a};
+};
+var $author$project$Types$ConnectRequest = function (a) {
+	return {$: 'ConnectRequest', a: a};
+};
+var $elm$html$Html$button = _VirtualDom_node('button');
+var $author$project$Types$ChangeIpAddressByte = function (a) {
+	return {$: 'ChangeIpAddressByte', a: a};
+};
+var $author$project$Types$NoByte = {$: 'NoByte'};
+var $author$project$View$insertByte = F2(
+	function (b, i) {
+		switch (b.$) {
+			case 'Byte1':
+				return $author$project$Types$Byte1(i);
+			case 'Byte2':
+				return $author$project$Types$Byte2(i);
+			case 'Byte3':
+				return $author$project$Types$Byte3(i);
+			case 'Byte4':
+				return $author$project$Types$Byte4(i);
+			default:
+				return $author$project$Types$NoByte;
+		}
+	});
+var $author$project$View$changeIp = F2(
+	function (_byte, s) {
+		var mbyte = $elm$core$String$toInt(s);
+		if (mbyte.$ === 'Nothing') {
+			return $author$project$Types$ChangeIpAddressByte($author$project$Types$NoByte);
+		} else {
+			var value = mbyte.a;
+			return ((value < 0) || (value > 255)) ? $author$project$Types$ChangeIpAddressByte($author$project$Types$NoByte) : $author$project$Types$ChangeIpAddressByte(
+				A2($author$project$View$insertByte, _byte, value));
+		}
+	});
+var $elm$html$Html$input = _VirtualDom_node('input');
+var $elm$html$Html$Attributes$max = $elm$html$Html$Attributes$stringProperty('max');
+var $elm$html$Html$Attributes$min = $elm$html$Html$Attributes$stringProperty('min');
 var $elm$virtual_dom$VirtualDom$Normal = function (a) {
 	return {$: 'Normal', a: a};
 };
@@ -6435,6 +6611,147 @@ var $elm$html$Html$Events$onClick = function (msg) {
 		$elm$html$Html$Events$on,
 		'click',
 		$elm$json$Json$Decode$succeed(msg));
+};
+var $elm$html$Html$Events$alwaysStop = function (x) {
+	return _Utils_Tuple2(x, true);
+};
+var $elm$virtual_dom$VirtualDom$MayStopPropagation = function (a) {
+	return {$: 'MayStopPropagation', a: a};
+};
+var $elm$html$Html$Events$stopPropagationOn = F2(
+	function (event, decoder) {
+		return A2(
+			$elm$virtual_dom$VirtualDom$on,
+			event,
+			$elm$virtual_dom$VirtualDom$MayStopPropagation(decoder));
+	});
+var $elm$json$Json$Decode$at = F2(
+	function (fields, decoder) {
+		return A3($elm$core$List$foldr, $elm$json$Json$Decode$field, decoder, fields);
+	});
+var $elm$html$Html$Events$targetValue = A2(
+	$elm$json$Json$Decode$at,
+	_List_fromArray(
+		['target', 'value']),
+	$elm$json$Json$Decode$string);
+var $elm$html$Html$Events$onInput = function (tagger) {
+	return A2(
+		$elm$html$Html$Events$stopPropagationOn,
+		'input',
+		A2(
+			$elm$json$Json$Decode$map,
+			$elm$html$Html$Events$alwaysStop,
+			A2($elm$json$Json$Decode$map, tagger, $elm$html$Html$Events$targetValue)));
+};
+var $elm$html$Html$Attributes$type_ = $elm$html$Html$Attributes$stringProperty('type');
+var $elm$html$Html$Attributes$value = $elm$html$Html$Attributes$stringProperty('value');
+var $author$project$View$viewConnect = function (model) {
+	return _List_fromArray(
+		[
+			A2(
+			$elm$html$Html$div,
+			_List_Nil,
+			_List_fromArray(
+				[
+					$elm$html$Html$text('ip address'),
+					A2(
+					$elm$html$Html$input,
+					_List_fromArray(
+						[
+							$elm$html$Html$Attributes$type_('number'),
+							$elm$html$Html$Attributes$max('255'),
+							$elm$html$Html$Attributes$min('0'),
+							$elm$html$Html$Attributes$value(
+							$elm$core$String$fromInt(model.ipAddress.b1)),
+							$elm$html$Html$Events$onInput(
+							$author$project$View$changeIp(
+								$author$project$Types$Byte1(model.ipAddress.b1)))
+						]),
+					_List_Nil),
+					$elm$html$Html$text('.'),
+					A2(
+					$elm$html$Html$input,
+					_List_fromArray(
+						[
+							$elm$html$Html$Attributes$type_('number'),
+							$elm$html$Html$Attributes$max('255'),
+							$elm$html$Html$Attributes$min('0'),
+							$elm$html$Html$Attributes$value(
+							$elm$core$String$fromInt(model.ipAddress.b2)),
+							$elm$html$Html$Events$onInput(
+							$author$project$View$changeIp(
+								$author$project$Types$Byte2(model.ipAddress.b2)))
+						]),
+					_List_Nil),
+					$elm$html$Html$text('.'),
+					A2(
+					$elm$html$Html$input,
+					_List_fromArray(
+						[
+							$elm$html$Html$Attributes$type_('number'),
+							$elm$html$Html$Attributes$max('255'),
+							$elm$html$Html$Attributes$min('0'),
+							$elm$html$Html$Attributes$value(
+							$elm$core$String$fromInt(model.ipAddress.b3)),
+							$elm$html$Html$Events$onInput(
+							$author$project$View$changeIp(
+								$author$project$Types$Byte3(model.ipAddress.b3)))
+						]),
+					_List_Nil),
+					$elm$html$Html$text('.'),
+					A2(
+					$elm$html$Html$input,
+					_List_fromArray(
+						[
+							$elm$html$Html$Attributes$type_('number'),
+							$elm$html$Html$Attributes$max('255'),
+							$elm$html$Html$Attributes$min('0'),
+							$elm$html$Html$Attributes$value(
+							$elm$core$String$fromInt(model.ipAddress.b4)),
+							$elm$html$Html$Events$onInput(
+							$author$project$View$changeIp(
+								$author$project$Types$Byte4(model.ipAddress.b4)))
+						]),
+					_List_Nil)
+				])),
+			A2(
+			$elm$html$Html$div,
+			_List_Nil,
+			_List_fromArray(
+				[
+					$elm$html$Html$text('port'),
+					A2(
+					$elm$html$Html$input,
+					_List_fromArray(
+						[
+							$elm$html$Html$Attributes$type_('number'),
+							$elm$html$Html$Attributes$value(
+							$elm$core$String$fromInt(model.socketPort))
+						]),
+					_List_Nil)
+				])),
+			A2(
+			$elm$html$Html$button,
+			_List_fromArray(
+				[
+					$elm$html$Html$Events$onClick(
+					$author$project$Types$ConnectRequest(
+						_Utils_Tuple2(model.ipAddress, model.socketPort)))
+				]),
+			_List_fromArray(
+				[
+					$elm$html$Html$text('connect')
+				]))
+		]);
+};
+var $author$project$Types$RefreshRequest = function (a) {
+	return {$: 'RefreshRequest', a: a};
+};
+var $elm$html$Html$Attributes$colspan = function (n) {
+	return A2(
+		_VirtualDom_attribute,
+		'colspan',
+		$elm$core$String$fromInt(n));
 };
 var $elm$html$Html$Attributes$scope = $elm$html$Html$Attributes$stringProperty('scope');
 var $elm$html$Html$table = _VirtualDom_node('table');
@@ -6689,6 +7006,13 @@ var $author$project$View$view = function (model) {
 				$elm$html$Html$div,
 				_List_fromArray(
 					[
+						$elm$html$Html$Attributes$class('connect')
+					]),
+				$author$project$View$viewConnect(model)),
+				A2(
+				$elm$html$Html$div,
+				_List_fromArray(
+					[
 						$elm$html$Html$Attributes$class('inputRegisters')
 					]),
 				_List_fromArray(
@@ -6697,11 +7021,14 @@ var $author$project$View$view = function (model) {
 					])),
 				A2(
 				$elm$html$Html$div,
-				_List_Nil,
+				_List_fromArray(
+					[
+						$elm$html$Html$Attributes$class('status')
+					]),
 				_List_fromArray(
 					[
 						$elm$html$Html$text(
-						$author$project$View$showStatus(model.status))
+						$author$project$Types$showStatus(model.status))
 					]))
 			]));
 };
