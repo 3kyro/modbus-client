@@ -12,6 +12,8 @@ module Types exposing
     , IpAddressByte (..)
     , changeIpAddressByte
     , showIpAddressByte
+    , ConnectStatus (..)
+    , showConnectStatus
     )
 
 import Http
@@ -19,15 +21,24 @@ import Http
 type Msg
     = ReadRegisters (Result Http.Error (List ModData))
     | RefreshRequest (List ModData)
-    | ConnectRequest (IpAddress , Int)
+    | ConnectRequest
     | ConnectedResponse (Result Http.Error () )
     | ChangeIpAddressByte IpAddressByte
+    | ChangePort String
+    | ChangeTimeout String
+
+type ConnectStatus
+    = Connect
+    | Connecting
+    | Connected
 
 type alias Model =
     { modData : List ModData
     , status : Status
+    , connectStatus : ConnectStatus
     , ipAddress : IpAddress
     , socketPort : Int
+    , timeout : Int
     }
 
 type alias IpAddress =
@@ -53,9 +64,9 @@ type Status
     = AllGood
     | Loading
     | Bad String
-    | Connecting
-    | Connected
     | BadIpAddress
+    | BadPort
+    | BadTimeout
 
 getRegType : RegType -> String
 getRegType rt =
@@ -111,6 +122,14 @@ showStatus status =
         AllGood -> "all good"
         Loading -> "getting stuff from the server"
         Bad err -> err
+        BadIpAddress -> "Invalid ip address"
+        BadPort -> "Bad Port"
+        BadTimeout -> "Bad Timeout"
+
+showConnectStatus : ConnectStatus -> String
+showConnectStatus st =
+    case st of
+        Connect -> "connect"
         Connecting -> "connecting"
         Connected -> "connected"
-        BadIpAddress -> "Invalid ip address"
+

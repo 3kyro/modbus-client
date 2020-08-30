@@ -13,10 +13,10 @@ import Types exposing
     , ModValue (..)
     , Status (..)
     , ModData
-    , IpAddress
     , IpAddressByte (..)
     , showIp
     , changeIpAddressByte
+    , ConnectStatus(..)
     )
 
 update : Msg -> Model -> ( Model, Cmd Msg)
@@ -27,30 +27,43 @@ update msg model =
         ReadRegisters (Err err) ->
             ( { model | status = Bad <| showHttpError err }, Cmd.none )
         RefreshRequest regs -> ( { model | status = Loading } , refreshRequest regs )
-        ConnectRequest ipPort -> ( { model | status = Connecting } , connectRequest ipPort )
+        ConnectRequest -> ( { model | connectStatus = Connecting } , connectRequest model )
         ConnectedResponse (Ok _) ->
-            ( { model | status = Connected } , Cmd.none )
+            ( { model | connectStatus = Connected } , Cmd.none )
         ConnectedResponse(Err err) ->
-            ( { model | status = Bad <| showHttpError err }, Cmd.none )
+            ( { model |
+                  status = Bad <| showHttpError err
+                , connectStatus = Connect }
+            , Cmd.none
+            )
         ChangeIpAddressByte (NoByte) ->
             ( { model | status = BadIpAddress }, Cmd.none )
         ChangeIpAddressByte byte ->
             ( { model | ipAddress = changeIpAddressByte model.ipAddress byte }, Cmd.none )
+        ChangePort portNum ->
+            case String.toInt portNum of
+                Nothing -> ( { model | status = BadPort }, Cmd.none )
+                Just p -> ( { model | socketPort = p }, Cmd.none )
+        ChangeTimeout tm ->
+            case String.toInt tm of
+                Nothing -> ( { model | status = BadTimeout }, Cmd.none )
+                Just t -> ( { model | timeout = t }, Cmd.none )
 
 
-connectRequest : (IpAddress , Int) -> Cmd Msg
-connectRequest ipPort =
+connectRequest : Model -> Cmd Msg
+connectRequest model =
     Http.post
         { url = "http://localhost:4000/connect"
-        , body = Http.jsonBody <| encodeIpPort ipPort
+        , body = Http.jsonBody <| encodeIpPort model
         , expect = Http.expectWhatever ConnectedResponse
         }
 
-encodeIpPort : (IpAddress, Int) -> E.Value
-encodeIpPort (ip, portNum) =
+encodeIpPort : Model -> E.Value
+encodeIpPort model =
     E.object
-        [ ( "ip address", E.string <| showIp ip)
-        , ( "port", E.int portNum )
+        [ ( "ip address", E.string <| showIp model.ipAddress)
+        , ( "port", E.int model.socketPort )
+        , ( "timeout", E.int  model.timeout)
         ]
 
 showHttpError : Http.Error -> String

@@ -5323,6 +5323,7 @@ var $elm$core$Platform$Cmd$batch = _Platform_batch;
 var $elm$core$Platform$Cmd$none = $elm$core$Platform$Cmd$batch(_List_Nil);
 var $author$project$App$initCmd = $elm$core$Platform$Cmd$none;
 var $author$project$Types$AllGood = {$: 'AllGood'};
+var $author$project$Types$Connect = {$: 'Connect'};
 var $author$project$Types$IpAddress = F4(
 	function (b1, b2, b3, b4) {
 		return {b1: b1, b2: b2, b3: b3, b4: b4};
@@ -5353,10 +5354,12 @@ var $author$project$App$initModData = _List_fromArray(
 	}
 	]);
 var $author$project$App$initModel = {
+	connectStatus: $author$project$Types$Connect,
 	ipAddress: A4($author$project$Types$IpAddress, 192, 168, 1, 1),
 	modData: $author$project$App$initModData,
 	socketPort: 502,
-	status: $author$project$Types$AllGood
+	status: $author$project$Types$AllGood,
+	timeout: 1000
 };
 var $elm$core$Platform$Sub$batch = _Platform_batch;
 var $elm$core$Platform$Sub$none = $elm$core$Platform$Sub$batch(_List_Nil);
@@ -5364,6 +5367,8 @@ var $author$project$Types$Bad = function (a) {
 	return {$: 'Bad', a: a};
 };
 var $author$project$Types$BadIpAddress = {$: 'BadIpAddress'};
+var $author$project$Types$BadPort = {$: 'BadPort'};
+var $author$project$Types$BadTimeout = {$: 'BadTimeout'};
 var $author$project$Types$Connected = {$: 'Connected'};
 var $author$project$Types$Connecting = {$: 'Connecting'};
 var $author$project$Types$Loading = {$: 'Loading'};
@@ -5415,19 +5420,20 @@ var $author$project$Types$showIp = function (ip) {
 	return $elm$core$String$fromInt(ip.b1) + ('.' + ($elm$core$String$fromInt(ip.b2) + ('.' + ($elm$core$String$fromInt(ip.b3) + ('.' + $elm$core$String$fromInt(ip.b4))))));
 };
 var $elm$json$Json$Encode$string = _Json_wrap;
-var $author$project$Update$encodeIpPort = function (_v0) {
-	var ip = _v0.a;
-	var portNum = _v0.b;
+var $author$project$Update$encodeIpPort = function (model) {
 	return $elm$json$Json$Encode$object(
 		_List_fromArray(
 			[
 				_Utils_Tuple2(
 				'ip address',
 				$elm$json$Json$Encode$string(
-					$author$project$Types$showIp(ip))),
+					$author$project$Types$showIp(model.ipAddress))),
 				_Utils_Tuple2(
 				'port',
-				$elm$json$Json$Encode$int(portNum))
+				$elm$json$Json$Encode$int(model.socketPort)),
+				_Utils_Tuple2(
+				'timeout',
+				$elm$json$Json$Encode$int(model.timeout))
 			]));
 };
 var $elm$http$Http$BadStatus_ = F2(
@@ -6217,11 +6223,11 @@ var $elm$http$Http$post = function (r) {
 	return $elm$http$Http$request(
 		{body: r.body, expect: r.expect, headers: _List_Nil, method: 'POST', timeout: $elm$core$Maybe$Nothing, tracker: $elm$core$Maybe$Nothing, url: r.url});
 };
-var $author$project$Update$connectRequest = function (ipPort) {
+var $author$project$Update$connectRequest = function (model) {
 	return $elm$http$Http$post(
 		{
 			body: $elm$http$Http$jsonBody(
-				$author$project$Update$encodeIpPort(ipPort)),
+				$author$project$Update$encodeIpPort(model)),
 			expect: $elm$http$Http$expectWhatever($author$project$Types$ConnectedResponse),
 			url: 'http://localhost:4000/connect'
 		});
@@ -6474,18 +6480,17 @@ var $author$project$Update$update = F2(
 						{status: $author$project$Types$Loading}),
 					$author$project$Update$refreshRequest(regs));
 			case 'ConnectRequest':
-				var ipPort = msg.a;
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
-						{status: $author$project$Types$Connecting}),
-					$author$project$Update$connectRequest(ipPort));
+						{connectStatus: $author$project$Types$Connecting}),
+					$author$project$Update$connectRequest(model));
 			case 'ConnectedResponse':
 				if (msg.a.$ === 'Ok') {
 					return _Utils_Tuple2(
 						_Utils_update(
 							model,
-							{status: $author$project$Types$Connected}),
+							{connectStatus: $author$project$Types$Connected}),
 						$elm$core$Platform$Cmd$none);
 				} else {
 					var err = msg.a.a;
@@ -6493,12 +6498,13 @@ var $author$project$Update$update = F2(
 						_Utils_update(
 							model,
 							{
+								connectStatus: $author$project$Types$Connect,
 								status: $author$project$Types$Bad(
 									$author$project$Update$showHttpError(err))
 							}),
 						$elm$core$Platform$Cmd$none);
 				}
-			default:
+			case 'ChangeIpAddressByte':
 				if (msg.a.$ === 'NoByte') {
 					var _v1 = msg.a;
 					return _Utils_Tuple2(
@@ -6514,6 +6520,40 @@ var $author$project$Update$update = F2(
 							{
 								ipAddress: A2($author$project$Types$changeIpAddressByte, model.ipAddress, _byte)
 							}),
+						$elm$core$Platform$Cmd$none);
+				}
+			case 'ChangePort':
+				var portNum = msg.a;
+				var _v2 = $elm$core$String$toInt(portNum);
+				if (_v2.$ === 'Nothing') {
+					return _Utils_Tuple2(
+						_Utils_update(
+							model,
+							{status: $author$project$Types$BadPort}),
+						$elm$core$Platform$Cmd$none);
+				} else {
+					var p = _v2.a;
+					return _Utils_Tuple2(
+						_Utils_update(
+							model,
+							{socketPort: p}),
+						$elm$core$Platform$Cmd$none);
+				}
+			default:
+				var tm = msg.a;
+				var _v3 = $elm$core$String$toInt(tm);
+				if (_v3.$ === 'Nothing') {
+					return _Utils_Tuple2(
+						_Utils_update(
+							model,
+							{status: $author$project$Types$BadTimeout}),
+						$elm$core$Platform$Cmd$none);
+				} else {
+					var t = _v3.a;
+					return _Utils_Tuple2(
+						_Utils_update(
+							model,
+							{timeout: t}),
 						$elm$core$Platform$Cmd$none);
 				}
 		}
@@ -6536,12 +6576,12 @@ var $author$project$Types$showStatus = function (status) {
 		case 'Bad':
 			var err = status.a;
 			return err;
-		case 'Connecting':
-			return 'connecting';
-		case 'Connected':
-			return 'connected';
-		default:
+		case 'BadIpAddress':
 			return 'Invalid ip address';
+		case 'BadPort':
+			return 'Bad Port';
+		default:
+			return 'Bad Timeout';
 	}
 };
 var $elm$virtual_dom$VirtualDom$text = _VirtualDom_text;
@@ -6558,10 +6598,47 @@ var $author$project$Types$Byte3 = function (a) {
 var $author$project$Types$Byte4 = function (a) {
 	return {$: 'Byte4', a: a};
 };
-var $author$project$Types$ConnectRequest = function (a) {
-	return {$: 'ConnectRequest', a: a};
+var $author$project$Types$ChangePort = function (a) {
+	return {$: 'ChangePort', a: a};
 };
-var $elm$html$Html$button = _VirtualDom_node('button');
+var $author$project$Types$ChangeTimeout = function (a) {
+	return {$: 'ChangeTimeout', a: a};
+};
+var $elm$html$Html$input = _VirtualDom_node('input');
+var $elm$html$Html$Events$alwaysStop = function (x) {
+	return _Utils_Tuple2(x, true);
+};
+var $elm$virtual_dom$VirtualDom$MayStopPropagation = function (a) {
+	return {$: 'MayStopPropagation', a: a};
+};
+var $elm$virtual_dom$VirtualDom$on = _VirtualDom_on;
+var $elm$html$Html$Events$stopPropagationOn = F2(
+	function (event, decoder) {
+		return A2(
+			$elm$virtual_dom$VirtualDom$on,
+			event,
+			$elm$virtual_dom$VirtualDom$MayStopPropagation(decoder));
+	});
+var $elm$json$Json$Decode$at = F2(
+	function (fields, decoder) {
+		return A3($elm$core$List$foldr, $elm$json$Json$Decode$field, decoder, fields);
+	});
+var $elm$html$Html$Events$targetValue = A2(
+	$elm$json$Json$Decode$at,
+	_List_fromArray(
+		['target', 'value']),
+	$elm$json$Json$Decode$string);
+var $elm$html$Html$Events$onInput = function (tagger) {
+	return A2(
+		$elm$html$Html$Events$stopPropagationOn,
+		'input',
+		A2(
+			$elm$json$Json$Decode$map,
+			$elm$html$Html$Events$alwaysStop,
+			A2($elm$json$Json$Decode$map, tagger, $elm$html$Html$Events$targetValue)));
+};
+var $elm$html$Html$Attributes$type_ = $elm$html$Html$Attributes$stringProperty('type');
+var $elm$html$Html$Attributes$value = $elm$html$Html$Attributes$stringProperty('value');
 var $author$project$Types$ChangeIpAddressByte = function (a) {
 	return {$: 'ChangeIpAddressByte', a: a};
 };
@@ -6592,13 +6669,45 @@ var $author$project$View$changeIp = F2(
 				A2($author$project$View$insertByte, _byte, value));
 		}
 	});
-var $elm$html$Html$input = _VirtualDom_node('input');
 var $elm$html$Html$Attributes$max = $elm$html$Html$Attributes$stringProperty('max');
 var $elm$html$Html$Attributes$min = $elm$html$Html$Attributes$stringProperty('min');
+var $author$project$Types$showIpAddressByte = function (_byte) {
+	switch (_byte.$) {
+		case 'Byte1':
+			var x = _byte.a;
+			return $elm$core$String$fromInt(x);
+		case 'Byte2':
+			var x = _byte.a;
+			return $elm$core$String$fromInt(x);
+		case 'Byte3':
+			var x = _byte.a;
+			return $elm$core$String$fromInt(x);
+		case 'Byte4':
+			var x = _byte.a;
+			return $elm$core$String$fromInt(x);
+		default:
+			return 'No Byte';
+	}
+};
+var $author$project$View$viewByteInput = function (_byte) {
+	return A2(
+		$elm$html$Html$input,
+		_List_fromArray(
+			[
+				$elm$html$Html$Attributes$type_('number'),
+				$elm$html$Html$Attributes$max('255'),
+				$elm$html$Html$Attributes$min('0'),
+				$elm$html$Html$Attributes$value(
+				$author$project$Types$showIpAddressByte(_byte)),
+				$elm$html$Html$Events$onInput(
+				$author$project$View$changeIp(_byte))
+			]),
+		_List_Nil);
+};
+var $author$project$Types$ConnectRequest = {$: 'ConnectRequest'};
 var $elm$virtual_dom$VirtualDom$Normal = function (a) {
 	return {$: 'Normal', a: a};
 };
-var $elm$virtual_dom$VirtualDom$on = _VirtualDom_on;
 var $elm$html$Html$Events$on = F2(
 	function (event, decoder) {
 		return A2(
@@ -6612,39 +6721,52 @@ var $elm$html$Html$Events$onClick = function (msg) {
 		'click',
 		$elm$json$Json$Decode$succeed(msg));
 };
-var $elm$html$Html$Events$alwaysStop = function (x) {
-	return _Utils_Tuple2(x, true);
+var $author$project$Types$showConnectStatus = function (st) {
+	switch (st.$) {
+		case 'Connect':
+			return 'connect';
+		case 'Connecting':
+			return 'connecting';
+		default:
+			return 'connected';
+	}
 };
-var $elm$virtual_dom$VirtualDom$MayStopPropagation = function (a) {
-	return {$: 'MayStopPropagation', a: a};
-};
-var $elm$html$Html$Events$stopPropagationOn = F2(
-	function (event, decoder) {
-		return A2(
-			$elm$virtual_dom$VirtualDom$on,
-			event,
-			$elm$virtual_dom$VirtualDom$MayStopPropagation(decoder));
-	});
-var $elm$json$Json$Decode$at = F2(
-	function (fields, decoder) {
-		return A3($elm$core$List$foldr, $elm$json$Json$Decode$field, decoder, fields);
-	});
-var $elm$html$Html$Events$targetValue = A2(
-	$elm$json$Json$Decode$at,
-	_List_fromArray(
-		['target', 'value']),
-	$elm$json$Json$Decode$string);
-var $elm$html$Html$Events$onInput = function (tagger) {
+var $author$project$View$viewConnectButton = function (model) {
 	return A2(
-		$elm$html$Html$Events$stopPropagationOn,
-		'input',
-		A2(
-			$elm$json$Json$Decode$map,
-			$elm$html$Html$Events$alwaysStop,
-			A2($elm$json$Json$Decode$map, tagger, $elm$html$Html$Events$targetValue)));
+		$elm$html$Html$div,
+		_List_fromArray(
+			[
+				$elm$html$Html$Attributes$class(
+				$author$project$Types$showConnectStatus(model.connectStatus)),
+				$elm$html$Html$Events$onClick($author$project$Types$ConnectRequest)
+			]),
+		_List_fromArray(
+			[
+				$elm$html$Html$text(
+				$author$project$Types$showConnectStatus(model.connectStatus))
+			]));
 };
-var $elm$html$Html$Attributes$type_ = $elm$html$Html$Attributes$stringProperty('type');
-var $elm$html$Html$Attributes$value = $elm$html$Html$Attributes$stringProperty('value');
+var $author$project$View$getDisconnectClass = function (status) {
+	if (status.$ === 'Connected') {
+		return 'connect';
+	} else {
+		return 'disconnect';
+	}
+};
+var $author$project$View$viewDisconnectButton = function (model) {
+	return A2(
+		$elm$html$Html$div,
+		_List_fromArray(
+			[
+				$elm$html$Html$Attributes$class(
+				$author$project$View$getDisconnectClass(model.connectStatus)),
+				$elm$html$Html$Events$onClick($author$project$Types$ConnectRequest)
+			]),
+		_List_fromArray(
+			[
+				$elm$html$Html$text('disconnect')
+			]));
+};
 var $author$project$View$viewConnect = function (model) {
 	return _List_fromArray(
 		[
@@ -6654,65 +6776,14 @@ var $author$project$View$viewConnect = function (model) {
 			_List_fromArray(
 				[
 					$elm$html$Html$text('ip address'),
-					A2(
-					$elm$html$Html$input,
-					_List_fromArray(
-						[
-							$elm$html$Html$Attributes$type_('number'),
-							$elm$html$Html$Attributes$max('255'),
-							$elm$html$Html$Attributes$min('0'),
-							$elm$html$Html$Attributes$value(
-							$elm$core$String$fromInt(model.ipAddress.b1)),
-							$elm$html$Html$Events$onInput(
-							$author$project$View$changeIp(
-								$author$project$Types$Byte1(model.ipAddress.b1)))
-						]),
-					_List_Nil),
-					$elm$html$Html$text('.'),
-					A2(
-					$elm$html$Html$input,
-					_List_fromArray(
-						[
-							$elm$html$Html$Attributes$type_('number'),
-							$elm$html$Html$Attributes$max('255'),
-							$elm$html$Html$Attributes$min('0'),
-							$elm$html$Html$Attributes$value(
-							$elm$core$String$fromInt(model.ipAddress.b2)),
-							$elm$html$Html$Events$onInput(
-							$author$project$View$changeIp(
-								$author$project$Types$Byte2(model.ipAddress.b2)))
-						]),
-					_List_Nil),
-					$elm$html$Html$text('.'),
-					A2(
-					$elm$html$Html$input,
-					_List_fromArray(
-						[
-							$elm$html$Html$Attributes$type_('number'),
-							$elm$html$Html$Attributes$max('255'),
-							$elm$html$Html$Attributes$min('0'),
-							$elm$html$Html$Attributes$value(
-							$elm$core$String$fromInt(model.ipAddress.b3)),
-							$elm$html$Html$Events$onInput(
-							$author$project$View$changeIp(
-								$author$project$Types$Byte3(model.ipAddress.b3)))
-						]),
-					_List_Nil),
-					$elm$html$Html$text('.'),
-					A2(
-					$elm$html$Html$input,
-					_List_fromArray(
-						[
-							$elm$html$Html$Attributes$type_('number'),
-							$elm$html$Html$Attributes$max('255'),
-							$elm$html$Html$Attributes$min('0'),
-							$elm$html$Html$Attributes$value(
-							$elm$core$String$fromInt(model.ipAddress.b4)),
-							$elm$html$Html$Events$onInput(
-							$author$project$View$changeIp(
-								$author$project$Types$Byte4(model.ipAddress.b4)))
-						]),
-					_List_Nil)
+					$author$project$View$viewByteInput(
+					$author$project$Types$Byte1(model.ipAddress.b1)),
+					$author$project$View$viewByteInput(
+					$author$project$Types$Byte2(model.ipAddress.b2)),
+					$author$project$View$viewByteInput(
+					$author$project$Types$Byte3(model.ipAddress.b3)),
+					$author$project$View$viewByteInput(
+					$author$project$Types$Byte4(model.ipAddress.b4))
 				])),
 			A2(
 			$elm$html$Html$div,
@@ -6726,22 +6797,30 @@ var $author$project$View$viewConnect = function (model) {
 						[
 							$elm$html$Html$Attributes$type_('number'),
 							$elm$html$Html$Attributes$value(
-							$elm$core$String$fromInt(model.socketPort))
+							$elm$core$String$fromInt(model.socketPort)),
+							$elm$html$Html$Events$onInput($author$project$Types$ChangePort)
 						]),
 					_List_Nil)
 				])),
 			A2(
-			$elm$html$Html$button,
+			$elm$html$Html$div,
+			_List_Nil,
 			_List_fromArray(
 				[
-					$elm$html$Html$Events$onClick(
-					$author$project$Types$ConnectRequest(
-						_Utils_Tuple2(model.ipAddress, model.socketPort)))
-				]),
-			_List_fromArray(
-				[
-					$elm$html$Html$text('connect')
-				]))
+					$elm$html$Html$text('timeout'),
+					A2(
+					$elm$html$Html$input,
+					_List_fromArray(
+						[
+							$elm$html$Html$Attributes$type_('number'),
+							$elm$html$Html$Attributes$value(
+							$elm$core$String$fromInt(model.timeout)),
+							$elm$html$Html$Events$onInput($author$project$Types$ChangeTimeout)
+						]),
+					_List_Nil)
+				])),
+			$author$project$View$viewConnectButton(model),
+			$author$project$View$viewDisconnectButton(model)
 		]);
 };
 var $author$project$Types$RefreshRequest = function (a) {
@@ -7006,7 +7085,7 @@ var $author$project$View$view = function (model) {
 				$elm$html$Html$div,
 				_List_fromArray(
 					[
-						$elm$html$Html$Attributes$class('connect')
+						$elm$html$Html$Attributes$class('connectRegion')
 					]),
 				$author$project$View$viewConnect(model)),
 				A2(

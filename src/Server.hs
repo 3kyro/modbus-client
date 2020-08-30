@@ -4,7 +4,7 @@ module Server (runServer) where
 
 
 import Control.Monad.Trans.State.Strict (evalStateT)
-import Control.Monad.Trans (lift)
+import Control.Monad.Trans (liftIO, lift)
 import Data.IP (IPv4)
 import Network.HTTP.Types.Status
 import Web.Scotty
@@ -45,12 +45,26 @@ app = do
     lift $ get "/app.js" $ file "frontend/app.js"
     lift $ get "/style.css" $ file "frontend/style.css"
     lift $ post "/register" register
+    lift $ post "/connect" connect
+
+
+connect :: ActionM ()
+connect = do
+    ConnectionData ip port tm <- jsonData
+    liftIO $ print ip
+    liftIO $ print port
+    liftIO $ print tm
+    maybeSocket <- liftIO $ maybeConnect (getAddr ip port) tm
+    case maybeSocket of
+        Nothing -> status status500
+        Just _ -> status status200
+
+
 
 showLandingPage :: ActionM ()
 showLandingPage = do
     setHeader "Content-Type" "text/html"
     file "frontend/index.html"
-
 
 register :: ActionM ()
 register = do

@@ -7,12 +7,34 @@ html, body {
     background-color: rgb(37, 39, 41);
     color: whitesmoke;
     width: 100vw;
-
     position: fixed;
     bottom: 0px;
     font-size: 80%;
     border: none;
     padding: 1%;
+}
+
+.connectRegion {
+    background-color: rgb(103, 105, 107);
+}
+
+.connect {
+    background-color: #587093;
+    cursor: pointer;
+}
+
+.connecting {
+    background-color: orange;
+    cursor: pointer;
+}
+
+.connected {
+    background-color: limegreen;
+    cursor: pointer;
+}
+
+.disconnect {
+    background-color: rgb(103, 105, 107);
 }
 
 table {

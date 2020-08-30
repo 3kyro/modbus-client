@@ -12,6 +12,7 @@ import Types exposing
     , Status (..)
     , RegType (..)
     , IpAddress
+    , ConnectStatus(..)
     )
 
 main : Program () Model Msg
@@ -26,8 +27,11 @@ initModel : Model
 initModel =
     { modData = initModData
     , status = AllGood
+    , connectStatus = Connect
     , ipAddress = IpAddress 192 168 1 1
     , socketPort = 502
+    , timeout = 1000
+
     }
 
 

@@ -12,7 +12,6 @@ import Html exposing
     , thead
     , tbody
     , tfoot
-    , button
     , input
     )
 import Html.Attributes exposing
@@ -35,13 +34,16 @@ import Types exposing
     , ModData
     , IpAddressByte(..)
     , showIpAddressByte
+    , showConnectStatus
     )
 import String
+import Types exposing (ConnectStatus)
+import Types exposing (ConnectStatus(..))
 
 view : Model -> Html Msg
 view model =
     div [ class "root" ]
-        [ div [ class "connect" ] (viewConnect model)
+        [ div [ class "connectRegion" ] (viewConnect model)
         , div [ class "inputRegisters" ] [viewMultModData model.modData]
         , div [ class "status" ] [text <| showStatus model.status]
         ]
@@ -51,17 +53,52 @@ viewConnect model =
     [ div []
         [ text "ip address"
         , viewByteInput <| Byte1 model.ipAddress.b1
-        , viewByteInput <| Byte1 model.ipAddress.b2
-        , viewByteInput <| Byte1 model.ipAddress.b3
-        , viewByteInput <| Byte1 model.ipAddress.b4
+        , viewByteInput <| Byte2 model.ipAddress.b2
+        , viewByteInput <| Byte3 model.ipAddress.b3
+        , viewByteInput <| Byte4 model.ipAddress.b4
         ]
 
     , div []
         [ text "port"
-        , input [ type_ "number", value <| String.fromInt model.socketPort ] []
+        , input
+            [ type_ "number"
+            , value <| String.fromInt model.socketPort
+            , onInput <| ChangePort
+            ] []
         ]
-    , button [onClick <| ConnectRequest (model.ipAddress , model.socketPort)] [ text "connect"]
+    , div []
+        [ text "timeout"
+        , input
+            [ type_ "number"
+            , value <| String.fromInt model.timeout
+            , onInput <| ChangeTimeout
+            ] []
+        ]
+    , viewConnectButton model
+    , viewDisconnectButton model
     ]
+
+viewConnectButton : Model -> Html Msg
+viewConnectButton model =
+    div
+        [ class <| showConnectStatus model.connectStatus
+        , onClick <| ConnectRequest
+        ]
+        [ text <| showConnectStatus model.connectStatus ]
+
+viewDisconnectButton : Model -> Html Msg
+viewDisconnectButton model =
+    div
+        [ class <| getDisconnectClass model.connectStatus
+        , onClick <| ConnectRequest
+        ]
+        [ text "disconnect" ]
+
+getDisconnectClass : ConnectStatus -> String
+getDisconnectClass status =
+    case status of
+        Connected -> "connect"
+        _ -> "disconnect"
 
 viewByteInput : IpAddressByte -> Html Msg
 viewByteInput byte =

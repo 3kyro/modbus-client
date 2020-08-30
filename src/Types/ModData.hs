@@ -162,7 +162,7 @@ serializeModValue mt =
     serMaybe Nothing = ""
 
 instance FromJSON ModData where
-    parseJSON (Object o)= do
+    parseJSON (Object o) = do
         name <- o .: "name"
         regType <- o .: "register type"
         addr <- o .: "address"
@@ -170,6 +170,8 @@ instance FromJSON ModData where
         uid <- o .: "uid"
         desc <- o .: "description"
         return $ ModData name regType addr value uid desc
+    parseJSON _ = fail "Not a ModData"
+
 
 instance ToJSON ModData where
     toJSON md = object
@@ -205,6 +207,7 @@ instance FromJSON ModValue where
             "float" -> do
                 v <- o .:? "value"
                 return $ ModFloat v
+    parseJSON _ = fail "Not a ModValue"
 
 instance ToJSON RegType where
     toJSON rt =
