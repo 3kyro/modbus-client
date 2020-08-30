@@ -4,6 +4,7 @@ module Modbus
     , getFloats
     , fromFloats
     , word2Float
+    , modbusConnection
     ) where
 
 import Control.Monad.Except (throwError)
@@ -23,11 +24,21 @@ import Data.Binary.Get
     , getWord16be
     , getWord16le
     )
+import Network.Socket.ByteString (recv, send)
 
+import qualified Network.Socket as S
 import qualified System.Modbus.TCP as MB
 
-import Types 
+import Types
 
+modbusConnection :: S.Socket -> Int -> MB.Connection
+modbusConnection s tm =
+    MB.Connection
+    { MB.connWrite          = send s
+    , MB.connRead           = recv s
+    , MB.connCommandTimeout = tm * 1000
+    , MB.connRetryWhen      = const . const False
+    }
 
 modSession :: [ModData] -> ByteOrder -> MB.Session [ModData]
 modSession md order =
@@ -96,7 +107,7 @@ getFloats bo (x:y:ys) = word2Float bo (x,y) : getFloats bo ys
 -- uses the default modbus protocol big-endian byte order
 fromFloats :: [Float] -> [Word16]
 fromFloats [] = []
-fromFloats (x:xs) = 
+fromFloats (x:xs) =
   let
       (msw,lsw) = float2Word x
   in
