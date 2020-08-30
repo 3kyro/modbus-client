@@ -1,16 +1,19 @@
 module Main where
 
 import Control.Monad.Except (runExceptT)
-import Control.Exception.Safe (bracket)
 import Data.Word (Word8)
-import Data.IP (IPv4, toHostAddress)
 
 import qualified Data.Text.IO as T
 import qualified Network.Socket as S
 import qualified System.Modbus.TCP as MB
 
 import CsvParser (parseCSVFile)
-import Modbus (modSession, modbusConnection)
+import Modbus
+    ( modSession
+    , modbusConnection
+    , withSocket
+    , getAddr
+    )
 import OptParser (Opt(..), AppMode (..), runOpts)
 import PrettyPrint (ppError)
 import Repl (runRepl)
@@ -31,10 +34,7 @@ runApp (Opt mode input output ip portNum order uid tm) =
                     resp <- runModDataApp (getAddr ip portNum) tm order md'
                     T.writeFile output (serializeModData resp)
         AppRepl -> runReplApp (getAddr ip portNum) tm order [] uid
-        AppWeb -> runServer
-
-getAddr :: IPv4 -> Int -> S.SockAddr
-getAddr ip portNum = S.SockAddrInet (fromIntegral portNum) (toHostAddress ip)
+        AppWeb -> runServer ip portNum order tm
 
 runModDataApp :: S.SockAddr -> Int -> ByteOrder -> [ModData] -> IO [ModData]
 runModDataApp addr tm order md =
@@ -50,15 +50,4 @@ runReplApp addr tm order mdata uid =
     withSocket addr $ \s ->
         runRepl (Config (modbusConnection s tm) addr order tm) (ReplState mdata uid [])
 
-withSocket :: S.SockAddr -> (S.Socket -> IO a) -> IO a
-withSocket addr = bracket (connect addr) close
-  where close s = S.gracefulClose s 1000
-
-connect :: S.SockAddr -> IO S.Socket
-connect addr = do
-    putStrLn ("Connecting to " ++ show addr ++ "...")
-    s <- S.socket S.AF_INET S.Stream S.defaultProtocol
-    S.connect s addr
-    putStrLn "connected"
-    return s
 

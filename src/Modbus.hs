@@ -1,3 +1,4 @@
+{-# LANGUAGE ScopedTypeVariables #-}
 module Modbus 
     (
       modSession
@@ -5,6 +6,10 @@ module Modbus
     , fromFloats
     , word2Float
     , modbusConnection
+    , withSocket
+    , connect
+    , maybeConnect
+    , getAddr
     ) where
 
 import Control.Monad.Except (throwError)
@@ -30,6 +35,9 @@ import qualified Network.Socket as S
 import qualified System.Modbus.TCP as MB
 
 import Types
+import Control.Exception.Safe (SomeException, try, bracket)
+import Data.IP (toHostAddress, IPv4)
+import qualified System.Timeout as TM
 
 modbusConnection :: S.Socket -> Int -> MB.Connection
 modbusConnection s tm =
@@ -39,6 +47,7 @@ modbusConnection s tm =
     , MB.connCommandTimeout = tm * 1000
     , MB.connRetryWhen      = const . const False
     }
+
 
 modSession :: [ModData] -> ByteOrder -> MB.Session [ModData]
 modSession md order =
@@ -140,3 +149,26 @@ be2float (f, s)= runGet getFloatbe $ runPut putWords
 swappWord :: Word16 -> Word16
 swappWord w = runGet getWord16be $ runPut $ putWord16le w
 
+withSocket :: S.SockAddr -> (S.Socket -> IO a) -> IO a
+withSocket addr = bracket (connect addr) close
+  where close s = S.gracefulClose s 1000
+
+connect :: S.SockAddr -> IO S.Socket
+connect addr = do
+    putStrLn ("Connecting to " ++ show addr ++ "...")
+    s <- S.socket S.AF_INET S.Stream S.defaultProtocol
+    S.connect s addr
+    putStrLn "connected"
+    return s
+
+-- Connect to the server using a new socket and checking for a timeout
+maybeConnect :: S.SockAddr -> Int -> IO (Maybe S.Socket)
+maybeConnect addr tm = do
+    s <- S.socket S.AF_INET S.Stream S.defaultProtocol
+    ( rlt :: Either SomeException (Maybe ()) ) <- try $ TM.timeout tm (S.connect s addr)
+    case rlt of
+        Left _ -> return Nothing
+        Right m -> return $ s <$ m
+
+getAddr :: IPv4 -> Int -> S.SockAddr
+getAddr ip portNum = S.SockAddrInet (fromIntegral portNum) (toHostAddress ip)

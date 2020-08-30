@@ -2,6 +2,10 @@
 
 module Server (runServer) where
 
+
+import Control.Monad.Trans.State.Strict (evalStateT)
+import Control.Monad.Trans (lift)
+import Data.IP (IPv4)
 import Network.HTTP.Types.Status
 import Web.Scotty
     (ScottyM
@@ -11,24 +15,36 @@ import Web.Scotty
     , ActionM
     , setHeader
     , file
-    
     , jsonData
     , json
     , status
     )
+
 import Types
+import Modbus (modbusConnection, maybeConnect, getAddr)
 
-runServer :: IO ()
-runServer = do
+runServerApp :: ServState -> Server a-> ScottyM a
+runServerApp state serv = evalStateT serv state
+
+runServer :: IPv4       -- Modbus Server IP address
+          -> Int        -- Port number
+          -> ByteOrder  -- Byte order
+          -> Int        -- timeout
+          -> IO ()
+runServer ip portNum order tm = do
+    let sockAddr = getAddr ip portNum
+    maybeSocket <- maybeConnect sockAddr tm
+    let conn = (`modbusConnection` tm) <$> maybeSocket
+    let state = ServState conn order []
     putStrLn "http://localhost:4000"
-    scotty 4000 app
+    scotty 4000 $ runServerApp state app
 
-app :: ScottyM ()
+app :: Server ()
 app = do
-    get "/" showLandingPage
-    get "/app.js" $ file "frontend/app.js"
-    get "/style.css" $ file "frontend/style.css"
-    post "/register" register
+    lift $ get "/" showLandingPage
+    lift $ get "/app.js" $ file "frontend/app.js"
+    lift $ get "/style.css" $ file "frontend/style.css"
+    lift $ post "/register" register
 
 showLandingPage :: ActionM ()
 showLandingPage = do

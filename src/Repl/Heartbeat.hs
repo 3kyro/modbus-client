@@ -16,8 +16,8 @@ import Network.Socket.ByteString (recv, send)
 
 import qualified Network.Socket as S
 import qualified System.Modbus.TCP as MB
-import qualified System.Timeout as TM
 
+import Modbus (maybeConnect)
 import Repl.Error (replRunExceptT, runReplSession)
 import Repl.Parser (pReplInt, pReplArg)
 import PrettyPrint (ppStrError, ppThreadError, ppMultThreadState, ppStrWarning)
@@ -79,7 +79,7 @@ spawn :: Word16             -- Address of holding register
       -> MVar SomeException -- bookeeping MVar
       -> IO ()
 spawn reg uid timer sock tm var = do
-    ms <- connect sock tm
+    ms <- maybeConnect sock tm
     case ms of
         Nothing -> ppStrError "Heartbeat connection timed out"
         Just s' -> go 0 (conn' s')
@@ -92,15 +92,6 @@ spawn reg uid timer sock tm var = do
         case wrapped of
             Left err -> putMVar var (SomeException err)
             Right _ -> go acc' mbConn
-
--- Connect to the server using a new socket and checking for a timeout
-connect :: S.SockAddr -> Int -> IO (Maybe S.Socket)
-connect addr tm = do
-    s <- S.socket S.AF_INET S.Stream S.defaultProtocol
-    m <- TM.timeout tm (S.connect s addr)
-    case m of
-        Nothing -> return Nothing
-        Just () -> return (Just s)
 
 -- Parse the argument list and call stopHeartbeatThread on
 -- each valid identifier
