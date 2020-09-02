@@ -79,11 +79,19 @@ getConnectionInfo state = servConnInfo <$> liftIO (readTVarIO state)
 disconnect :: TVar ServState -> String -> Handler ()
 disconnect state s = case s of
         "disconnect" -> do
-            mCon <- servConn <$> liftIO (readTVarIO state)
+            currentState <- liftIO $ readTVarIO state
+            let mCon = servConn currentState
             case mCon of
                 Nothing -> throwError err410
                 Just (sock, _) -> do
                     liftIO $ S.gracefulClose sock 1000
+                    liftIO $ atomically $ writeTVar state $ currentState
+                        { servConn = Nothing
+                        -- !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                        -- when disconnectiing also drop all heartbeat signals
+                        , servPool = [] 
+                        , servConnInfo = Nothing
+                        }
                     return ()
         _ -> throwError err400
 
