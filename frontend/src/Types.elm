@@ -14,9 +14,11 @@ module Types exposing
     , showIpAddressByte
     , ConnectStatus (..)
     , showConnectStatus
+    , ipFromString
     )
 
 import Http
+import Array
 
 type Msg
     = ReadRegisters (Result Http.Error (List ModData))
@@ -100,7 +102,25 @@ showIp ip =
     ++ "."
     ++ String.fromInt ip.b4
 
+ipFromString : String -> Maybe IpAddress
+ipFromString s =
+    let
+        splits = Array.fromList <| String.split "." s
+        mip = Maybe.map4 getIpAddress
+                ( Array.get 0 splits )
+                ( Array.get 1 splits )
+                ( Array.get 2 splits )
+                ( Array.get 3 splits )
+    in mip |> Maybe.andThen (\m -> m)
 
+
+getIpAddress : String -> String -> String -> String -> Maybe IpAddress
+getIpAddress byte1 byte2 byte3 byte4 =
+    Maybe.map4 IpAddress
+        ( String.toInt byte1 )
+        ( String.toInt byte2 )
+        ( String.toInt byte3 )
+        ( String.toInt byte4 )
 showIpAddressByte : IpAddressByte -> String
 showIpAddressByte byte =
     case byte of
