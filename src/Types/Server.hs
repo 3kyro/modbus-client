@@ -5,6 +5,7 @@ module Types.Server
     , ConnectionData (..)
     ) where
 
+import qualified Network.Socket as S
 import qualified System.Modbus.TCP as MB
 
 import Types.Repl (ThreadState (..))
@@ -16,7 +17,7 @@ import Servant
 import Types.ModData
 
 data ServState = ServState
-    { servConn  :: !(Maybe MB.Connection)
+    { servConn  :: !(Maybe (S.Socket , MB.Connection))
     , servOrd   :: !ByteOrder
     , servPool  :: ![ThreadState]
     }

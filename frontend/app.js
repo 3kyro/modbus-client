@@ -6568,11 +6568,16 @@ var $author$project$Update$update = F2(
 						$elm$core$Platform$Cmd$none);
 				}
 			case 'DisconnectRequest':
-				return _Utils_Tuple2(
-					_Utils_update(
-						model,
-						{connectStatus: $author$project$Types$Disconnecting}),
-					$author$project$Update$disconnectRequest);
+				var _v4 = model.connectStatus;
+				if (_v4.$ === 'Connected') {
+					return _Utils_Tuple2(
+						_Utils_update(
+							model,
+							{connectStatus: $author$project$Types$Disconnecting}),
+						$author$project$Update$disconnectRequest);
+				} else {
+					return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
+				}
 			default:
 				if (msg.a.$ === 'Ok') {
 					return _Utils_Tuple2(

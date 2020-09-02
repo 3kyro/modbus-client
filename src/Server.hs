@@ -14,6 +14,7 @@ import Data.IP (IPv4)
 import Network.Wai.Handler.Warp (run)
 import Servant
 
+import qualified Network.Socket as S
 import qualified System.Modbus.TCP as MB
 
 import Types (ConnectionData (..), ByteOrder, ServState (..), ModData (..))
@@ -22,6 +23,7 @@ import Modbus (modbusConnection, maybeConnect, getAddr)
 type ServerAPI
     = "register" :> ReqBody '[JSON] [ModData] :> Post '[JSON] [ModData]
     :<|> "connect" :> ReqBody '[JSON] ConnectionData :> Post '[JSON] ()
+    :<|> "disconnect" :> ReqBody '[JSON] String :> Post '[JSON] ()
     :<|> Raw
 
 proxyAPI :: Proxy ServerAPI
@@ -44,6 +46,7 @@ serverAPI :: TVar ServState -> Server ServerAPI
 serverAPI state
     = reversem
     :<|> connect state
+    :<|> disconnect state
     :<|> serveDirectoryWebApp "frontend"
 
 reversem :: [ModData] -> Handler [ModData]
@@ -59,51 +62,27 @@ connect state (ConnectionData ip portNum tm) = do
             liftIO $ atomically $ writeTVar state $ ServState (Just c) order []
             return ()
 
+disconnect :: TVar ServState -> String -> Handler ()
+disconnect state s = case s of
+        "disconnect" -> do
+            mCon <- servConn <$> liftIO (readTVarIO state)
+            case mCon of
+                Nothing -> throwError err410
+                Just (sock, _) -> do
+                    liftIO $ S.gracefulClose sock 1000
+                    return ()
+        _ -> throwError err400
+
 getServState :: IPv4 -> Int -> ByteOrder -> Int -> IO ServState
 getServState ip portNum order tm = do
     conn <- getMaybeConnection ip portNum tm
     return $ ServState conn order []
 
-getMaybeConnection :: IPv4 -> Int -> Int -> IO (Maybe MB.Connection)
+getMaybeConnection :: IPv4 -> Int -> Int -> IO (Maybe (S.Socket , MB.Connection))
 getMaybeConnection ip portNum tm = do
     let sockAddr = getAddr ip portNum
     maybeSocket <- maybeConnect sockAddr tm
-    return $ (`modbusConnection` tm) <$> maybeSocket
-
-
-
--- app :: Server ()
--- app = do
---     lift $ get "/" showLandingPage
---     lift $ get "/app.js" $ file "frontend/app.js"
---     lift $ get "/style.css" $ file "frontend/style.css"
---     lift $ post "/register" register
---     lift $ post "/connect" connect
-
-
--- connect :: ActionM ()
--- connect = do
---     ConnectionData ip port tm <- jsonData
---     liftIO $ print ip
---     liftIO $ print port
---     liftIO $ print tm
---     maybeSocket <- liftIO $ maybeConnect (getAddr ip port) tm
---     case maybeSocket of
---         Nothing -> status status500
---         Just _ -> status status200
-
-
-
--- showLandingPage :: ActionM ()
--- showLandingPage = do
---     setHeader "Content-Type" "text/html"
---     file "frontend/index.html"
-
--- register :: ActionM ()
--- register = do
---     got <- jsonData
---     let changed = map reverseName got
---     json changed
---     status status200
---   where
---       reverseName md = md { modName = reverse (modName md)}
+    return $ (,) <$> maybeSocket <*> maybeCon maybeSocket
+  where
+    maybeCon :: Maybe S.Socket -> Maybe MB.Connection
+    maybeCon maybeSocket = (`modbusConnection` tm) <$> maybeSocket

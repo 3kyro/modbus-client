@@ -48,7 +48,10 @@ update msg model =
             case String.toInt tm of
                 Nothing -> ( { model | status = BadTimeout }, Cmd.none )
                 Just t -> ( { model | timeout = t }, Cmd.none )
-        DisconnectRequest -> ( { model | connectStatus = Disconnecting } , disconnectRequest )
+        DisconnectRequest ->
+            case model.connectStatus of
+                Connected -> ( { model | connectStatus = Disconnecting } , disconnectRequest )
+                _ -> (model, Cmd.none)
         DisconnectedResponse (Ok _) ->
             ( { model | connectStatus = Connect } , Cmd.none )
         DisconnectedResponse(Err err) ->
