@@ -5328,6 +5328,7 @@ var $author$project$Types$IpAddress = F4(
 	function (b1, b2, b3, b4) {
 		return {b1: b1, b2: b2, b3: b3, b4: b4};
 	});
+var $author$project$Types$HoldingRegister = {$: 'HoldingRegister'};
 var $author$project$Types$InputRegister = {$: 'InputRegister'};
 var $author$project$Types$ModWord = function (a) {
 	return {$: 'ModWord', a: a};
@@ -5351,6 +5352,22 @@ var $author$project$App$initModData = _List_fromArray(
 		modUid: 1,
 		modValue: $author$project$Types$ModWord(
 			$elm$core$Maybe$Just(2))
+	},
+		{
+		modAddress: 10,
+		modDescription: 'A register for tesing purposes',
+		modName: '1500',
+		modRegType: $author$project$Types$InputRegister,
+		modUid: 1,
+		modValue: $author$project$Types$ModWord($elm$core$Maybe$Nothing)
+	},
+		{
+		modAddress: 15,
+		modDescription: 'A register for tesing purposes',
+		modName: '1700',
+		modRegType: $author$project$Types$HoldingRegister,
+		modUid: 1,
+		modValue: $author$project$Types$ModWord($elm$core$Maybe$Nothing)
 	}
 	]);
 var $author$project$App$initModel = {
@@ -6294,7 +6311,6 @@ var $author$project$Update$decodeModValue = A2(
 		}
 	},
 	A2($elm$json$Json$Decode$field, 'type', $elm$json$Json$Decode$string));
-var $author$project$Types$HoldingRegister = {$: 'HoldingRegister'};
 var $author$project$Update$decodeRegType = A2(
 	$elm$json$Json$Decode$map,
 	function (s) {

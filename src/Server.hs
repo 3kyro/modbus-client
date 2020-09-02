@@ -18,7 +18,8 @@ import qualified Network.Socket as S
 import qualified System.Modbus.TCP as MB
 
 import Types (ConnectionData (..), ByteOrder, ServState (..), ModData (..))
-import Modbus (modbusConnection, maybeConnect, getAddr)
+import Modbus (modSession, modbusConnection, maybeConnect, getAddr)
+import Control.Monad.Except (runExceptT)
 
 type ServerAPI
     = "register" :> ReqBody '[JSON] [ModData] :> Post '[JSON] [ModData]
@@ -44,13 +45,21 @@ runServer ip portNum order tm = do
 
 serverAPI :: TVar ServState -> Server ServerAPI
 serverAPI state
-    = reversem
+    = reversem state
     :<|> connect state
     :<|> disconnect state
     :<|> serveDirectoryWebApp "frontend"
 
-reversem :: [ModData] -> Handler [ModData]
-reversem x = return (reverse x)
+reversem :: TVar ServState -> [ModData] -> Handler [ModData]
+reversem state md = do
+    ServState conn order _ <- liftIO $ readTVarIO state
+    case conn of
+        Nothing -> throwError err400
+        Just (_, mbc) -> do
+            resp <- liftIO $ runExceptT $ MB.runSession mbc (modSession md order)
+            case resp of
+                Left _ -> throwError err500
+                Right md' -> return md'
 
 connect :: TVar ServState -> ConnectionData -> Handler ()
 connect state (ConnectionData ip portNum tm) = do

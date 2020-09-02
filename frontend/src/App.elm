@@ -54,4 +54,18 @@ initModData =
       , modUid = 1
       , modDescription = "A register for tesing purposes"
       }
+    , { modName = "1500"
+      , modRegType = InputRegister
+      , modAddress = 10
+      , modValue = ModWord Nothing
+      , modUid = 1
+      , modDescription = "A register for tesing purposes"
+      }
+    , { modName = "1700"
+      , modRegType = HoldingRegister
+      , modAddress = 15
+      , modValue = ModWord Nothing
+      , modUid = 1
+      , modDescription = "A register for tesing purposes"
+      }
     ]
