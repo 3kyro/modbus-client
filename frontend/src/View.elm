@@ -35,10 +35,9 @@ import Types exposing
     , IpAddressByte(..)
     , showIpAddressByte
     , showConnectStatus
+    , ConnectStatus (..)
     )
 import String
-import Types exposing (ConnectStatus)
-import Types exposing (ConnectStatus(..))
 
 view : Model -> Html Msg
 view model =
@@ -90,7 +89,7 @@ viewDisconnectButton : Model -> Html Msg
 viewDisconnectButton model =
     div
         [ class <| getDisconnectClass model.connectStatus
-        , onClick <| ConnectRequest
+        , onClick <| DisconnectRequest
         ]
         [ text "disconnect" ]
 

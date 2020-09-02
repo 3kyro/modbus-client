@@ -5371,6 +5371,7 @@ var $author$project$Types$BadPort = {$: 'BadPort'};
 var $author$project$Types$BadTimeout = {$: 'BadTimeout'};
 var $author$project$Types$Connected = {$: 'Connected'};
 var $author$project$Types$Connecting = {$: 'Connecting'};
+var $author$project$Types$Disconnecting = {$: 'Disconnecting'};
 var $author$project$Types$Loading = {$: 'Loading'};
 var $author$project$Types$changeIpAddressByte = F2(
 	function (ip, _byte) {
@@ -6232,6 +6233,16 @@ var $author$project$Update$connectRequest = function (model) {
 			url: 'http://localhost:4000/connect'
 		});
 };
+var $author$project$Types$DisconnectedResponse = function (a) {
+	return {$: 'DisconnectedResponse', a: a};
+};
+var $author$project$Update$disconnectRequest = $elm$http$Http$post(
+	{
+		body: $elm$http$Http$jsonBody(
+			$elm$json$Json$Encode$string('disconnect')),
+		expect: $elm$http$Http$expectWhatever($author$project$Types$DisconnectedResponse),
+		url: 'http://localhost:4000/disconnect'
+	});
 var $author$project$Types$ReadRegisters = function (a) {
 	return {$: 'ReadRegisters', a: a};
 };
@@ -6539,7 +6550,7 @@ var $author$project$Update$update = F2(
 							{socketPort: p}),
 						$elm$core$Platform$Cmd$none);
 				}
-			default:
+			case 'ChangeTimeout':
 				var tm = msg.a;
 				var _v3 = $elm$core$String$toInt(tm);
 				if (_v3.$ === 'Nothing') {
@@ -6554,6 +6565,31 @@ var $author$project$Update$update = F2(
 						_Utils_update(
 							model,
 							{timeout: t}),
+						$elm$core$Platform$Cmd$none);
+				}
+			case 'DisconnectRequest':
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{connectStatus: $author$project$Types$Disconnecting}),
+					$author$project$Update$disconnectRequest);
+			default:
+				if (msg.a.$ === 'Ok') {
+					return _Utils_Tuple2(
+						_Utils_update(
+							model,
+							{connectStatus: $author$project$Types$Connect}),
+						$elm$core$Platform$Cmd$none);
+				} else {
+					var err = msg.a.a;
+					return _Utils_Tuple2(
+						_Utils_update(
+							model,
+							{
+								connectStatus: $author$project$Types$Connect,
+								status: $author$project$Types$Bad(
+									$author$project$Update$showHttpError(err))
+							}),
 						$elm$core$Platform$Cmd$none);
 				}
 		}
@@ -6727,8 +6763,10 @@ var $author$project$Types$showConnectStatus = function (st) {
 			return 'connect';
 		case 'Connecting':
 			return 'connecting';
-		default:
+		case 'Connected':
 			return 'connected';
+		default:
+			return 'disconnecting';
 	}
 };
 var $author$project$View$viewConnectButton = function (model) {
@@ -6746,6 +6784,7 @@ var $author$project$View$viewConnectButton = function (model) {
 				$author$project$Types$showConnectStatus(model.connectStatus))
 			]));
 };
+var $author$project$Types$DisconnectRequest = {$: 'DisconnectRequest'};
 var $author$project$View$getDisconnectClass = function (status) {
 	if (status.$ === 'Connected') {
 		return 'connect';
@@ -6760,7 +6799,7 @@ var $author$project$View$viewDisconnectButton = function (model) {
 			[
 				$elm$html$Html$Attributes$class(
 				$author$project$View$getDisconnectClass(model.connectStatus)),
-				$elm$html$Html$Events$onClick($author$project$Types$ConnectRequest)
+				$elm$html$Html$Events$onClick($author$project$Types$DisconnectRequest)
 			]),
 		_List_fromArray(
 			[

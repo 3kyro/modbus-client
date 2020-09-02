@@ -5,26 +5,21 @@ module Types.Server
     , ConnectionData (..)
     ) where
 
-import Control.Monad.Trans.State.Strict (StateT)
-
 import qualified System.Modbus.TCP as MB
 
-import Types.ModData (ByteOrder (..))
 import Types.Repl (ThreadState (..))
-import Web.Scotty (ScottyM)
 import Data.IP (IPv4)
 import Data.Aeson (FromJSON, parseJSON, (.:))
 import Data.Aeson.Types (Value (..))
+import Servant
 
-
-type Server a = StateT ServState ScottyM a
+import Types.ModData
 
 data ServState = ServState
     { servConn  :: !(Maybe MB.Connection)
     , servOrd   :: !ByteOrder
     , servPool  :: ![ThreadState]
     }
-
 
 data ConnectionData = ConnectionData
     { servIpAddress :: !IPv4

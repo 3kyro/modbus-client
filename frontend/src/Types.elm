@@ -26,11 +26,14 @@ type Msg
     | ChangeIpAddressByte IpAddressByte
     | ChangePort String
     | ChangeTimeout String
+    | DisconnectRequest
+    | DisconnectedResponse (Result Http.Error () )
 
 type ConnectStatus
     = Connect
     | Connecting
     | Connected
+    | Disconnecting
 
 type alias Model =
     { modData : List ModData
@@ -132,4 +135,4 @@ showConnectStatus st =
         Connect -> "connect"
         Connecting -> "connecting"
         Connected -> "connected"
-
+        Disconnecting -> "disconnecting"

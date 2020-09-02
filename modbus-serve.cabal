@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: e71fadfd1f265308831f6106a43a3d9106ceb3d943525e122ad5e3685bebdf68
+-- hash: 8df37f3be1d5373618eb3e189ee7b4bc5deef4fe385638d93347901652df3c5c
 
 name:           modbus-serve
 version:        0.1.0.0
@@ -51,10 +51,10 @@ library
       Cabal
     , QuickCheck
     , aeson
-    , ansi-terminal >=0.10.3 && <1
+    , ansi-terminal
     , base >=4.7 && <5
     , binary
-    , directory >=1.3.6 && <2
+    , directory
     , either
     , hspec
     , http-types
@@ -66,10 +66,14 @@ library
     , parsec
     , process
     , repline
-    , safe-exceptions >=0.1.6 && <0.2
+    , safe-exceptions
     , scotty
+    , servant-server
+    , stm
     , text
     , transformers
+    , wai
+    , warp
   default-language: Haskell2010
 
 executable modbus-serve-exe
@@ -83,10 +87,10 @@ executable modbus-serve-exe
       Cabal
     , QuickCheck
     , aeson
-    , ansi-terminal >=0.10.3 && <1
+    , ansi-terminal
     , base >=4.7 && <5
     , binary
-    , directory >=1.3.6 && <2
+    , directory
     , either
     , hspec
     , http-types
@@ -99,10 +103,14 @@ executable modbus-serve-exe
     , parsec
     , process
     , repline
-    , safe-exceptions >=0.1.6 && <0.2
+    , safe-exceptions
     , scotty
+    , servant-server
+    , stm
     , text
     , transformers
+    , wai
+    , warp
   default-language: Haskell2010
 
 test-suite modbus-serve-test
@@ -120,10 +128,10 @@ test-suite modbus-serve-test
       Cabal
     , QuickCheck
     , aeson
-    , ansi-terminal >=0.10.3 && <1
+    , ansi-terminal
     , base >=4.7 && <5
     , binary
-    , directory >=1.3.6 && <2
+    , directory
     , either
     , hspec
     , http-types
@@ -136,8 +144,12 @@ test-suite modbus-serve-test
     , parsec
     , process
     , repline
-    , safe-exceptions >=0.1.6 && <0.2
+    , safe-exceptions
     , scotty
+    , servant-server
+    , stm
     , text
     , transformers
+    , wai
+    , warp
   default-language: Haskell2010

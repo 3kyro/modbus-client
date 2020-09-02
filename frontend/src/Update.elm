@@ -48,6 +48,15 @@ update msg model =
             case String.toInt tm of
                 Nothing -> ( { model | status = BadTimeout }, Cmd.none )
                 Just t -> ( { model | timeout = t }, Cmd.none )
+        DisconnectRequest -> ( { model | connectStatus = Disconnecting } , disconnectRequest )
+        DisconnectedResponse (Ok _) ->
+            ( { model | connectStatus = Connect } , Cmd.none )
+        DisconnectedResponse(Err err) ->
+            ( { model |
+                  status = Bad <| showHttpError err
+                , connectStatus = Connect }
+            , Cmd.none
+            )
 
 
 connectRequest : Model -> Cmd Msg
@@ -56,6 +65,14 @@ connectRequest model =
         { url = "http://localhost:4000/connect"
         , body = Http.jsonBody <| encodeIpPort model
         , expect = Http.expectWhatever ConnectedResponse
+        }
+
+disconnectRequest : Cmd Msg
+disconnectRequest =
+    Http.post
+        { url = "http://localhost:4000/disconnect"
+        , body = Http.jsonBody <| E.string "disconnect"
+        , expect = Http.expectWhatever DisconnectedResponse
         }
 
 encodeIpPort : Model -> E.Value
