@@ -135,7 +135,7 @@ pub fn create_server(registers: Vec<Register>) -> MbServer {
     for reg in registers {
         match reg {
             Register::Input(addr, word) => server.input_registers[addr as usize] = word,
-            Register::Holding(addr, word) => server.holding_registers.lock().unwrap().clone()[addr as usize] = word,
+            Register::Holding(addr, word) => server.holding_registers.lock().unwrap()[addr as usize] = word,
             _ => unimplemented!(),
         }
     }
