@@ -12,6 +12,7 @@ module Types exposing
     , IpAddressByte (..)
     , changeIpAddressByte
     , showIpAddressByte
+    , insertIpAddressByte
     , ConnectStatus (..)
     , showConnectStatus
     , ipFromString
@@ -163,6 +164,16 @@ changeIpAddressByte ip byte =
         Byte3 x -> { ip | b3 = x }
         Byte4 x -> { ip | b4 = x }
         NoByte -> ip
+
+insertIpAddressByte : IpAddressByte -> Int -> IpAddressByte
+insertIpAddressByte b i =
+    case b of
+        Byte1 _ -> Byte1 i
+        Byte2 _ -> Byte2 i
+        Byte3 _ -> Byte3 i
+        Byte4 _ -> Byte4 i
+        NoByte -> NoByte
+
 
 showStatus : Status -> String
 showStatus status =

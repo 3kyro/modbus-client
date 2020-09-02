@@ -6908,6 +6908,7 @@ var $author$project$Types$ChangeTimeout = function (a) {
 	return {$: 'ChangeTimeout', a: a};
 };
 var $elm$html$Html$input = _VirtualDom_node('input');
+var $elm$html$Html$label = _VirtualDom_node('label');
 var $elm$html$Html$Events$alwaysStop = function (x) {
 	return _Utils_Tuple2(x, true);
 };
@@ -6940,13 +6941,19 @@ var $elm$html$Html$Events$onInput = function (tagger) {
 			$elm$html$Html$Events$alwaysStop,
 			A2($elm$json$Json$Decode$map, tagger, $elm$html$Html$Events$targetValue)));
 };
+var $elm$html$Html$Attributes$size = function (n) {
+	return A2(
+		_VirtualDom_attribute,
+		'size',
+		$elm$core$String$fromInt(n));
+};
 var $elm$html$Html$Attributes$type_ = $elm$html$Html$Attributes$stringProperty('type');
 var $elm$html$Html$Attributes$value = $elm$html$Html$Attributes$stringProperty('value');
 var $author$project$Types$ChangeIpAddressByte = function (a) {
 	return {$: 'ChangeIpAddressByte', a: a};
 };
 var $author$project$Types$NoByte = {$: 'NoByte'};
-var $author$project$View$insertByte = F2(
+var $author$project$Types$insertIpAddressByte = F2(
 	function (b, i) {
 		switch (b.$) {
 			case 'Byte1':
@@ -6961,7 +6968,7 @@ var $author$project$View$insertByte = F2(
 				return $author$project$Types$NoByte;
 		}
 	});
-var $author$project$View$changeIp = F2(
+var $author$project$View$Connect$changeIp = F2(
 	function (_byte, s) {
 		var mbyte = $elm$core$String$toInt(s);
 		if (mbyte.$ === 'Nothing') {
@@ -6969,7 +6976,7 @@ var $author$project$View$changeIp = F2(
 		} else {
 			var value = mbyte.a;
 			return ((value < 0) || (value > 255)) ? $author$project$Types$ChangeIpAddressByte($author$project$Types$NoByte) : $author$project$Types$ChangeIpAddressByte(
-				A2($author$project$View$insertByte, _byte, value));
+				A2($author$project$Types$insertIpAddressByte, _byte, value));
 		}
 	});
 var $elm$html$Html$Attributes$max = $elm$html$Html$Attributes$stringProperty('max');
@@ -6992,7 +6999,7 @@ var $author$project$Types$showIpAddressByte = function (_byte) {
 			return 'No Byte';
 	}
 };
-var $author$project$View$viewByteInput = function (_byte) {
+var $author$project$View$Connect$viewByteInput = function (_byte) {
 	return A2(
 		$elm$html$Html$input,
 		_List_fromArray(
@@ -7000,10 +7007,11 @@ var $author$project$View$viewByteInput = function (_byte) {
 				$elm$html$Html$Attributes$type_('number'),
 				$elm$html$Html$Attributes$max('255'),
 				$elm$html$Html$Attributes$min('0'),
+				$elm$html$Html$Attributes$size(3),
 				$elm$html$Html$Attributes$value(
 				$author$project$Types$showIpAddressByte(_byte)),
 				$elm$html$Html$Events$onInput(
-				$author$project$View$changeIp(_byte))
+				$author$project$View$Connect$changeIp(_byte))
 			]),
 		_List_Nil);
 };
@@ -7036,7 +7044,7 @@ var $author$project$Types$showConnectStatus = function (st) {
 			return 'disconnecting';
 	}
 };
-var $author$project$View$viewConnectButton = function (model) {
+var $author$project$View$Connect$viewConnectButton = function (model) {
 	return A2(
 		$elm$html$Html$div,
 		_List_fromArray(
@@ -7052,20 +7060,20 @@ var $author$project$View$viewConnectButton = function (model) {
 			]));
 };
 var $author$project$Types$DisconnectRequest = {$: 'DisconnectRequest'};
-var $author$project$View$getDisconnectClass = function (status) {
+var $author$project$View$Connect$getDisconnectClass = function (status) {
 	if (status.$ === 'Connected') {
 		return 'connect';
 	} else {
 		return 'disconnect';
 	}
 };
-var $author$project$View$viewDisconnectButton = function (model) {
+var $author$project$View$Connect$viewDisconnectButton = function (model) {
 	return A2(
 		$elm$html$Html$div,
 		_List_fromArray(
 			[
 				$elm$html$Html$Attributes$class(
-				$author$project$View$getDisconnectClass(model.connectStatus)),
+				$author$project$View$Connect$getDisconnectClass(model.connectStatus)),
 				$elm$html$Html$Events$onClick($author$project$Types$DisconnectRequest)
 			]),
 		_List_fromArray(
@@ -7073,7 +7081,7 @@ var $author$project$View$viewDisconnectButton = function (model) {
 				$elm$html$Html$text('disconnect')
 			]));
 };
-var $author$project$View$viewConnect = function (model) {
+var $author$project$View$Connect$viewConnect = function (model) {
 	return _List_fromArray(
 		[
 			A2(
@@ -7082,13 +7090,34 @@ var $author$project$View$viewConnect = function (model) {
 			_List_fromArray(
 				[
 					$elm$html$Html$text('ip address'),
-					$author$project$View$viewByteInput(
+					$author$project$View$Connect$viewByteInput(
 					$author$project$Types$Byte1(model.ipAddress.b1)),
-					$author$project$View$viewByteInput(
+					A2(
+					$elm$html$Html$label,
+					_List_Nil,
+					_List_fromArray(
+						[
+							$elm$html$Html$text('.')
+						])),
+					$author$project$View$Connect$viewByteInput(
 					$author$project$Types$Byte2(model.ipAddress.b2)),
-					$author$project$View$viewByteInput(
+					A2(
+					$elm$html$Html$label,
+					_List_Nil,
+					_List_fromArray(
+						[
+							$elm$html$Html$text('.')
+						])),
+					$author$project$View$Connect$viewByteInput(
 					$author$project$Types$Byte3(model.ipAddress.b3)),
-					$author$project$View$viewByteInput(
+					A2(
+					$elm$html$Html$label,
+					_List_Nil,
+					_List_fromArray(
+						[
+							$elm$html$Html$text('.')
+						])),
+					$author$project$View$Connect$viewByteInput(
 					$author$project$Types$Byte4(model.ipAddress.b4))
 				])),
 			A2(
@@ -7102,31 +7131,27 @@ var $author$project$View$viewConnect = function (model) {
 					_List_fromArray(
 						[
 							$elm$html$Html$Attributes$type_('number'),
+							$elm$html$Html$Attributes$size(4),
 							$elm$html$Html$Attributes$value(
 							$elm$core$String$fromInt(model.socketPort)),
 							$elm$html$Html$Events$onInput($author$project$Types$ChangePort)
 						]),
-					_List_Nil)
-				])),
-			A2(
-			$elm$html$Html$div,
-			_List_Nil,
-			_List_fromArray(
-				[
+					_List_Nil),
 					$elm$html$Html$text('timeout'),
 					A2(
 					$elm$html$Html$input,
 					_List_fromArray(
 						[
 							$elm$html$Html$Attributes$type_('number'),
+							$elm$html$Html$Attributes$size(5),
 							$elm$html$Html$Attributes$value(
 							$elm$core$String$fromInt(model.timeout)),
 							$elm$html$Html$Events$onInput($author$project$Types$ChangeTimeout)
 						]),
 					_List_Nil)
 				])),
-			$author$project$View$viewConnectButton(model),
-			$author$project$View$viewDisconnectButton(model)
+			$author$project$View$Connect$viewConnectButton(model),
+			$author$project$View$Connect$viewDisconnectButton(model)
 		]);
 };
 var $author$project$Types$RefreshRequest = function (a) {
@@ -7146,7 +7171,6 @@ var $elm$html$Html$th = _VirtualDom_node('th');
 var $elm$html$Html$thead = _VirtualDom_node('thead');
 var $elm$html$Html$tr = _VirtualDom_node('tr');
 var $elm$html$Html$td = _VirtualDom_node('td');
-var $elm$html$Html$label = _VirtualDom_node('label');
 var $author$project$View$viewModType = function (value) {
 	return A2(
 		$elm$html$Html$label,
@@ -7393,7 +7417,7 @@ var $author$project$View$view = function (model) {
 					[
 						$elm$html$Html$Attributes$class('connectRegion')
 					]),
-				$author$project$View$viewConnect(model)),
+				$author$project$View$Connect$viewConnect(model)),
 				A2(
 				$elm$html$Html$div,
 				_List_fromArray(

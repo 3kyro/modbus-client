@@ -12,16 +12,14 @@ import Html exposing
     , thead
     , tbody
     , tfoot
-    , input
     )
 import Html.Attributes exposing
     ( class
     , scope
     , colspan
-    , value
-    , type_
     )
-import Html.Events exposing (onClick, onInput)
+import Html.Events exposing (onClick)
+import String
 
 import Types exposing
     ( Msg (..)
@@ -33,11 +31,9 @@ import Types exposing
     , showStatus
     , ModData
     , IpAddressByte(..)
-    , showIpAddressByte
-    , showConnectStatus
     , ConnectStatus (..)
     )
-import String
+import View.Connect exposing (viewConnect)
 
 view : Model -> Html Msg
 view model =
@@ -46,89 +42,6 @@ view model =
         , div [ class "inputRegisters" ] [viewMultModData model.modData]
         , div [ class "status" ] [text <| showStatus model.status]
         ]
-
-viewConnect : Model -> List (Html Msg)
-viewConnect model =
-    [ div []
-        [ text "ip address"
-        , viewByteInput <| Byte1 model.ipAddress.b1
-        , viewByteInput <| Byte2 model.ipAddress.b2
-        , viewByteInput <| Byte3 model.ipAddress.b3
-        , viewByteInput <| Byte4 model.ipAddress.b4
-        ]
-
-    , div []
-        [ text "port"
-        , input
-            [ type_ "number"
-            , value <| String.fromInt model.socketPort
-            , onInput <| ChangePort
-            ] []
-        ]
-    , div []
-        [ text "timeout"
-        , input
-            [ type_ "number"
-            , value <| String.fromInt model.timeout
-            , onInput <| ChangeTimeout
-            ] []
-        ]
-    , viewConnectButton model
-    , viewDisconnectButton model
-    ]
-
-viewConnectButton : Model -> Html Msg
-viewConnectButton model =
-    div
-        [ class <| showConnectStatus model.connectStatus
-        , onClick <| ConnectRequest
-        ]
-        [ text <| showConnectStatus model.connectStatus ]
-
-viewDisconnectButton : Model -> Html Msg
-viewDisconnectButton model =
-    div
-        [ class <| getDisconnectClass model.connectStatus
-        , onClick <| DisconnectRequest
-        ]
-        [ text "disconnect" ]
-
-getDisconnectClass : ConnectStatus -> String
-getDisconnectClass status =
-    case status of
-        Connected -> "connect"
-        _ -> "disconnect"
-
-viewByteInput : IpAddressByte -> Html Msg
-viewByteInput byte =
-    input
-        [ type_ "number"
-        , Html.Attributes.max "255"
-        , Html.Attributes.min "0"
-        , value <| showIpAddressByte byte
-        , onInput <| changeIp byte
-        ] []
-
-changeIp : IpAddressByte -> String -> Msg
-changeIp byte s =
-    let
-        mbyte = String.toInt s
-    in
-        case mbyte of
-            Nothing -> ChangeIpAddressByte NoByte
-            Just value ->
-                if value < 0 || value > 255
-                then ChangeIpAddressByte NoByte
-                else ChangeIpAddressByte <| insertByte byte value
-
-insertByte : IpAddressByte -> Int -> IpAddressByte
-insertByte b i =
-    case b of
-        Byte1 _ -> Byte1 i
-        Byte2 _ -> Byte2 i
-        Byte3 _ -> Byte3 i
-        Byte4 _ -> Byte4 i
-        NoByte -> NoByte
 
 viewMultModData : List ModData -> Html Msg
 viewMultModData mds =
