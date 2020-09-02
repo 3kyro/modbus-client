@@ -24,6 +24,7 @@ import Control.Monad.Except (runExceptT)
 type ServerAPI
     = "register" :> ReqBody '[JSON] [ModData] :> Post '[JSON] [ModData]
     :<|> "connect" :> ReqBody '[JSON] ConnectionData :> Post '[JSON] ()
+    :<|> "connectInfo" :> Get '[JSON] (Maybe ConnectionData)
     :<|> "disconnect" :> ReqBody '[JSON] String :> Post '[JSON] ()
     :<|> Raw
 
@@ -45,14 +46,15 @@ runServer ip portNum order tm = do
 
 serverAPI :: TVar ServState -> Server ServerAPI
 serverAPI state
-    = reversem state
+    = readModData state
     :<|> connect state
+    :<|> getConnectionInfo state
     :<|> disconnect state
     :<|> serveDirectoryWebApp "frontend"
 
-reversem :: TVar ServState -> [ModData] -> Handler [ModData]
-reversem state md = do
-    ServState conn order _ <- liftIO $ readTVarIO state
+readModData :: TVar ServState -> [ModData] -> Handler [ModData]
+readModData state md = do
+    ServState conn order _ _ <- liftIO $ readTVarIO state
     case conn of
         Nothing -> throwError err400
         Just (_, mbc) -> do
@@ -62,14 +64,17 @@ reversem state md = do
                 Right md' -> return md'
 
 connect :: TVar ServState -> ConnectionData -> Handler ()
-connect state (ConnectionData ip portNum tm) = do
-    ServState _ order _ <- liftIO $ readTVarIO state
+connect state dt@(ConnectionData ip portNum tm) = do
+    ServState _ order _ _ <- liftIO $ readTVarIO state
     mConn <- liftIO $ getMaybeConnection ip portNum tm
     case mConn of
         Nothing -> throwError err300
         Just c -> do
-            liftIO $ atomically $ writeTVar state $ ServState (Just c) order []
+            liftIO $ atomically $ writeTVar state $ ServState (Just c) order [] (Just dt)
             return ()
+
+getConnectionInfo :: TVar ServState -> Handler (Maybe ConnectionData)
+getConnectionInfo state = servConnInfo <$> liftIO (readTVarIO state)
 
 disconnect :: TVar ServState -> String -> Handler ()
 disconnect state s = case s of
@@ -85,7 +90,9 @@ disconnect state s = case s of
 getServState :: IPv4 -> Int -> ByteOrder -> Int -> IO ServState
 getServState ip portNum order tm = do
     conn <- getMaybeConnection ip portNum tm
-    return $ ServState conn order []
+    case conn of
+        Nothing -> return $ ServState Nothing order [] Nothing
+        Just _ -> return $ ServState conn order [] $ Just $ ConnectionData ip portNum tm
 
 getMaybeConnection :: IPv4 -> Int -> Int -> IO (Maybe (S.Socket , MB.Connection))
 getMaybeConnection ip portNum tm = do

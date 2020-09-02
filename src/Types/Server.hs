@@ -10,16 +10,25 @@ import qualified System.Modbus.TCP as MB
 
 import Types.Repl (ThreadState (..))
 import Data.IP (IPv4)
-import Data.Aeson (FromJSON, parseJSON, (.:))
+import Data.Aeson
+    (ToJSON
+    , toJSON
+    , object
+    , (.=)
+    , FromJSON
+    , parseJSON
+    , (.:)
+    )
 import Data.Aeson.Types (Value (..))
 import Servant
 
 import Types.ModData
 
 data ServState = ServState
-    { servConn  :: !(Maybe (S.Socket , MB.Connection))
-    , servOrd   :: !ByteOrder
-    , servPool  :: ![ThreadState]
+    { servConn      :: !(Maybe (S.Socket , MB.Connection))
+    , servOrd       :: !ByteOrder
+    , servPool      :: ![ThreadState]
+    , servConnInfo  :: !(Maybe ConnectionData)
     }
 
 data ConnectionData = ConnectionData
@@ -34,3 +43,10 @@ instance FromJSON ConnectionData where
         port <- o .: "port"
         tm <- o .: "timeout"
         return $ ConnectionData (read ip) port tm
+
+instance ToJSON ConnectionData where
+    toJSON cd = object
+        [ "ip address" .= show (servIpAddress cd)
+        , "port" .= servPortNum cd
+        , "timeout" .= servTimeout cd
+        ]

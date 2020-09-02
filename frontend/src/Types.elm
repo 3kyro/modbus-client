@@ -15,13 +15,18 @@ module Types exposing
     , ConnectStatus (..)
     , showConnectStatus
     , ipFromString
+    , ConnectionInfo
+    , decodeIpAddress
+    , decodeConnInfo
     )
 
 import Http
 import Array
+import Json.Decode as D
 
 type Msg
     = ReadRegisters (Result Http.Error (List ModData))
+    | ReceivedConnectionInfo ( Result Http.Error (Maybe ConnectionInfo))
     | RefreshRequest (List ModData)
     | ConnectRequest
     | ConnectedResponse (Result Http.Error () )
@@ -92,6 +97,27 @@ type alias ModData =
     , modDescription : String
     }
 
+type alias ConnectionInfo =
+    { ipAddress : IpAddress
+    , socketPort : Int
+    , timeout : Int
+    }
+
+decodeConnInfo : D.Decoder ConnectionInfo
+decodeConnInfo =
+    D.map3 ConnectionInfo
+        ( D.field "ip address" decodeIpAddress )
+        ( D.field "port" D.int )
+        ( D.field "timeout" D.int)
+
+decodeIpAddress : D.Decoder IpAddress
+decodeIpAddress =
+    D.string |> D.andThen (\str ->
+        case ipFromString str of
+            Nothing -> D.fail "Not an Ip Address"
+            Just ip -> D.succeed ip
+        )
+
 showIp : IpAddress -> String
 showIp ip =
     String.fromInt ip.b1
@@ -112,7 +138,6 @@ ipFromString s =
                 ( Array.get 2 splits )
                 ( Array.get 3 splits )
     in mip |> Maybe.andThen (\m -> m)
-
 
 getIpAddress : String -> String -> String -> String -> Maybe IpAddress
 getIpAddress byte1 byte2 byte3 byte4 =

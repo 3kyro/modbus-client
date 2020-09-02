@@ -3,7 +3,7 @@ module App exposing (main)
 import Browser
 
 import View exposing (view)
-import Update exposing (update)
+import Update exposing (update, initCmd)
 import Types exposing
     ( Msg (..)
     , Model
@@ -33,10 +33,6 @@ initModel =
     , timeout = 1000
 
     }
-
-
-initCmd : Cmd Msg
-initCmd = Cmd.none
 
 initModData : List ModData
 initModData =

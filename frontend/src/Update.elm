@@ -1,4 +1,4 @@
-module Update exposing (update)
+module Update exposing (update, initCmd)
 
 import Http
 
@@ -17,6 +17,7 @@ import Types exposing
     , showIp
     , changeIpAddressByte
     , ConnectStatus(..)
+    , decodeConnInfo
     )
 
 update : Msg -> Model -> ( Model, Cmd Msg)
@@ -25,6 +26,18 @@ update msg model =
         ReadRegisters (Ok regs) ->
             ( { model | modData = regs , status = AllGood } , Cmd.none )
         ReadRegisters (Err err) ->
+            ( { model | status = Bad <| showHttpError err }, Cmd.none )
+        ReceivedConnectionInfo (Ok (Just conn)) ->
+            ( { model
+                | ipAddress = conn.ipAddress
+                , socketPort = conn.socketPort
+                , timeout = conn.timeout
+                , connectStatus = Connected
+                }
+            , Cmd.none
+            )
+        ReceivedConnectionInfo (Ok Nothing) -> (model, Cmd.none)
+        ReceivedConnectionInfo (Err err) ->
             ( { model | status = Bad <| showHttpError err }, Cmd.none )
         RefreshRequest regs -> ( { model | status = Loading } , refreshRequest regs )
         ConnectRequest -> ( { model | connectStatus = Connecting } , connectRequest model )
@@ -61,7 +74,14 @@ update msg model =
             , Cmd.none
             )
 
-
+initCmd : Cmd Msg
+initCmd = connectionInfoRequest
+connectionInfoRequest : Cmd Msg
+connectionInfoRequest  =
+    Http.get
+        { url = "http://localhost:4000/connectInfo"
+        , expect = Http.expectJson ReceivedConnectionInfo (D.maybe decodeConnInfo)
+        }
 connectRequest : Model -> Cmd Msg
 connectRequest model =
     Http.post

@@ -4358,6 +4358,43 @@ function _Browser_load(url)
 
 
 
+var _Bitwise_and = F2(function(a, b)
+{
+	return a & b;
+});
+
+var _Bitwise_or = F2(function(a, b)
+{
+	return a | b;
+});
+
+var _Bitwise_xor = F2(function(a, b)
+{
+	return a ^ b;
+});
+
+function _Bitwise_complement(a)
+{
+	return ~a;
+};
+
+var _Bitwise_shiftLeftBy = F2(function(offset, a)
+{
+	return a << offset;
+});
+
+var _Bitwise_shiftRightBy = F2(function(offset, a)
+{
+	return a >> offset;
+});
+
+var _Bitwise_shiftRightZfBy = F2(function(offset, a)
+{
+	return a >>> offset;
+});
+
+
+
 // SEND REQUEST
 
 var _Http_toTask = F3(function(router, toTask, request)
@@ -5319,141 +5356,180 @@ var $elm$core$Task$perform = F2(
 				A2($elm$core$Task$map, toMessage, task)));
 	});
 var $elm$browser$Browser$element = _Browser_element;
-var $elm$core$Platform$Cmd$batch = _Platform_batch;
-var $elm$core$Platform$Cmd$none = $elm$core$Platform$Cmd$batch(_List_Nil);
-var $author$project$App$initCmd = $elm$core$Platform$Cmd$none;
-var $author$project$Types$AllGood = {$: 'AllGood'};
-var $author$project$Types$Connect = {$: 'Connect'};
+var $author$project$Types$ReceivedConnectionInfo = function (a) {
+	return {$: 'ReceivedConnectionInfo', a: a};
+};
+var $author$project$Types$ConnectionInfo = F3(
+	function (ipAddress, socketPort, timeout) {
+		return {ipAddress: ipAddress, socketPort: socketPort, timeout: timeout};
+	});
+var $elm$json$Json$Decode$andThen = _Json_andThen;
+var $elm$json$Json$Decode$fail = _Json_fail;
+var $elm$core$Maybe$andThen = F2(
+	function (callback, maybeValue) {
+		if (maybeValue.$ === 'Just') {
+			var value = maybeValue.a;
+			return callback(value);
+		} else {
+			return $elm$core$Maybe$Nothing;
+		}
+	});
+var $elm$core$Array$fromListHelp = F3(
+	function (list, nodeList, nodeListSize) {
+		fromListHelp:
+		while (true) {
+			var _v0 = A2($elm$core$Elm$JsArray$initializeFromList, $elm$core$Array$branchFactor, list);
+			var jsArray = _v0.a;
+			var remainingItems = _v0.b;
+			if (_Utils_cmp(
+				$elm$core$Elm$JsArray$length(jsArray),
+				$elm$core$Array$branchFactor) < 0) {
+				return A2(
+					$elm$core$Array$builderToArray,
+					true,
+					{nodeList: nodeList, nodeListSize: nodeListSize, tail: jsArray});
+			} else {
+				var $temp$list = remainingItems,
+					$temp$nodeList = A2(
+					$elm$core$List$cons,
+					$elm$core$Array$Leaf(jsArray),
+					nodeList),
+					$temp$nodeListSize = nodeListSize + 1;
+				list = $temp$list;
+				nodeList = $temp$nodeList;
+				nodeListSize = $temp$nodeListSize;
+				continue fromListHelp;
+			}
+		}
+	});
+var $elm$core$Array$fromList = function (list) {
+	if (!list.b) {
+		return $elm$core$Array$empty;
+	} else {
+		return A3($elm$core$Array$fromListHelp, list, _List_Nil, 0);
+	}
+};
+var $elm$core$Bitwise$and = _Bitwise_and;
+var $elm$core$Bitwise$shiftRightZfBy = _Bitwise_shiftRightZfBy;
+var $elm$core$Array$bitMask = 4294967295 >>> (32 - $elm$core$Array$shiftStep);
+var $elm$core$Basics$ge = _Utils_ge;
+var $elm$core$Elm$JsArray$unsafeGet = _JsArray_unsafeGet;
+var $elm$core$Array$getHelp = F3(
+	function (shift, index, tree) {
+		getHelp:
+		while (true) {
+			var pos = $elm$core$Array$bitMask & (index >>> shift);
+			var _v0 = A2($elm$core$Elm$JsArray$unsafeGet, pos, tree);
+			if (_v0.$ === 'SubTree') {
+				var subTree = _v0.a;
+				var $temp$shift = shift - $elm$core$Array$shiftStep,
+					$temp$index = index,
+					$temp$tree = subTree;
+				shift = $temp$shift;
+				index = $temp$index;
+				tree = $temp$tree;
+				continue getHelp;
+			} else {
+				var values = _v0.a;
+				return A2($elm$core$Elm$JsArray$unsafeGet, $elm$core$Array$bitMask & index, values);
+			}
+		}
+	});
+var $elm$core$Bitwise$shiftLeftBy = _Bitwise_shiftLeftBy;
+var $elm$core$Array$tailIndex = function (len) {
+	return (len >>> 5) << 5;
+};
+var $elm$core$Array$get = F2(
+	function (index, _v0) {
+		var len = _v0.a;
+		var startShift = _v0.b;
+		var tree = _v0.c;
+		var tail = _v0.d;
+		return ((index < 0) || (_Utils_cmp(index, len) > -1)) ? $elm$core$Maybe$Nothing : ((_Utils_cmp(
+			index,
+			$elm$core$Array$tailIndex(len)) > -1) ? $elm$core$Maybe$Just(
+			A2($elm$core$Elm$JsArray$unsafeGet, $elm$core$Array$bitMask & index, tail)) : $elm$core$Maybe$Just(
+			A3($elm$core$Array$getHelp, startShift, index, tree)));
+	});
 var $author$project$Types$IpAddress = F4(
 	function (b1, b2, b3, b4) {
 		return {b1: b1, b2: b2, b3: b3, b4: b4};
 	});
-var $author$project$Types$HoldingRegister = {$: 'HoldingRegister'};
-var $author$project$Types$InputRegister = {$: 'InputRegister'};
-var $author$project$Types$ModWord = function (a) {
-	return {$: 'ModWord', a: a};
-};
-var $author$project$App$initModData = _List_fromArray(
-	[
-		{
-		modAddress: 1,
-		modDescription: 'A register for tesing purposes',
-		modName: 'first',
-		modRegType: $author$project$Types$InputRegister,
-		modUid: 1,
-		modValue: $author$project$Types$ModWord(
-			$elm$core$Maybe$Just(1))
-	},
-		{
-		modAddress: 2,
-		modDescription: 'A register for tesing purposes',
-		modName: 'second',
-		modRegType: $author$project$Types$InputRegister,
-		modUid: 1,
-		modValue: $author$project$Types$ModWord(
-			$elm$core$Maybe$Just(2))
-	},
-		{
-		modAddress: 10,
-		modDescription: 'A register for tesing purposes',
-		modName: '1500',
-		modRegType: $author$project$Types$InputRegister,
-		modUid: 1,
-		modValue: $author$project$Types$ModWord($elm$core$Maybe$Nothing)
-	},
-		{
-		modAddress: 15,
-		modDescription: 'A register for tesing purposes',
-		modName: '1700',
-		modRegType: $author$project$Types$HoldingRegister,
-		modUid: 1,
-		modValue: $author$project$Types$ModWord($elm$core$Maybe$Nothing)
-	}
-	]);
-var $author$project$App$initModel = {
-	connectStatus: $author$project$Types$Connect,
-	ipAddress: A4($author$project$Types$IpAddress, 192, 168, 1, 1),
-	modData: $author$project$App$initModData,
-	socketPort: 502,
-	status: $author$project$Types$AllGood,
-	timeout: 1000
-};
-var $elm$core$Platform$Sub$batch = _Platform_batch;
-var $elm$core$Platform$Sub$none = $elm$core$Platform$Sub$batch(_List_Nil);
-var $author$project$Types$Bad = function (a) {
-	return {$: 'Bad', a: a};
-};
-var $author$project$Types$BadIpAddress = {$: 'BadIpAddress'};
-var $author$project$Types$BadPort = {$: 'BadPort'};
-var $author$project$Types$BadTimeout = {$: 'BadTimeout'};
-var $author$project$Types$Connected = {$: 'Connected'};
-var $author$project$Types$Connecting = {$: 'Connecting'};
-var $author$project$Types$Disconnecting = {$: 'Disconnecting'};
-var $author$project$Types$Loading = {$: 'Loading'};
-var $author$project$Types$changeIpAddressByte = F2(
-	function (ip, _byte) {
-		switch (_byte.$) {
-			case 'Byte1':
-				var x = _byte.a;
-				return _Utils_update(
-					ip,
-					{b1: x});
-			case 'Byte2':
-				var x = _byte.a;
-				return _Utils_update(
-					ip,
-					{b2: x});
-			case 'Byte3':
-				var x = _byte.a;
-				return _Utils_update(
-					ip,
-					{b3: x});
-			case 'Byte4':
-				var x = _byte.a;
-				return _Utils_update(
-					ip,
-					{b4: x});
-			default:
-				return ip;
+var $elm$core$Maybe$map4 = F5(
+	function (func, ma, mb, mc, md) {
+		if (ma.$ === 'Nothing') {
+			return $elm$core$Maybe$Nothing;
+		} else {
+			var a = ma.a;
+			if (mb.$ === 'Nothing') {
+				return $elm$core$Maybe$Nothing;
+			} else {
+				var b = mb.a;
+				if (mc.$ === 'Nothing') {
+					return $elm$core$Maybe$Nothing;
+				} else {
+					var c = mc.a;
+					if (md.$ === 'Nothing') {
+						return $elm$core$Maybe$Nothing;
+					} else {
+						var d = md.a;
+						return $elm$core$Maybe$Just(
+							A4(func, a, b, c, d));
+					}
+				}
+			}
 		}
 	});
-var $author$project$Types$ConnectedResponse = function (a) {
-	return {$: 'ConnectedResponse', a: a};
+var $author$project$Types$getIpAddress = F4(
+	function (byte1, byte2, byte3, byte4) {
+		return A5(
+			$elm$core$Maybe$map4,
+			$author$project$Types$IpAddress,
+			$elm$core$String$toInt(byte1),
+			$elm$core$String$toInt(byte2),
+			$elm$core$String$toInt(byte3),
+			$elm$core$String$toInt(byte4));
+	});
+var $author$project$Types$ipFromString = function (s) {
+	var splits = $elm$core$Array$fromList(
+		A2($elm$core$String$split, '.', s));
+	var mip = A5(
+		$elm$core$Maybe$map4,
+		$author$project$Types$getIpAddress,
+		A2($elm$core$Array$get, 0, splits),
+		A2($elm$core$Array$get, 1, splits),
+		A2($elm$core$Array$get, 2, splits),
+		A2($elm$core$Array$get, 3, splits));
+	return A2(
+		$elm$core$Maybe$andThen,
+		function (m) {
+			return m;
+		},
+		mip);
 };
-var $elm$json$Json$Encode$int = _Json_wrap;
-var $elm$json$Json$Encode$object = function (pairs) {
-	return _Json_wrap(
-		A3(
-			$elm$core$List$foldl,
-			F2(
-				function (_v0, obj) {
-					var k = _v0.a;
-					var v = _v0.b;
-					return A3(_Json_addField, k, v, obj);
-				}),
-			_Json_emptyObject(_Utils_Tuple0),
-			pairs));
-};
-var $author$project$Types$showIp = function (ip) {
-	return $elm$core$String$fromInt(ip.b1) + ('.' + ($elm$core$String$fromInt(ip.b2) + ('.' + ($elm$core$String$fromInt(ip.b3) + ('.' + $elm$core$String$fromInt(ip.b4))))));
-};
-var $elm$json$Json$Encode$string = _Json_wrap;
-var $author$project$Update$encodeIpPort = function (model) {
-	return $elm$json$Json$Encode$object(
-		_List_fromArray(
-			[
-				_Utils_Tuple2(
-				'ip address',
-				$elm$json$Json$Encode$string(
-					$author$project$Types$showIp(model.ipAddress))),
-				_Utils_Tuple2(
-				'port',
-				$elm$json$Json$Encode$int(model.socketPort)),
-				_Utils_Tuple2(
-				'timeout',
-				$elm$json$Json$Encode$int(model.timeout))
-			]));
-};
+var $elm$json$Json$Decode$string = _Json_decodeString;
+var $author$project$Types$decodeIpAddress = A2(
+	$elm$json$Json$Decode$andThen,
+	function (str) {
+		var _v0 = $author$project$Types$ipFromString(str);
+		if (_v0.$ === 'Nothing') {
+			return $elm$json$Json$Decode$fail('Not an Ip Address');
+		} else {
+			var ip = _v0.a;
+			return $elm$json$Json$Decode$succeed(ip);
+		}
+	},
+	$elm$json$Json$Decode$string);
+var $elm$json$Json$Decode$field = _Json_decodeField;
+var $elm$json$Json$Decode$int = _Json_decodeInt;
+var $elm$json$Json$Decode$map3 = _Json_map3;
+var $author$project$Types$decodeConnInfo = A4(
+	$elm$json$Json$Decode$map3,
+	$author$project$Types$ConnectionInfo,
+	A2($elm$json$Json$Decode$field, 'ip address', $author$project$Types$decodeIpAddress),
+	A2($elm$json$Json$Decode$field, 'port', $elm$json$Json$Decode$int),
+	A2($elm$json$Json$Decode$field, 'timeout', $elm$json$Json$Decode$int));
+var $elm$json$Json$Decode$decodeString = _Json_runOnString;
 var $elm$http$Http$BadStatus_ = F2(
 	function (a, b) {
 		return {$: 'BadStatus_', a: a, b: b};
@@ -6001,13 +6077,24 @@ var $elm$core$Basics$composeR = F3(
 		return g(
 			f(x));
 	});
-var $elm$http$Http$expectBytesResponse = F2(
+var $elm$http$Http$expectStringResponse = F2(
 	function (toMsg, toResult) {
 		return A3(
 			_Http_expect,
-			'arraybuffer',
-			_Http_toDataView,
+			'',
+			$elm$core$Basics$identity,
 			A2($elm$core$Basics$composeR, toResult, toMsg));
+	});
+var $elm$core$Result$mapError = F2(
+	function (f, result) {
+		if (result.$ === 'Ok') {
+			var v = result.a;
+			return $elm$core$Result$Ok(v);
+		} else {
+			var e = result.a;
+			return $elm$core$Result$Err(
+				f(e));
+		}
 	});
 var $elm$http$Http$BadBody = function (a) {
 	return {$: 'BadBody', a: a};
@@ -6020,17 +6107,6 @@ var $elm$http$Http$BadUrl = function (a) {
 };
 var $elm$http$Http$NetworkError = {$: 'NetworkError'};
 var $elm$http$Http$Timeout = {$: 'Timeout'};
-var $elm$core$Result$mapError = F2(
-	function (f, result) {
-		if (result.$ === 'Ok') {
-			var v = result.a;
-			return $elm$core$Result$Ok(v);
-		} else {
-			var e = result.a;
-			return $elm$core$Result$Err(
-				f(e));
-		}
-	});
 var $elm$http$Http$resolve = F2(
 	function (toResult, response) {
 		switch (response.$) {
@@ -6054,21 +6130,20 @@ var $elm$http$Http$resolve = F2(
 					toResult(body));
 		}
 	});
-var $elm$http$Http$expectWhatever = function (toMsg) {
-	return A2(
-		$elm$http$Http$expectBytesResponse,
-		toMsg,
-		$elm$http$Http$resolve(
-			function (_v0) {
-				return $elm$core$Result$Ok(_Utils_Tuple0);
-			}));
-};
-var $elm$http$Http$jsonBody = function (value) {
-	return A2(
-		_Http_pair,
-		'application/json',
-		A2($elm$json$Json$Encode$encode, 0, value));
-};
+var $elm$http$Http$expectJson = F2(
+	function (toMsg, decoder) {
+		return A2(
+			$elm$http$Http$expectStringResponse,
+			toMsg,
+			$elm$http$Http$resolve(
+				function (string) {
+					return A2(
+						$elm$core$Result$mapError,
+						$elm$json$Json$Decode$errorToString,
+						A2($elm$json$Json$Decode$decodeString, decoder, string));
+				}));
+	});
+var $elm$http$Http$emptyBody = _Http_emptyBody;
 var $elm$http$Http$Request = function (a) {
 	return {$: 'Request', a: a};
 };
@@ -6237,6 +6312,179 @@ var $elm$http$Http$request = function (r) {
 		$elm$http$Http$Request(
 			{allowCookiesFromOtherDomains: false, body: r.body, expect: r.expect, headers: r.headers, method: r.method, timeout: r.timeout, tracker: r.tracker, url: r.url}));
 };
+var $elm$http$Http$get = function (r) {
+	return $elm$http$Http$request(
+		{body: $elm$http$Http$emptyBody, expect: r.expect, headers: _List_Nil, method: 'GET', timeout: $elm$core$Maybe$Nothing, tracker: $elm$core$Maybe$Nothing, url: r.url});
+};
+var $elm$json$Json$Decode$oneOf = _Json_oneOf;
+var $elm$json$Json$Decode$maybe = function (decoder) {
+	return $elm$json$Json$Decode$oneOf(
+		_List_fromArray(
+			[
+				A2($elm$json$Json$Decode$map, $elm$core$Maybe$Just, decoder),
+				$elm$json$Json$Decode$succeed($elm$core$Maybe$Nothing)
+			]));
+};
+var $author$project$Update$connectionInfoRequest = $elm$http$Http$get(
+	{
+		expect: A2(
+			$elm$http$Http$expectJson,
+			$author$project$Types$ReceivedConnectionInfo,
+			$elm$json$Json$Decode$maybe($author$project$Types$decodeConnInfo)),
+		url: 'http://localhost:4000/connectInfo'
+	});
+var $author$project$Update$initCmd = $author$project$Update$connectionInfoRequest;
+var $author$project$Types$AllGood = {$: 'AllGood'};
+var $author$project$Types$Connect = {$: 'Connect'};
+var $author$project$Types$HoldingRegister = {$: 'HoldingRegister'};
+var $author$project$Types$InputRegister = {$: 'InputRegister'};
+var $author$project$Types$ModWord = function (a) {
+	return {$: 'ModWord', a: a};
+};
+var $author$project$App$initModData = _List_fromArray(
+	[
+		{
+		modAddress: 1,
+		modDescription: 'A register for tesing purposes',
+		modName: 'first',
+		modRegType: $author$project$Types$InputRegister,
+		modUid: 1,
+		modValue: $author$project$Types$ModWord(
+			$elm$core$Maybe$Just(1))
+	},
+		{
+		modAddress: 2,
+		modDescription: 'A register for tesing purposes',
+		modName: 'second',
+		modRegType: $author$project$Types$InputRegister,
+		modUid: 1,
+		modValue: $author$project$Types$ModWord(
+			$elm$core$Maybe$Just(2))
+	},
+		{
+		modAddress: 10,
+		modDescription: 'A register for tesing purposes',
+		modName: '1500',
+		modRegType: $author$project$Types$InputRegister,
+		modUid: 1,
+		modValue: $author$project$Types$ModWord($elm$core$Maybe$Nothing)
+	},
+		{
+		modAddress: 15,
+		modDescription: 'A register for tesing purposes',
+		modName: '1700',
+		modRegType: $author$project$Types$HoldingRegister,
+		modUid: 1,
+		modValue: $author$project$Types$ModWord($elm$core$Maybe$Nothing)
+	}
+	]);
+var $author$project$App$initModel = {
+	connectStatus: $author$project$Types$Connect,
+	ipAddress: A4($author$project$Types$IpAddress, 192, 168, 1, 1),
+	modData: $author$project$App$initModData,
+	socketPort: 502,
+	status: $author$project$Types$AllGood,
+	timeout: 1000
+};
+var $elm$core$Platform$Sub$batch = _Platform_batch;
+var $elm$core$Platform$Sub$none = $elm$core$Platform$Sub$batch(_List_Nil);
+var $author$project$Types$Bad = function (a) {
+	return {$: 'Bad', a: a};
+};
+var $author$project$Types$BadIpAddress = {$: 'BadIpAddress'};
+var $author$project$Types$BadPort = {$: 'BadPort'};
+var $author$project$Types$BadTimeout = {$: 'BadTimeout'};
+var $author$project$Types$Connected = {$: 'Connected'};
+var $author$project$Types$Connecting = {$: 'Connecting'};
+var $author$project$Types$Disconnecting = {$: 'Disconnecting'};
+var $author$project$Types$Loading = {$: 'Loading'};
+var $author$project$Types$changeIpAddressByte = F2(
+	function (ip, _byte) {
+		switch (_byte.$) {
+			case 'Byte1':
+				var x = _byte.a;
+				return _Utils_update(
+					ip,
+					{b1: x});
+			case 'Byte2':
+				var x = _byte.a;
+				return _Utils_update(
+					ip,
+					{b2: x});
+			case 'Byte3':
+				var x = _byte.a;
+				return _Utils_update(
+					ip,
+					{b3: x});
+			case 'Byte4':
+				var x = _byte.a;
+				return _Utils_update(
+					ip,
+					{b4: x});
+			default:
+				return ip;
+		}
+	});
+var $author$project$Types$ConnectedResponse = function (a) {
+	return {$: 'ConnectedResponse', a: a};
+};
+var $elm$json$Json$Encode$int = _Json_wrap;
+var $elm$json$Json$Encode$object = function (pairs) {
+	return _Json_wrap(
+		A3(
+			$elm$core$List$foldl,
+			F2(
+				function (_v0, obj) {
+					var k = _v0.a;
+					var v = _v0.b;
+					return A3(_Json_addField, k, v, obj);
+				}),
+			_Json_emptyObject(_Utils_Tuple0),
+			pairs));
+};
+var $author$project$Types$showIp = function (ip) {
+	return $elm$core$String$fromInt(ip.b1) + ('.' + ($elm$core$String$fromInt(ip.b2) + ('.' + ($elm$core$String$fromInt(ip.b3) + ('.' + $elm$core$String$fromInt(ip.b4))))));
+};
+var $elm$json$Json$Encode$string = _Json_wrap;
+var $author$project$Update$encodeIpPort = function (model) {
+	return $elm$json$Json$Encode$object(
+		_List_fromArray(
+			[
+				_Utils_Tuple2(
+				'ip address',
+				$elm$json$Json$Encode$string(
+					$author$project$Types$showIp(model.ipAddress))),
+				_Utils_Tuple2(
+				'port',
+				$elm$json$Json$Encode$int(model.socketPort)),
+				_Utils_Tuple2(
+				'timeout',
+				$elm$json$Json$Encode$int(model.timeout))
+			]));
+};
+var $elm$http$Http$expectBytesResponse = F2(
+	function (toMsg, toResult) {
+		return A3(
+			_Http_expect,
+			'arraybuffer',
+			_Http_toDataView,
+			A2($elm$core$Basics$composeR, toResult, toMsg));
+	});
+var $elm$http$Http$expectWhatever = function (toMsg) {
+	return A2(
+		$elm$http$Http$expectBytesResponse,
+		toMsg,
+		$elm$http$Http$resolve(
+			function (_v0) {
+				return $elm$core$Result$Ok(_Utils_Tuple0);
+			}));
+};
+var $elm$http$Http$jsonBody = function (value) {
+	return A2(
+		_Http_pair,
+		'application/json',
+		A2($elm$json$Json$Encode$encode, 0, value));
+};
 var $elm$http$Http$post = function (r) {
 	return $elm$http$Http$request(
 		{body: r.body, expect: r.expect, headers: _List_Nil, method: 'POST', timeout: $elm$core$Maybe$Nothing, tracker: $elm$core$Maybe$Nothing, url: r.url});
@@ -6260,6 +6508,8 @@ var $author$project$Update$disconnectRequest = $elm$http$Http$post(
 		expect: $elm$http$Http$expectWhatever($author$project$Types$DisconnectedResponse),
 		url: 'http://localhost:4000/disconnect'
 	});
+var $elm$core$Platform$Cmd$batch = _Platform_batch;
+var $elm$core$Platform$Cmd$none = $elm$core$Platform$Cmd$batch(_List_Nil);
 var $author$project$Types$ReadRegisters = function (a) {
 	return {$: 'ReadRegisters', a: a};
 };
@@ -6270,13 +6520,8 @@ var $author$project$Types$ModData = F6(
 var $author$project$Types$ModFloat = function (a) {
 	return {$: 'ModFloat', a: a};
 };
-var $elm$json$Json$Decode$andThen = _Json_andThen;
-var $elm$json$Json$Decode$fail = _Json_fail;
-var $elm$json$Json$Decode$field = _Json_decodeField;
 var $elm$json$Json$Decode$float = _Json_decodeFloat;
-var $elm$json$Json$Decode$int = _Json_decodeInt;
 var $elm$json$Json$Decode$null = _Json_decodeNull;
-var $elm$json$Json$Decode$oneOf = _Json_oneOf;
 var $elm$json$Json$Decode$nullable = function (decoder) {
 	return $elm$json$Json$Decode$oneOf(
 		_List_fromArray(
@@ -6285,7 +6530,6 @@ var $elm$json$Json$Decode$nullable = function (decoder) {
 				A2($elm$json$Json$Decode$map, $elm$core$Maybe$Just, decoder)
 			]));
 };
-var $elm$json$Json$Decode$string = _Json_decodeString;
 var $author$project$Update$decodeModValue = A2(
 	$elm$json$Json$Decode$andThen,
 	function (s) {
@@ -6416,28 +6660,6 @@ var $author$project$Update$encodeRegister = function (md) {
 				$elm$json$Json$Encode$string(md.modDescription))
 			]));
 };
-var $elm$json$Json$Decode$decodeString = _Json_runOnString;
-var $elm$http$Http$expectStringResponse = F2(
-	function (toMsg, toResult) {
-		return A3(
-			_Http_expect,
-			'',
-			$elm$core$Basics$identity,
-			A2($elm$core$Basics$composeR, toResult, toMsg));
-	});
-var $elm$http$Http$expectJson = F2(
-	function (toMsg, decoder) {
-		return A2(
-			$elm$http$Http$expectStringResponse,
-			toMsg,
-			$elm$http$Http$resolve(
-				function (string) {
-					return A2(
-						$elm$core$Result$mapError,
-						$elm$json$Json$Decode$errorToString,
-						A2($elm$json$Json$Decode$decodeString, decoder, string));
-				}));
-	});
 var $elm$json$Json$Decode$list = _Json_decodeList;
 var $elm$json$Json$Encode$list = F2(
 	function (func, entries) {
@@ -6499,6 +6721,30 @@ var $author$project$Update$update = F2(
 							}),
 						$elm$core$Platform$Cmd$none);
 				}
+			case 'ReceivedConnectionInfo':
+				if (msg.a.$ === 'Ok') {
+					if (msg.a.a.$ === 'Just') {
+						var conn = msg.a.a.a;
+						return _Utils_Tuple2(
+							_Utils_update(
+								model,
+								{connectStatus: $author$project$Types$Connected, ipAddress: conn.ipAddress, socketPort: conn.socketPort, timeout: conn.timeout}),
+							$elm$core$Platform$Cmd$none);
+					} else {
+						var _v1 = msg.a.a;
+						return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
+					}
+				} else {
+					var err = msg.a.a;
+					return _Utils_Tuple2(
+						_Utils_update(
+							model,
+							{
+								status: $author$project$Types$Bad(
+									$author$project$Update$showHttpError(err))
+							}),
+						$elm$core$Platform$Cmd$none);
+				}
 			case 'RefreshRequest':
 				var regs = msg.a;
 				return _Utils_Tuple2(
@@ -6533,7 +6779,7 @@ var $author$project$Update$update = F2(
 				}
 			case 'ChangeIpAddressByte':
 				if (msg.a.$ === 'NoByte') {
-					var _v1 = msg.a;
+					var _v2 = msg.a;
 					return _Utils_Tuple2(
 						_Utils_update(
 							model,
@@ -6551,15 +6797,15 @@ var $author$project$Update$update = F2(
 				}
 			case 'ChangePort':
 				var portNum = msg.a;
-				var _v2 = $elm$core$String$toInt(portNum);
-				if (_v2.$ === 'Nothing') {
+				var _v3 = $elm$core$String$toInt(portNum);
+				if (_v3.$ === 'Nothing') {
 					return _Utils_Tuple2(
 						_Utils_update(
 							model,
 							{status: $author$project$Types$BadPort}),
 						$elm$core$Platform$Cmd$none);
 				} else {
-					var p = _v2.a;
+					var p = _v3.a;
 					return _Utils_Tuple2(
 						_Utils_update(
 							model,
@@ -6568,15 +6814,15 @@ var $author$project$Update$update = F2(
 				}
 			case 'ChangeTimeout':
 				var tm = msg.a;
-				var _v3 = $elm$core$String$toInt(tm);
-				if (_v3.$ === 'Nothing') {
+				var _v4 = $elm$core$String$toInt(tm);
+				if (_v4.$ === 'Nothing') {
 					return _Utils_Tuple2(
 						_Utils_update(
 							model,
 							{status: $author$project$Types$BadTimeout}),
 						$elm$core$Platform$Cmd$none);
 				} else {
-					var t = _v3.a;
+					var t = _v4.a;
 					return _Utils_Tuple2(
 						_Utils_update(
 							model,
@@ -6584,8 +6830,8 @@ var $author$project$Update$update = F2(
 						$elm$core$Platform$Cmd$none);
 				}
 			case 'DisconnectRequest':
-				var _v4 = model.connectStatus;
-				if (_v4.$ === 'Connected') {
+				var _v5 = model.connectStatus;
+				if (_v5.$ === 'Connected') {
 					return _Utils_Tuple2(
 						_Utils_update(
 							model,
@@ -7174,7 +7420,7 @@ var $author$project$View$view = function (model) {
 var $author$project$App$main = $elm$browser$Browser$element(
 	{
 		init: function (_v0) {
-			return _Utils_Tuple2($author$project$App$initModel, $author$project$App$initCmd);
+			return _Utils_Tuple2($author$project$App$initModel, $author$project$Update$initCmd);
 		},
 		subscriptions: function (_v1) {
 			return $elm$core$Platform$Sub$none;
