@@ -1,4 +1,4 @@
-module View.Connect exposing (viewConnect)
+module View.Connect exposing (viewConnectMenu)
 
 import Html exposing
     ( Html
@@ -25,39 +25,40 @@ import Types exposing
     , showConnectStatus
     )
 
-viewConnect : Model -> List (Html Msg)
-viewConnect model =
-    [ div []
-        [ text "ip address"
-        , viewByteInput <| Byte1 model.ipAddress.b1
-        , label [] [text "."]
-        , viewByteInput <| Byte2 model.ipAddress.b2
-        , label [] [text "."]
-        , viewByteInput <| Byte3 model.ipAddress.b3
-        , label [] [text "."]
-        , viewByteInput <| Byte4 model.ipAddress.b4
-        ]
+viewConnectMenu : Model -> Html Msg
+viewConnectMenu model =
+    div [ class "activeMenu" , class "connectRegion" ]
+        [ div []
+            [ text "ip address"
+            , viewByteInput <| Byte1 model.ipAddress.b1
+            , label [] [text "."]
+            , viewByteInput <| Byte2 model.ipAddress.b2
+            , label [] [text "."]
+            , viewByteInput <| Byte3 model.ipAddress.b3
+            , label [] [text "."]
+            , viewByteInput <| Byte4 model.ipAddress.b4
+            ]
 
 
-    , div []
-        [ text "port"
-        , input
-            [ type_ "number"
-            , size 4
-            , value <| String.fromInt model.socketPort
-            , onInput <| ChangePort
-            ] []
-        , text "timeout"
-        , input
-            [ type_ "number"
-            , size 5
-            , value <| String.fromInt model.timeout
-            , onInput <| ChangeTimeout
-            ] []
+        , div []
+            [ text "port"
+            , input
+                [ type_ "number"
+                , size 4
+                , value <| String.fromInt model.socketPort
+                , onInput <| ChangePort
+                ] []
+            , text "timeout"
+            , input
+                [ type_ "number"
+                , size 5
+                , value <| String.fromInt model.timeout
+                , onInput <| ChangeTimeout
+                ] []
+            ]
+        , viewConnectButton model
+        , viewDisconnectButton model
         ]
-    , viewConnectButton model
-    , viewDisconnectButton model
-    ]
 
 getDisconnectClass : ConnectStatus -> String
 getDisconnectClass status =

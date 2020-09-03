@@ -21,6 +21,8 @@ module Types exposing
     , encodeIpPort
     , encodeRegister
     , decodeModData
+    , ActiveMenu (..)
+    , getChangedMenu
     )
 
 import Http
@@ -39,6 +41,7 @@ type Msg
     | ChangeTimeout String
     | DisconnectRequest
     | DisconnectedResponse (Result Http.Error () )
+    | ChangeActiveMenu ActiveMenu
 
 type alias Model =
     { modData : List ModData
@@ -47,6 +50,7 @@ type alias Model =
     , ipAddress : IpAddress
     , socketPort : Int
     , timeout : Int
+    , activeMenu : ActiveMenu
     }
 type ConnectStatus
     = Connect
@@ -265,3 +269,20 @@ decodeRegType =
             "holding register" -> HoldingRegister
             _ -> InputRegister
     ) D.string
+
+-- ActiveMenu
+--------------------------------------------------------------------------------------------------
+
+type ActiveMenu
+    = NoneActive
+    | ConnectMenu
+    | ImportRegisters
+
+getChangedMenu : Model -> ActiveMenu -> ActiveMenu
+getChangedMenu model newActive =
+    if
+        model.activeMenu == newActive
+    then
+        NoneActive
+    else
+        newActive

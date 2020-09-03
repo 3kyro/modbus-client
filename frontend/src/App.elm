@@ -13,6 +13,7 @@ import Types exposing
     , RegType (..)
     , IpAddress
     , ConnectStatus(..)
+    , ActiveMenu(..)
     )
 
 main : Program () Model Msg
@@ -31,7 +32,7 @@ initModel =
     , ipAddress = IpAddress 192 168 1 1
     , socketPort = 502
     , timeout = 1000
-
+    , activeMenu = NoneActive
     }
 
 initModData : List ModData

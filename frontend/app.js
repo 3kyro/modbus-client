@@ -6336,6 +6336,7 @@ var $author$project$Update$connectionInfoRequest = $elm$http$Http$get(
 var $author$project$Update$initCmd = $author$project$Update$connectionInfoRequest;
 var $author$project$Types$AllGood = {$: 'AllGood'};
 var $author$project$Types$Connect = {$: 'Connect'};
+var $author$project$Types$NoneActive = {$: 'NoneActive'};
 var $author$project$Types$HoldingRegister = {$: 'HoldingRegister'};
 var $author$project$Types$InputRegister = {$: 'InputRegister'};
 var $author$project$Types$ModWord = function (a) {
@@ -6379,6 +6380,7 @@ var $author$project$App$initModData = _List_fromArray(
 	}
 	]);
 var $author$project$App$initModel = {
+	activeMenu: $author$project$Types$NoneActive,
 	connectStatus: $author$project$Types$Connect,
 	ipAddress: A4($author$project$Types$IpAddress, 192, 168, 1, 1),
 	modData: $author$project$App$initModData,
@@ -6507,6 +6509,10 @@ var $author$project$Update$disconnectRequest = $elm$http$Http$post(
 			$elm$json$Json$Encode$string('disconnect')),
 		expect: $elm$http$Http$expectWhatever($author$project$Types$DisconnectedResponse),
 		url: 'http://localhost:4000/disconnect'
+	});
+var $author$project$Types$getChangedMenu = F2(
+	function (model, newActive) {
+		return _Utils_eq(model.activeMenu, newActive) ? $author$project$Types$NoneActive : newActive;
 	});
 var $elm$core$Platform$Cmd$batch = _Platform_batch;
 var $elm$core$Platform$Cmd$none = $elm$core$Platform$Cmd$batch(_List_Nil);
@@ -6840,7 +6846,7 @@ var $author$project$Update$update = F2(
 				} else {
 					return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
 				}
-			default:
+			case 'DisconnectedResponse':
 				if (msg.a.$ === 'Ok') {
 					return _Utils_Tuple2(
 						_Utils_update(
@@ -6859,6 +6865,15 @@ var $author$project$Update$update = F2(
 							}),
 						$elm$core$Platform$Cmd$none);
 				}
+			default:
+				var menu = msg.a;
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{
+							activeMenu: A2($author$project$Types$getChangedMenu, model, menu)
+						}),
+					$elm$core$Platform$Cmd$none);
 		}
 	});
 var $elm$html$Html$Attributes$stringProperty = F2(
@@ -7081,78 +7096,160 @@ var $author$project$View$Connect$viewDisconnectButton = function (model) {
 				$elm$html$Html$text('disconnect')
 			]));
 };
-var $author$project$View$Connect$viewConnect = function (model) {
-	return _List_fromArray(
+var $author$project$View$Connect$viewConnectMenu = function (model) {
+	return A2(
+		$elm$html$Html$div,
+		_List_fromArray(
+			[
+				$elm$html$Html$Attributes$class('activeMenu'),
+				$elm$html$Html$Attributes$class('connectRegion')
+			]),
+		_List_fromArray(
+			[
+				A2(
+				$elm$html$Html$div,
+				_List_Nil,
+				_List_fromArray(
+					[
+						$elm$html$Html$text('ip address'),
+						$author$project$View$Connect$viewByteInput(
+						$author$project$Types$Byte1(model.ipAddress.b1)),
+						A2(
+						$elm$html$Html$label,
+						_List_Nil,
+						_List_fromArray(
+							[
+								$elm$html$Html$text('.')
+							])),
+						$author$project$View$Connect$viewByteInput(
+						$author$project$Types$Byte2(model.ipAddress.b2)),
+						A2(
+						$elm$html$Html$label,
+						_List_Nil,
+						_List_fromArray(
+							[
+								$elm$html$Html$text('.')
+							])),
+						$author$project$View$Connect$viewByteInput(
+						$author$project$Types$Byte3(model.ipAddress.b3)),
+						A2(
+						$elm$html$Html$label,
+						_List_Nil,
+						_List_fromArray(
+							[
+								$elm$html$Html$text('.')
+							])),
+						$author$project$View$Connect$viewByteInput(
+						$author$project$Types$Byte4(model.ipAddress.b4))
+					])),
+				A2(
+				$elm$html$Html$div,
+				_List_Nil,
+				_List_fromArray(
+					[
+						$elm$html$Html$text('port'),
+						A2(
+						$elm$html$Html$input,
+						_List_fromArray(
+							[
+								$elm$html$Html$Attributes$type_('number'),
+								$elm$html$Html$Attributes$size(4),
+								$elm$html$Html$Attributes$value(
+								$elm$core$String$fromInt(model.socketPort)),
+								$elm$html$Html$Events$onInput($author$project$Types$ChangePort)
+							]),
+						_List_Nil),
+						$elm$html$Html$text('timeout'),
+						A2(
+						$elm$html$Html$input,
+						_List_fromArray(
+							[
+								$elm$html$Html$Attributes$type_('number'),
+								$elm$html$Html$Attributes$size(5),
+								$elm$html$Html$Attributes$value(
+								$elm$core$String$fromInt(model.timeout)),
+								$elm$html$Html$Events$onInput($author$project$Types$ChangeTimeout)
+							]),
+						_List_Nil)
+					])),
+				$author$project$View$Connect$viewConnectButton(model),
+				$author$project$View$Connect$viewDisconnectButton(model)
+			]));
+};
+var $author$project$View$viewEmptyMenu = A2($elm$html$Html$div, _List_Nil, _List_Nil);
+var $author$project$View$viewImportRegistersMenu = A2(
+	$elm$html$Html$div,
+	_List_fromArray(
 		[
-			A2(
-			$elm$html$Html$div,
-			_List_Nil,
-			_List_fromArray(
-				[
-					$elm$html$Html$text('ip address'),
-					$author$project$View$Connect$viewByteInput(
-					$author$project$Types$Byte1(model.ipAddress.b1)),
-					A2(
-					$elm$html$Html$label,
-					_List_Nil,
-					_List_fromArray(
-						[
-							$elm$html$Html$text('.')
-						])),
-					$author$project$View$Connect$viewByteInput(
-					$author$project$Types$Byte2(model.ipAddress.b2)),
-					A2(
-					$elm$html$Html$label,
-					_List_Nil,
-					_List_fromArray(
-						[
-							$elm$html$Html$text('.')
-						])),
-					$author$project$View$Connect$viewByteInput(
-					$author$project$Types$Byte3(model.ipAddress.b3)),
-					A2(
-					$elm$html$Html$label,
-					_List_Nil,
-					_List_fromArray(
-						[
-							$elm$html$Html$text('.')
-						])),
-					$author$project$View$Connect$viewByteInput(
-					$author$project$Types$Byte4(model.ipAddress.b4))
-				])),
-			A2(
-			$elm$html$Html$div,
-			_List_Nil,
-			_List_fromArray(
-				[
-					$elm$html$Html$text('port'),
-					A2(
-					$elm$html$Html$input,
-					_List_fromArray(
-						[
-							$elm$html$Html$Attributes$type_('number'),
-							$elm$html$Html$Attributes$size(4),
-							$elm$html$Html$Attributes$value(
-							$elm$core$String$fromInt(model.socketPort)),
-							$elm$html$Html$Events$onInput($author$project$Types$ChangePort)
-						]),
-					_List_Nil),
-					$elm$html$Html$text('timeout'),
-					A2(
-					$elm$html$Html$input,
-					_List_fromArray(
-						[
-							$elm$html$Html$Attributes$type_('number'),
-							$elm$html$Html$Attributes$size(5),
-							$elm$html$Html$Attributes$value(
-							$elm$core$String$fromInt(model.timeout)),
-							$elm$html$Html$Events$onInput($author$project$Types$ChangeTimeout)
-						]),
-					_List_Nil)
-				])),
-			$author$project$View$Connect$viewConnectButton(model),
-			$author$project$View$Connect$viewDisconnectButton(model)
-		]);
+			$elm$html$Html$Attributes$class('activeMenu')
+		]),
+	_List_fromArray(
+		[
+			$elm$html$Html$text('put something here')
+		]));
+var $author$project$View$viewActiveMenu = function (model) {
+	var _v0 = model.activeMenu;
+	switch (_v0.$) {
+		case 'ConnectMenu':
+			return $author$project$View$Connect$viewConnectMenu(model);
+		case 'ImportRegisters':
+			return $author$project$View$viewImportRegistersMenu;
+		default:
+			return $author$project$View$viewEmptyMenu;
+	}
+};
+var $author$project$Types$ChangeActiveMenu = function (a) {
+	return {$: 'ChangeActiveMenu', a: a};
+};
+var $author$project$Types$ConnectMenu = {$: 'ConnectMenu'};
+var $author$project$Types$ImportRegisters = {$: 'ImportRegisters'};
+var $author$project$View$viewMenuBar = function (model) {
+	return A2(
+		$elm$html$Html$div,
+		_List_fromArray(
+			[
+				$elm$html$Html$Attributes$class('menuBar')
+			]),
+		_List_fromArray(
+			[
+				A2(
+				$elm$html$Html$label,
+				_List_fromArray(
+					[
+						$elm$html$Html$Attributes$class('menuButton'),
+						$elm$html$Html$Events$onClick(
+						$author$project$Types$ChangeActiveMenu($author$project$Types$ConnectMenu))
+					]),
+				_List_fromArray(
+					[
+						$elm$html$Html$text('Connect')
+					])),
+				A2(
+				$elm$html$Html$label,
+				_List_fromArray(
+					[
+						$elm$html$Html$Attributes$class('menuButton'),
+						$elm$html$Html$Events$onClick(
+						$author$project$Types$ChangeActiveMenu($author$project$Types$ImportRegisters))
+					]),
+				_List_fromArray(
+					[
+						$elm$html$Html$text('Import')
+					]))
+			]));
+};
+var $author$project$View$viewMenu = function (model) {
+	return A2(
+		$elm$html$Html$div,
+		_List_fromArray(
+			[
+				$elm$html$Html$Attributes$class('menu')
+			]),
+		_List_fromArray(
+			[
+				$author$project$View$viewMenuBar(model),
+				$author$project$View$viewActiveMenu(model)
+			]));
 };
 var $author$project$Types$RefreshRequest = function (a) {
 	return {$: 'RefreshRequest', a: a};
@@ -7411,13 +7508,7 @@ var $author$project$View$view = function (model) {
 			]),
 		_List_fromArray(
 			[
-				A2(
-				$elm$html$Html$div,
-				_List_fromArray(
-					[
-						$elm$html$Html$Attributes$class('connectRegion')
-					]),
-				$author$project$View$Connect$viewConnect(model)),
+				$author$project$View$viewMenu(model),
 				A2(
 				$elm$html$Html$div,
 				_List_fromArray(

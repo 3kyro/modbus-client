@@ -19,6 +19,7 @@ import Types exposing
     , encodeIpPort
     , encodeRegister
     , decodeModData
+    , getChangedMenu
     )
 
 update : Msg -> Model -> ( Model, Cmd Msg)
@@ -69,11 +70,11 @@ update msg model =
         DisconnectedResponse (Ok _) ->
             ( { model | connectStatus = Connect } , Cmd.none )
         DisconnectedResponse(Err err) ->
-            ( { model |
-                  status = Bad <| showHttpError err
+            ( { model | status = Bad <| showHttpError err
                 , connectStatus = Connect }
             , Cmd.none
             )
+        ChangeActiveMenu menu -> ( { model | activeMenu = getChangedMenu model menu }, Cmd.none )
 
 initCmd : Cmd Msg
 initCmd = connectionInfoRequest

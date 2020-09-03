@@ -32,16 +32,45 @@ import Types exposing
     , ModData
     , IpAddressByte(..)
     , ConnectStatus (..)
+    , ActiveMenu(..)
     )
-import View.Connect exposing (viewConnect)
+import View.Connect exposing (viewConnectMenu)
 
 view : Model -> Html Msg
 view model =
     div [ class "root" ]
-        [ div [ class "connectRegion" ] (viewConnect model)
+        [ viewMenu model
         , div [ class "inputRegisters" ] [viewMultModData model.modData]
         , div [ class "status" ] [text <| showStatus model.status]
         ]
+
+viewMenu : Model -> Html Msg
+viewMenu model =
+    div [ class "menu" ]
+        [ viewMenuBar model
+        , viewActiveMenu model
+        ]
+
+viewMenuBar : Model -> Html Msg
+viewMenuBar model =
+    div
+        [ class "menuBar" ]
+        [ label [ class "menuButton", onClick <| ChangeActiveMenu ConnectMenu ] [ text "Connect" ]
+        , label [ class "menuButton", onClick <| ChangeActiveMenu ImportRegisters ] [ text "Import" ]
+        ]
+
+viewActiveMenu : Model -> Html Msg
+viewActiveMenu model =
+    case model.activeMenu of
+        ConnectMenu -> viewConnectMenu model
+        ImportRegisters -> viewImportRegistersMenu
+        NoneActive -> viewEmptyMenu
+
+viewImportRegistersMenu : Html Msg
+viewImportRegistersMenu = div [ class "activeMenu" ] [text "put something here"]
+
+viewEmptyMenu : Html Msg
+viewEmptyMenu = div [] []
 
 viewMultModData : List ModData -> Html Msg
 viewMultModData mds =

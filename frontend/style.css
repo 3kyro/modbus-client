@@ -1,6 +1,35 @@
 /* spacing */
 html, body {
     margin: 0px;
+    height:100%;
+}
+
+.menuBar {
+    background-color: rgb(86, 88, 90);
+    width : 100vw;
+    height: 30px;
+    display: flex;
+}
+
+.activeMenu {
+    width : 100vw;
+    height: 5vw;
+    background-color: rgb(76, 78, 80);
+}
+.menuButton {
+    display:inline-flex;
+    user-select: none;
+    height : 100%;
+    color: whitesmoke;
+    text-align:center;
+    align-items: center;
+    padding-left: 10px;
+    padding-right: 10px;
+
+}
+.menuBar label:hover {
+    cursor: pointer;
+    background-color: rgb(125, 128, 131);
 }
 
 .status {
@@ -15,7 +44,7 @@ html, body {
 }
 
 .connectRegion {
-    background-color: rgb(103, 105, 107);
+
 }
 
 .connect {
@@ -105,5 +134,4 @@ thead, tfoot {
 tbody tr:nth-child(even) {
     background-color: #c0c3c6
   }
-
 
