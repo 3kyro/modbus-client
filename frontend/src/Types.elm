@@ -8,7 +8,6 @@ module Types exposing
     , Status (..)
     , showStatus
     , IpAddress
-    , showIp
     , IpAddressByte (..)
     , changeIpAddressByte
     , showIpAddressByte
@@ -19,11 +18,15 @@ module Types exposing
     , ConnectionInfo
     , decodeIpAddress
     , decodeConnInfo
+    , encodeIpPort
+    , encodeRegister
+    , decodeModData
     )
 
 import Http
 import Array
 import Json.Decode as D
+import Json.Encode as E
 
 type Msg
     = ReadRegisters (Result Http.Error (List ModData))
@@ -37,12 +40,6 @@ type Msg
     | DisconnectRequest
     | DisconnectedResponse (Result Http.Error () )
 
-type ConnectStatus
-    = Connect
-    | Connecting
-    | Connected
-    | Disconnecting
-
 type alias Model =
     { modData : List ModData
     , status : Status
@@ -51,65 +48,28 @@ type alias Model =
     , socketPort : Int
     , timeout : Int
     }
+type ConnectStatus
+    = Connect
+    | Connecting
+    | Connected
+    | Disconnecting
 
+showConnectStatus : ConnectStatus -> String
+showConnectStatus st =
+    case st of
+        Connect -> "connect"
+        Connecting -> "connecting"
+        Connected -> "connected"
+        Disconnecting -> "disconnecting"
+
+-- IpAddress
+------------------------------------------------------------------------------------------
 type alias IpAddress =
     { b1 : Int
     , b2 : Int
     , b3 : Int
     , b4 : Int
     }
-
-type IpAddressByte
-    = Byte1 Int
-    | Byte2 Int
-    | Byte3 Int
-    | Byte4 Int
-    | NoByte
-
--- See Types/ModData.hs
-type RegType
-    = InputRegister
-    | HoldingRegister
-
-type Status
-    = AllGood
-    | Loading
-    | Bad String
-    | BadIpAddress
-    | BadPort
-    | BadTimeout
-
-getRegType : RegType -> String
-getRegType rt =
-    case rt of
-        InputRegister -> "input register"
-        HoldingRegister -> "holding register"
-
-type ModValue
-    = ModWord (Maybe Int)
-    | ModFloat (Maybe Float)
-
-type alias ModData =
-    { modName : String
-    , modRegType : RegType
-    , modAddress : Int
-    , modValue : ModValue
-    , modUid : Int
-    , modDescription : String
-    }
-
-type alias ConnectionInfo =
-    { ipAddress : IpAddress
-    , socketPort : Int
-    , timeout : Int
-    }
-
-decodeConnInfo : D.Decoder ConnectionInfo
-decodeConnInfo =
-    D.map3 ConnectionInfo
-        ( D.field "ip address" decodeIpAddress )
-        ( D.field "port" D.int )
-        ( D.field "timeout" D.int)
 
 decodeIpAddress : D.Decoder IpAddress
 decodeIpAddress =
@@ -174,6 +134,21 @@ insertIpAddressByte b i =
         Byte4 _ -> Byte4 i
         NoByte -> NoByte
 
+type IpAddressByte
+    = Byte1 Int
+    | Byte2 Int
+    | Byte3 Int
+    | Byte4 Int
+    | NoByte
+
+
+type Status
+    = AllGood
+    | Loading
+    | Bad String
+    | BadIpAddress
+    | BadPort
+    | BadTimeout
 
 showStatus : Status -> String
 showStatus status =
@@ -185,10 +160,108 @@ showStatus status =
         BadPort -> "Bad Port"
         BadTimeout -> "Bad Timeout"
 
-showConnectStatus : ConnectStatus -> String
-showConnectStatus st =
-    case st of
-        Connect -> "connect"
-        Connecting -> "connecting"
-        Connected -> "connected"
-        Disconnecting -> "disconnecting"
+type alias ConnectionInfo =
+    { ipAddress : IpAddress
+    , socketPort : Int
+    , timeout : Int
+    }
+
+
+decodeConnInfo : D.Decoder ConnectionInfo
+decodeConnInfo =
+    D.map3 ConnectionInfo
+        ( D.field "ip address" decodeIpAddress )
+        ( D.field "port" D.int )
+        ( D.field "timeout" D.int)
+
+encodeIpPort : Model -> E.Value
+encodeIpPort model =
+    E.object
+        [ ( "ip address", E.string <| showIp model.ipAddress)
+        , ( "port", E.int model.socketPort )
+        , ( "timeout", E.int  model.timeout)
+        ]
+
+
+-- ModData
+--------------------------------------------------------------------------------------------------
+
+type alias ModData =
+    { modName : String
+    , modRegType : RegType
+    , modAddress : Int
+    , modValue : ModValue
+    , modUid : Int
+    , modDescription : String
+    }
+
+type RegType
+    = InputRegister
+    | HoldingRegister
+
+type ModValue
+    = ModWord (Maybe Int)
+    | ModFloat (Maybe Float)
+getRegType : RegType -> String
+getRegType rt =
+    case rt of
+        InputRegister -> "input register"
+        HoldingRegister -> "holding register"
+
+encodeRegister : ModData -> E.Value
+encodeRegister md =
+    E.object
+        [ ( "name" , E.string md.modName)
+        , ( "register type" , E.string <| getRegType md.modRegType )
+        , ( "address", E.int md.modAddress )
+        , ( "register value" , encodeModValue md.modValue )
+        , ( "uid", E.int md.modUid )
+        , ( "description", E.string md.modDescription )
+        ]
+
+encodeModValue : ModValue -> E.Value
+encodeModValue mv =
+    case mv of
+        ModWord (Just x) -> E.object
+            [ ( "type", E.string "word" )
+            , ( "value", E.int x)
+            ]
+        ModWord Nothing -> E.object
+            [ ( "type", E.string "word" )
+            ]
+        ModFloat (Just x) -> E.object
+            [ ( "type", E.string "float" )
+            , ( "value", E.float x)
+            ]
+        ModFloat Nothing -> E.object
+            [ ( "type", E.string "float" )
+            ]
+
+decodeModData : D.Decoder ModData
+decodeModData =
+    D.map6 ModData
+        ( D.field "name" D.string )
+        ( D.field "register type" decodeRegType )
+        ( D.field "address" D.int )
+        ( D.field "register value" decodeModValue )
+        ( D.field "uid" D.int )
+        ( D.field "description" D.string )
+
+decodeModValue : D.Decoder ModValue
+decodeModValue =
+    D.field "type" D.string |> D.andThen (\s ->
+        case s of
+            "word" -> D.map ModWord <| D.field "value" (D.nullable D.int)
+            "float" -> D.map ModFloat <| D.field "value" (D.nullable D.float)
+            _ -> D.fail "Not a valid ModValue"
+    )
+
+-- find a way to fail on non valid input
+decodeRegType : D.Decoder RegType
+decodeRegType =
+    D.map (\s ->
+        case s of
+            "input register" -> InputRegister
+            "holding register" -> HoldingRegister
+            _ -> InputRegister
+    ) D.string

@@ -6446,7 +6446,7 @@ var $author$project$Types$showIp = function (ip) {
 	return $elm$core$String$fromInt(ip.b1) + ('.' + ($elm$core$String$fromInt(ip.b2) + ('.' + ($elm$core$String$fromInt(ip.b3) + ('.' + $elm$core$String$fromInt(ip.b4))))));
 };
 var $elm$json$Json$Encode$string = _Json_wrap;
-var $author$project$Update$encodeIpPort = function (model) {
+var $author$project$Types$encodeIpPort = function (model) {
 	return $elm$json$Json$Encode$object(
 		_List_fromArray(
 			[
@@ -6493,7 +6493,7 @@ var $author$project$Update$connectRequest = function (model) {
 	return $elm$http$Http$post(
 		{
 			body: $elm$http$Http$jsonBody(
-				$author$project$Update$encodeIpPort(model)),
+				$author$project$Types$encodeIpPort(model)),
 			expect: $elm$http$Http$expectWhatever($author$project$Types$ConnectedResponse),
 			url: 'http://localhost:4000/connect'
 		});
@@ -6530,7 +6530,7 @@ var $elm$json$Json$Decode$nullable = function (decoder) {
 				A2($elm$json$Json$Decode$map, $elm$core$Maybe$Just, decoder)
 			]));
 };
-var $author$project$Update$decodeModValue = A2(
+var $author$project$Types$decodeModValue = A2(
 	$elm$json$Json$Decode$andThen,
 	function (s) {
 		switch (s) {
@@ -6555,7 +6555,7 @@ var $author$project$Update$decodeModValue = A2(
 		}
 	},
 	A2($elm$json$Json$Decode$field, 'type', $elm$json$Json$Decode$string));
-var $author$project$Update$decodeRegType = A2(
+var $author$project$Types$decodeRegType = A2(
 	$elm$json$Json$Decode$map,
 	function (s) {
 		switch (s) {
@@ -6569,17 +6569,17 @@ var $author$project$Update$decodeRegType = A2(
 	},
 	$elm$json$Json$Decode$string);
 var $elm$json$Json$Decode$map6 = _Json_map6;
-var $author$project$Update$decodeModData = A7(
+var $author$project$Types$decodeModData = A7(
 	$elm$json$Json$Decode$map6,
 	$author$project$Types$ModData,
 	A2($elm$json$Json$Decode$field, 'name', $elm$json$Json$Decode$string),
-	A2($elm$json$Json$Decode$field, 'register type', $author$project$Update$decodeRegType),
+	A2($elm$json$Json$Decode$field, 'register type', $author$project$Types$decodeRegType),
 	A2($elm$json$Json$Decode$field, 'address', $elm$json$Json$Decode$int),
-	A2($elm$json$Json$Decode$field, 'register value', $author$project$Update$decodeModValue),
+	A2($elm$json$Json$Decode$field, 'register value', $author$project$Types$decodeModValue),
 	A2($elm$json$Json$Decode$field, 'uid', $elm$json$Json$Decode$int),
 	A2($elm$json$Json$Decode$field, 'description', $elm$json$Json$Decode$string));
 var $elm$json$Json$Encode$float = _Json_wrap;
-var $author$project$Update$encodeModValue = function (mv) {
+var $author$project$Types$encodeModValue = function (mv) {
 	if (mv.$ === 'ModWord') {
 		if (mv.a.$ === 'Just') {
 			var x = mv.a.a;
@@ -6635,7 +6635,7 @@ var $author$project$Types$getRegType = function (rt) {
 		return 'holding register';
 	}
 };
-var $author$project$Update$encodeRegister = function (md) {
+var $author$project$Types$encodeRegister = function (md) {
 	return $elm$json$Json$Encode$object(
 		_List_fromArray(
 			[
@@ -6651,7 +6651,7 @@ var $author$project$Update$encodeRegister = function (md) {
 				$elm$json$Json$Encode$int(md.modAddress)),
 				_Utils_Tuple2(
 				'register value',
-				$author$project$Update$encodeModValue(md.modValue)),
+				$author$project$Types$encodeModValue(md.modValue)),
 				_Utils_Tuple2(
 				'uid',
 				$elm$json$Json$Encode$int(md.modUid)),
@@ -6674,11 +6674,11 @@ var $author$project$Update$refreshRequest = function (regs) {
 	return $elm$http$Http$post(
 		{
 			body: $elm$http$Http$jsonBody(
-				A2($elm$json$Json$Encode$list, $author$project$Update$encodeRegister, regs)),
+				A2($elm$json$Json$Encode$list, $author$project$Types$encodeRegister, regs)),
 			expect: A2(
 				$elm$http$Http$expectJson,
 				$author$project$Types$ReadRegisters,
-				$elm$json$Json$Decode$list($author$project$Update$decodeModData)),
+				$elm$json$Json$Decode$list($author$project$Types$decodeModData)),
 			url: 'http://localhost:4000/register'
 		});
 };

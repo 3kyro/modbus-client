@@ -38,6 +38,7 @@ viewConnect model =
         , viewByteInput <| Byte4 model.ipAddress.b4
         ]
 
+
     , div []
         [ text "port"
         , input
