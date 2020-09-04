@@ -4567,7 +4567,185 @@ function _Http_track(router, xhr, tracker)
 			size: event.lengthComputable ? $elm$core$Maybe$Just(event.total) : $elm$core$Maybe$Nothing
 		}))));
 	});
-}var $elm$core$Basics$EQ = {$: 'EQ'};
+}
+
+
+// DECODER
+
+var _File_decoder = _Json_decodePrim(function(value) {
+	// NOTE: checks if `File` exists in case this is run on node
+	return (typeof File !== 'undefined' && value instanceof File)
+		? $elm$core$Result$Ok(value)
+		: _Json_expecting('a FILE', value);
+});
+
+
+// METADATA
+
+function _File_name(file) { return file.name; }
+function _File_mime(file) { return file.type; }
+function _File_size(file) { return file.size; }
+
+function _File_lastModified(file)
+{
+	return $elm$time$Time$millisToPosix(file.lastModified);
+}
+
+
+// DOWNLOAD
+
+var _File_downloadNode;
+
+function _File_getDownloadNode()
+{
+	return _File_downloadNode || (_File_downloadNode = document.createElement('a'));
+}
+
+var _File_download = F3(function(name, mime, content)
+{
+	return _Scheduler_binding(function(callback)
+	{
+		var blob = new Blob([content], {type: mime});
+
+		// for IE10+
+		if (navigator.msSaveOrOpenBlob)
+		{
+			navigator.msSaveOrOpenBlob(blob, name);
+			return;
+		}
+
+		// for HTML5
+		var node = _File_getDownloadNode();
+		var objectUrl = URL.createObjectURL(blob);
+		node.href = objectUrl;
+		node.download = name;
+		_File_click(node);
+		URL.revokeObjectURL(objectUrl);
+	});
+});
+
+function _File_downloadUrl(href)
+{
+	return _Scheduler_binding(function(callback)
+	{
+		var node = _File_getDownloadNode();
+		node.href = href;
+		node.download = '';
+		node.origin === location.origin || (node.target = '_blank');
+		_File_click(node);
+	});
+}
+
+
+// IE COMPATIBILITY
+
+function _File_makeBytesSafeForInternetExplorer(bytes)
+{
+	// only needed by IE10 and IE11 to fix https://github.com/elm/file/issues/10
+	// all other browsers can just run `new Blob([bytes])` directly with no problem
+	//
+	return new Uint8Array(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+}
+
+function _File_click(node)
+{
+	// only needed by IE10 and IE11 to fix https://github.com/elm/file/issues/11
+	// all other browsers have MouseEvent and do not need this conditional stuff
+	//
+	if (typeof MouseEvent === 'function')
+	{
+		node.dispatchEvent(new MouseEvent('click'));
+	}
+	else
+	{
+		var event = document.createEvent('MouseEvents');
+		event.initMouseEvent('click', true, true, window, 0, 0, 0, 0, 0, false, false, false, false, 0, null);
+		document.body.appendChild(node);
+		node.dispatchEvent(event);
+		document.body.removeChild(node);
+	}
+}
+
+
+// UPLOAD
+
+var _File_node;
+
+function _File_uploadOne(mimes)
+{
+	return _Scheduler_binding(function(callback)
+	{
+		_File_node = document.createElement('input');
+		_File_node.type = 'file';
+		_File_node.accept = A2($elm$core$String$join, ',', mimes);
+		_File_node.addEventListener('change', function(event)
+		{
+			callback(_Scheduler_succeed(event.target.files[0]));
+		});
+		_File_click(_File_node);
+	});
+}
+
+function _File_uploadOneOrMore(mimes)
+{
+	return _Scheduler_binding(function(callback)
+	{
+		_File_node = document.createElement('input');
+		_File_node.type = 'file';
+		_File_node.multiple = true;
+		_File_node.accept = A2($elm$core$String$join, ',', mimes);
+		_File_node.addEventListener('change', function(event)
+		{
+			var elmFiles = _List_fromArray(event.target.files);
+			callback(_Scheduler_succeed(_Utils_Tuple2(elmFiles.a, elmFiles.b)));
+		});
+		_File_click(_File_node);
+	});
+}
+
+
+// CONTENT
+
+function _File_toString(blob)
+{
+	return _Scheduler_binding(function(callback)
+	{
+		var reader = new FileReader();
+		reader.addEventListener('loadend', function() {
+			callback(_Scheduler_succeed(reader.result));
+		});
+		reader.readAsText(blob);
+		return function() { reader.abort(); };
+	});
+}
+
+function _File_toBytes(blob)
+{
+	return _Scheduler_binding(function(callback)
+	{
+		var reader = new FileReader();
+		reader.addEventListener('loadend', function() {
+			callback(_Scheduler_succeed(new DataView(reader.result)));
+		});
+		reader.readAsArrayBuffer(blob);
+		return function() { reader.abort(); };
+	});
+}
+
+function _File_toUrl(blob)
+{
+	return _Scheduler_binding(function(callback)
+	{
+		var reader = new FileReader();
+		reader.addEventListener('loadend', function() {
+			callback(_Scheduler_succeed(reader.result));
+		});
+		reader.readAsDataURL(blob);
+		return function() { reader.abort(); };
+	});
+}
+
+var $elm$core$Basics$EQ = {$: 'EQ'};
 var $elm$core$Basics$LT = {$: 'LT'};
 var $elm$core$List$cons = _List_cons;
 var $elm$core$Elm$JsArray$foldr = _JsArray_foldr;
@@ -6405,6 +6583,8 @@ var $author$project$App$initModData = _List_fromArray(
 var $author$project$App$initModel = {
 	activeMenu: $author$project$Types$NoneActive,
 	connectStatus: $author$project$Types$Connect,
+	csvContent: $elm$core$Maybe$Nothing,
+	csvFileName: $elm$core$Maybe$Nothing,
 	ipAddress: $author$project$Types$IpAddress$defaultIpAddr,
 	modData: $author$project$App$initModData,
 	socketPort: $elm$core$Maybe$Just(502),
@@ -6420,6 +6600,12 @@ var $author$project$Types$BadPort = {$: 'BadPort'};
 var $author$project$Types$BadTimeout = {$: 'BadTimeout'};
 var $author$project$Types$Connected = {$: 'Connected'};
 var $author$project$Types$Connecting = {$: 'Connecting'};
+var $author$project$Types$CsvLoaded = function (a) {
+	return {$: 'CsvLoaded', a: a};
+};
+var $author$project$Types$CsvSelected = function (a) {
+	return {$: 'CsvSelected', a: a};
+};
 var $author$project$Types$Disconnecting = {$: 'Disconnecting'};
 var $author$project$Types$Loading = {$: 'Loading'};
 var $author$project$Types$ConnectedResponse = function (a) {
@@ -6538,10 +6724,22 @@ var $author$project$Update$disconnectRequest = $elm$http$Http$post(
 		expect: $elm$http$Http$expectWhatever($author$project$Types$DisconnectedResponse),
 		url: 'http://localhost:4000/disconnect'
 	});
+var $elm$time$Time$Posix = function (a) {
+	return {$: 'Posix', a: a};
+};
+var $elm$time$Time$millisToPosix = $elm$time$Time$Posix;
+var $elm$file$File$Select$file = F2(
+	function (mimes, toMsg) {
+		return A2(
+			$elm$core$Task$perform,
+			toMsg,
+			_File_uploadOne(mimes));
+	});
 var $author$project$Types$getChangedMenu = F2(
 	function (model, newActive) {
 		return _Utils_eq(model.activeMenu, newActive) ? $author$project$Types$NoneActive : newActive;
 	});
+var $elm$file$File$name = _File_name;
 var $elm$core$Platform$Cmd$batch = _Platform_batch;
 var $elm$core$Platform$Cmd$none = $elm$core$Platform$Cmd$batch(_List_Nil);
 var $author$project$Types$ReadRegisters = function (a) {
@@ -6754,6 +6952,7 @@ var $author$project$Update$showHttpError = function (err) {
 			return s;
 	}
 };
+var $elm$file$File$toString = _File_toString;
 var $author$project$Update$update = F2(
 	function (msg, model) {
 		switch (msg.$) {
@@ -6951,13 +7150,39 @@ var $author$project$Update$update = F2(
 							}),
 						$elm$core$Platform$Cmd$none);
 				}
-			default:
+			case 'ChangeActiveMenu':
 				var menu = msg.a;
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
 						{
 							activeMenu: A2($author$project$Types$getChangedMenu, model, menu)
+						}),
+					$elm$core$Platform$Cmd$none);
+			case 'CsvRequested':
+				return _Utils_Tuple2(
+					model,
+					A2($elm$file$File$Select$file, _List_Nil, $author$project$Types$CsvSelected));
+			case 'CsvSelected':
+				var file = msg.a;
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{
+							csvFileName: $elm$core$Maybe$Just(
+								$elm$file$File$name(file))
+						}),
+					A2(
+						$elm$core$Task$perform,
+						$author$project$Types$CsvLoaded,
+						$elm$file$File$toString(file)));
+			default:
+				var content = msg.a;
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{
+							csvContent: $elm$core$Maybe$Just(content)
 						}),
 					$elm$core$Platform$Cmd$none);
 		}
@@ -7046,6 +7271,10 @@ var $elm$html$Html$Attributes$size = function (n) {
 		'size',
 		$elm$core$String$fromInt(n));
 };
+var $elm$html$Html$table = _VirtualDom_node('table');
+var $elm$html$Html$tbody = _VirtualDom_node('tbody');
+var $elm$html$Html$td = _VirtualDom_node('td');
+var $elm$html$Html$tr = _VirtualDom_node('tr');
 var $elm$html$Html$Attributes$value = $elm$html$Html$Attributes$stringProperty('value');
 var $author$project$Types$ChangeIpAddress = F2(
 	function (a, b) {
@@ -7173,7 +7402,7 @@ var $author$project$View$Connect$viewConnectMenu = function (model) {
 		_List_fromArray(
 			[
 				A2(
-				$elm$html$Html$div,
+				$elm$html$Html$table,
 				_List_fromArray(
 					[
 						$elm$html$Html$Attributes$class('connectInput')
@@ -7181,116 +7410,158 @@ var $author$project$View$Connect$viewConnectMenu = function (model) {
 				_List_fromArray(
 					[
 						A2(
-						$elm$html$Html$div,
-						_List_fromArray(
-							[
-								$elm$html$Html$Attributes$class('ipAddress')
-							]),
+						$elm$html$Html$tbody,
+						_List_Nil,
 						_List_fromArray(
 							[
 								A2(
-								$elm$html$Html$label,
+								$elm$html$Html$tr,
 								_List_fromArray(
 									[
-										$elm$html$Html$Attributes$size(5)
+										$elm$html$Html$Attributes$class('ipAddress')
 									]),
 								_List_fromArray(
 									[
-										$elm$html$Html$text('IP address')
-									])),
-								A2($author$project$View$Connect$viewByteInput, $author$project$Types$IpAddress$Byte0, model.ipAddress),
-								A2(
-								$elm$html$Html$label,
-								_List_Nil,
-								_List_fromArray(
-									[
-										$elm$html$Html$text('.')
-									])),
-								A2($author$project$View$Connect$viewByteInput, $author$project$Types$IpAddress$Byte1, model.ipAddress),
-								A2(
-								$elm$html$Html$label,
-								_List_Nil,
-								_List_fromArray(
-									[
-										$elm$html$Html$text('.')
-									])),
-								A2($author$project$View$Connect$viewByteInput, $author$project$Types$IpAddress$Byte2, model.ipAddress),
-								A2(
-								$elm$html$Html$label,
-								_List_Nil,
-								_List_fromArray(
-									[
-										$elm$html$Html$text('.')
-									])),
-								A2($author$project$View$Connect$viewByteInput, $author$project$Types$IpAddress$Byte3, model.ipAddress)
-							])),
-						A2(
-						$elm$html$Html$div,
-						_List_fromArray(
-							[
-								$elm$html$Html$Attributes$class('port')
-							]),
-						_List_fromArray(
-							[
-								A2(
-								$elm$html$Html$label,
-								_List_fromArray(
-									[
-										$elm$html$Html$Attributes$size(50)
-									]),
-								_List_fromArray(
-									[
-										$elm$html$Html$text('Port')
-									])),
-								A2(
-								$elm$html$Html$input,
-								_List_fromArray(
-									[
-										$elm$html$Html$Attributes$class('connectValueInput'),
-										$elm$html$Html$Attributes$size(2),
-										$elm$html$Html$Attributes$maxlength(4),
-										$elm$html$Html$Attributes$value(
 										A2(
-											$elm$core$Maybe$withDefault,
-											'',
-											A2($elm$core$Maybe$map, $elm$core$String$fromInt, model.socketPort))),
-										$elm$html$Html$Events$onInput($author$project$Types$ChangePort)
-									]),
-								_List_Nil)
-							])),
-						A2(
-						$elm$html$Html$div,
-						_List_fromArray(
-							[
-								$elm$html$Html$Attributes$class('timeout')
-							]),
-						_List_fromArray(
-							[
-								A2(
-								$elm$html$Html$label,
-								_List_fromArray(
-									[
-										$elm$html$Html$Attributes$size(5)
-									]),
-								_List_fromArray(
-									[
-										$elm$html$Html$text('Timeout')
+										$elm$html$Html$td,
+										_List_Nil,
+										_List_fromArray(
+											[
+												A2(
+												$elm$html$Html$label,
+												_List_fromArray(
+													[
+														$elm$html$Html$Attributes$size(5)
+													]),
+												_List_fromArray(
+													[
+														$elm$html$Html$text('IP address')
+													]))
+											])),
+										A2(
+										$elm$html$Html$td,
+										_List_Nil,
+										_List_fromArray(
+											[
+												A2($author$project$View$Connect$viewByteInput, $author$project$Types$IpAddress$Byte0, model.ipAddress),
+												A2(
+												$elm$html$Html$label,
+												_List_Nil,
+												_List_fromArray(
+													[
+														$elm$html$Html$text('.')
+													])),
+												A2($author$project$View$Connect$viewByteInput, $author$project$Types$IpAddress$Byte1, model.ipAddress),
+												A2(
+												$elm$html$Html$label,
+												_List_Nil,
+												_List_fromArray(
+													[
+														$elm$html$Html$text('.')
+													])),
+												A2($author$project$View$Connect$viewByteInput, $author$project$Types$IpAddress$Byte2, model.ipAddress),
+												A2(
+												$elm$html$Html$label,
+												_List_Nil,
+												_List_fromArray(
+													[
+														$elm$html$Html$text('.')
+													])),
+												A2($author$project$View$Connect$viewByteInput, $author$project$Types$IpAddress$Byte3, model.ipAddress)
+											]))
 									])),
 								A2(
-								$elm$html$Html$input,
+								$elm$html$Html$tr,
 								_List_fromArray(
 									[
-										$elm$html$Html$Attributes$class('connectValueInput'),
-										$elm$html$Html$Attributes$size(2),
-										$elm$html$Html$Attributes$maxlength(5),
-										$elm$html$Html$Attributes$value(
-										A2(
-											$elm$core$Maybe$withDefault,
-											'',
-											A2($elm$core$Maybe$map, $elm$core$String$fromInt, model.timeout))),
-										$elm$html$Html$Events$onInput($author$project$Types$ChangeTimeout)
+										$elm$html$Html$Attributes$class('port')
 									]),
-								_List_Nil)
+								_List_fromArray(
+									[
+										A2(
+										$elm$html$Html$td,
+										_List_Nil,
+										_List_fromArray(
+											[
+												A2(
+												$elm$html$Html$label,
+												_List_fromArray(
+													[
+														$elm$html$Html$Attributes$size(50)
+													]),
+												_List_fromArray(
+													[
+														$elm$html$Html$text('Port')
+													]))
+											])),
+										A2(
+										$elm$html$Html$td,
+										_List_Nil,
+										_List_fromArray(
+											[
+												A2(
+												$elm$html$Html$input,
+												_List_fromArray(
+													[
+														$elm$html$Html$Attributes$class('connectValueInput'),
+														$elm$html$Html$Attributes$size(2),
+														$elm$html$Html$Attributes$maxlength(4),
+														$elm$html$Html$Attributes$value(
+														A2(
+															$elm$core$Maybe$withDefault,
+															'',
+															A2($elm$core$Maybe$map, $elm$core$String$fromInt, model.socketPort))),
+														$elm$html$Html$Events$onInput($author$project$Types$ChangePort)
+													]),
+												_List_Nil)
+											]))
+									])),
+								A2(
+								$elm$html$Html$tr,
+								_List_fromArray(
+									[
+										$elm$html$Html$Attributes$class('timeout')
+									]),
+								_List_fromArray(
+									[
+										A2(
+										$elm$html$Html$td,
+										_List_Nil,
+										_List_fromArray(
+											[
+												A2(
+												$elm$html$Html$label,
+												_List_fromArray(
+													[
+														$elm$html$Html$Attributes$size(5)
+													]),
+												_List_fromArray(
+													[
+														$elm$html$Html$text('Timeout')
+													]))
+											])),
+										A2(
+										$elm$html$Html$td,
+										_List_Nil,
+										_List_fromArray(
+											[
+												A2(
+												$elm$html$Html$input,
+												_List_fromArray(
+													[
+														$elm$html$Html$Attributes$class('connectValueInput'),
+														$elm$html$Html$Attributes$size(2),
+														$elm$html$Html$Attributes$maxlength(5),
+														$elm$html$Html$Attributes$value(
+														A2(
+															$elm$core$Maybe$withDefault,
+															'',
+															A2($elm$core$Maybe$map, $elm$core$String$fromInt, model.timeout))),
+														$elm$html$Html$Events$onInput($author$project$Types$ChangeTimeout)
+													]),
+												_List_Nil)
+											]))
+									]))
 							]))
 					])),
 				A2(
@@ -7307,23 +7578,41 @@ var $author$project$View$Connect$viewConnectMenu = function (model) {
 			]));
 };
 var $author$project$View$viewEmptyMenu = A2($elm$html$Html$div, _List_Nil, _List_Nil);
-var $author$project$View$viewImportRegistersMenu = A2(
-	$elm$html$Html$div,
-	_List_fromArray(
-		[
-			$elm$html$Html$Attributes$class('activeMenu')
-		]),
-	_List_fromArray(
-		[
-			$elm$html$Html$text('put something here')
-		]));
+var $author$project$Types$CsvRequested = {$: 'CsvRequested'};
+var $author$project$View$viewRegistersLoad = function (model) {
+	var _v0 = model.csvFileName;
+	if (_v0.$ === 'Nothing') {
+		return A2(
+			$elm$html$Html$label,
+			_List_fromArray(
+				[
+					$elm$html$Html$Events$onClick($author$project$Types$CsvRequested)
+				]),
+			_List_fromArray(
+				[
+					$elm$html$Html$text('Load CSV')
+				]));
+	} else {
+		var name = _v0.a;
+		return A2(
+			$elm$html$Html$label,
+			_List_fromArray(
+				[
+					$elm$html$Html$Events$onClick($author$project$Types$CsvRequested)
+				]),
+			_List_fromArray(
+				[
+					$elm$html$Html$text('Loaded ' + name)
+				]));
+	}
+};
 var $author$project$View$viewActiveMenu = function (model) {
 	var _v0 = model.activeMenu;
 	switch (_v0.$) {
 		case 'ConnectMenu':
 			return $author$project$View$Connect$viewConnectMenu(model);
 		case 'ImportRegisters':
-			return $author$project$View$viewImportRegistersMenu;
+			return $author$project$View$viewRegistersLoad(model);
 		default:
 			return $author$project$View$viewEmptyMenu;
 	}
@@ -7389,13 +7678,9 @@ var $elm$html$Html$Attributes$colspan = function (n) {
 		$elm$core$String$fromInt(n));
 };
 var $elm$html$Html$Attributes$scope = $elm$html$Html$Attributes$stringProperty('scope');
-var $elm$html$Html$table = _VirtualDom_node('table');
-var $elm$html$Html$tbody = _VirtualDom_node('tbody');
 var $elm$html$Html$tfoot = _VirtualDom_node('tfoot');
 var $elm$html$Html$th = _VirtualDom_node('th');
 var $elm$html$Html$thead = _VirtualDom_node('thead');
-var $elm$html$Html$tr = _VirtualDom_node('tr');
-var $elm$html$Html$td = _VirtualDom_node('td');
 var $author$project$View$viewModType = function (value) {
 	return A2(
 		$elm$html$Html$label,

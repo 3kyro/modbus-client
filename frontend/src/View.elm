@@ -34,6 +34,7 @@ import Types exposing
     , ActiveMenu(..)
     )
 import View.Connect exposing (viewConnectMenu)
+-- import File exposing (..)
 
 view : Model -> Html Msg
 view model =
@@ -62,11 +63,18 @@ viewActiveMenu : Model -> Html Msg
 viewActiveMenu model =
     case model.activeMenu of
         ConnectMenu -> viewConnectMenu model
-        ImportRegisters -> viewImportRegistersMenu
+        ImportRegisters -> viewRegistersLoad model
         NoneActive -> viewEmptyMenu
 
-viewImportRegistersMenu : Html Msg
-viewImportRegistersMenu = div [ class "activeMenu" ] [text "put something here"]
+viewRegistersLoad : Model -> Html Msg
+viewRegistersLoad model =
+  case model.csvFileName of
+    Nothing ->
+        label [ onClick CsvRequested ] [ text "Load CSV" ]
+    Just name ->
+        label [ onClick CsvRequested ] [ text <| "Loaded " ++ name ]
+
+
 
 viewEmptyMenu : Html Msg
 viewEmptyMenu = div [] []

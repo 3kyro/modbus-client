@@ -22,6 +22,7 @@ module Types exposing
 import Http
 import Json.Decode as D
 import Json.Encode as E
+import File exposing (File)
 
 import Types.IpAddress exposing
     ( IpAddress
@@ -42,6 +43,9 @@ type Msg
     | DisconnectRequest
     | DisconnectedResponse (Result Http.Error () )
     | ChangeActiveMenu ActiveMenu
+    | CsvRequested
+    | CsvSelected File
+    | CsvLoaded String
 
 type alias Model =
     { modData : List ModData
@@ -51,6 +55,8 @@ type alias Model =
     , socketPort : Maybe Int
     , timeout : Maybe Int
     , activeMenu : ActiveMenu
+    , csvFileName : Maybe String
+    , csvContent : Maybe String
     }
 type ConnectStatus
     = Connect

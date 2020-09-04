@@ -3,6 +3,11 @@ html, body {
     margin: 0px;
     height:100%;
 }
+
+html {
+    font-family: 'helvetica neue', helvetica, arial, sans-serif;
+  }
+
 /*************************************************************************************************************/
 .menuBar {
     background-color: rgb(86, 88, 90);
@@ -34,19 +39,26 @@ html, body {
     font-size: small;
 }
 
-.connectInput {
+table.connectInput {
+    table-layout: fixed;
+    width: 70%;
+    border-collapse: collapse;
+    border: 0px solid;
+    border-left: 1px solid grey;
+    border-right: 1px solid grey;
+    margin: 5px;
     color: whitesmoke;
-    border-right: 2px solid grey;
-    padding: 5px;
     user-select: none;
 }
 
-.connectInput > * {
-    padding: 5px;
+table.connectInput:nth-child(1) {
+    width: 20%;
 }
+
 
 .connectValueInput {
     background-color: rgb(125, 128, 131);
+    color: whitesmoke;
     border-style: none;
     margin-left: 5px;
     margin-right: 5px;
@@ -100,7 +112,11 @@ html, body {
 
 /*****************************************************************************************/
 
-table {
+.importRegister input {
+    opacity: 0;
+}
+
+table.regTable {
     table-layout: fixed;
     width: 70%;
     border-collapse: collapse;
@@ -108,64 +124,55 @@ table {
     margin: 5px;
   }
 
-thead th:nth-child(1) {
+.regTable thead th:nth-child(1) {
     width: 5%;
   }
 
-thead th:nth-child(2) {
+.regTable thead th:nth-child(2) {
     width: 10%;
   }
 
-thead th:nth-child(3) {
+.regTable thead th:nth-child(3) {
     width: 5%;
   }
 
-thead th:nth-child(4) {
+.regTable thead th:nth-child(4) {
     width: 10%;
   }
 
-thead th:nth-child(5) {
+.regTable thead th:nth-child(5) {
     width: 5%;
   }
 
-thead th:nth-child(6) {
+.regTable thead th:nth-child(6) {
     width: 5%;
   }
 
-th, td {
+.regTable th, td {
     padding: 1px;
   }
 
   /* typography */
 
-html {
-    font-family: 'helvetica neue', helvetica, arial, sans-serif;
-  }
 
-th {
-    letter-spacing: 1px;
-  }
 
-td {
-    letter-spacing: 1px;
-  }
 
-tbody td {
+.regTable tbody td {
     text-align: center;
   }
 
-tfoot th {
+.regTable tfoot th {
     text-align: center;
     cursor: pointer;
   }
 
 
-thead, tfoot {
+.regTable thead, tfoot {
       background-color: #587093;
       color: whitesmoke;
   }
 
-tbody tr:nth-child(even) {
+.regTable tbody tr:nth-child(even) {
     background-color: #c0c3c6
   }
 

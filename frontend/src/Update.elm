@@ -4,6 +4,9 @@ import Http
 
 import Json.Decode as D
 import Json.Encode as E
+import File
+import File.Select as Select
+import Task
 
 import Types exposing
     ( Msg (..)
@@ -21,6 +24,7 @@ import Types exposing
     )
 
 import Types.IpAddress exposing (setIpAddressByte)
+
 update : Msg -> Model -> ( Model, Cmd Msg)
 update msg model =
     case msg of
@@ -98,6 +102,14 @@ update msg model =
             )
 
         ChangeActiveMenu menu -> ( { model | activeMenu = getChangedMenu model menu }, Cmd.none )
+
+        CsvRequested -> ( model , Select.file [] CsvSelected )
+
+        CsvSelected file ->
+            ( { model | csvFileName = Just <| File.name file } , Task.perform CsvLoaded (File.toString file) )
+
+        CsvLoaded content ->
+            ( { model | csvContent = Just content }, Cmd.none )
 
 initCmd : Cmd Msg
 initCmd = connectionInfoRequest

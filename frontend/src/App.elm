@@ -33,6 +33,8 @@ initModel =
     , socketPort = Just 502
     , timeout = Just 1000
     , activeMenu = NoneActive
+    , csvFileName = Nothing
+    , csvContent = Nothing
     }
 
 initModData : List ModData
