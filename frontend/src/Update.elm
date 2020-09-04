@@ -111,6 +111,16 @@ update msg model =
         CsvLoaded content ->
             ( { model | csvContent = Just content }, Cmd.none )
 
+        ModDataRequest -> ( model, requestModData model )
+
+        ReceivedModData (Err err) ->
+            ( { model | status = Bad <| showHttpError err }, Cmd.none )
+
+        ReceivedModData (Ok md) ->
+            ( { model | modData = md }, Cmd.none )
+
+
+
 initCmd : Cmd Msg
 initCmd = connectionInfoRequest
 connectionInfoRequest : Cmd Msg
@@ -153,7 +163,13 @@ refreshRequest regs =
         , expect = Http.expectJson ReadRegisters <| D.list decodeModData
         }
 
-
+requestModData : Model -> Cmd Msg
+requestModData model =
+    Http.post
+        { url = "http://localhost:4000/parseModData"
+        , body = Http.jsonBody <| E.string <| Maybe.withDefault "" model.csvContent
+        , expect = Http.expectJson ReceivedModData <| D.list decodeModData
+        }
 
 
 

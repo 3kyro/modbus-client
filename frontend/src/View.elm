@@ -48,7 +48,7 @@ viewMenu : Model -> Html Msg
 viewMenu model =
     div [ class "menu" ]
         [ viewMenuBar
-        , viewActiveMenu model
+        , viewActiveMenu model 
         ]
 
 viewMenuBar : Html Msg
@@ -68,13 +68,23 @@ viewActiveMenu model =
 
 viewRegistersLoad : Model -> Html Msg
 viewRegistersLoad model =
-  case model.csvFileName of
-    Nothing ->
-        label [ onClick CsvRequested ] [ text "Load CSV" ]
-    Just name ->
-        label [ onClick CsvRequested ] [ text <| "Loaded " ++ name ]
+    div [ class "activeMenu" ]
+        [ table []
+            [ tr []
+                [ label [ onClick CsvRequested ] [ text "Load CSV" ]
+                , label [] [ showLoadedFileName model ]
+                ]
+            , tr []
+                [ label [ onClick ModDataRequest ] [ text "Load registers"]]
+            , tr [] []
+            ]
+        ]
 
-
+showLoadedFileName : Model -> Html Msg
+showLoadedFileName model =
+    case model.csvFileName of
+        Nothing -> text ""
+        Just name -> text <| "Loaded " ++ name
 
 viewEmptyMenu : Html Msg
 viewEmptyMenu = div [] []

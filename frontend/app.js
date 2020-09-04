@@ -6914,6 +6914,22 @@ var $author$project$Update$refreshRequest = function (regs) {
 			url: 'http://localhost:4000/register'
 		});
 };
+var $author$project$Types$ReceivedModData = function (a) {
+	return {$: 'ReceivedModData', a: a};
+};
+var $author$project$Update$requestModData = function (model) {
+	return $elm$http$Http$post(
+		{
+			body: $elm$http$Http$jsonBody(
+				$elm$json$Json$Encode$string(
+					A2($elm$core$Maybe$withDefault, '', model.csvContent))),
+			expect: A2(
+				$elm$http$Http$expectJson,
+				$author$project$Types$ReceivedModData,
+				$elm$json$Json$Decode$list($author$project$Types$decodeModData)),
+			url: 'http://localhost:4000/parseModData'
+		});
+};
 var $author$project$Types$IpAddress$setIpAddressByte = F3(
 	function (_byte, ip, mint) {
 		switch (_byte.$) {
@@ -7176,7 +7192,7 @@ var $author$project$Update$update = F2(
 						$elm$core$Task$perform,
 						$author$project$Types$CsvLoaded,
 						$elm$file$File$toString(file)));
-			default:
+			case 'CsvLoaded':
 				var content = msg.a;
 				return _Utils_Tuple2(
 					_Utils_update(
@@ -7185,6 +7201,29 @@ var $author$project$Update$update = F2(
 							csvContent: $elm$core$Maybe$Just(content)
 						}),
 					$elm$core$Platform$Cmd$none);
+			case 'ModDataRequest':
+				return _Utils_Tuple2(
+					model,
+					$author$project$Update$requestModData(model));
+			default:
+				if (msg.a.$ === 'Err') {
+					var err = msg.a.a;
+					return _Utils_Tuple2(
+						_Utils_update(
+							model,
+							{
+								status: $author$project$Types$Bad(
+									$author$project$Update$showHttpError(err))
+							}),
+						$elm$core$Platform$Cmd$none);
+				} else {
+					var md = msg.a.a;
+					return _Utils_Tuple2(
+						_Utils_update(
+							model,
+							{modData: md}),
+						$elm$core$Platform$Cmd$none);
+				}
 		}
 	});
 var $elm$html$Html$Attributes$stringProperty = F2(
@@ -7579,32 +7618,72 @@ var $author$project$View$Connect$viewConnectMenu = function (model) {
 };
 var $author$project$View$viewEmptyMenu = A2($elm$html$Html$div, _List_Nil, _List_Nil);
 var $author$project$Types$CsvRequested = {$: 'CsvRequested'};
-var $author$project$View$viewRegistersLoad = function (model) {
+var $author$project$Types$ModDataRequest = {$: 'ModDataRequest'};
+var $author$project$View$showLoadedFileName = function (model) {
 	var _v0 = model.csvFileName;
 	if (_v0.$ === 'Nothing') {
-		return A2(
-			$elm$html$Html$label,
-			_List_fromArray(
-				[
-					$elm$html$Html$Events$onClick($author$project$Types$CsvRequested)
-				]),
-			_List_fromArray(
-				[
-					$elm$html$Html$text('Load CSV')
-				]));
+		return $elm$html$Html$text('');
 	} else {
 		var name = _v0.a;
-		return A2(
-			$elm$html$Html$label,
-			_List_fromArray(
-				[
-					$elm$html$Html$Events$onClick($author$project$Types$CsvRequested)
-				]),
-			_List_fromArray(
-				[
-					$elm$html$Html$text('Loaded ' + name)
-				]));
+		return $elm$html$Html$text('Loaded ' + name);
 	}
+};
+var $author$project$View$viewRegistersLoad = function (model) {
+	return A2(
+		$elm$html$Html$div,
+		_List_fromArray(
+			[
+				$elm$html$Html$Attributes$class('activeMenu')
+			]),
+		_List_fromArray(
+			[
+				A2(
+				$elm$html$Html$table,
+				_List_Nil,
+				_List_fromArray(
+					[
+						A2(
+						$elm$html$Html$tr,
+						_List_Nil,
+						_List_fromArray(
+							[
+								A2(
+								$elm$html$Html$label,
+								_List_fromArray(
+									[
+										$elm$html$Html$Events$onClick($author$project$Types$CsvRequested)
+									]),
+								_List_fromArray(
+									[
+										$elm$html$Html$text('Load CSV')
+									])),
+								A2(
+								$elm$html$Html$label,
+								_List_Nil,
+								_List_fromArray(
+									[
+										$author$project$View$showLoadedFileName(model)
+									]))
+							])),
+						A2(
+						$elm$html$Html$tr,
+						_List_Nil,
+						_List_fromArray(
+							[
+								A2(
+								$elm$html$Html$label,
+								_List_fromArray(
+									[
+										$elm$html$Html$Events$onClick($author$project$Types$ModDataRequest)
+									]),
+								_List_fromArray(
+									[
+										$elm$html$Html$text('Load registers')
+									]))
+							])),
+						A2($elm$html$Html$tr, _List_Nil, _List_Nil)
+					]))
+			]));
 };
 var $author$project$View$viewActiveMenu = function (model) {
 	var _v0 = model.activeMenu;
