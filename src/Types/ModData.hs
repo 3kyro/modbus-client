@@ -190,12 +190,18 @@ instance ToJSON ModValue where
                 [ "type" .= String "word"
                 , "value" .= x
                 ]
-            ModWord Nothing -> object ["type" .= String "word"]
+            ModWord Nothing -> object
+                ["type" .= String "word"
+                , "value" .= Null
+                ]
             ModFloat (Just x) -> object
                 [ "type" .= String "float"
                 , "value" .= x
                 ]
-            ModFloat Nothing -> object ["type" .= String "float"]
+            ModFloat Nothing -> object
+                ["type" .= String "float"
+                , "value" .= Null
+                ]
 
 instance FromJSON ModValue where
     parseJSON (Object o) = do

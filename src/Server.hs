@@ -16,16 +16,19 @@ import Servant
 
 import qualified Network.Socket as S
 import qualified System.Modbus.TCP as MB
+import qualified Data.Text as T
 
 import Types (ConnectionData (..), ByteOrder, ServState (..), ModData (..))
 import Modbus (modSession, modbusConnection, maybeConnect, getAddr)
 import Control.Monad.Except (runExceptT)
+import CsvParser (runpCSV)
 
 type ServerAPI
     = "register" :> ReqBody '[JSON] [ModData] :> Post '[JSON] [ModData]
     :<|> "connect" :> ReqBody '[JSON] ConnectionData :> Post '[JSON] ()
     :<|> "connectInfo" :> Get '[JSON] (Maybe ConnectionData)
     :<|> "disconnect" :> ReqBody '[JSON] String :> Post '[JSON] ()
+    :<|> "parseModData" :> ReqBody '[JSON] String :> Post '[JSON] [ModData]
     :<|> Raw
 
 proxyAPI :: Proxy ServerAPI
@@ -50,6 +53,7 @@ serverAPI state
     :<|> connect state
     :<|> getConnectionInfo state
     :<|> disconnect state
+    :<|> parseAndSend
     :<|> serveDirectoryWebApp "frontend"
 
 readModData :: TVar ServState -> [ModData] -> Handler [ModData]
@@ -110,3 +114,12 @@ getMaybeConnection ip portNum tm = do
   where
     maybeCon :: Maybe S.Socket -> Maybe MB.Connection
     maybeCon maybeSocket = (`modbusConnection` tm) <$> maybeSocket
+
+parseAndSend :: String -> Handler [ModData]
+parseAndSend content = 
+    let
+        md = runpCSV $ T.pack content
+    in
+        case md of
+            Left _ -> throwError err400
+            Right mds -> pure mds
