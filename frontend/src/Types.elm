@@ -61,10 +61,10 @@ type ConnectStatus
 showConnectStatus : ConnectStatus -> String
 showConnectStatus st =
     case st of
-        Connect -> "connect"
-        Connecting -> "connecting"
-        Connected -> "connected"
-        Disconnecting -> "disconnecting"
+        Connect -> "Connect"
+        Connecting -> "Connecting"
+        Connected -> "Connected"
+        Disconnecting -> "Disconnecting"
 
 type Status
     = AllGood

@@ -11,6 +11,7 @@ import Html.Attributes exposing
     ( class
     , value
     , size
+    , maxlength
     )
 import Html.Events exposing (onClick, onInput)
 
@@ -26,53 +27,64 @@ import Types.IpAddress exposing
     , showIpAddressByte
     )
 
+
 viewConnectMenu : Model -> Html Msg
 viewConnectMenu model =
-    div [ class "activeMenu" , class "connectRegion" ]
-        [ div []
-            [ text "ip address"
-            , viewByteInput Byte0 model.ipAddress
-            , label [] [text "."]
-            , viewByteInput Byte1 model.ipAddress
-            , label [] [text "."]
-            , viewByteInput Byte2 model.ipAddress
-            , label [] [text "."]
-            , viewByteInput Byte3 model.ipAddress
+    div [ class "activeMenu" , class "connectMenu" ]
+        [ div [ class "connectInput" ]
+            [div [ class "ipAddress" ]
+                [ label [ size 5 ] [ text "IP address" ]
+                , viewByteInput Byte0 model.ipAddress
+                , label [] [text "."]
+                , viewByteInput Byte1 model.ipAddress
+                , label [] [text "."]
+                , viewByteInput Byte2 model.ipAddress
+                , label [] [text "."]
+                , viewByteInput Byte3 model.ipAddress
+                ]
+            , div
+                [ class "port" ]
+                [ label [ size 50 ] [ text "Port" ]
+                , input
+                    [ class "connectValueInput"
+                    , size 2
+                    , maxlength 4
+                    , value <| Maybe.withDefault "" <| Maybe.map String.fromInt model.socketPort
+                    , onInput <| ChangePort
+                    ] []
+                ]
+            , div
+                [ class "timeout" ]
+                [ label [ size 5 ] [ text "Timeout" ]
+                , input
+                    [ class "connectValueInput"
+                    , size 2
+                    , maxlength 5
+                    , value <| Maybe.withDefault "" <| Maybe.map String.fromInt model.timeout
+                    , onInput <| ChangeTimeout
+                    ] []
+                ]
             ]
-        , div
-            []
-            [ text "port"
-            , input
-                [ class "connectInput"
-                , size 4
-                , value <| Maybe.withDefault "" <| Maybe.map String.fromInt model.socketPort
-                , onInput <| ChangePort
-                ] []
-            , text "timeout"
-            , input
-                [ class "connectInput"
-                , size 5
-                , value <| Maybe.withDefault "" <| Maybe.map String.fromInt model.timeout
-                , onInput <| ChangeTimeout
-                ] []
+        , div [ class "connectButtons" ]
+            [ viewConnectButton model
+            , viewDisconnectButton model
             ]
-        , viewConnectButton model
-        , viewDisconnectButton model
         ]
 
 getDisconnectClass : ConnectStatus -> String
 getDisconnectClass status =
     case status of
-        Connected -> "connect"
-        _ -> "disconnect"
+        Connected -> "Connect"
+        _ -> "Disconnect"
 
 viewByteInput : IpAddressByte -> IpAddress -> Html Msg
 viewByteInput byte ip =
     input
-        [ class "connectInput"
+        [ class "connectValueInput"
         ,  Html.Attributes.max "255"
         , Html.Attributes.min "0"
-        , Html.Attributes.size 3
+        , Html.Attributes.maxlength 3
+        , Html.Attributes.size 1
         , value <| showIpAddressByte byte ip
         , onInput <| ChangeIpAddress byte
         ] []
@@ -83,7 +95,7 @@ viewDisconnectButton model =
         [ class <| getDisconnectClass model.connectStatus
         , onClick <| DisconnectRequest
         ]
-        [ text "disconnect" ]
+        [ text "Disconnect" ]
 
 viewConnectButton : Model -> Html Msg
 viewConnectButton model =

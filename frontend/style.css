@@ -30,18 +30,41 @@ html, body {
 /*************************************************************************************************************/
 .activeMenu {
     width : 100vw;
-    height: 5vw;
     background-color: rgb(76, 78, 80);
+    font-size: small;
 }
 
 .connectInput {
+    color: whitesmoke;
+    border-right: 2px solid grey;
+    padding: 5px;
+    user-select: none;
+}
+
+.connectInput > * {
+    padding: 5px;
+}
+
+.connectValueInput {
     background-color: rgb(125, 128, 131);
     border-style: none;
     margin-left: 5px;
     margin-right: 5px;
+    text-align: right;
+    padding: 0px;
 }
 
+.connectButtons {
+    border-right: 2px solid grey;
+    padding: 5px;
+    user-select: none;
+}
 
+.connectButtons > * {
+    padding: 5px;
+    width: 120px;
+    text-align: center;
+}
 
 .status {
     background-color: rgb(37, 39, 41);
@@ -54,28 +77,28 @@ html, body {
     padding: 1%;
 }
 
-.connectRegion {
-
+.connectMenu {
+    display: flex;
 }
 
-.connect {
+.Connect {
     background-color: #587093;
     cursor: pointer;
 }
 
-.connecting {
+.Connecting {
     background-color: orange;
-    cursor: pointer;
 }
 
-.connected {
+.Connected {
     background-color: limegreen;
-    cursor: pointer;
 }
 
-.disconnect {
+.Disconnect {
     background-color: rgb(103, 105, 107);
 }
+
+/*****************************************************************************************/
 
 table {
     table-layout: fixed;

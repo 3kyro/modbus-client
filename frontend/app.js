@@ -7002,6 +7002,12 @@ var $author$project$Types$ChangeTimeout = function (a) {
 };
 var $elm$html$Html$input = _VirtualDom_node('input');
 var $elm$html$Html$label = _VirtualDom_node('label');
+var $elm$html$Html$Attributes$maxlength = function (n) {
+	return A2(
+		_VirtualDom_attribute,
+		'maxlength',
+		$elm$core$String$fromInt(n));
+};
 var $elm$html$Html$Events$alwaysStop = function (x) {
 	return _Utils_Tuple2(x, true);
 };
@@ -7078,10 +7084,11 @@ var $author$project$View$Connect$viewByteInput = F2(
 			$elm$html$Html$input,
 			_List_fromArray(
 				[
-					$elm$html$Html$Attributes$class('connectInput'),
+					$elm$html$Html$Attributes$class('connectValueInput'),
 					$elm$html$Html$Attributes$max('255'),
 					$elm$html$Html$Attributes$min('0'),
-					$elm$html$Html$Attributes$size(3),
+					$elm$html$Html$Attributes$maxlength(3),
+					$elm$html$Html$Attributes$size(1),
 					$elm$html$Html$Attributes$value(
 					A2($author$project$Types$IpAddress$showIpAddressByte, _byte, ip)),
 					$elm$html$Html$Events$onInput(
@@ -7109,13 +7116,13 @@ var $elm$html$Html$Events$onClick = function (msg) {
 var $author$project$Types$showConnectStatus = function (st) {
 	switch (st.$) {
 		case 'Connect':
-			return 'connect';
+			return 'Connect';
 		case 'Connecting':
-			return 'connecting';
+			return 'Connecting';
 		case 'Connected':
-			return 'connected';
+			return 'Connected';
 		default:
-			return 'disconnecting';
+			return 'Disconnecting';
 	}
 };
 var $author$project$View$Connect$viewConnectButton = function (model) {
@@ -7136,9 +7143,9 @@ var $author$project$View$Connect$viewConnectButton = function (model) {
 var $author$project$Types$DisconnectRequest = {$: 'DisconnectRequest'};
 var $author$project$View$Connect$getDisconnectClass = function (status) {
 	if (status.$ === 'Connected') {
-		return 'connect';
+		return 'Connect';
 	} else {
-		return 'disconnect';
+		return 'Disconnect';
 	}
 };
 var $author$project$View$Connect$viewDisconnectButton = function (model) {
@@ -7152,7 +7159,7 @@ var $author$project$View$Connect$viewDisconnectButton = function (model) {
 			]),
 		_List_fromArray(
 			[
-				$elm$html$Html$text('disconnect')
+				$elm$html$Html$text('Disconnect')
 			]));
 };
 var $author$project$View$Connect$viewConnectMenu = function (model) {
@@ -7161,80 +7168,142 @@ var $author$project$View$Connect$viewConnectMenu = function (model) {
 		_List_fromArray(
 			[
 				$elm$html$Html$Attributes$class('activeMenu'),
-				$elm$html$Html$Attributes$class('connectRegion')
+				$elm$html$Html$Attributes$class('connectMenu')
 			]),
 		_List_fromArray(
 			[
 				A2(
 				$elm$html$Html$div,
-				_List_Nil,
 				_List_fromArray(
 					[
-						$elm$html$Html$text('ip address'),
-						A2($author$project$View$Connect$viewByteInput, $author$project$Types$IpAddress$Byte0, model.ipAddress),
+						$elm$html$Html$Attributes$class('connectInput')
+					]),
+				_List_fromArray(
+					[
 						A2(
-						$elm$html$Html$label,
-						_List_Nil,
+						$elm$html$Html$div,
 						_List_fromArray(
 							[
-								$elm$html$Html$text('.')
-							])),
-						A2($author$project$View$Connect$viewByteInput, $author$project$Types$IpAddress$Byte1, model.ipAddress),
-						A2(
-						$elm$html$Html$label,
-						_List_Nil,
+								$elm$html$Html$Attributes$class('ipAddress')
+							]),
 						_List_fromArray(
 							[
-								$elm$html$Html$text('.')
+								A2(
+								$elm$html$Html$label,
+								_List_fromArray(
+									[
+										$elm$html$Html$Attributes$size(5)
+									]),
+								_List_fromArray(
+									[
+										$elm$html$Html$text('IP address')
+									])),
+								A2($author$project$View$Connect$viewByteInput, $author$project$Types$IpAddress$Byte0, model.ipAddress),
+								A2(
+								$elm$html$Html$label,
+								_List_Nil,
+								_List_fromArray(
+									[
+										$elm$html$Html$text('.')
+									])),
+								A2($author$project$View$Connect$viewByteInput, $author$project$Types$IpAddress$Byte1, model.ipAddress),
+								A2(
+								$elm$html$Html$label,
+								_List_Nil,
+								_List_fromArray(
+									[
+										$elm$html$Html$text('.')
+									])),
+								A2($author$project$View$Connect$viewByteInput, $author$project$Types$IpAddress$Byte2, model.ipAddress),
+								A2(
+								$elm$html$Html$label,
+								_List_Nil,
+								_List_fromArray(
+									[
+										$elm$html$Html$text('.')
+									])),
+								A2($author$project$View$Connect$viewByteInput, $author$project$Types$IpAddress$Byte3, model.ipAddress)
 							])),
-						A2($author$project$View$Connect$viewByteInput, $author$project$Types$IpAddress$Byte2, model.ipAddress),
 						A2(
-						$elm$html$Html$label,
-						_List_Nil,
+						$elm$html$Html$div,
 						_List_fromArray(
 							[
-								$elm$html$Html$text('.')
+								$elm$html$Html$Attributes$class('port')
+							]),
+						_List_fromArray(
+							[
+								A2(
+								$elm$html$Html$label,
+								_List_fromArray(
+									[
+										$elm$html$Html$Attributes$size(50)
+									]),
+								_List_fromArray(
+									[
+										$elm$html$Html$text('Port')
+									])),
+								A2(
+								$elm$html$Html$input,
+								_List_fromArray(
+									[
+										$elm$html$Html$Attributes$class('connectValueInput'),
+										$elm$html$Html$Attributes$size(2),
+										$elm$html$Html$Attributes$maxlength(4),
+										$elm$html$Html$Attributes$value(
+										A2(
+											$elm$core$Maybe$withDefault,
+											'',
+											A2($elm$core$Maybe$map, $elm$core$String$fromInt, model.socketPort))),
+										$elm$html$Html$Events$onInput($author$project$Types$ChangePort)
+									]),
+								_List_Nil)
 							])),
-						A2($author$project$View$Connect$viewByteInput, $author$project$Types$IpAddress$Byte3, model.ipAddress)
+						A2(
+						$elm$html$Html$div,
+						_List_fromArray(
+							[
+								$elm$html$Html$Attributes$class('timeout')
+							]),
+						_List_fromArray(
+							[
+								A2(
+								$elm$html$Html$label,
+								_List_fromArray(
+									[
+										$elm$html$Html$Attributes$size(5)
+									]),
+								_List_fromArray(
+									[
+										$elm$html$Html$text('Timeout')
+									])),
+								A2(
+								$elm$html$Html$input,
+								_List_fromArray(
+									[
+										$elm$html$Html$Attributes$class('connectValueInput'),
+										$elm$html$Html$Attributes$size(2),
+										$elm$html$Html$Attributes$maxlength(5),
+										$elm$html$Html$Attributes$value(
+										A2(
+											$elm$core$Maybe$withDefault,
+											'',
+											A2($elm$core$Maybe$map, $elm$core$String$fromInt, model.timeout))),
+										$elm$html$Html$Events$onInput($author$project$Types$ChangeTimeout)
+									]),
+								_List_Nil)
+							]))
 					])),
 				A2(
 				$elm$html$Html$div,
-				_List_Nil,
 				_List_fromArray(
 					[
-						$elm$html$Html$text('port'),
-						A2(
-						$elm$html$Html$input,
-						_List_fromArray(
-							[
-								$elm$html$Html$Attributes$class('connectInput'),
-								$elm$html$Html$Attributes$size(4),
-								$elm$html$Html$Attributes$value(
-								A2(
-									$elm$core$Maybe$withDefault,
-									'',
-									A2($elm$core$Maybe$map, $elm$core$String$fromInt, model.socketPort))),
-								$elm$html$Html$Events$onInput($author$project$Types$ChangePort)
-							]),
-						_List_Nil),
-						$elm$html$Html$text('timeout'),
-						A2(
-						$elm$html$Html$input,
-						_List_fromArray(
-							[
-								$elm$html$Html$Attributes$class('connectInput'),
-								$elm$html$Html$Attributes$size(5),
-								$elm$html$Html$Attributes$value(
-								A2(
-									$elm$core$Maybe$withDefault,
-									'',
-									A2($elm$core$Maybe$map, $elm$core$String$fromInt, model.timeout))),
-								$elm$html$Html$Events$onInput($author$project$Types$ChangeTimeout)
-							]),
-						_List_Nil)
-					])),
-				$author$project$View$Connect$viewConnectButton(model),
-				$author$project$View$Connect$viewDisconnectButton(model)
+						$elm$html$Html$Attributes$class('connectButtons')
+					]),
+				_List_fromArray(
+					[
+						$author$project$View$Connect$viewConnectButton(model),
+						$author$project$View$Connect$viewDisconnectButton(model)
+					]))
 			]));
 };
 var $author$project$View$viewEmptyMenu = A2($elm$html$Html$div, _List_Nil, _List_Nil);
