@@ -11,11 +11,11 @@ module Types exposing
     , showConnectStatus
     , ConnectionInfo
     , decodeConnInfo
-    , encodeIpPort
     , encodeRegister
     , decodeModData
     , ActiveMenu (..)
     , getChangedMenu
+    , encodeIpPort
     )
 
 
@@ -28,6 +28,7 @@ import Types.IpAddress exposing
     , decodeIpAddress
     , showIp
     , IpAddressByte
+    , unsafeShowIp
     )
 
 type Msg
@@ -90,6 +91,7 @@ type alias ConnectionInfo =
     , timeout : Int
     }
 
+
 decodeConnInfo : D.Decoder ConnectionInfo
 decodeConnInfo =
     D.map3 ConnectionInfo
@@ -98,10 +100,11 @@ decodeConnInfo =
         ( D.field "port" D.int )
         ( D.field "timeout" D.int)
 
+
 encodeIpPort : Model -> E.Value
 encodeIpPort model =
     E.object
-        [ ( "ip address", E.string <| showIp model.ipAddress)
+        [ ( "ip address", E.string <| unsafeShowIp model.ipAddress)
         , ( "port", E.int model.socketPort )
         , ( "timeout", E.int  model.timeout)
         ]

@@ -79,7 +79,8 @@ viewByteInput byte ip =
         ] []
 
 changeIpAddress : IpAddressByte -> IpAddress -> String -> Msg
-changeIpAddress byte ip s = ChangeIpAddress <| changeIpAddressByte byte ip s
+changeIpAddress byte ip s =
+    ChangeIpAddress <| changeIpAddressByte byte ip s
 
 
 viewDisconnectButton : Model -> Html Msg

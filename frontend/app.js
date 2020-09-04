@@ -5484,13 +5484,18 @@ var $elm$core$Maybe$map4 = F5(
 			}
 		}
 	});
-var $author$project$Types$IpAddress$IpAddress = function (a) {
-	return {$: 'IpAddress', a: a};
-};
+var $author$project$Types$IpAddress$IpAddress = F4(
+	function (b0, b1, b2, b3) {
+		return {b0: b0, b1: b1, b2: b2, b3: b3};
+	});
 var $author$project$Types$IpAddress$unsafeFromInts = F4(
-	function (b1, b2, b3, b4) {
-		return $author$project$Types$IpAddress$IpAddress(
-			$elm$core$String$fromInt(b1) + ('.' + ($elm$core$String$fromInt(b2) + ('.' + ($elm$core$String$fromInt(b3) + ('.' + $elm$core$String$fromInt(b4)))))));
+	function (b0, b1, b2, b3) {
+		return A4(
+			$author$project$Types$IpAddress$IpAddress,
+			$elm$core$Maybe$Just(b0),
+			$elm$core$Maybe$Just(b1),
+			$elm$core$Maybe$Just(b2),
+			$elm$core$Maybe$Just(b3));
 	});
 var $author$project$Types$IpAddress$getIpAddress = F4(
 	function (byte1, byte2, byte3, byte4) {
@@ -6349,7 +6354,12 @@ var $author$project$Update$initCmd = $author$project$Update$connectionInfoReques
 var $author$project$Types$AllGood = {$: 'AllGood'};
 var $author$project$Types$Connect = {$: 'Connect'};
 var $author$project$Types$NoneActive = {$: 'NoneActive'};
-var $author$project$Types$IpAddress$defaultIpAddr = $author$project$Types$IpAddress$IpAddress('192.168.1.1');
+var $author$project$Types$IpAddress$defaultIpAddr = A4(
+	$author$project$Types$IpAddress$IpAddress,
+	$elm$core$Maybe$Just(192),
+	$elm$core$Maybe$Just(168),
+	$elm$core$Maybe$Just(0),
+	$elm$core$Maybe$Just(1));
 var $author$project$Types$HoldingRegister = {$: 'HoldingRegister'};
 var $author$project$Types$InputRegister = {$: 'InputRegister'};
 var $author$project$Types$ModWord = function (a) {
@@ -6421,11 +6431,41 @@ var $elm$json$Json$Encode$object = function (pairs) {
 			_Json_emptyObject(_Utils_Tuple0),
 			pairs));
 };
-var $author$project$Types$IpAddress$showIp = function (_v0) {
-	var s = _v0.a;
-	return s;
-};
 var $elm$json$Json$Encode$string = _Json_wrap;
+var $elm$core$Maybe$map = F2(
+	function (f, maybe) {
+		if (maybe.$ === 'Just') {
+			var value = maybe.a;
+			return $elm$core$Maybe$Just(
+				f(value));
+		} else {
+			return $elm$core$Maybe$Nothing;
+		}
+	});
+var $elm$core$Maybe$withDefault = F2(
+	function (_default, maybe) {
+		if (maybe.$ === 'Just') {
+			var value = maybe.a;
+			return value;
+		} else {
+			return _default;
+		}
+	});
+var $author$project$Types$IpAddress$unsafeShowIp = function (ip) {
+	return A2(
+		$elm$core$Maybe$withDefault,
+		'',
+		A2($elm$core$Maybe$map, $elm$core$String$fromInt, ip.b0)) + ('.' + (A2(
+		$elm$core$Maybe$withDefault,
+		'',
+		A2($elm$core$Maybe$map, $elm$core$String$fromInt, ip.b1)) + ('.' + (A2(
+		$elm$core$Maybe$withDefault,
+		'',
+		A2($elm$core$Maybe$map, $elm$core$String$fromInt, ip.b2)) + ('.' + A2(
+		$elm$core$Maybe$withDefault,
+		'',
+		A2($elm$core$Maybe$map, $elm$core$String$fromInt, ip.b3)))))));
+};
 var $author$project$Types$encodeIpPort = function (model) {
 	return $elm$json$Json$Encode$object(
 		_List_fromArray(
@@ -6433,7 +6473,7 @@ var $author$project$Types$encodeIpPort = function (model) {
 				_Utils_Tuple2(
 				'ip address',
 				$elm$json$Json$Encode$string(
-					$author$project$Types$IpAddress$showIp(model.ipAddress))),
+					$author$project$Types$IpAddress$unsafeShowIp(model.ipAddress))),
 				_Utils_Tuple2(
 				'port',
 				$elm$json$Json$Encode$int(model.socketPort)),
@@ -6930,41 +6970,29 @@ var $elm$html$Html$Attributes$value = $elm$html$Html$Attributes$stringProperty('
 var $author$project$Types$ChangeIpAddress = function (a) {
 	return {$: 'ChangeIpAddress', a: a};
 };
-var $elm$core$Maybe$withDefault = F2(
-	function (_default, maybe) {
-		if (maybe.$ === 'Just') {
-			var value = maybe.a;
-			return value;
-		} else {
-			return _default;
-		}
-	});
 var $author$project$Types$IpAddress$showIpAddressByte = F2(
-	function (_byte, _v0) {
-		var str = _v0.a;
-		var bytes = $elm$core$Array$fromList(
-			A2($elm$core$String$split, '.', str));
+	function (_byte, ip) {
 		switch (_byte.$) {
 			case 'Byte1':
 				return A2(
 					$elm$core$Maybe$withDefault,
-					'0',
-					A2($elm$core$Array$get, 0, bytes));
+					'',
+					A2($elm$core$Maybe$map, $elm$core$String$fromInt, ip.b0));
 			case 'Byte2':
 				return A2(
 					$elm$core$Maybe$withDefault,
-					'0',
-					A2($elm$core$Array$get, 1, bytes));
+					'',
+					A2($elm$core$Maybe$map, $elm$core$String$fromInt, ip.b1));
 			case 'Byte3':
 				return A2(
 					$elm$core$Maybe$withDefault,
-					'0',
-					A2($elm$core$Array$get, 2, bytes));
+					'',
+					A2($elm$core$Maybe$map, $elm$core$String$fromInt, ip.b2));
 			default:
 				return A2(
 					$elm$core$Maybe$withDefault,
-					'0',
-					A2($elm$core$Array$get, 3, bytes));
+					'',
+					A2($elm$core$Maybe$map, $elm$core$String$fromInt, ip.b3));
 		}
 	});
 var $author$project$Types$IpAddress$changeIpAddressByte = F3(

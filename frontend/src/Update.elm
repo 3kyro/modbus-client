@@ -14,11 +14,12 @@ import Types exposing
     , ModData
     , ConnectStatus(..)
     , decodeConnInfo
-    , encodeIpPort
     , encodeRegister
     , decodeModData
     , getChangedMenu
+    , encodeIpPort
     )
+import Types exposing (encodeIpPort)
 
 update : Msg -> Model -> ( Model, Cmd Msg)
 update msg model =
