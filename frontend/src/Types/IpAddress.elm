@@ -7,6 +7,7 @@ module Types.IpAddress exposing
     , showIpAddressByte
     , changeIpAddressByte
     , unsafeShowIp
+    , setIpAddressByte
     )
 
 import Array
@@ -20,10 +21,10 @@ type alias IpAddress =
     }
 
 type IpAddressByte
-    = Byte1
+    = Byte0
+    | Byte1
     | Byte2
     | Byte3
-    | Byte4
 
 defaultIpAddr : IpAddress
 defaultIpAddr =
@@ -107,23 +108,31 @@ decodeIpAddress =
 showIpAddressByte : IpAddressByte -> IpAddress -> String
 showIpAddressByte byte ip =
     case byte of
-        Byte1 -> Maybe.withDefault "" <| Maybe.map String.fromInt ip.b0
-        Byte2 -> Maybe.withDefault "" <| Maybe.map String.fromInt ip.b1
-        Byte3 -> Maybe.withDefault "" <| Maybe.map String.fromInt ip.b2
-        Byte4 -> Maybe.withDefault "" <| Maybe.map String.fromInt ip.b3
+        Byte0 -> Maybe.withDefault "" <| Maybe.map String.fromInt ip.b0
+        Byte1 -> Maybe.withDefault "" <| Maybe.map String.fromInt ip.b1
+        Byte2 -> Maybe.withDefault "" <| Maybe.map String.fromInt ip.b2
+        Byte3 -> Maybe.withDefault "" <| Maybe.map String.fromInt ip.b3
 
 changeIpAddressByte : IpAddressByte -> IpAddress -> String -> Maybe IpAddress
 changeIpAddressByte byte ip str =
     let
-        str1 = showIpAddressByte Byte1 ip
-        str2 = showIpAddressByte Byte2 ip
-        str3 = showIpAddressByte Byte3 ip
-        str4 = showIpAddressByte Byte4 ip
+        str1 = showIpAddressByte Byte0 ip
+        str2 = showIpAddressByte Byte1 ip
+        str3 = showIpAddressByte Byte2 ip
+        str4 = showIpAddressByte Byte3 ip
     in
         String.toInt str |> Maybe.andThen (\_ ->
             case byte of
-                Byte1 -> getIpAddress str str2 str3 str4
-                Byte2 -> getIpAddress str1 str str3 str4
-                Byte3 -> getIpAddress str1 str2 str str4
-                Byte4 -> getIpAddress str1 str2 str3 str
+                Byte0 -> getIpAddress str str2 str3 str4
+                Byte1 -> getIpAddress str1 str str3 str4
+                Byte2 -> getIpAddress str1 str2 str str4
+                Byte3 -> getIpAddress str1 str2 str3 str
         )
+
+setIpAddressByte : IpAddressByte -> IpAddress -> Maybe Int -> IpAddress
+setIpAddressByte byte ip mint =
+    case byte of
+        Byte0 -> { ip | b0 = mint }
+        Byte1 -> { ip | b1 = mint }
+        Byte2 -> { ip | b2 = mint }
+        Byte3 -> { ip | b3 = mint }

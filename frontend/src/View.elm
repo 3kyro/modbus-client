@@ -46,12 +46,12 @@ view model =
 viewMenu : Model -> Html Msg
 viewMenu model =
     div [ class "menu" ]
-        [ viewMenuBar model
+        [ viewMenuBar
         , viewActiveMenu model
         ]
 
-viewMenuBar : Model -> Html Msg
-viewMenuBar model =
+viewMenuBar : Html Msg
+viewMenuBar =
     div
         [ class "menuBar" ]
         [ label [ class "menuButton", onClick <| ChangeActiveMenu ConnectMenu ] [ text "Connect" ]

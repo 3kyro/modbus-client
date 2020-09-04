@@ -30,8 +30,8 @@ initModel =
     , status = AllGood
     , connectStatus = Connect
     , ipAddress = defaultIpAddr
-    , socketPort = 502
-    , timeout = 1000
+    , socketPort = Just 502
+    , timeout = Just 1000
     , activeMenu = NoneActive
     }
 

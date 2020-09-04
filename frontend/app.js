@@ -6402,7 +6402,15 @@ var $author$project$App$initModData = _List_fromArray(
 		modValue: $author$project$Types$ModWord($elm$core$Maybe$Nothing)
 	}
 	]);
-var $author$project$App$initModel = {activeMenu: $author$project$Types$NoneActive, connectStatus: $author$project$Types$Connect, ipAddress: $author$project$Types$IpAddress$defaultIpAddr, modData: $author$project$App$initModData, socketPort: 502, status: $author$project$Types$AllGood, timeout: 1000};
+var $author$project$App$initModel = {
+	activeMenu: $author$project$Types$NoneActive,
+	connectStatus: $author$project$Types$Connect,
+	ipAddress: $author$project$Types$IpAddress$defaultIpAddr,
+	modData: $author$project$App$initModData,
+	socketPort: $elm$core$Maybe$Just(502),
+	status: $author$project$Types$AllGood,
+	timeout: $elm$core$Maybe$Just(1000)
+};
 var $elm$core$Platform$Sub$batch = _Platform_batch;
 var $elm$core$Platform$Sub$none = $elm$core$Platform$Sub$batch(_List_Nil);
 var $author$project$Types$Bad = function (a) {
@@ -6476,10 +6484,12 @@ var $author$project$Types$encodeIpPort = function (model) {
 					$author$project$Types$IpAddress$unsafeShowIp(model.ipAddress))),
 				_Utils_Tuple2(
 				'port',
-				$elm$json$Json$Encode$int(model.socketPort)),
+				$elm$json$Json$Encode$int(
+					A2($elm$core$Maybe$withDefault, 0, model.socketPort))),
 				_Utils_Tuple2(
 				'timeout',
-				$elm$json$Json$Encode$int(model.timeout))
+				$elm$json$Json$Encode$int(
+					A2($elm$core$Maybe$withDefault, 0, model.timeout)))
 			]));
 };
 var $elm$http$Http$expectBytesResponse = F2(
@@ -6706,6 +6716,27 @@ var $author$project$Update$refreshRequest = function (regs) {
 			url: 'http://localhost:4000/register'
 		});
 };
+var $author$project$Types$IpAddress$setIpAddressByte = F3(
+	function (_byte, ip, mint) {
+		switch (_byte.$) {
+			case 'Byte0':
+				return _Utils_update(
+					ip,
+					{b0: mint});
+			case 'Byte1':
+				return _Utils_update(
+					ip,
+					{b1: mint});
+			case 'Byte2':
+				return _Utils_update(
+					ip,
+					{b2: mint});
+			default:
+				return _Utils_update(
+					ip,
+					{b3: mint});
+		}
+	});
 var $author$project$Update$showHttpError = function (err) {
 	switch (err.$) {
 		case 'BadUrl':
@@ -6752,7 +6783,12 @@ var $author$project$Update$update = F2(
 						return _Utils_Tuple2(
 							_Utils_update(
 								model,
-								{connectStatus: $author$project$Types$Connected, ipAddress: conn.ipAddress, socketPort: conn.socketPort, timeout: conn.timeout}),
+								{
+									connectStatus: $author$project$Types$Connected,
+									ipAddress: conn.ipAddress,
+									socketPort: $elm$core$Maybe$Just(conn.socketPort),
+									timeout: $elm$core$Maybe$Just(conn.timeout)
+								}),
 							$elm$core$Platform$Cmd$none);
 					} else {
 						var _v1 = msg.a.a;
@@ -6802,50 +6838,88 @@ var $author$project$Update$update = F2(
 						$elm$core$Platform$Cmd$none);
 				}
 			case 'ChangeIpAddress':
-				if (msg.a.$ === 'Nothing') {
-					var _v2 = msg.a;
-					return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
-				} else {
-					var address = msg.a.a;
+				var _byte = msg.a;
+				var str = msg.b;
+				if ($elm$core$String$isEmpty(str)) {
 					return _Utils_Tuple2(
 						_Utils_update(
 							model,
-							{ipAddress: address}),
+							{
+								ipAddress: A3($author$project$Types$IpAddress$setIpAddressByte, _byte, model.ipAddress, $elm$core$Maybe$Nothing)
+							}),
 						$elm$core$Platform$Cmd$none);
+				} else {
+					var _v2 = $elm$core$String$toInt(str);
+					if (_v2.$ === 'Nothing') {
+						return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
+					} else {
+						var b = _v2.a;
+						return _Utils_Tuple2(
+							_Utils_update(
+								model,
+								{
+									ipAddress: A3(
+										$author$project$Types$IpAddress$setIpAddressByte,
+										_byte,
+										model.ipAddress,
+										$elm$core$Maybe$Just(b))
+								}),
+							$elm$core$Platform$Cmd$none);
+					}
 				}
 			case 'ChangePort':
 				var portNum = msg.a;
-				var _v3 = $elm$core$String$toInt(portNum);
-				if (_v3.$ === 'Nothing') {
+				if ($elm$core$String$isEmpty(portNum)) {
 					return _Utils_Tuple2(
 						_Utils_update(
 							model,
-							{status: $author$project$Types$BadPort}),
+							{socketPort: $elm$core$Maybe$Nothing}),
 						$elm$core$Platform$Cmd$none);
 				} else {
-					var p = _v3.a;
-					return _Utils_Tuple2(
-						_Utils_update(
-							model,
-							{socketPort: p}),
-						$elm$core$Platform$Cmd$none);
+					var _v3 = $elm$core$String$toInt(portNum);
+					if (_v3.$ === 'Nothing') {
+						return _Utils_Tuple2(
+							_Utils_update(
+								model,
+								{status: $author$project$Types$BadPort}),
+							$elm$core$Platform$Cmd$none);
+					} else {
+						var p = _v3.a;
+						return _Utils_Tuple2(
+							_Utils_update(
+								model,
+								{
+									socketPort: $elm$core$Maybe$Just(p)
+								}),
+							$elm$core$Platform$Cmd$none);
+					}
 				}
 			case 'ChangeTimeout':
 				var tm = msg.a;
-				var _v4 = $elm$core$String$toInt(tm);
-				if (_v4.$ === 'Nothing') {
+				if ($elm$core$String$isEmpty(tm)) {
 					return _Utils_Tuple2(
 						_Utils_update(
 							model,
-							{status: $author$project$Types$BadTimeout}),
+							{timeout: $elm$core$Maybe$Nothing}),
 						$elm$core$Platform$Cmd$none);
 				} else {
-					var t = _v4.a;
-					return _Utils_Tuple2(
-						_Utils_update(
-							model,
-							{timeout: t}),
-						$elm$core$Platform$Cmd$none);
+					var _v4 = $elm$core$String$toInt(tm);
+					if (_v4.$ === 'Nothing') {
+						return _Utils_Tuple2(
+							_Utils_update(
+								model,
+								{status: $author$project$Types$BadTimeout}),
+							$elm$core$Platform$Cmd$none);
+					} else {
+						var t = _v4.a;
+						return _Utils_Tuple2(
+							_Utils_update(
+								model,
+								{
+									timeout: $elm$core$Maybe$Just(t)
+								}),
+							$elm$core$Platform$Cmd$none);
+					}
 				}
 			case 'DisconnectRequest':
 				var _v5 = model.connectStatus;
@@ -6916,10 +6990,10 @@ var $author$project$Types$showStatus = function (status) {
 };
 var $elm$virtual_dom$VirtualDom$text = _VirtualDom_text;
 var $elm$html$Html$text = $elm$virtual_dom$VirtualDom$text;
+var $author$project$Types$IpAddress$Byte0 = {$: 'Byte0'};
 var $author$project$Types$IpAddress$Byte1 = {$: 'Byte1'};
 var $author$project$Types$IpAddress$Byte2 = {$: 'Byte2'};
 var $author$project$Types$IpAddress$Byte3 = {$: 'Byte3'};
-var $author$project$Types$IpAddress$Byte4 = {$: 'Byte4'};
 var $author$project$Types$ChangePort = function (a) {
 	return {$: 'ChangePort', a: a};
 };
@@ -6967,23 +7041,26 @@ var $elm$html$Html$Attributes$size = function (n) {
 		$elm$core$String$fromInt(n));
 };
 var $elm$html$Html$Attributes$value = $elm$html$Html$Attributes$stringProperty('value');
-var $author$project$Types$ChangeIpAddress = function (a) {
-	return {$: 'ChangeIpAddress', a: a};
-};
+var $author$project$Types$ChangeIpAddress = F2(
+	function (a, b) {
+		return {$: 'ChangeIpAddress', a: a, b: b};
+	});
+var $elm$html$Html$Attributes$max = $elm$html$Html$Attributes$stringProperty('max');
+var $elm$html$Html$Attributes$min = $elm$html$Html$Attributes$stringProperty('min');
 var $author$project$Types$IpAddress$showIpAddressByte = F2(
 	function (_byte, ip) {
 		switch (_byte.$) {
-			case 'Byte1':
+			case 'Byte0':
 				return A2(
 					$elm$core$Maybe$withDefault,
 					'',
 					A2($elm$core$Maybe$map, $elm$core$String$fromInt, ip.b0));
-			case 'Byte2':
+			case 'Byte1':
 				return A2(
 					$elm$core$Maybe$withDefault,
 					'',
 					A2($elm$core$Maybe$map, $elm$core$String$fromInt, ip.b1));
-			case 'Byte3':
+			case 'Byte2':
 				return A2(
 					$elm$core$Maybe$withDefault,
 					'',
@@ -6995,35 +7072,6 @@ var $author$project$Types$IpAddress$showIpAddressByte = F2(
 					A2($elm$core$Maybe$map, $elm$core$String$fromInt, ip.b3));
 		}
 	});
-var $author$project$Types$IpAddress$changeIpAddressByte = F3(
-	function (_byte, ip, str) {
-		var str4 = A2($author$project$Types$IpAddress$showIpAddressByte, $author$project$Types$IpAddress$Byte4, ip);
-		var str3 = A2($author$project$Types$IpAddress$showIpAddressByte, $author$project$Types$IpAddress$Byte3, ip);
-		var str2 = A2($author$project$Types$IpAddress$showIpAddressByte, $author$project$Types$IpAddress$Byte2, ip);
-		var str1 = A2($author$project$Types$IpAddress$showIpAddressByte, $author$project$Types$IpAddress$Byte1, ip);
-		return A2(
-			$elm$core$Maybe$andThen,
-			function (_v0) {
-				switch (_byte.$) {
-					case 'Byte1':
-						return A4($author$project$Types$IpAddress$getIpAddress, str, str2, str3, str4);
-					case 'Byte2':
-						return A4($author$project$Types$IpAddress$getIpAddress, str1, str, str3, str4);
-					case 'Byte3':
-						return A4($author$project$Types$IpAddress$getIpAddress, str1, str2, str, str4);
-					default:
-						return A4($author$project$Types$IpAddress$getIpAddress, str1, str2, str3, str);
-				}
-			},
-			$elm$core$String$toInt(str));
-	});
-var $author$project$View$Connect$changeIpAddress = F3(
-	function (_byte, ip, s) {
-		return $author$project$Types$ChangeIpAddress(
-			A3($author$project$Types$IpAddress$changeIpAddressByte, _byte, ip, s));
-	});
-var $elm$html$Html$Attributes$max = $elm$html$Html$Attributes$stringProperty('max');
-var $elm$html$Html$Attributes$min = $elm$html$Html$Attributes$stringProperty('min');
 var $author$project$View$Connect$viewByteInput = F2(
 	function (_byte, ip) {
 		return A2(
@@ -7037,7 +7085,7 @@ var $author$project$View$Connect$viewByteInput = F2(
 					$elm$html$Html$Attributes$value(
 					A2($author$project$Types$IpAddress$showIpAddressByte, _byte, ip)),
 					$elm$html$Html$Events$onInput(
-					A2($author$project$View$Connect$changeIpAddress, _byte, ip))
+					$author$project$Types$ChangeIpAddress(_byte))
 				]),
 			_List_Nil);
 	});
@@ -7123,6 +7171,14 @@ var $author$project$View$Connect$viewConnectMenu = function (model) {
 				_List_fromArray(
 					[
 						$elm$html$Html$text('ip address'),
+						A2($author$project$View$Connect$viewByteInput, $author$project$Types$IpAddress$Byte0, model.ipAddress),
+						A2(
+						$elm$html$Html$label,
+						_List_Nil,
+						_List_fromArray(
+							[
+								$elm$html$Html$text('.')
+							])),
 						A2($author$project$View$Connect$viewByteInput, $author$project$Types$IpAddress$Byte1, model.ipAddress),
 						A2(
 						$elm$html$Html$label,
@@ -7139,15 +7195,7 @@ var $author$project$View$Connect$viewConnectMenu = function (model) {
 							[
 								$elm$html$Html$text('.')
 							])),
-						A2($author$project$View$Connect$viewByteInput, $author$project$Types$IpAddress$Byte3, model.ipAddress),
-						A2(
-						$elm$html$Html$label,
-						_List_Nil,
-						_List_fromArray(
-							[
-								$elm$html$Html$text('.')
-							])),
-						A2($author$project$View$Connect$viewByteInput, $author$project$Types$IpAddress$Byte4, model.ipAddress)
+						A2($author$project$View$Connect$viewByteInput, $author$project$Types$IpAddress$Byte3, model.ipAddress)
 					])),
 				A2(
 				$elm$html$Html$div,
@@ -7162,7 +7210,10 @@ var $author$project$View$Connect$viewConnectMenu = function (model) {
 								$elm$html$Html$Attributes$class('connectInput'),
 								$elm$html$Html$Attributes$size(4),
 								$elm$html$Html$Attributes$value(
-								$elm$core$String$fromInt(model.socketPort)),
+								A2(
+									$elm$core$Maybe$withDefault,
+									'',
+									A2($elm$core$Maybe$map, $elm$core$String$fromInt, model.socketPort))),
 								$elm$html$Html$Events$onInput($author$project$Types$ChangePort)
 							]),
 						_List_Nil),
@@ -7174,7 +7225,10 @@ var $author$project$View$Connect$viewConnectMenu = function (model) {
 								$elm$html$Html$Attributes$class('connectInput'),
 								$elm$html$Html$Attributes$size(5),
 								$elm$html$Html$Attributes$value(
-								$elm$core$String$fromInt(model.timeout)),
+								A2(
+									$elm$core$Maybe$withDefault,
+									'',
+									A2($elm$core$Maybe$map, $elm$core$String$fromInt, model.timeout))),
 								$elm$html$Html$Events$onInput($author$project$Types$ChangeTimeout)
 							]),
 						_List_Nil)
@@ -7210,41 +7264,39 @@ var $author$project$Types$ChangeActiveMenu = function (a) {
 };
 var $author$project$Types$ConnectMenu = {$: 'ConnectMenu'};
 var $author$project$Types$ImportRegisters = {$: 'ImportRegisters'};
-var $author$project$View$viewMenuBar = function (model) {
-	return A2(
-		$elm$html$Html$div,
-		_List_fromArray(
-			[
-				$elm$html$Html$Attributes$class('menuBar')
-			]),
-		_List_fromArray(
-			[
-				A2(
-				$elm$html$Html$label,
-				_List_fromArray(
-					[
-						$elm$html$Html$Attributes$class('menuButton'),
-						$elm$html$Html$Events$onClick(
-						$author$project$Types$ChangeActiveMenu($author$project$Types$ConnectMenu))
-					]),
-				_List_fromArray(
-					[
-						$elm$html$Html$text('Connect')
-					])),
-				A2(
-				$elm$html$Html$label,
-				_List_fromArray(
-					[
-						$elm$html$Html$Attributes$class('menuButton'),
-						$elm$html$Html$Events$onClick(
-						$author$project$Types$ChangeActiveMenu($author$project$Types$ImportRegisters))
-					]),
-				_List_fromArray(
-					[
-						$elm$html$Html$text('Import')
-					]))
-			]));
-};
+var $author$project$View$viewMenuBar = A2(
+	$elm$html$Html$div,
+	_List_fromArray(
+		[
+			$elm$html$Html$Attributes$class('menuBar')
+		]),
+	_List_fromArray(
+		[
+			A2(
+			$elm$html$Html$label,
+			_List_fromArray(
+				[
+					$elm$html$Html$Attributes$class('menuButton'),
+					$elm$html$Html$Events$onClick(
+					$author$project$Types$ChangeActiveMenu($author$project$Types$ConnectMenu))
+				]),
+			_List_fromArray(
+				[
+					$elm$html$Html$text('Connect')
+				])),
+			A2(
+			$elm$html$Html$label,
+			_List_fromArray(
+				[
+					$elm$html$Html$Attributes$class('menuButton'),
+					$elm$html$Html$Events$onClick(
+					$author$project$Types$ChangeActiveMenu($author$project$Types$ImportRegisters))
+				]),
+			_List_fromArray(
+				[
+					$elm$html$Html$text('Import')
+				]))
+		]));
 var $author$project$View$viewMenu = function (model) {
 	return A2(
 		$elm$html$Html$div,
@@ -7254,7 +7306,7 @@ var $author$project$View$viewMenu = function (model) {
 			]),
 		_List_fromArray(
 			[
-				$author$project$View$viewMenuBar(model),
+				$author$project$View$viewMenuBar,
 				$author$project$View$viewActiveMenu(model)
 			]));
 };

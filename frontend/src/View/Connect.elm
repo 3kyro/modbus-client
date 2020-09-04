@@ -24,7 +24,6 @@ import Types.IpAddress exposing
     ( IpAddress
     , IpAddressByte (..)
     , showIpAddressByte
-    , changeIpAddressByte
     )
 
 viewConnectMenu : Model -> Html Msg
@@ -32,13 +31,13 @@ viewConnectMenu model =
     div [ class "activeMenu" , class "connectRegion" ]
         [ div []
             [ text "ip address"
+            , viewByteInput Byte0 model.ipAddress
+            , label [] [text "."]
             , viewByteInput Byte1 model.ipAddress
             , label [] [text "."]
             , viewByteInput Byte2 model.ipAddress
             , label [] [text "."]
             , viewByteInput Byte3 model.ipAddress
-            , label [] [text "."]
-            , viewByteInput Byte4 model.ipAddress
             ]
         , div
             []
@@ -46,14 +45,14 @@ viewConnectMenu model =
             , input
                 [ class "connectInput"
                 , size 4
-                , value <| String.fromInt model.socketPort
+                , value <| Maybe.withDefault "" <| Maybe.map String.fromInt model.socketPort
                 , onInput <| ChangePort
                 ] []
             , text "timeout"
             , input
                 [ class "connectInput"
                 , size 5
-                , value <| String.fromInt model.timeout
+                , value <| Maybe.withDefault "" <| Maybe.map String.fromInt model.timeout
                 , onInput <| ChangeTimeout
                 ] []
             ]
@@ -75,13 +74,8 @@ viewByteInput byte ip =
         , Html.Attributes.min "0"
         , Html.Attributes.size 3
         , value <| showIpAddressByte byte ip
-        , onInput <| changeIpAddress byte ip
+        , onInput <| ChangeIpAddress byte
         ] []
-
-changeIpAddress : IpAddressByte -> IpAddress -> String -> Msg
-changeIpAddress byte ip s =
-    ChangeIpAddress <| changeIpAddressByte byte ip s
-
 
 viewDisconnectButton : Model -> Html Msg
 viewDisconnectButton model =

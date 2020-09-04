@@ -26,7 +26,6 @@ import Json.Encode as E
 import Types.IpAddress exposing
     ( IpAddress
     , decodeIpAddress
-    , showIp
     , IpAddressByte
     , unsafeShowIp
     )
@@ -37,7 +36,7 @@ type Msg
     | RefreshRequest (List ModData)
     | ConnectRequest
     | ConnectedResponse (Result Http.Error () )
-    | ChangeIpAddress (Maybe IpAddress)
+    | ChangeIpAddress IpAddressByte String
     | ChangePort String
     | ChangeTimeout String
     | DisconnectRequest
@@ -49,8 +48,8 @@ type alias Model =
     , status : Status
     , connectStatus : ConnectStatus
     , ipAddress : IpAddress
-    , socketPort : Int
-    , timeout : Int
+    , socketPort : Maybe Int
+    , timeout : Maybe Int
     , activeMenu : ActiveMenu
     }
 type ConnectStatus
@@ -105,8 +104,8 @@ encodeIpPort : Model -> E.Value
 encodeIpPort model =
     E.object
         [ ( "ip address", E.string <| unsafeShowIp model.ipAddress)
-        , ( "port", E.int model.socketPort )
-        , ( "timeout", E.int  model.timeout)
+        , ( "port", E.int <| Maybe.withDefault 0 model.socketPort )
+        , ( "timeout", E.int <| Maybe.withDefault 0  model.timeout)
         ]
 
 

@@ -19,8 +19,8 @@ import Types exposing
     , getChangedMenu
     , encodeIpPort
     )
-import Types exposing (encodeIpPort)
 
+import Types.IpAddress exposing (setIpAddressByte)
 update : Msg -> Model -> ( Model, Cmd Msg)
 update msg model =
     case msg of
@@ -31,8 +31,8 @@ update msg model =
         ReceivedConnectionInfo (Ok (Just conn)) ->
             ( { model
                 | ipAddress = conn.ipAddress
-                , socketPort = conn.socketPort
-                , timeout = conn.timeout
+                , socketPort = Just conn.socketPort
+                , timeout = Just conn.timeout
                 , connectStatus = Connected
                 }
             , Cmd.none
@@ -50,17 +50,27 @@ update msg model =
                 , connectStatus = Connect }
             , Cmd.none
             )
-        ChangeIpAddress Nothing -> ( model , Cmd.none )
-        ChangeIpAddress (Just address) ->
-            ( { model | ipAddress = address }, Cmd.none )
+        ChangeIpAddress byte str ->
+            if String.isEmpty str
+            then ( { model | ipAddress = setIpAddressByte byte model.ipAddress Nothing }, Cmd.none )
+            else
+                case String.toInt str of
+                    Nothing -> ( model , Cmd.none )
+                    Just b -> ( { model | ipAddress = setIpAddressByte byte model.ipAddress (Just b) }, Cmd.none )
         ChangePort portNum ->
-            case String.toInt portNum of
-                Nothing -> ( { model | status = BadPort }, Cmd.none )
-                Just p -> ( { model | socketPort = p }, Cmd.none )
+            if String.isEmpty portNum
+            then ( { model | socketPort = Nothing }, Cmd.none )
+            else
+                case String.toInt portNum of
+                    Nothing -> ( { model | status = BadPort }, Cmd.none )
+                    Just p -> ( { model | socketPort = Just p }, Cmd.none )
         ChangeTimeout tm ->
-            case String.toInt tm of
-                Nothing -> ( { model | status = BadTimeout }, Cmd.none )
-                Just t -> ( { model | timeout = t }, Cmd.none )
+            if String.isEmpty tm
+            then ( { model | timeout = Nothing }, Cmd.none )
+            else
+                case String.toInt tm of
+                    Nothing -> ( { model | status = BadTimeout }, Cmd.none )
+                    Just t -> ( { model | timeout = Just t }, Cmd.none )
         DisconnectRequest ->
             case model.connectStatus of
                 Connected -> ( { model | connectStatus = Disconnecting } , disconnectRequest )
