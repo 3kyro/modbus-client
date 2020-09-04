@@ -3,7 +3,7 @@ html, body {
     margin: 0px;
     height:100%;
 }
-
+/*************************************************************************************************************/
 .menuBar {
     background-color: rgb(86, 88, 90);
     width : 100vw;
@@ -11,11 +11,6 @@ html, body {
     display: flex;
 }
 
-.activeMenu {
-    width : 100vw;
-    height: 5vw;
-    background-color: rgb(76, 78, 80);
-}
 .menuButton {
     display:inline-flex;
     user-select: none;
@@ -31,6 +26,22 @@ html, body {
     cursor: pointer;
     background-color: rgb(125, 128, 131);
 }
+
+/*************************************************************************************************************/
+.activeMenu {
+    width : 100vw;
+    height: 5vw;
+    background-color: rgb(76, 78, 80);
+}
+
+.connectInput {
+    background-color: rgb(125, 128, 131);
+    border-style: none;
+    margin-left: 5px;
+    margin-right: 5px;
+}
+
+
 
 .status {
     background-color: rgb(37, 39, 41);

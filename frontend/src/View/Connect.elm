@@ -9,7 +9,6 @@ import Html exposing
     )
 import Html.Attributes exposing
     ( class
-    , type_
     , value
     , size
     )
@@ -18,11 +17,14 @@ import Html.Events exposing (onClick, onInput)
 import Types exposing
     ( Model
     , Msg (..)
-    , IpAddressByte(..)
     , ConnectStatus(..)
-    , showIpAddressByte
-    , insertIpAddressByte
     , showConnectStatus
+    )
+import Types.IpAddress exposing
+    ( IpAddress
+    , IpAddressByte (..)
+    , showIpAddressByte
+    , changeIpAddressByte
     )
 
 viewConnectMenu : Model -> Html Msg
@@ -30,27 +32,26 @@ viewConnectMenu model =
     div [ class "activeMenu" , class "connectRegion" ]
         [ div []
             [ text "ip address"
-            , viewByteInput <| Byte1 model.ipAddress.b1
+            , viewByteInput Byte1 model.ipAddress
             , label [] [text "."]
-            , viewByteInput <| Byte2 model.ipAddress.b2
+            , viewByteInput Byte2 model.ipAddress
             , label [] [text "."]
-            , viewByteInput <| Byte3 model.ipAddress.b3
+            , viewByteInput Byte3 model.ipAddress
             , label [] [text "."]
-            , viewByteInput <| Byte4 model.ipAddress.b4
+            , viewByteInput Byte4 model.ipAddress
             ]
-
-
-        , div []
+        , div
+            []
             [ text "port"
             , input
-                [ type_ "number"
+                [ class "connectInput"
                 , size 4
                 , value <| String.fromInt model.socketPort
                 , onInput <| ChangePort
                 ] []
             , text "timeout"
             , input
-                [ type_ "number"
+                [ class "connectInput"
                 , size 5
                 , value <| String.fromInt model.timeout
                 , onInput <| ChangeTimeout
@@ -66,28 +67,20 @@ getDisconnectClass status =
         Connected -> "connect"
         _ -> "disconnect"
 
-viewByteInput : IpAddressByte -> Html Msg
-viewByteInput byte =
+viewByteInput : IpAddressByte -> IpAddress -> Html Msg
+viewByteInput byte ip =
     input
-        [ type_ "number"
-        , Html.Attributes.max "255"
+        [ class "connectInput"
+        ,  Html.Attributes.max "255"
         , Html.Attributes.min "0"
         , Html.Attributes.size 3
-        , value <| showIpAddressByte byte
-        , onInput <| changeIp byte
+        , value <| showIpAddressByte byte ip
+        , onInput <| changeIpAddress byte ip
         ] []
 
-changeIp : IpAddressByte -> String -> Msg
-changeIp byte s =
-    let
-        mbyte = String.toInt s
-    in
-        case mbyte of
-            Nothing -> ChangeIpAddressByte NoByte
-            Just value ->
-                if value < 0 || value > 255
-                then ChangeIpAddressByte NoByte
-                else ChangeIpAddressByte <| insertIpAddressByte byte value
+changeIpAddress : IpAddressByte -> IpAddress -> String -> Msg
+changeIpAddress byte ip s = ChangeIpAddress <| changeIpAddressByte byte ip s
+
 
 viewDisconnectButton : Model -> Html Msg
 viewDisconnectButton model =

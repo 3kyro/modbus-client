@@ -11,10 +11,10 @@ import Types exposing
     , ModValue (..)
     , Status (..)
     , RegType (..)
-    , IpAddress
     , ConnectStatus(..)
     , ActiveMenu(..)
     )
+import Types.IpAddress exposing (defaultIpAddr)
 
 main : Program () Model Msg
 main = Browser.element
@@ -29,7 +29,7 @@ initModel =
     { modData = initModData
     , status = AllGood
     , connectStatus = Connect
-    , ipAddress = IpAddress 192 168 1 1
+    , ipAddress = defaultIpAddr
     , socketPort = 502
     , timeout = 1000
     , activeMenu = NoneActive

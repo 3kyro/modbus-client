@@ -5451,10 +5451,14 @@ var $elm$core$Array$get = F2(
 			A2($elm$core$Elm$JsArray$unsafeGet, $elm$core$Array$bitMask & index, tail)) : $elm$core$Maybe$Just(
 			A3($elm$core$Array$getHelp, startShift, index, tree)));
 	});
-var $author$project$Types$IpAddress = F4(
-	function (b1, b2, b3, b4) {
-		return {b1: b1, b2: b2, b3: b3, b4: b4};
-	});
+var $author$project$Types$IpAddress$byteFromString = function (str) {
+	return A2(
+		$elm$core$Maybe$andThen,
+		function (i) {
+			return ((i < 0) || (i > 255)) ? $elm$core$Maybe$Nothing : $elm$core$Maybe$Just(i);
+		},
+		$elm$core$String$toInt(str));
+};
 var $elm$core$Maybe$map4 = F5(
 	function (func, ma, mb, mc, md) {
 		if (ma.$ === 'Nothing') {
@@ -5480,22 +5484,30 @@ var $elm$core$Maybe$map4 = F5(
 			}
 		}
 	});
-var $author$project$Types$getIpAddress = F4(
+var $author$project$Types$IpAddress$IpAddress = function (a) {
+	return {$: 'IpAddress', a: a};
+};
+var $author$project$Types$IpAddress$unsafeFromInts = F4(
+	function (b1, b2, b3, b4) {
+		return $author$project$Types$IpAddress$IpAddress(
+			$elm$core$String$fromInt(b1) + ('.' + ($elm$core$String$fromInt(b2) + ('.' + ($elm$core$String$fromInt(b3) + ('.' + $elm$core$String$fromInt(b4)))))));
+	});
+var $author$project$Types$IpAddress$getIpAddress = F4(
 	function (byte1, byte2, byte3, byte4) {
 		return A5(
 			$elm$core$Maybe$map4,
-			$author$project$Types$IpAddress,
-			$elm$core$String$toInt(byte1),
-			$elm$core$String$toInt(byte2),
-			$elm$core$String$toInt(byte3),
-			$elm$core$String$toInt(byte4));
+			$author$project$Types$IpAddress$unsafeFromInts,
+			$author$project$Types$IpAddress$byteFromString(byte1),
+			$author$project$Types$IpAddress$byteFromString(byte2),
+			$author$project$Types$IpAddress$byteFromString(byte3),
+			$author$project$Types$IpAddress$byteFromString(byte4));
 	});
-var $author$project$Types$ipFromString = function (s) {
+var $author$project$Types$IpAddress$ipFromString = function (s) {
 	var splits = $elm$core$Array$fromList(
 		A2($elm$core$String$split, '.', s));
 	var mip = A5(
 		$elm$core$Maybe$map4,
-		$author$project$Types$getIpAddress,
+		$author$project$Types$IpAddress$getIpAddress,
 		A2($elm$core$Array$get, 0, splits),
 		A2($elm$core$Array$get, 1, splits),
 		A2($elm$core$Array$get, 2, splits),
@@ -5508,10 +5520,10 @@ var $author$project$Types$ipFromString = function (s) {
 		mip);
 };
 var $elm$json$Json$Decode$string = _Json_decodeString;
-var $author$project$Types$decodeIpAddress = A2(
+var $author$project$Types$IpAddress$decodeIpAddress = A2(
 	$elm$json$Json$Decode$andThen,
 	function (str) {
-		var _v0 = $author$project$Types$ipFromString(str);
+		var _v0 = $author$project$Types$IpAddress$ipFromString(str);
 		if (_v0.$ === 'Nothing') {
 			return $elm$json$Json$Decode$fail('Not an Ip Address');
 		} else {
@@ -5526,7 +5538,7 @@ var $elm$json$Json$Decode$map3 = _Json_map3;
 var $author$project$Types$decodeConnInfo = A4(
 	$elm$json$Json$Decode$map3,
 	$author$project$Types$ConnectionInfo,
-	A2($elm$json$Json$Decode$field, 'ip address', $author$project$Types$decodeIpAddress),
+	A2($elm$json$Json$Decode$field, 'ip address', $author$project$Types$IpAddress$decodeIpAddress),
 	A2($elm$json$Json$Decode$field, 'port', $elm$json$Json$Decode$int),
 	A2($elm$json$Json$Decode$field, 'timeout', $elm$json$Json$Decode$int));
 var $elm$json$Json$Decode$decodeString = _Json_runOnString;
@@ -6337,6 +6349,7 @@ var $author$project$Update$initCmd = $author$project$Update$connectionInfoReques
 var $author$project$Types$AllGood = {$: 'AllGood'};
 var $author$project$Types$Connect = {$: 'Connect'};
 var $author$project$Types$NoneActive = {$: 'NoneActive'};
+var $author$project$Types$IpAddress$defaultIpAddr = $author$project$Types$IpAddress$IpAddress('192.168.1.1');
 var $author$project$Types$HoldingRegister = {$: 'HoldingRegister'};
 var $author$project$Types$InputRegister = {$: 'InputRegister'};
 var $author$project$Types$ModWord = function (a) {
@@ -6379,54 +6392,18 @@ var $author$project$App$initModData = _List_fromArray(
 		modValue: $author$project$Types$ModWord($elm$core$Maybe$Nothing)
 	}
 	]);
-var $author$project$App$initModel = {
-	activeMenu: $author$project$Types$NoneActive,
-	connectStatus: $author$project$Types$Connect,
-	ipAddress: A4($author$project$Types$IpAddress, 192, 168, 1, 1),
-	modData: $author$project$App$initModData,
-	socketPort: 502,
-	status: $author$project$Types$AllGood,
-	timeout: 1000
-};
+var $author$project$App$initModel = {activeMenu: $author$project$Types$NoneActive, connectStatus: $author$project$Types$Connect, ipAddress: $author$project$Types$IpAddress$defaultIpAddr, modData: $author$project$App$initModData, socketPort: 502, status: $author$project$Types$AllGood, timeout: 1000};
 var $elm$core$Platform$Sub$batch = _Platform_batch;
 var $elm$core$Platform$Sub$none = $elm$core$Platform$Sub$batch(_List_Nil);
 var $author$project$Types$Bad = function (a) {
 	return {$: 'Bad', a: a};
 };
-var $author$project$Types$BadIpAddress = {$: 'BadIpAddress'};
 var $author$project$Types$BadPort = {$: 'BadPort'};
 var $author$project$Types$BadTimeout = {$: 'BadTimeout'};
 var $author$project$Types$Connected = {$: 'Connected'};
 var $author$project$Types$Connecting = {$: 'Connecting'};
 var $author$project$Types$Disconnecting = {$: 'Disconnecting'};
 var $author$project$Types$Loading = {$: 'Loading'};
-var $author$project$Types$changeIpAddressByte = F2(
-	function (ip, _byte) {
-		switch (_byte.$) {
-			case 'Byte1':
-				var x = _byte.a;
-				return _Utils_update(
-					ip,
-					{b1: x});
-			case 'Byte2':
-				var x = _byte.a;
-				return _Utils_update(
-					ip,
-					{b2: x});
-			case 'Byte3':
-				var x = _byte.a;
-				return _Utils_update(
-					ip,
-					{b3: x});
-			case 'Byte4':
-				var x = _byte.a;
-				return _Utils_update(
-					ip,
-					{b4: x});
-			default:
-				return ip;
-		}
-	});
 var $author$project$Types$ConnectedResponse = function (a) {
 	return {$: 'ConnectedResponse', a: a};
 };
@@ -6444,8 +6421,9 @@ var $elm$json$Json$Encode$object = function (pairs) {
 			_Json_emptyObject(_Utils_Tuple0),
 			pairs));
 };
-var $author$project$Types$showIp = function (ip) {
-	return $elm$core$String$fromInt(ip.b1) + ('.' + ($elm$core$String$fromInt(ip.b2) + ('.' + ($elm$core$String$fromInt(ip.b3) + ('.' + $elm$core$String$fromInt(ip.b4))))));
+var $author$project$Types$IpAddress$showIp = function (_v0) {
+	var s = _v0.a;
+	return s;
 };
 var $elm$json$Json$Encode$string = _Json_wrap;
 var $author$project$Types$encodeIpPort = function (model) {
@@ -6455,7 +6433,7 @@ var $author$project$Types$encodeIpPort = function (model) {
 				_Utils_Tuple2(
 				'ip address',
 				$elm$json$Json$Encode$string(
-					$author$project$Types$showIp(model.ipAddress))),
+					$author$project$Types$IpAddress$showIp(model.ipAddress))),
 				_Utils_Tuple2(
 				'port',
 				$elm$json$Json$Encode$int(model.socketPort)),
@@ -6783,22 +6761,16 @@ var $author$project$Update$update = F2(
 							}),
 						$elm$core$Platform$Cmd$none);
 				}
-			case 'ChangeIpAddressByte':
-				if (msg.a.$ === 'NoByte') {
+			case 'ChangeIpAddress':
+				if (msg.a.$ === 'Nothing') {
 					var _v2 = msg.a;
-					return _Utils_Tuple2(
-						_Utils_update(
-							model,
-							{status: $author$project$Types$BadIpAddress}),
-						$elm$core$Platform$Cmd$none);
+					return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
 				} else {
-					var _byte = msg.a;
+					var address = msg.a.a;
 					return _Utils_Tuple2(
 						_Utils_update(
 							model,
-							{
-								ipAddress: A2($author$project$Types$changeIpAddressByte, model.ipAddress, _byte)
-							}),
+							{ipAddress: address}),
 						$elm$core$Platform$Cmd$none);
 				}
 			case 'ChangePort':
@@ -6904,18 +6876,10 @@ var $author$project$Types$showStatus = function (status) {
 };
 var $elm$virtual_dom$VirtualDom$text = _VirtualDom_text;
 var $elm$html$Html$text = $elm$virtual_dom$VirtualDom$text;
-var $author$project$Types$Byte1 = function (a) {
-	return {$: 'Byte1', a: a};
-};
-var $author$project$Types$Byte2 = function (a) {
-	return {$: 'Byte2', a: a};
-};
-var $author$project$Types$Byte3 = function (a) {
-	return {$: 'Byte3', a: a};
-};
-var $author$project$Types$Byte4 = function (a) {
-	return {$: 'Byte4', a: a};
-};
+var $author$project$Types$IpAddress$Byte1 = {$: 'Byte1'};
+var $author$project$Types$IpAddress$Byte2 = {$: 'Byte2'};
+var $author$project$Types$IpAddress$Byte3 = {$: 'Byte3'};
+var $author$project$Types$IpAddress$Byte4 = {$: 'Byte4'};
 var $author$project$Types$ChangePort = function (a) {
 	return {$: 'ChangePort', a: a};
 };
@@ -6962,74 +6926,93 @@ var $elm$html$Html$Attributes$size = function (n) {
 		'size',
 		$elm$core$String$fromInt(n));
 };
-var $elm$html$Html$Attributes$type_ = $elm$html$Html$Attributes$stringProperty('type');
 var $elm$html$Html$Attributes$value = $elm$html$Html$Attributes$stringProperty('value');
-var $author$project$Types$ChangeIpAddressByte = function (a) {
-	return {$: 'ChangeIpAddressByte', a: a};
+var $author$project$Types$ChangeIpAddress = function (a) {
+	return {$: 'ChangeIpAddress', a: a};
 };
-var $author$project$Types$NoByte = {$: 'NoByte'};
-var $author$project$Types$insertIpAddressByte = F2(
-	function (b, i) {
-		switch (b.$) {
-			case 'Byte1':
-				return $author$project$Types$Byte1(i);
-			case 'Byte2':
-				return $author$project$Types$Byte2(i);
-			case 'Byte3':
-				return $author$project$Types$Byte3(i);
-			case 'Byte4':
-				return $author$project$Types$Byte4(i);
-			default:
-				return $author$project$Types$NoByte;
+var $elm$core$Maybe$withDefault = F2(
+	function (_default, maybe) {
+		if (maybe.$ === 'Just') {
+			var value = maybe.a;
+			return value;
+		} else {
+			return _default;
 		}
 	});
-var $author$project$View$Connect$changeIp = F2(
-	function (_byte, s) {
-		var mbyte = $elm$core$String$toInt(s);
-		if (mbyte.$ === 'Nothing') {
-			return $author$project$Types$ChangeIpAddressByte($author$project$Types$NoByte);
-		} else {
-			var value = mbyte.a;
-			return ((value < 0) || (value > 255)) ? $author$project$Types$ChangeIpAddressByte($author$project$Types$NoByte) : $author$project$Types$ChangeIpAddressByte(
-				A2($author$project$Types$insertIpAddressByte, _byte, value));
+var $author$project$Types$IpAddress$showIpAddressByte = F2(
+	function (_byte, _v0) {
+		var str = _v0.a;
+		var bytes = $elm$core$Array$fromList(
+			A2($elm$core$String$split, '.', str));
+		switch (_byte.$) {
+			case 'Byte1':
+				return A2(
+					$elm$core$Maybe$withDefault,
+					'0',
+					A2($elm$core$Array$get, 0, bytes));
+			case 'Byte2':
+				return A2(
+					$elm$core$Maybe$withDefault,
+					'0',
+					A2($elm$core$Array$get, 1, bytes));
+			case 'Byte3':
+				return A2(
+					$elm$core$Maybe$withDefault,
+					'0',
+					A2($elm$core$Array$get, 2, bytes));
+			default:
+				return A2(
+					$elm$core$Maybe$withDefault,
+					'0',
+					A2($elm$core$Array$get, 3, bytes));
 		}
+	});
+var $author$project$Types$IpAddress$changeIpAddressByte = F3(
+	function (_byte, ip, str) {
+		var str4 = A2($author$project$Types$IpAddress$showIpAddressByte, $author$project$Types$IpAddress$Byte4, ip);
+		var str3 = A2($author$project$Types$IpAddress$showIpAddressByte, $author$project$Types$IpAddress$Byte3, ip);
+		var str2 = A2($author$project$Types$IpAddress$showIpAddressByte, $author$project$Types$IpAddress$Byte2, ip);
+		var str1 = A2($author$project$Types$IpAddress$showIpAddressByte, $author$project$Types$IpAddress$Byte1, ip);
+		return A2(
+			$elm$core$Maybe$andThen,
+			function (_v0) {
+				switch (_byte.$) {
+					case 'Byte1':
+						return A4($author$project$Types$IpAddress$getIpAddress, str, str2, str3, str4);
+					case 'Byte2':
+						return A4($author$project$Types$IpAddress$getIpAddress, str1, str, str3, str4);
+					case 'Byte3':
+						return A4($author$project$Types$IpAddress$getIpAddress, str1, str2, str, str4);
+					default:
+						return A4($author$project$Types$IpAddress$getIpAddress, str1, str2, str3, str);
+				}
+			},
+			$elm$core$String$toInt(str));
+	});
+var $author$project$View$Connect$changeIpAddress = F3(
+	function (_byte, ip, s) {
+		return $author$project$Types$ChangeIpAddress(
+			A3($author$project$Types$IpAddress$changeIpAddressByte, _byte, ip, s));
 	});
 var $elm$html$Html$Attributes$max = $elm$html$Html$Attributes$stringProperty('max');
 var $elm$html$Html$Attributes$min = $elm$html$Html$Attributes$stringProperty('min');
-var $author$project$Types$showIpAddressByte = function (_byte) {
-	switch (_byte.$) {
-		case 'Byte1':
-			var x = _byte.a;
-			return $elm$core$String$fromInt(x);
-		case 'Byte2':
-			var x = _byte.a;
-			return $elm$core$String$fromInt(x);
-		case 'Byte3':
-			var x = _byte.a;
-			return $elm$core$String$fromInt(x);
-		case 'Byte4':
-			var x = _byte.a;
-			return $elm$core$String$fromInt(x);
-		default:
-			return 'No Byte';
-	}
-};
-var $author$project$View$Connect$viewByteInput = function (_byte) {
-	return A2(
-		$elm$html$Html$input,
-		_List_fromArray(
-			[
-				$elm$html$Html$Attributes$type_('number'),
-				$elm$html$Html$Attributes$max('255'),
-				$elm$html$Html$Attributes$min('0'),
-				$elm$html$Html$Attributes$size(3),
-				$elm$html$Html$Attributes$value(
-				$author$project$Types$showIpAddressByte(_byte)),
-				$elm$html$Html$Events$onInput(
-				$author$project$View$Connect$changeIp(_byte))
-			]),
-		_List_Nil);
-};
+var $author$project$View$Connect$viewByteInput = F2(
+	function (_byte, ip) {
+		return A2(
+			$elm$html$Html$input,
+			_List_fromArray(
+				[
+					$elm$html$Html$Attributes$class('connectInput'),
+					$elm$html$Html$Attributes$max('255'),
+					$elm$html$Html$Attributes$min('0'),
+					$elm$html$Html$Attributes$size(3),
+					$elm$html$Html$Attributes$value(
+					A2($author$project$Types$IpAddress$showIpAddressByte, _byte, ip)),
+					$elm$html$Html$Events$onInput(
+					A2($author$project$View$Connect$changeIpAddress, _byte, ip))
+				]),
+			_List_Nil);
+	});
 var $author$project$Types$ConnectRequest = {$: 'ConnectRequest'};
 var $elm$virtual_dom$VirtualDom$Normal = function (a) {
 	return {$: 'Normal', a: a};
@@ -7112,8 +7095,7 @@ var $author$project$View$Connect$viewConnectMenu = function (model) {
 				_List_fromArray(
 					[
 						$elm$html$Html$text('ip address'),
-						$author$project$View$Connect$viewByteInput(
-						$author$project$Types$Byte1(model.ipAddress.b1)),
+						A2($author$project$View$Connect$viewByteInput, $author$project$Types$IpAddress$Byte1, model.ipAddress),
 						A2(
 						$elm$html$Html$label,
 						_List_Nil,
@@ -7121,8 +7103,7 @@ var $author$project$View$Connect$viewConnectMenu = function (model) {
 							[
 								$elm$html$Html$text('.')
 							])),
-						$author$project$View$Connect$viewByteInput(
-						$author$project$Types$Byte2(model.ipAddress.b2)),
+						A2($author$project$View$Connect$viewByteInput, $author$project$Types$IpAddress$Byte2, model.ipAddress),
 						A2(
 						$elm$html$Html$label,
 						_List_Nil,
@@ -7130,8 +7111,7 @@ var $author$project$View$Connect$viewConnectMenu = function (model) {
 							[
 								$elm$html$Html$text('.')
 							])),
-						$author$project$View$Connect$viewByteInput(
-						$author$project$Types$Byte3(model.ipAddress.b3)),
+						A2($author$project$View$Connect$viewByteInput, $author$project$Types$IpAddress$Byte3, model.ipAddress),
 						A2(
 						$elm$html$Html$label,
 						_List_Nil,
@@ -7139,8 +7119,7 @@ var $author$project$View$Connect$viewConnectMenu = function (model) {
 							[
 								$elm$html$Html$text('.')
 							])),
-						$author$project$View$Connect$viewByteInput(
-						$author$project$Types$Byte4(model.ipAddress.b4))
+						A2($author$project$View$Connect$viewByteInput, $author$project$Types$IpAddress$Byte4, model.ipAddress)
 					])),
 				A2(
 				$elm$html$Html$div,
@@ -7152,7 +7131,7 @@ var $author$project$View$Connect$viewConnectMenu = function (model) {
 						$elm$html$Html$input,
 						_List_fromArray(
 							[
-								$elm$html$Html$Attributes$type_('number'),
+								$elm$html$Html$Attributes$class('connectInput'),
 								$elm$html$Html$Attributes$size(4),
 								$elm$html$Html$Attributes$value(
 								$elm$core$String$fromInt(model.socketPort)),
@@ -7164,7 +7143,7 @@ var $author$project$View$Connect$viewConnectMenu = function (model) {
 						$elm$html$Html$input,
 						_List_fromArray(
 							[
-								$elm$html$Html$Attributes$type_('number'),
+								$elm$html$Html$Attributes$class('connectInput'),
 								$elm$html$Html$Attributes$size(5),
 								$elm$html$Html$Attributes$value(
 								$elm$core$String$fromInt(model.timeout)),

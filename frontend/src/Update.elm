@@ -12,8 +12,6 @@ import Types exposing
     , ModValue (..)
     , Status (..)
     , ModData
-    , IpAddressByte (..)
-    , changeIpAddressByte
     , ConnectStatus(..)
     , decodeConnInfo
     , encodeIpPort
@@ -51,10 +49,9 @@ update msg model =
                 , connectStatus = Connect }
             , Cmd.none
             )
-        ChangeIpAddressByte (NoByte) ->
-            ( { model | status = BadIpAddress }, Cmd.none )
-        ChangeIpAddressByte byte ->
-            ( { model | ipAddress = changeIpAddressByte model.ipAddress byte }, Cmd.none )
+        ChangeIpAddress Nothing -> ( model , Cmd.none )
+        ChangeIpAddress (Just address) ->
+            ( { model | ipAddress = address }, Cmd.none )
         ChangePort portNum ->
             case String.toInt portNum of
                 Nothing -> ( { model | status = BadPort }, Cmd.none )

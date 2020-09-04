@@ -30,7 +30,6 @@ import Types exposing
     , Status (..)
     , showStatus
     , ModData
-    , IpAddressByte(..)
     , ConnectStatus (..)
     , ActiveMenu(..)
     )
