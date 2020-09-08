@@ -34,7 +34,7 @@ import Types.IpAddress exposing
 
 viewConnectMenu : Model -> Html Msg
 viewConnectMenu model =
-    div [ class "activeMenu" , class "connectMenu" ]
+    div [ class "connect_menu_extension", class "menu_bar_extension" ]
         [ table [ class "connectInput" ]
             [ tbody []
                 [ tr [ class "ipAddress" ]

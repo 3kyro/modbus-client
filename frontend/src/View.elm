@@ -12,9 +12,12 @@ import Html exposing
     , thead
     , tbody
     , tfoot
+    , nav
+    , i
     )
 import Html.Attributes exposing
     ( class
+    , classList
     , scope
     , colspan
     )
@@ -38,37 +41,92 @@ import View.Connect exposing (viewConnectMenu)
 
 view : Model -> Html Msg
 view model =
-    div [ class "root" ]
-        [ viewMenu model
-        , div [ class "inputRegisters" ] [viewMultModData model.modData]
-        , div [ class "status" ] [text <| showStatus model.status]
+    div [ class "application" ]
+        [ viewMenuBar model
+        , viewActiveMenu model
+        , viewSideBar
+        , viewTables model
+        , viewStatusBar model
         ]
 
-viewMenu : Model -> Html Msg
-viewMenu model =
-    div [ class "menu" ]
-        [ viewMenuBar
-        , viewActiveMenu model 
-        ]
-
-viewMenuBar : Html Msg
-viewMenuBar =
+viewMenuBar : Model -> Html Msg
+viewMenuBar model =
     div
-        [ class "menuBar" ]
-        [ label [ class "menuButton", onClick <| ChangeActiveMenu ConnectMenu ] [ text "Connect" ]
-        , label [ class "menuButton", onClick <| ChangeActiveMenu ImportRegisters ] [ text "Import" ]
+        [ class "menu_bar" ]
+        [ label
+            [ classList [ ("menu_bar_activated", model.activeMenu == ConnectMenu ) ]
+            , onClick <| ChangeActiveMenu ConnectMenu
+            ] [ text "Connect" ]
+        , label
+            [ classList [ ("menu_bar_activated", model.activeMenu == ImportRegistersMenu ) ]
+            , onClick <| ChangeActiveMenu ImportRegistersMenu
+            ] [ text "Import" ]
         ]
 
 viewActiveMenu : Model -> Html Msg
 viewActiveMenu model =
     case model.activeMenu of
         ConnectMenu -> viewConnectMenu model
-        ImportRegisters -> viewRegistersLoad model
+        ImportRegistersMenu -> viewRegistersLoad model
         NoneActive -> viewEmptyMenu
 
+viewSideBar : Html Msg
+viewSideBar =
+    nav
+        [ class "side_bar" ]
+        [ viewSideBarCsv
+        , viewSideBarRegisters
+        , viewSideBarHeartBeat
+        ]
+
+viewSideBarCsv : Html Msg
+viewSideBarCsv =
+    i
+        [ class "material-icons md-24" ]
+        [ text "input" ]
+
+viewSideBarRegisters : Html Msg
+viewSideBarRegisters =
+    i
+        [ class "material-icons md-24" ]
+        [ text "view_list" ]
+
+viewSideBarHeartBeat : Html Msg
+viewSideBarHeartBeat =
+    i
+        [ class "material-icons md-24" ]
+        [ text "favorite_border" ]
+
+viewTables : Model -> Html Msg
+viewTables model =
+    div [ class "tables" ]
+        [ table [ class "regTable" ]
+            [ thead [] <|
+                [ tr []
+                    [ th [] [ text "Name"]
+                    , th [] [ text "Type" ]
+                    , th [] [ text "Address" ]
+                    , th [] [ text "Value Type" ]
+                    , th [] [ text "Value" ]
+                    , th [] [ text "Unit Id" ]
+                    , th [] [ text "Description" ]
+                    ]
+                ]
+            , tbody [] (List.map viewModData model.modData)
+            , tfoot [onClick <| RefreshRequest model.modData]
+                [ tr []
+                    [ th [scope "row", colspan 7 ] [ text "refresh"]
+                    ]
+                ]
+            ]
+        ]
+
+viewStatusBar : Model -> Html Msg
+viewStatusBar model =
+    div [ class "status_bar" ] [text <| showStatus model.status]
 viewRegistersLoad : Model -> Html Msg
 viewRegistersLoad model =
-    div [ class "activeMenu" ]
+    div [ class "activeMenu" , class "menu_bar_extension" ]
         [ table []
             [ tr []
                 [ label [ onClick CsvRequested ] [ text "Load CSV" ]
@@ -87,31 +145,8 @@ showLoadedFileName model =
         Just name -> text <| "Loaded " ++ name
 
 viewEmptyMenu : Html Msg
-viewEmptyMenu = div [] []
+viewEmptyMenu = text ""
 
-viewMultModData : List ModData -> Html Msg
-viewMultModData mds =
-    div [ class "registers" ]
-        [ table [ class "regTable" ]
-            [ thead [] <|
-                [ tr []
-                    [ th [] [ text "Name"]
-                    , th [] [ text "Type" ]
-                    , th [] [ text "Address" ]
-                    , th [] [ text "Value Type" ]
-                    , th [] [ text "Value" ]
-                    , th [] [ text "Unit Id" ]
-                    , th [] [ text "Description" ]
-                    ]
-                ]
-            , tbody [] (List.map viewModData mds)
-            , tfoot [onClick <| RefreshRequest mds]
-                [ tr []
-                    [ th [scope "row", colspan 7 ] [ text "refresh"]
-                    ]
-                ]
-            ]
-        ]
 
 viewModData : ModData -> Html Msg
 viewModData md =

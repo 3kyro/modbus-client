@@ -1,178 +1,157 @@
-/* spacing */
 html, body {
-    margin: 0px;
-    height:100%;
+    margin: 0px;;
+    width: 100%;
+    height: 100%;
+    font-size: 16px;
 }
 
-html {
-    font-family: 'helvetica neue', helvetica, arial, sans-serif;
-  }
+.application {
+    min-height: 100%;
+    display: grid;
+    grid-template-rows: 30px 90px 100% 90px 30px;
+    grid-template-columns: 60px 1fr;
+    grid-auto-rows: 100px;
+}
 
-/*************************************************************************************************************/
-.menuBar {
-    background-color: rgb(86, 88, 90);
-    width : 100vw;
-    height: 30px;
+.menu_bar {
+    background-color: rgb(90, 90, 90);
+    color: whitesmoke;
+    grid-row-start: 1;
+    grid-row-end:2;
+    grid-column-start: 1;
+    grid-column-end: 3;
     display: flex;
 }
 
-.menuButton {
-    display:inline-flex;
+
+.menu_bar > * {
     user-select: none;
-    height : 100%;
-    color: whitesmoke;
+    padding-left: 5px;
+    padding-right: 5px;
+    margin-top: 0px;
+    margin-bottom: 0px;
+    height: 100%;
+    display:inline-flex;
     text-align:center;
     align-items: center;
-    padding-left: 10px;
-    padding-right: 10px;
-
 }
-.menuBar label:hover {
+
+.menu_bar_activated {
+    background-color: rgb(126, 124, 124);
+}
+
+.menu_bar > *:hover {
+    background-color: rgb(126, 124, 124);
     cursor: pointer;
-    background-color: rgb(125, 128, 131);
 }
 
-/*************************************************************************************************************/
-.activeMenu {
-    width : 100vw;
-    background-color: rgb(76, 78, 80);
-    font-size: small;
-}
-
-table.connectInput {
-    table-layout: fixed;
-    width: 70%;
-    border-collapse: collapse;
-    border: 0px solid;
-    border-left: 1px solid grey;
-    border-right: 1px solid grey;
-    margin: 5px;
+.menu_bar_extension {
+    background-color: rgb(126, 124, 124);
     color: whitesmoke;
-    user-select: none;
-}
-
-table.connectInput:nth-child(1) {
-    width: 20%;
-}
-
-
-.connectValueInput {
-    background-color: rgb(125, 128, 131);
-    color: whitesmoke;
-    border-style: none;
-    margin-left: 5px;
-    margin-right: 5px;
-    text-align: right;
-    padding: 0px;
-}
-
-.connectButtons {
-    border-right: 2px solid grey;
-    padding: 5px;
-    user-select: none;
-}
-
-.connectButtons > * {
-    padding: 5px;
-    width: 120px;
-    text-align: center;
-}
-
-.status {
-    background-color: rgb(37, 39, 41);
-    color: whitesmoke;
-    width: 100vw;
-    position: fixed;
-    bottom: 0px;
-    font-size: 80%;
-    border: none;
-    padding: 1%;
-}
-
-.connectMenu {
+    grid-row-start: 2;
+    grid-row-end:3;
+    grid-column-start: 1;
+    grid-column-end: 3;
+    z-index: 2;
     display: flex;
 }
 
-.Connect {
-    background-color: #587093;
+.connect_menu_extension {
+
+}
+
+.side_bar {
+    background-color: rgb(70, 70, 70);
+    color: whitesmoke;
+    grid-row-start: 2;
+    grid-row-end:5;
+    grid-column-start: 1;
+    grid-column-end: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.side_bar > * {
+    color: rgba(0, 0, 0, 0.54);
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+
+.side_bar > *:hover {
+    color: rgba(255, 255, 255, 1);
     cursor: pointer;
 }
 
-.Connecting {
-    background-color: orange;
+.tables {
+    background-color: rgb(45, 41, 49);
+    color: whitesmoke;
+    grid-row-start: 2;
+    grid-row-end: 5;
+    grid-column-start: 2;
+    grid-column-end: 3;
 }
 
-.Connected {
-    background-color: limegreen;
+.status_bar {
+    background-color: rgb(105, 75, 109);
+    color: whitesmoke;
+    grid-row-start: 5;
+    grid-row-end: 6;
+    grid-column-start:1;
+    grid-column-end: 3;
 }
 
-.Disconnect {
-    background-color: rgb(103, 105, 107);
+.status_bar_expanded {
+    grid-row-start: 4;
+    grid-row-end: 5;
+    grid-column-start:2;
+    grid-column-end: 3;
+
 }
 
 /*****************************************************************************************/
 
-.importRegister input {
-    opacity: 0;
+
+
+
+
+@font-face {
+    font-family: 'Material Icons';
+    font-style: normal;
+    font-weight: 400;
+    src: local('Material Icons'),
+      local('MaterialIcons-Regular'),
+      url(font/MaterialIcons-Regular.woff2) format('woff2'),
+      url(font/MaterialIcons-Regular.woff) format('woff'),
+      url(font/MaterialIcons-Regular.ttf) format('truetype');
+  }
+
+.material-icons {
+    font-family: 'Material Icons';
+    font-weight: normal;
+    font-style: normal;
+    font-size: 24px;  /* Preferred icon size */
+    display: inline-block;
+    line-height: 1;
+    text-transform: none;
+    letter-spacing: normal;
+    word-wrap: normal;
+    white-space: nowrap;
+    direction: ltr;
+
+    /* Support for all WebKit browsers. */
+    -webkit-font-smoothing: antialiased;
+    /* Support for Safari and Chrome. */
+    text-rendering: optimizeLegibility;
+
+    /* Support for Firefox. */
+    -moz-osx-font-smoothing: grayscale;
+
+    /* Support for IE. */
+    font-feature-settings: 'liga';
 }
 
-table.regTable {
-    table-layout: fixed;
-    width: 70%;
-    border-collapse: collapse;
-    border: 1px solid;
-    margin: 5px;
-  }
-
-.regTable thead th:nth-child(1) {
-    width: 5%;
-  }
-
-.regTable thead th:nth-child(2) {
-    width: 10%;
-  }
-
-.regTable thead th:nth-child(3) {
-    width: 5%;
-  }
-
-.regTable thead th:nth-child(4) {
-    width: 10%;
-  }
-
-.regTable thead th:nth-child(5) {
-    width: 5%;
-  }
-
-.regTable thead th:nth-child(6) {
-    width: 5%;
-  }
-
-.regTable th, td {
-    padding: 1px;
-  }
-
-  /* typography */
-
-
-
-
-.regTable tbody td {
-    text-align: center;
-  }
-
-.regTable tfoot th {
-    text-align: center;
-    cursor: pointer;
-  }
-
-
-.regTable thead, tfoot {
-      background-color: #587093;
-      color: whitesmoke;
-  }
-
-.regTable tbody tr:nth-child(even) {
-    background-color: #c0c3c6
-  }
-
+.material-icons.md-18 { font-size: 18px; }
+.material-icons.md-24 { font-size: 24px; }
+.material-icons.md-36 { font-size: 36px; }
+.material-icons.md-48 { font-size: 48px; }

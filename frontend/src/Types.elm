@@ -206,7 +206,7 @@ decodeRegType =
 type ActiveMenu
     = NoneActive
     | ConnectMenu
-    | ImportRegisters
+    | ImportRegistersMenu
 
 getChangedMenu : Model -> ActiveMenu -> ActiveMenu
 getChangedMenu model newActive =
