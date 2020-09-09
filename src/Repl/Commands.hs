@@ -1,4 +1,9 @@
-module Repl.Commands where
+module Repl.Commands
+    ( commandsCompl
+    ,getCommand
+    , cmd
+    , list
+    ) where
 
 import Control.Monad.Trans (liftIO, lift)
 import Control.Monad.Trans.Except (except)
@@ -30,29 +35,46 @@ import Repl.Heartbeat (heartbeat, stopHeartbeat, listHeartbeat)
 import Repl.HelpFun (invalidCmd, getModByPair, getPairs, getModByName)
 import Types
 
+getCommand :: String -> Command
+getCommand s =
+    case s of
+        "readInputRegistersWord" -> ReadInputRegistersWord
+        "readInputRegistersFloat" -> ReadInputRegistersFloat
+        "readHoldingRegistersFloat" -> ReadHoldingRegistersFloat
+        "readHoldingRegistersWord" -> ReadHoldingRegistersWord
+        "writeRegistersWord" -> WriteRegistersWord
+        "writeRegistersFloat" -> WriteRegistersFloat
+        "read" -> Read
+        "write" -> Write
+        "heartbeat" -> Heartbeat
+        "stopHeartbeat" -> StopHeartbeat
+        "listHeartbeat" -> ListHeartbeat
+        "import" -> Import
+        "export" -> Export
+        "id" -> Id
+        _ -> CommandNotFound
+
 -- Top level command function
 cmd :: String -> Repl ()
-cmd input = 
-  let 
-    (command, args) = (fromJust . uncons . words) input
-  in case command of
-        "readInputRegistersWord" -> readRegistersWord InputRegister args
-        "readInputRegistersFloat" -> readRegistersFloat InputRegister args
-        "readHoldingRegistersWord" -> readRegistersWord HoldingRegister args
-        "readHoldingRegistersFloat" -> readRegistersFloat HoldingRegister args
-        "writeSingleRegisterWord" -> writeSingleRegisterWord args
-        "writeMultipleRegistersWord" -> writeMultipleRegistersWord args
-        "writeSingleRegisterFloat" -> writeSingleRegisterFloat args
-        "writeMultipleRegistersFloat" -> writeMultipleRegistersFloat args
-        "read" -> readModData args
-        "write" -> writeModData args
-        "heartbeat" -> heartbeat args
-        "stopHeartbeat" -> stopHeartbeat args
-        "listHeartbeat" -> listHeartbeat args
-        "import" -> replImport args
-        "export" -> replExport args
-        "id" -> replId args
-        _ -> liftIO $ putStrLn ("command not found: " ++ command)
+cmd input =
+  let
+    (str, args) = (fromJust . uncons . words) input
+  in case getCommand str of
+        ReadInputRegistersWord -> readRegistersWord InputRegister args
+        ReadInputRegistersFloat -> readRegistersFloat InputRegister args
+        ReadHoldingRegistersWord -> readRegistersWord HoldingRegister args
+        ReadHoldingRegistersFloat -> readRegistersFloat HoldingRegister args
+        WriteRegistersWord -> writeMultipleRegistersWord args
+        WriteRegistersFloat -> writeMultipleRegistersFloat args
+        Read -> readModData args
+        Write -> writeModData args
+        Heartbeat -> heartbeat args
+        StopHeartbeat -> stopHeartbeat args
+        ListHeartbeat -> listHeartbeat args
+        Import -> replImport args
+        Export -> replExport args
+        Id -> replId args
+        CommandNotFound -> liftIO $ putStrLn ("command not found: " ++ str)
 
 commandsCompl :: [String]
 commandsCompl = [
@@ -60,10 +82,8 @@ commandsCompl = [
     , "readInputRegistersFloat"
     , "readHoldingRegistersWord"
     , "readHoldingRegistersFloat"
-    , "writeSingleRegistersWord"
-    , "writeMultipleRegistersWord"
-    , "writeSingleRegisterFloat"
-    , "writeMultipleRegistersFloat"
+    , "writeRegistersWord"
+    , "writeRegistersFloat"
     , "read"
     , "write"
     , "heartbeat"
@@ -115,20 +135,10 @@ readRegistersFloat rt [address, number] = do
     toModFloat xs = ModFloat . Just <$> xs
 readRegistersFloat _ _ = invalidCmd
 
-writeSingleRegisterWord :: [String] -> Repl ()
-writeSingleRegisterWord [address, regValue] =
-    replWriteRegisters address [regValue] (ModWord Nothing)
-writeSingleRegisterWord _ = invalidCmd
-
 writeMultipleRegistersWord :: [String] -> Repl ()
 writeMultipleRegistersWord (address:values) =
-    replWriteRegisters address values (ModWord Nothing) 
+    replWriteRegisters address values (ModWord Nothing)
 writeMultipleRegistersWord _ = invalidCmd
-
-writeSingleRegisterFloat :: [String] -> Repl ()
-writeSingleRegisterFloat [address, regValue] = 
-    replWriteRegisters address [regValue] (ModFloat Nothing)
-writeSingleRegisterFloat _ = invalidCmd
 
 writeMultipleRegistersFloat :: [String] -> Repl ()
 writeMultipleRegistersFloat (address:values) = 

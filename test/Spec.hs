@@ -1,11 +1,12 @@
-import CsvParserSpec 
-import Test.Hspec
-import ModbusSpec
+import CsvParserSpec ( csvParserSpec ) 
+import Test.Hspec ( hspec, Spec )
+import ReplSpec (replSpec)
 
 main :: IO ()
 main = do
     hspec spec
-    modbusSpec
+    replSpec
+
 
 spec :: Spec
 spec = csvParserSpec

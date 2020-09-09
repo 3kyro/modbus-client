@@ -1,41 +1,61 @@
 module Repl.Help
     ( help
     , helpCompl
+    , getHelpCmd
+    , helpOutputs
     ) where
 
 import Control.Monad.Trans (liftIO)
 
-import Types (Repl)
-import Repl.Commands (commandsCompl)
+import Types (Repl, Command (..))
+import Repl.Commands (commandsCompl, getCommand)
 
 -- Top level help command
 help :: [String] -> Repl ()
 help args = liftIO $ putStrLn "" >> mapM_ helpCmd args
 
+getHelpCmd :: String -> String
+getHelpCmd str =
+    case getCommand str of
+        ReadInputRegistersWord -> hReadInputRegistersWord
+        ReadInputRegistersFloat -> hReadInputRegistersFloat
+        ReadHoldingRegistersWord -> hReadHoldingRegistersWord
+        ReadHoldingRegistersFloat -> hReadHoldingRegistersFloat
+        WriteRegistersWord -> hWriteRegistersWord
+        WriteRegistersFloat -> hWriteRegistersFloat
+        Read -> hRead
+        Write -> hWrite
+        Heartbeat -> hHeartbeat
+        StopHeartbeat -> hStopHeartbeat
+        ListHeartbeat -> hListHeartbeat
+        Import -> hImport
+        Export -> hExport
+        Id -> hId
+        CommandNotFound -> "Command \"" ++ str ++"\" not found"
+
 helpCmd :: String -> IO ()
 helpCmd [] = putStrLn helpMessage
-helpCmd arg =
-  let
-    command = case arg of
-        "readInputRegistersWord" -> hReadInputRegistersWord
-        "readInputRegistersFloat" -> hReadInputRegistersFloat
-        "readHoldingRegistersWord" -> hReadHoldingRegistersWord
-        "readHoldingRegistersFloat" -> hReadHoldingRegistersFloat
-        "writeSingleRegisterWord" -> hWriteSingleRegisterWord
-        "writeSingleRegisterFloat" -> hWriteSingleRegisterFloat
-        "writeMultipleRegistersWord" -> hWriteMultipleRegistersWord
-        "writeMultipleRegistersFloat" -> hWriteMultipleRegistersFloat
-        "read" -> hRead
-        "write" -> hWrite
-        "heartbeat" -> hHeartbeat
-        "stopHeartbeat" -> hStopHeartbeat
-        "listHeartbeat" -> hListHeartbeat
-        "import" -> hImport
-        "export" -> hExport
-        "id" -> hId
-        _ -> "Command \"" ++ arg ++"\" not found"
-  in
-    putStrLn command
+helpCmd arg = putStrLn $ getHelpCmd arg
+
+-- A list of all possible help outputs
+-- Used for testing
+helpOutputs :: [String]
+helpOutputs =
+    [ hReadInputRegistersWord
+    , hReadInputRegistersFloat
+    , hReadHoldingRegistersWord
+    , hReadHoldingRegistersFloat
+    , hWriteRegistersWord
+    , hWriteRegistersFloat
+    , hRead
+    , hWrite
+    , hHeartbeat
+    , hStopHeartbeat
+    , hListHeartbeat
+    , hImport
+    , hExport
+    , hId
+    ]
 
 helpMessage :: String
 helpMessage =
@@ -47,48 +67,42 @@ hReadInputRegistersWord =
     "readInputRegistersWord:\n"
     ++ "Read values of word type from the provided input registers\n"
     ++ "Usage: readInputRegistersWord [Starting address] [Number of registers]\n"
+    ++ "e.g. readInputRegistersWord 3001 10\n"
 
 hReadInputRegistersFloat :: String
 hReadInputRegistersFloat =
     "readInputRegistersFloat:\n"
     ++ "Read values of float type from the provided input registers\n"
     ++ "Usage: readInputRegistersFloat [Starting address] [Number of registers]\n"
+    ++ "e.g. readInputRegistersFloat 3001 10\n"
 
 hReadHoldingRegistersWord :: String
-hReadHoldingRegistersWord = 
+hReadHoldingRegistersWord =
     "readHoldingRegistersWord:\n"
     ++ "Read values of word type from the provided holding registers\n"
     ++ "Usage: readHoldingRegistersWord [Starting address] [Number of registers]\n"
+    ++ "e.g. readHoldingRegistersWord 3001 10\n"
 
 hReadHoldingRegistersFloat :: String
 hReadHoldingRegistersFloat =
     "readHoldingRegistersFloat:\n"
     ++ "Read values of float type from the provided holding registers\n"
     ++ "Usage: readHoldingRegistersFloat [Starting address] [Number of registers]\n"
-    
-hWriteSingleRegisterWord :: String
-hWriteSingleRegisterWord =
-    "writeSingleRegisterWord:\n"
-    ++ "Write a single values of word type to the provided register\n"
-    ++ "Usage: writeSingleRegisterWord [register address] [word value]\n"
+    ++ "e.g. readHoldingRegistersFloat 3001 10\n"
 
-hWriteMultipleRegistersWord :: String
-hWriteMultipleRegistersWord =
-    "writeMultipleRegistersWord:\n"
+hWriteRegistersWord :: String
+hWriteRegistersWord =
+    "writeRegistersWord:\n"
     ++ "Write multiple values of word type, starting from the provided address\n"
     ++ "Usage: writeSingleRegisterWord [starting address] [word values ..]\n"
-    
-hWriteSingleRegisterFloat :: String
-hWriteSingleRegisterFloat =
-    "writeSingleRegisterFloat:\n"
-    ++ "Write a single values of float type to the provided register\n"
-    ++ "Usage: writeSingleRegisterFloat [register address] [float value]\n"
+    ++ "e.g. writeRegistersWord 1001 1 2 3\n"
 
-hWriteMultipleRegistersFloat :: String
-hWriteMultipleRegistersFloat =
-    "writeMultipleRegistersFloat:\n"
+hWriteRegistersFloat :: String
+hWriteRegistersFloat =
+    "writeRegistersFloat:\n"
     ++ "Write multiple values of float type, starting from the provided address\n"
     ++ "Usage: writeSingleRegisterFloat [starting address] [float values ..]\n"
+    ++ "e.g. writeRegistersWord 1001 1.1 2.1 3.4\n"
 
 hRead :: String
 hRead =

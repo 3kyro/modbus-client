@@ -7,15 +7,29 @@ import Data.Char
 import Data.Either (isLeft,)
 import Data.List (intercalate)
 import Data.Word (Word8, Word16)
-import Test.Hspec
-import Test.QuickCheck 
+import Test.Hspec ( describe, it, shouldBe, shouldSatisfy, Spec )
+import Test.QuickCheck ( (==>), Property, Testable(property) ) 
 import Text.Parsec (ParseError)
 
 import qualified Data.Text as T
 
 import CsvParser
+    ( testCSVParser,
+      pCSV,
+      pModData,
+      pName,
+      pRegType,
+      pWord,
+      pValue,
+      pMaybeFloat,
+      pFloat,
+      pMaybeWord,
+      pDesc,
+      field,
+      only )
 import Types
-import TestHelper
+    ( NameArb(unNA), ModValue(..), ModData(ModData), RegType )
+import TestHelper ( TestShow(tShow) )
 import Text.Parsec.Text (Parser)
 
 csvParserSpec :: Spec

@@ -5,6 +5,7 @@ module Types.Repl
     , ReplArg (..)
     , ThreadState (..)
     , replAsk
+    , Command (..)
     ) where
 
 import Control.Concurrent (MVar, ThreadId)
@@ -58,3 +59,20 @@ data ReplArg
 replAsk :: Repl ReplConfig
 replAsk = lift $ lift ask
 
+data Command
+    = ReadInputRegistersWord
+    | ReadInputRegistersFloat
+    | ReadHoldingRegistersWord
+    | ReadHoldingRegistersFloat
+    | WriteRegistersWord
+    | WriteRegistersFloat
+    | Read
+    | Write
+    | Heartbeat
+    | StopHeartbeat
+    | ListHeartbeat
+    | Import
+    | Export
+    | Id
+    | CommandNotFound
+    deriving (Eq, Show)
