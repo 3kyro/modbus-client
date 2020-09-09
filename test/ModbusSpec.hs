@@ -9,7 +9,7 @@ import Types
 import TestHelper ()
 
 modbusSpec :: IO ()
-modbusSpec = undefined
+modbusSpec = hspec modSessionSpec
 
 modSessionSpec :: Spec
 modSessionSpec =
@@ -18,4 +18,4 @@ modSessionSpec =
     $ property prop_modSession_valid_inputs
 
 prop_modSession_valid_inputs :: [ModData] -> Bool
-prop_modSession_valid_inputs md = undefined
+prop_modSession_valid_inputs _ = undefined

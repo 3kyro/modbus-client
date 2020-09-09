@@ -19,6 +19,12 @@ import PrettyPrint (ppError)
 import Repl (runRepl)
 import Server (runServer)
 import Types
+    ( serializeModData
+    , ByteOrder
+    , ModData
+    , ReplConfig(Config)
+    , ReplState(ReplState)
+    )
 
 main :: IO ()
 main = runApp =<< runOpts
