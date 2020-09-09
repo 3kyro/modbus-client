@@ -55,10 +55,6 @@ html, body {
     display: flex;
 }
 
-.connect_menu_extension {
-
-}
-
 .side_bar {
     background-color: rgb(70, 70, 70);
     color: whitesmoke;
@@ -116,10 +112,26 @@ html, body {
 }
 
 /*****************************************************************************************/
+/* Connect Buttons */
 
+.Connect {
+    background-color: #587093;
+    cursor: pointer;
+}
 
+.Connecting {
+    background-color: orange;
+}
 
+.Connected {
+    background-color: limegreen;
+}
 
+.Disconnect {
+    background-color: rgb(103, 105, 107);
+}
+
+/*****************************************************************************************/
 
 @font-face {
     font-family: 'Material Icons';
