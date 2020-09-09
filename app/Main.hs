@@ -48,6 +48,6 @@ runModDataApp addr tm order md =
 runReplApp :: S.SockAddr -> Int -> ByteOrder -> [ModData] -> Word8 -> IO ()
 runReplApp addr tm order mdata uid =
     withSocket addr $ \s ->
-        runRepl (Config (modbusConnection s tm) addr order tm) (ReplState mdata uid [])
+        runRepl (Config (modbusConnection s tm) addr order tm) (ReplState mdata uid [] 0)
 
 

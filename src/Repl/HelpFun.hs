@@ -13,6 +13,11 @@ import Data.List (find)
 import PrettyPrint (ppStrWarning)
 import Repl.Parser (pReplDesc, pReplFloat, pReplWord)
 import Types
+    ( ModData (..)
+    , ModValue(..)
+    , Repl
+    , AppError(..)
+    )
 
 -- Parse a ModData name and lookup in a list of ModData if it exists
 getModByName :: [ModData] -> String -> Either AppError ModData

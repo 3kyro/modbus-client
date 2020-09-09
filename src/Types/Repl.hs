@@ -38,9 +38,10 @@ data ThreadState = ThreadState
     } deriving (Eq)
 
 data ReplState = ReplState
-    { replModData    :: ![ModData]
-    , replUId        :: !Word8
-    , replPool       :: ![ThreadState]
+    { replModData       :: ![ModData]
+    , replUId           :: !Word8
+    , replPool          :: ![ThreadState]
+    , replTransactionId :: !Word16
     }
 
 data ReplConfig = Config
