@@ -46,6 +46,7 @@ view model =
         , viewActiveMenu model
         , viewSideBar
         , viewTables model
+        , viewCommandBar
         , viewStatusBar model
         ]
 
@@ -120,6 +121,10 @@ viewTables model =
                 ]
             ]
         ]
+
+viewCommandBar : Html Msg
+viewCommandBar =
+    div [ class "command_bar" ] []
 
 viewStatusBar : Model -> Html Msg
 viewStatusBar model =

@@ -9,7 +9,7 @@ html, body {
     min-height: 100%;
     display: grid;
     grid-template-rows: 30px 90px 100% 90px 30px;
-    grid-template-columns: 60px 1fr;
+    grid-template-columns: 60px 2fr 1fr;
     grid-auto-rows: 100px;
 }
 
@@ -19,10 +19,9 @@ html, body {
     grid-row-start: 1;
     grid-row-end:2;
     grid-column-start: 1;
-    grid-column-end: 3;
+    grid-column-end: 4;
     display: flex;
 }
-
 
 .menu_bar > * {
     user-select: none;
@@ -92,20 +91,27 @@ html, body {
     grid-column-end: 3;
 }
 
+.command_bar {
+    background-color: rgb(70, 70, 70);
+    grid-row: 2 / 5;
+    grid-column: 3 / 4;
+
+}
+
 .status_bar {
     background-color: rgb(105, 75, 109);
     color: whitesmoke;
     grid-row-start: 5;
     grid-row-end: 6;
     grid-column-start:1;
-    grid-column-end: 3;
+    grid-column-end: 4;
 }
 
 .status_bar_expanded {
     grid-row-start: 4;
     grid-row-end: 5;
-    grid-column-start:2;
-    grid-column-end: 3;
+    grid-column-start: 1;
+    grid-column-end: 4;
 
 }
 

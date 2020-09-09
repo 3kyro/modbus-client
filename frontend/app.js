@@ -7680,6 +7680,13 @@ var $author$project$View$viewActiveMenu = function (model) {
 			return $author$project$View$viewEmptyMenu;
 	}
 };
+var $author$project$View$viewCommandBar = A2(
+	$elm$html$Html$div,
+	_List_fromArray(
+		[
+			$elm$html$Html$Attributes$class('command_bar')
+		]),
+	_List_Nil);
 var $author$project$Types$ChangeActiveMenu = function (a) {
 	return {$: 'ChangeActiveMenu', a: a};
 };
@@ -8084,6 +8091,7 @@ var $author$project$View$view = function (model) {
 				$author$project$View$viewActiveMenu(model),
 				$author$project$View$viewSideBar,
 				$author$project$View$viewTables(model),
+				$author$project$View$viewCommandBar,
 				$author$project$View$viewStatusBar(model)
 			]));
 };
