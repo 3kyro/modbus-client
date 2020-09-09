@@ -103,6 +103,8 @@ update msg model =
 
         ChangeActiveMenu menu -> ( { model | activeMenu = getChangedMenu model menu }, Cmd.none )
 
+        ChangeActiveTable table -> ( { model | activeTable = table }, Cmd.none )
+
         CsvRequested -> ( model , Select.file [] CsvSelected )
 
         CsvSelected file ->

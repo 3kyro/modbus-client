@@ -14,6 +14,7 @@ module Types exposing
     , encodeRegister
     , decodeModData
     , ActiveMenu (..)
+    , ActiveTable (..)
     , getChangedMenu
     , encodeIpPort
     )
@@ -43,6 +44,7 @@ type Msg
     | DisconnectRequest
     | DisconnectedResponse (Result Http.Error () )
     | ChangeActiveMenu ActiveMenu
+    | ChangeActiveTable ActiveTable
     | CsvRequested
     | CsvSelected File
     | CsvLoaded String
@@ -57,6 +59,7 @@ type alias Model =
     , socketPort : Maybe Int
     , timeout : Maybe Int
     , activeMenu : ActiveMenu
+    , activeTable : ActiveTable
     , csvFileName : Maybe String
     , csvContent : Maybe String
     }
@@ -216,3 +219,8 @@ getChangedMenu model newActive =
         NoneActive
     else
         newActive
+
+type ActiveTable
+    = ModDataTable
+    | RegisterTable
+    | HeartbeatTable

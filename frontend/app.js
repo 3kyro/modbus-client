@@ -6531,6 +6531,7 @@ var $author$project$Update$connectionInfoRequest = $elm$http$Http$get(
 var $author$project$Update$initCmd = $author$project$Update$connectionInfoRequest;
 var $author$project$Types$AllGood = {$: 'AllGood'};
 var $author$project$Types$Connect = {$: 'Connect'};
+var $author$project$Types$ModDataTable = {$: 'ModDataTable'};
 var $author$project$Types$NoneActive = {$: 'NoneActive'};
 var $author$project$Types$IpAddress$defaultIpAddr = A4(
 	$author$project$Types$IpAddress$IpAddress,
@@ -6582,6 +6583,7 @@ var $author$project$App$initModData = _List_fromArray(
 	]);
 var $author$project$App$initModel = {
 	activeMenu: $author$project$Types$NoneActive,
+	activeTable: $author$project$Types$ModDataTable,
 	connectStatus: $author$project$Types$Connect,
 	csvContent: $elm$core$Maybe$Nothing,
 	csvFileName: $elm$core$Maybe$Nothing,
@@ -7175,6 +7177,13 @@ var $author$project$Update$update = F2(
 							activeMenu: A2($author$project$Types$getChangedMenu, model, menu)
 						}),
 					$elm$core$Platform$Cmd$none);
+			case 'ChangeActiveTable':
+				var table = msg.a;
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{activeTable: table}),
+					$elm$core$Platform$Cmd$none);
 			case 'CsvRequested':
 				return _Utils_Tuple2(
 					model,
@@ -7680,159 +7689,14 @@ var $author$project$View$viewActiveMenu = function (model) {
 			return $author$project$View$viewEmptyMenu;
 	}
 };
-var $author$project$View$viewCommandBar = A2(
-	$elm$html$Html$div,
-	_List_fromArray(
-		[
-			$elm$html$Html$Attributes$class('command_bar')
-		]),
-	_List_Nil);
-var $author$project$Types$ChangeActiveMenu = function (a) {
-	return {$: 'ChangeActiveMenu', a: a};
-};
-var $author$project$Types$ConnectMenu = {$: 'ConnectMenu'};
-var $author$project$Types$ImportRegistersMenu = {$: 'ImportRegistersMenu'};
-var $elm$core$List$filter = F2(
-	function (isGood, list) {
-		return A3(
-			$elm$core$List$foldr,
-			F2(
-				function (x, xs) {
-					return isGood(x) ? A2($elm$core$List$cons, x, xs) : xs;
-				}),
-			_List_Nil,
-			list);
-	});
-var $elm$core$Tuple$second = function (_v0) {
-	var y = _v0.b;
-	return y;
-};
-var $elm$html$Html$Attributes$classList = function (classes) {
-	return $elm$html$Html$Attributes$class(
-		A2(
-			$elm$core$String$join,
-			' ',
-			A2(
-				$elm$core$List$map,
-				$elm$core$Tuple$first,
-				A2($elm$core$List$filter, $elm$core$Tuple$second, classes))));
-};
-var $author$project$View$viewMenuBar = function (model) {
+var $author$project$View$viewHeartbeatTable = function (model) {
 	return A2(
 		$elm$html$Html$div,
 		_List_fromArray(
 			[
-				$elm$html$Html$Attributes$class('menu_bar')
+				$elm$html$Html$Attributes$class('tables')
 			]),
-		_List_fromArray(
-			[
-				A2(
-				$elm$html$Html$label,
-				_List_fromArray(
-					[
-						$elm$html$Html$Attributes$classList(
-						_List_fromArray(
-							[
-								_Utils_Tuple2(
-								'menu_bar_activated',
-								_Utils_eq(model.activeMenu, $author$project$Types$ConnectMenu))
-							])),
-						$elm$html$Html$Events$onClick(
-						$author$project$Types$ChangeActiveMenu($author$project$Types$ConnectMenu))
-					]),
-				_List_fromArray(
-					[
-						$elm$html$Html$text('Connect')
-					])),
-				A2(
-				$elm$html$Html$label,
-				_List_fromArray(
-					[
-						$elm$html$Html$Attributes$classList(
-						_List_fromArray(
-							[
-								_Utils_Tuple2(
-								'menu_bar_activated',
-								_Utils_eq(model.activeMenu, $author$project$Types$ImportRegistersMenu))
-							])),
-						$elm$html$Html$Events$onClick(
-						$author$project$Types$ChangeActiveMenu($author$project$Types$ImportRegistersMenu))
-					]),
-				_List_fromArray(
-					[
-						$elm$html$Html$text('Import')
-					]))
-			]));
-};
-var $elm$html$Html$nav = _VirtualDom_node('nav');
-var $elm$html$Html$i = _VirtualDom_node('i');
-var $author$project$View$viewSideBarCsv = A2(
-	$elm$html$Html$i,
-	_List_fromArray(
-		[
-			$elm$html$Html$Attributes$class('material-icons md-24')
-		]),
-	_List_fromArray(
-		[
-			$elm$html$Html$text('input')
-		]));
-var $author$project$View$viewSideBarHeartBeat = A2(
-	$elm$html$Html$i,
-	_List_fromArray(
-		[
-			$elm$html$Html$Attributes$class('material-icons md-24')
-		]),
-	_List_fromArray(
-		[
-			$elm$html$Html$text('favorite_border')
-		]));
-var $author$project$View$viewSideBarRegisters = A2(
-	$elm$html$Html$i,
-	_List_fromArray(
-		[
-			$elm$html$Html$Attributes$class('material-icons md-24')
-		]),
-	_List_fromArray(
-		[
-			$elm$html$Html$text('view_list')
-		]));
-var $author$project$View$viewSideBar = A2(
-	$elm$html$Html$nav,
-	_List_fromArray(
-		[
-			$elm$html$Html$Attributes$class('side_bar')
-		]),
-	_List_fromArray(
-		[$author$project$View$viewSideBarCsv, $author$project$View$viewSideBarRegisters, $author$project$View$viewSideBarHeartBeat]));
-var $author$project$Types$showStatus = function (status) {
-	switch (status.$) {
-		case 'AllGood':
-			return 'all good';
-		case 'Loading':
-			return 'getting stuff from the server';
-		case 'Bad':
-			var err = status.a;
-			return err;
-		case 'BadIpAddress':
-			return 'Invalid ip address';
-		case 'BadPort':
-			return 'Bad Port';
-		default:
-			return 'Bad Timeout';
-	}
-};
-var $author$project$View$viewStatusBar = function (model) {
-	return A2(
-		$elm$html$Html$div,
-		_List_fromArray(
-			[
-				$elm$html$Html$Attributes$class('status_bar')
-			]),
-		_List_fromArray(
-			[
-				$elm$html$Html$text(
-				$author$project$Types$showStatus(model.status))
-			]));
+		_List_Nil);
 };
 var $author$project$Types$RefreshRequest = function (a) {
 	return {$: 'RefreshRequest', a: a};
@@ -7966,7 +7830,7 @@ var $author$project$View$viewModData = function (md) {
 					]))
 			]));
 };
-var $author$project$View$viewTables = function (model) {
+var $author$project$View$viewModDataTable = function (model) {
 	return A2(
 		$elm$html$Html$div,
 		_List_fromArray(
@@ -8078,6 +7942,191 @@ var $author$project$View$viewTables = function (model) {
 					]))
 			]));
 };
+var $author$project$View$viewRegisterTable = function (model) {
+	return A2(
+		$elm$html$Html$div,
+		_List_fromArray(
+			[
+				$elm$html$Html$Attributes$class('tables')
+			]),
+		_List_Nil);
+};
+var $author$project$View$viewActiveTable = function (model) {
+	var _v0 = model.activeTable;
+	switch (_v0.$) {
+		case 'ModDataTable':
+			return $author$project$View$viewModDataTable(model);
+		case 'RegisterTable':
+			return $author$project$View$viewRegisterTable(model);
+		default:
+			return $author$project$View$viewHeartbeatTable(model);
+	}
+};
+var $author$project$View$viewCommandBar = A2(
+	$elm$html$Html$div,
+	_List_fromArray(
+		[
+			$elm$html$Html$Attributes$class('command_bar')
+		]),
+	_List_Nil);
+var $author$project$Types$ChangeActiveMenu = function (a) {
+	return {$: 'ChangeActiveMenu', a: a};
+};
+var $author$project$Types$ConnectMenu = {$: 'ConnectMenu'};
+var $author$project$Types$ImportRegistersMenu = {$: 'ImportRegistersMenu'};
+var $elm$core$List$filter = F2(
+	function (isGood, list) {
+		return A3(
+			$elm$core$List$foldr,
+			F2(
+				function (x, xs) {
+					return isGood(x) ? A2($elm$core$List$cons, x, xs) : xs;
+				}),
+			_List_Nil,
+			list);
+	});
+var $elm$core$Tuple$second = function (_v0) {
+	var y = _v0.b;
+	return y;
+};
+var $elm$html$Html$Attributes$classList = function (classes) {
+	return $elm$html$Html$Attributes$class(
+		A2(
+			$elm$core$String$join,
+			' ',
+			A2(
+				$elm$core$List$map,
+				$elm$core$Tuple$first,
+				A2($elm$core$List$filter, $elm$core$Tuple$second, classes))));
+};
+var $author$project$View$viewMenuBar = function (model) {
+	return A2(
+		$elm$html$Html$div,
+		_List_fromArray(
+			[
+				$elm$html$Html$Attributes$class('menu_bar')
+			]),
+		_List_fromArray(
+			[
+				A2(
+				$elm$html$Html$label,
+				_List_fromArray(
+					[
+						$elm$html$Html$Attributes$classList(
+						_List_fromArray(
+							[
+								_Utils_Tuple2(
+								'menu_bar_activated',
+								_Utils_eq(model.activeMenu, $author$project$Types$ConnectMenu))
+							])),
+						$elm$html$Html$Events$onClick(
+						$author$project$Types$ChangeActiveMenu($author$project$Types$ConnectMenu))
+					]),
+				_List_fromArray(
+					[
+						$elm$html$Html$text('Connect')
+					])),
+				A2(
+				$elm$html$Html$label,
+				_List_fromArray(
+					[
+						$elm$html$Html$Attributes$classList(
+						_List_fromArray(
+							[
+								_Utils_Tuple2(
+								'menu_bar_activated',
+								_Utils_eq(model.activeMenu, $author$project$Types$ImportRegistersMenu))
+							])),
+						$elm$html$Html$Events$onClick(
+						$author$project$Types$ChangeActiveMenu($author$project$Types$ImportRegistersMenu))
+					]),
+				_List_fromArray(
+					[
+						$elm$html$Html$text('Import')
+					]))
+			]));
+};
+var $elm$html$Html$nav = _VirtualDom_node('nav');
+var $author$project$Types$ChangeActiveTable = function (a) {
+	return {$: 'ChangeActiveTable', a: a};
+};
+var $elm$html$Html$i = _VirtualDom_node('i');
+var $author$project$View$viewSideBarCsv = A2(
+	$elm$html$Html$i,
+	_List_fromArray(
+		[
+			$elm$html$Html$Attributes$class('material-icons md-24'),
+			$elm$html$Html$Events$onClick(
+			$author$project$Types$ChangeActiveTable($author$project$Types$ModDataTable))
+		]),
+	_List_fromArray(
+		[
+			$elm$html$Html$text('input')
+		]));
+var $author$project$Types$HeartbeatTable = {$: 'HeartbeatTable'};
+var $author$project$View$viewSideBarHeartBeat = A2(
+	$elm$html$Html$i,
+	_List_fromArray(
+		[
+			$elm$html$Html$Attributes$class('material-icons md-24'),
+			$elm$html$Html$Events$onClick(
+			$author$project$Types$ChangeActiveTable($author$project$Types$HeartbeatTable))
+		]),
+	_List_fromArray(
+		[
+			$elm$html$Html$text('favorite_border')
+		]));
+var $author$project$Types$RegisterTable = {$: 'RegisterTable'};
+var $author$project$View$viewSideBarRegisters = A2(
+	$elm$html$Html$i,
+	_List_fromArray(
+		[
+			$elm$html$Html$Attributes$class('material-icons md-24'),
+			$elm$html$Html$Events$onClick(
+			$author$project$Types$ChangeActiveTable($author$project$Types$RegisterTable))
+		]),
+	_List_fromArray(
+		[
+			$elm$html$Html$text('view_list')
+		]));
+var $author$project$View$viewSideBar = A2(
+	$elm$html$Html$nav,
+	_List_fromArray(
+		[
+			$elm$html$Html$Attributes$class('side_bar')
+		]),
+	_List_fromArray(
+		[$author$project$View$viewSideBarCsv, $author$project$View$viewSideBarRegisters, $author$project$View$viewSideBarHeartBeat]));
+var $author$project$Types$showStatus = function (status) {
+	switch (status.$) {
+		case 'AllGood':
+			return 'all good';
+		case 'Loading':
+			return 'getting stuff from the server';
+		case 'Bad':
+			var err = status.a;
+			return err;
+		case 'BadIpAddress':
+			return 'Invalid ip address';
+		case 'BadPort':
+			return 'Bad Port';
+		default:
+			return 'Bad Timeout';
+	}
+};
+var $author$project$View$viewStatusBar = function (model) {
+	return A2(
+		$elm$html$Html$div,
+		_List_fromArray(
+			[
+				$elm$html$Html$Attributes$class('status_bar')
+			]),
+		_List_fromArray(
+			[
+				$elm$html$Html$text(
+				$author$project$Types$showStatus(model.status))
+			]));
+};
 var $author$project$View$view = function (model) {
 	return A2(
 		$elm$html$Html$div,
@@ -8090,7 +8139,7 @@ var $author$project$View$view = function (model) {
 				$author$project$View$viewMenuBar(model),
 				$author$project$View$viewActiveMenu(model),
 				$author$project$View$viewSideBar,
-				$author$project$View$viewTables(model),
+				$author$project$View$viewActiveTable(model),
 				$author$project$View$viewCommandBar,
 				$author$project$View$viewStatusBar(model)
 			]));

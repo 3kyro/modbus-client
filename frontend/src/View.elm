@@ -38,6 +38,7 @@ import Types exposing
     )
 import View.Connect exposing (viewConnectMenu)
 -- import File exposing (..)
+import Types exposing (ActiveTable(..))
 
 view : Model -> Html Msg
 view model =
@@ -45,7 +46,7 @@ view model =
         [ viewMenuBar model
         , viewActiveMenu model
         , viewSideBar
-        , viewTables model
+        , viewActiveTable model
         , viewCommandBar
         , viewStatusBar model
         ]
@@ -83,23 +84,36 @@ viewSideBar =
 viewSideBarCsv : Html Msg
 viewSideBarCsv =
     i
-        [ class "material-icons md-24" ]
+        [ class "material-icons md-24"
+        , onClick <| ChangeActiveTable ModDataTable
+        ]
         [ text "input" ]
 
 viewSideBarRegisters : Html Msg
 viewSideBarRegisters =
     i
-        [ class "material-icons md-24" ]
+        [ class "material-icons md-24"
+        , onClick <| ChangeActiveTable RegisterTable
+        ]
         [ text "view_list" ]
 
 viewSideBarHeartBeat : Html Msg
 viewSideBarHeartBeat =
     i
-        [ class "material-icons md-24" ]
+        [ class "material-icons md-24"
+        , onClick <| ChangeActiveTable HeartbeatTable
+        ]
         [ text "favorite_border" ]
 
-viewTables : Model -> Html Msg
-viewTables model =
+viewActiveTable : Model -> Html Msg
+viewActiveTable model =
+    case model.activeTable of
+        ModDataTable -> viewModDataTable model
+        RegisterTable -> viewRegisterTable model
+        HeartbeatTable -> viewHeartbeatTable model
+
+viewModDataTable : Model -> Html Msg
+viewModDataTable model =
     div [ class "tables" ]
         [ table [ class "regTable" ]
             [ thead [] <|
@@ -121,6 +135,11 @@ viewTables model =
                 ]
             ]
         ]
+
+viewRegisterTable : Model -> Html Msg
+viewRegisterTable model = div [ class "tables" ] []
+viewHeartbeatTable : Model -> Html Msg
+viewHeartbeatTable model = div [ class "tables" ] []
 
 viewCommandBar : Html Msg
 viewCommandBar =

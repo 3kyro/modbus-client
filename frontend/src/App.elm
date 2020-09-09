@@ -13,6 +13,7 @@ import Types exposing
     , RegType (..)
     , ConnectStatus(..)
     , ActiveMenu(..)
+    , ActiveTable(..)
     )
 import Types.IpAddress exposing (defaultIpAddr)
 
@@ -33,6 +34,7 @@ initModel =
     , socketPort = Just 502
     , timeout = Just 1000
     , activeMenu = NoneActive
+    , activeTable = ModDataTable
     , csvFileName = Nothing
     , csvContent = Nothing
     }
