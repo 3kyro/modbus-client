@@ -1,203 +1,453 @@
-module View exposing (view)
+module View exposing (view, page)
 
-import Html exposing
-    ( Html
-    , div
+import Element exposing
+    ( Element
+    , el
     , text
-    , label
+    , row
+    , column
+    , layout
+    , fill
+    , width
+    , height
+    , px
+    , paddingXY
+    , spacing
+    , focused
+    , mouseOver
+    , none
+    , alignBottom
+    , alignTop
+    , maximum
     , table
-    , th
-    , tr
-    , td
-    , thead
-    , tbody
-    , tfoot
-    , nav
-    , i
+    , htmlAttribute
+    , Color
     )
-import Html.Attributes exposing
-    ( class
-    , classList
-    , scope
-    , colspan
-    )
-import Html.Events exposing (onClick)
-import String
+import Element.Background as Background
+import Element.Border as Border
+import Element.Font as Font
+import Element.Input as Input
+import Html exposing (Html)
+import Html.Attributes
 
 import Types exposing
-    ( Msg (..)
+    ( Msg(..)
+    , ActiveMenu (..)
     , Model
-    , RegType (..)
-    , getRegType
-    , ModValue (..)
-    , Status (..)
     , showStatus
-    , ModData
-    , ConnectStatus (..)
-    , ActiveMenu(..)
+    , Status (..)
+    , ActiveTable(..)
+    , showConnectStatus
+    , showLoadedFileName
+    , ConnectStatus(..)
     )
-import View.Connect exposing (viewConnectMenu)
--- import File exposing (..)
-import Types exposing (ActiveTable(..))
+import Types.IpAddress exposing
+    ( IpAddress
+    , IpAddressByte (..)
+    , showIpAddressByte
+    )
+import Palette exposing
+    ( dimGrey
+    , grey
+    , lightGrey
+    , white
+    , maximumBluePurple
+    , maximumBluePurpleLight
+    , darkBluePurple
+    , lightGreen
+    , smallFont
+    )
 
 view : Model -> Html Msg
-view model =
-    div [ class "application" ]
-        [ viewMenuBar model
-        , viewActiveMenu model
-        , viewSideBar
-        , viewActiveTable model
-        , viewCommandBar
-        , viewStatusBar model
+view model = layout [] <| page model
+
+page : Model -> Element Msg
+page model =
+    column
+        [ width fill
+        , height fill
+        , smallFont
+        ]
+        [ mainCell model
+        , statusBar model
         ]
 
-viewMenuBar : Model -> Html Msg
-viewMenuBar model =
-    div
-        [ class "menu_bar" ]
-        [ label
-            [ classList [ ("menu_bar_activated", model.activeMenu == ConnectMenu ) ]
-            , onClick <| ChangeActiveMenu ConnectMenu
-            ] [ text "Connect" ]
-        , label
-            [ classList [ ("menu_bar_activated", model.activeMenu == ImportRegistersMenu ) ]
-            , onClick <| ChangeActiveMenu ImportRegistersMenu
-            ] [ text "Import" ]
+
+
+------------------------------------------------------------------------------------------------------------------
+-- Main Cell
+
+mainCell : Model -> Element Msg
+mainCell model =
+    row
+        [ width fill
+        , height fill ]
+        [ registerCell model
+        , commandBar model
         ]
 
-viewActiveMenu : Model -> Html Msg
-viewActiveMenu model =
-    case model.activeMenu of
-        ConnectMenu -> viewConnectMenu model
-        ImportRegistersMenu -> viewRegistersLoad model
-        NoneActive -> viewEmptyMenu
 
-viewSideBar : Html Msg
-viewSideBar =
-    nav
-        [ class "side_bar" ]
-        [ viewSideBarCsv
-        , viewSideBarRegisters
-        , viewSideBarHeartBeat
+------------------------------------------------------------------------------------------------------------------
+-- Registers Cell
+
+registerCell : Model -> Element Msg
+registerCell model =
+    column
+        [ height fill
+        , width fill
+        ]
+        [ tableSelectBar
+        , tablesCell model
         ]
 
-viewSideBarCsv : Html Msg
-viewSideBarCsv =
-    i
-        [ class "material-icons md-24"
-        , onClick <| ChangeActiveTable ModDataTable
-        ]
-        [ text "input" ]
+------------------------------------------------------------------------------------------------------------------
+-- Tables Select Bar
 
-viewSideBarRegisters : Html Msg
-viewSideBarRegisters =
-    i
-        [ class "material-icons md-24"
-        , onClick <| ChangeActiveTable RegisterTable
+tableSelectBar : Element Msg
+tableSelectBar =
+    row
+        [ Background.color dimGrey
+        , alignTop
+        , width fill
+        , height <| px 30
+        , paddingXY 10 0
+        , spacing 0
         ]
-        [ text "view_list" ]
-
-viewSideBarHeartBeat : Html Msg
-viewSideBarHeartBeat =
-    i
-        [ class "material-icons md-24"
-        , onClick <| ChangeActiveTable HeartbeatTable
+        [ inputRegistersButton
+        , holdingRegistersButton
+        , registerTableButton
+        , heartbeatButton
         ]
-        [ text "favorite_border" ]
 
-viewActiveTable : Model -> Html Msg
-viewActiveTable model =
+newSelectButton : String -> Maybe Msg -> Element Msg
+newSelectButton str action =
+    Input.button
+        [
+         focused
+            [ Background.color grey
+            , Font.color white
+            ]
+        , mouseOver [ Font.color white ]
+        , Border.width 0
+        , height fill
+        , paddingXY 10 0
+        , Font.color lightGrey
+        ]
+        { onPress = action
+        , label = text str
+        }
+
+inputRegistersButton : Element Msg
+inputRegistersButton =
+    newSelectButton "Input Registers" Nothing
+    
+holdingRegistersButton : Element Msg
+holdingRegistersButton =
+    newSelectButton "Holding Registers" Nothing
+
+registerTableButton : Element Msg
+registerTableButton =
+    newSelectButton "Register Table" Nothing
+
+heartbeatButton : Element Msg
+heartbeatButton =
+    newSelectButton "Heartbeat Signals" Nothing
+
+------------------------------------------------------------------------------------------------------------------
+-- Tables Cell
+
+tablesCell : Model -> Element Msg
+tablesCell model =
     case model.activeTable of
-        ModDataTable -> viewModDataTable model
-        RegisterTable -> viewRegisterTable model
-        HeartbeatTable -> viewHeartbeatTable model
+        InputRegistersTable -> inputRegistersTable model
+        HoldingRegistersTable -> holdingRegistersTable model
+        ModDataTable -> modDataTable model
+        HeartbeatTable -> heartbeatTable model
 
-viewModDataTable : Model -> Html Msg
-viewModDataTable model =
-    div [ class "tables" ]
-        [ table [ class "regTable" ]
-            [ thead [] <|
-                [ tr []
-                    [ th [] [ text "Name"]
-                    , th [] [ text "Type" ]
-                    , th [] [ text "Address" ]
-                    , th [] [ text "Value Type" ]
-                    , th [] [ text "Value" ]
-                    , th [] [ text "Unit Id" ]
-                    , th [] [ text "Description" ]
-                    ]
-                ]
-            , tbody [] (List.map viewModData model.modData)
-            , tfoot [onClick <| RefreshRequest model.modData]
-                [ tr []
-                    [ th [scope "row", colspan 7 ] [ text "refresh"]
-                    ]
-                ]
+newRegisterTable : Model -> Element Msg
+newRegisterTable model =
+    table
+        [ Background.color grey
+        , width fill
+        , height fill
+        ]
+        { data = []
+        , columns = []
+        }
+
+inputRegistersTable : Model -> Element Msg
+inputRegistersTable model = newRegisterTable model
+
+holdingRegistersTable : Model -> Element Msg
+holdingRegistersTable model = newRegisterTable model
+
+modDataTable : Model -> Element Msg
+modDataTable model = newRegisterTable model
+
+heartbeatTable : Model -> Element Msg
+heartbeatTable model = newRegisterTable model
+
+------------------------------------------------------------------------------------------------------------------
+-- Command Bar
+
+commandBar : Model -> Element Msg
+commandBar model =
+    column
+        [ width ( fill |> maximum 500 )
+        , height fill
+        , Background.color darkBluePurple
+        , Font.color white ]
+        [ connectionButton
+        , connectMenu model
+        , importRegTableButton
+        , importMenu model
+        ]
+
+newCommandButton : String -> Maybe Msg -> Element Msg
+newCommandButton str action =
+    Input.button
+        [
+         focused
+            [ Background.color maximumBluePurpleLight
+            , Font.color white
             ]
+        , mouseOver [ Font.color white ]
+        , Border.widthEach
+            { bottom = 1
+            , left = 0
+            , right = 0
+            , top = 0
+            }
+        , height <| px 30
+        , width fill
+        , paddingXY 0 0
+        , Font.color lightGrey
+        , Font.center
+        ]
+        { onPress = action
+        , label = text str
+        }
+
+connectionButton : Element Msg
+connectionButton =
+    newCommandButton "Connection" <| Just <|ChangeActiveMenu ConnectMenu
+connectMenu : Model -> Element Msg
+connectMenu model =
+    case model.activeMenu of
+        ConnectMenu -> connectionActiveMenu model
+        _ -> none
+
+importRegTableButton : Element Msg
+importRegTableButton =
+    newCommandButton "Import" <| Just <| ChangeActiveMenu ImportRegistersMenu
+
+importMenu : Model -> Element Msg
+importMenu model =
+    case model.activeMenu of
+        ImportRegistersMenu -> importActiveMenu model
+        _ -> none
+
+------------------------------------------------------------------------------------------------------------------
+-- Connect Menu
+
+connectionActiveMenu : Model -> Element Msg
+connectionActiveMenu model =
+    column
+        [ width fill
+        , Border.widthEach
+            { bottom = 1
+            , left = 0
+            , right = 0
+            , top = 0
+            }
+        , spacing 20
+        , paddingXY 10 20
+        ]
+        [ ipaddress model
+        , portNum model
+        , timeout model
+        , connectButton model
+        , disconnectButton model
         ]
 
-viewRegisterTable : Model -> Html Msg
-viewRegisterTable model = div [ class "tables" ] []
-viewHeartbeatTable : Model -> Html Msg
-viewHeartbeatTable model = div [ class "tables" ] []
 
-viewCommandBar : Html Msg
-viewCommandBar =
-    div [ class "command_bar" ] []
 
-viewStatusBar : Model -> Html Msg
-viewStatusBar model =
-    div [ class "status_bar" ] [text <| showStatus model.status]
-viewRegistersLoad : Model -> Html Msg
-viewRegistersLoad model =
-    div [ class "activeMenu" , class "menu_bar_extension" ]
-        [ table []
-            [ tr []
-                [ label [ onClick CsvRequested ] [ text "Load CSV" ]
-                , label [] [ showLoadedFileName model ]
-                ]
-            , tr []
-                [ label [ onClick ModDataRequest ] [ text "Load registers"]]
-            , tr [] []
-            ]
+ipaddress : Model -> Element Msg
+ipaddress model =
+    row
+        [ width fill
+        , spacing 5
+        ]
+        [ el [ width <| px 100 ] <| text "IP Address"
+        , ipAddressInput Byte0 model.ipAddress
+        , ipAddressInput Byte1 model.ipAddress
+        , ipAddressInput Byte2 model.ipAddress
+        , ipAddressInput Byte3 model.ipAddress
+         ]
+
+ipAddressInput :  IpAddressByte -> IpAddress -> Element Msg
+ipAddressInput byte ip =
+    Input.text
+        [
+          width <| px 70
+        , Background.color darkBluePurple
+        , htmlAttribute <| Html.Attributes.maxlength 3
+        , focused [ Border.glow white 1 ]
+        ]
+        { onChange = ChangeIpAddress byte
+        , text = showIpAddressByte byte ip
+        , placeholder = Nothing
+        , label = Input.labelHidden "Byte"
+        }
+
+portNum : Model -> Element Msg
+portNum model =
+    Input.text
+        [ width <| px 70
+        , Background.color darkBluePurple
+        , htmlAttribute <| Html.Attributes.maxlength 5
+        , focused [ Border.glow white 1 ]
+        ]
+        { onChange = ChangePort
+        , text = Maybe.withDefault "" <| Maybe.map String.fromInt model.socketPort
+        , placeholder = Nothing
+        , label = Input.labelLeft [] <| el [ width <| px 100 ] (text "Port")
+        }
+
+timeout : Model -> Element Msg
+timeout model =
+    Input.text
+        [ width <| px 70
+        , Background.color darkBluePurple
+        , htmlAttribute <| Html.Attributes.maxlength 5
+        , focused [ Border.glow white 1 ]
+        ]
+        { onChange = ChangeTimeout
+        , text = Maybe.withDefault "" <| Maybe.map String.fromInt model.timeout
+        , placeholder = Nothing
+        , label = Input.labelLeft [] <| el [ width <| px 100 ] (text "Timeout (ms)")
+        }
+
+connectButton : Model -> Element Msg
+connectButton model =
+    Input.button
+        [ Background.color <| connectButtonBgd model
+        , mouseOver [ Font.color white ]
+        , height <| px 30
+        , width fill
+        , paddingXY 0 0
+        , Font.color lightGrey
+        , Font.center
+        , focused []
+        ]
+        { onPress = Just ConnectRequest
+        , label = text <| showConnectStatus model.connectStatus
+        }
+
+connectButtonBgd : Model -> Color
+connectButtonBgd model =
+    case model.connectStatus of
+        Connect -> maximumBluePurpleLight
+        Connecting -> maximumBluePurpleLight
+        Connected -> lightGreen
+        Disconnecting -> maximumBluePurple
+
+
+disconnectButton : Model -> Element Msg
+disconnectButton model =
+    Input.button
+        [ Background.color <| disconnectButtonBgd model
+        , mouseOver [ Font.color white ]
+        , height <| px 30
+        , width fill
+        , paddingXY 0 0
+        , Font.color lightGrey
+        , Font.center
+        , focused []
+        ]
+        { onPress = Just DisconnectRequest
+        , label = text "Disconnect"
+        }
+
+disconnectButtonBgd : Model -> Color
+disconnectButtonBgd model =
+    case model.connectStatus of
+        Connect -> darkBluePurple
+        Connecting -> darkBluePurple
+        Connected -> maximumBluePurpleLight
+        Disconnecting -> darkBluePurple
+
+------------------------------------------------------------------------------------------------------------------
+-- Import Menu
+
+importActiveMenu : Model -> Element Msg
+importActiveMenu model =
+    column
+        [ width fill
+        , Border.widthEach
+            { bottom = 1
+            , left = 0
+            , right = 0
+            , top = 0
+            }
+        , spacing 20
+        , paddingXY 10 20
+        ]
+        [ loadCSVButton
+        , showCSVFile model
+        , loadRegisterTableButton
+        -- , showNumOfLoadedRegs
         ]
 
-showLoadedFileName : Model -> Html Msg
-showLoadedFileName model =
-    case model.csvFileName of
-        Nothing -> text ""
-        Just name -> text <| "Loaded " ++ name
-
-viewEmptyMenu : Html Msg
-viewEmptyMenu = text ""
-
-
-viewModData : ModData -> Html Msg
-viewModData md =
-    tr []
-        [ td [] [ text md.modName ]
-        , td [] [ text <| getRegType md.modRegType ]
-        , td [] [ text <| String.fromInt md.modAddress ]
-        , td [] [ viewModType md.modValue ]
-        , td [] [ viewModValue md.modValue ]
-        , td [] [ text <| String.fromInt md.modUid ]
-        , td [] [ text md.modDescription ]
+loadCSVButton : Element Msg
+loadCSVButton =
+    Input.button
+        [ Background.color maximumBluePurpleLight
+        , mouseOver [ Font.color white ]
+        , height <| px 30
+        , width fill
+        , paddingXY 0 0
+        , Font.color lightGrey
+        , Font.center
+        , focused []
         ]
+        { onPress = Just CsvRequested
+        , label = text "Load CSV File"
+        }
 
-viewModValue : ModValue -> Html Msg
-viewModValue value =
-    label [ class "modValue" ]
-        <| case value of
-            ModWord (Just word) ->
-                    [ text <| String.fromInt word]
-            ModFloat (Just float) ->
-                    [ text <| String.fromFloat float]
-            _ -> []
-viewModType : ModValue -> Html Msg
-viewModType value =
-    label [ class "modType" ]
-        <| case value of
-            ModWord (_) ->
-                    [ text "Word" ]
-            ModFloat (_) ->
-                    [ text "Float" ]
+showCSVFile : Model -> Element Msg
+showCSVFile model =
+    el
+        []
+        ( text <| showLoadedFileName model )
+loadRegisterTableButton : Element Msg
+loadRegisterTableButton =
+    Input.button
+        [ Background.color maximumBluePurpleLight
+        , mouseOver [ Font.color white ]
+        , height <| px 30
+        , width fill
+        , paddingXY 0 0
+        , Font.color lightGrey
+        , Font.center
+        , focused []
+        ]
+        { onPress = Just ModDataRequest
+        , label = text "Load Register Table"
+        }
+
+
+------------------------------------------------------------------------------------------------------------------
+-- Status Bar
+
+statusBar : Model -> Element Msg
+statusBar model =
+    row
+        [ Background.color maximumBluePurple
+        , width fill
+        , height <| px 30
+        , alignBottom
+        ]
+        [ text <| showStatus model.status ]
+
+

@@ -14,7 +14,7 @@ module Types exposing
     , encodeRegister
     , decodeModData
     , ActiveMenu (..)
-    , ActiveTable (..)
+    , ActiveTable (..), showLoadedFileName
     , getChangedMenu
     , encodeIpPort
     )
@@ -81,9 +81,6 @@ type Status
     = AllGood
     | Loading
     | Bad String
-    | BadIpAddress
-    | BadPort
-    | BadTimeout
 
 showStatus : Status -> String
 showStatus status =
@@ -91,9 +88,6 @@ showStatus status =
         AllGood -> "all good"
         Loading -> "getting stuff from the server"
         Bad err -> err
-        BadIpAddress -> "Invalid ip address"
-        BadPort -> "Bad Port"
-        BadTimeout -> "Bad Timeout"
 
 type alias ConnectionInfo =
     { ipAddress : IpAddress
@@ -119,7 +113,11 @@ encodeIpPort model =
         , ( "timeout", E.int <| Maybe.withDefault 0  model.timeout)
         ]
 
-
+showLoadedFileName : Model -> String
+showLoadedFileName model =
+    case model.csvFileName of
+        Nothing -> "No file loaded"
+        Just name -> "Loaded: " ++ name
 -- ModData
 --------------------------------------------------------------------------------------------------
 
@@ -221,6 +219,7 @@ getChangedMenu model newActive =
         newActive
 
 type ActiveTable
-    = ModDataTable
-    | RegisterTable
+    = InputRegistersTable
+    | HoldingRegistersTable
+    | ModDataTable
     | HeartbeatTable

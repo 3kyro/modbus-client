@@ -69,23 +69,32 @@ update msg model =
             else
                 case String.toInt str of
                     Nothing -> ( model , Cmd.none )
-                    Just b -> ( { model | ipAddress = setIpAddressByte byte model.ipAddress (Just b) }, Cmd.none )
+                    Just b ->
+                        if b < 0 || b > 255
+                        then ( model, Cmd.none )
+                        else ( { model | ipAddress = setIpAddressByte byte model.ipAddress (Just b) }, Cmd.none )
 
         ChangePort portNum ->
             if String.isEmpty portNum
             then ( { model | socketPort = Nothing }, Cmd.none )
             else
                 case String.toInt portNum of
-                    Nothing -> ( { model | status = BadPort }, Cmd.none )
-                    Just p -> ( { model | socketPort = Just p }, Cmd.none )
+                    Nothing -> ( model , Cmd.none )
+                    Just p ->
+                        if p < 0 || p > 65535
+                        then ( model , Cmd.none )
+                        else ( { model | socketPort = Just p }, Cmd.none )
 
         ChangeTimeout tm ->
             if String.isEmpty tm
             then ( { model | timeout = Nothing }, Cmd.none )
             else
                 case String.toInt tm of
-                    Nothing -> ( { model | status = BadTimeout }, Cmd.none )
-                    Just t -> ( { model | timeout = Just t }, Cmd.none )
+                    Nothing -> ( model , Cmd.none )
+                    Just t ->
+                        if t < 0 || t > 65535
+                        then ( model , Cmd.none )
+                        else ( { model | timeout = Just t }, Cmd.none )
 
         DisconnectRequest ->
             case model.connectStatus of
