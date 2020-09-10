@@ -21,9 +21,12 @@ import Types exposing
     , decodeModData
     , getChangedMenu
     , encodeIpPort
+    , replaceModData
     )
 
 import Types.IpAddress exposing (setIpAddressByte)
+import Array exposing (indexedMap)
+import Types exposing (ActiveTable(..))
 
 update : Msg -> Model -> ( Model, Cmd Msg)
 update msg model =
@@ -129,6 +132,22 @@ update msg model =
 
         ReceivedModData (Ok md) ->
             ( { model | modData = md }, Cmd.none )
+
+        SelectAllChecked b ->
+            case model.activeTable of
+                ModDataTable ->
+                    (
+                    { model |
+                        selectAllCheckbox = b
+                        , modData = List.map (\md -> { md | selected = b}) model.modData
+                    }
+                    , Cmd.none
+                    )
+                _ -> ( { model | selectAllCheckbox = b } , Cmd.none )
+
+
+        ModDataChecked idx checked ->
+            ( { model | modData = List.indexedMap (replaceModData idx checked) model.modData }, Cmd.none)
 
 
 

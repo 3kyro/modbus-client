@@ -18,10 +18,16 @@ import Element exposing
     , none
     , alignBottom
     , alignTop
+    , alignLeft
+    , centerX
+    , centerY
     , maximum
-    , table
+    , indexedTable
     , htmlAttribute
     , Color
+    , IndexedColumn
+    , Attribute
+    , fillPortion
     )
 import Element.Background as Background
 import Element.Border as Border
@@ -40,6 +46,10 @@ import Types exposing
     , showConnectStatus
     , showLoadedFileName
     , ConnectStatus(..)
+    , ModData
+    , getRegType
+    , getModValueType
+    , getModValue
     )
 import Types.IpAddress exposing
     ( IpAddress
@@ -47,9 +57,10 @@ import Types.IpAddress exposing
     , showIpAddressByte
     )
 import Palette exposing
-    ( dimGrey
+    ( darkGrey
     , grey
     , lightGrey
+    , greyWhite
     , white
     , maximumBluePurple
     , maximumBluePurpleLight
@@ -96,62 +107,65 @@ registerCell model =
         [ height fill
         , width fill
         ]
-        [ tableSelectBar
+        [ tableSelectBar model
         , tablesCell model
         ]
 
 ------------------------------------------------------------------------------------------------------------------
 -- Tables Select Bar
 
-tableSelectBar : Element Msg
-tableSelectBar =
+tableSelectBar : Model -> Element Msg
+tableSelectBar model =
     row
-        [ Background.color dimGrey
+        [ Background.color darkGrey
         , alignTop
         , width fill
         , height <| px 30
         , paddingXY 10 0
         , spacing 0
         ]
-        [ inputRegistersButton
-        , holdingRegistersButton
-        , registerTableButton
-        , heartbeatButton
+        [ inputRegistersButton model
+        , holdingRegistersButton model
+        , registerTableButton model
+        , heartbeatButton model
         ]
 
-newSelectButton : String -> Maybe Msg -> Element Msg
-newSelectButton str action =
+newSelectButton : Model -> String -> ActiveTable -> Element Msg
+newSelectButton model str table =
     Input.button
-        [
-         focused
-            [ Background.color grey
-            , Font.color white
-            ]
+        [ Background.color <| selectButtonBgdColor model table
+        , focused []
         , mouseOver [ Font.color white ]
         , Border.width 0
         , height fill
         , paddingXY 10 0
-        , Font.color lightGrey
+        , Font.color greyWhite
         ]
-        { onPress = action
+        { onPress = Just <| ChangeActiveTable table
         , label = text str
         }
 
-inputRegistersButton : Element Msg
-inputRegistersButton =
-    newSelectButton "Input Registers" Nothing
-    
-holdingRegistersButton : Element Msg
-holdingRegistersButton =
-    newSelectButton "Holding Registers" Nothing
+selectButtonBgdColor : Model -> ActiveTable -> Color
+selectButtonBgdColor model table =
+    if model.activeTable == table
+    then grey
+    else darkGrey
 
-registerTableButton : Element Msg
-registerTableButton =
-    newSelectButton "Register Table" Nothing
+inputRegistersButton : Model -> Element Msg
+inputRegistersButton model =
+    newSelectButton model "Input Registers" InputRegistersTable
 
-heartbeatButton : Element Msg
-heartbeatButton =
-    newSelectButton "Heartbeat Signals" Nothing
+holdingRegistersButton : Model -> Element Msg
+holdingRegistersButton model =
+    newSelectButton model "Holding Registers" HoldingRegistersTable
+
+registerTableButton : Model -> Element Msg
+registerTableButton model =
+    newSelectButton model "Register Table" ModDataTable
+
+heartbeatButton : Model -> Element Msg
+heartbeatButton model =
+    newSelectButton model "Heartbeat Signals" HeartbeatTable
 
 ------------------------------------------------------------------------------------------------------------------
 -- Tables Cell
@@ -166,14 +180,138 @@ tablesCell model =
 
 newRegisterTable : Model -> Element Msg
 newRegisterTable model =
-    table
+    indexedTable
         [ Background.color grey
         , width fill
         , height fill
+        , Font.center
         ]
-        { data = []
-        , columns = []
+        { data = model.modData
+        , columns = modDataColumns model
         }
+
+modDataColumns : Model -> List ( IndexedColumn ModData Msg )
+modDataColumns model =
+    [ modNameColumn
+    , modRegTypeColumn
+    , modAddressColumn
+    , modValueTypeColumn
+    , modValueColumn
+    , modUidColumn
+    , modDescriptionColumn
+    , selectColumn model
+    ]
+
+modNameColumn : IndexedColumn ModData Msg
+modNameColumn =
+    { header = el [ height <| px 30 ] <| el headerTextAttr <| text "Name"
+    , width = fillPortion 1
+    , view = \i md -> viewCell i md.modName
+    }
+
+modRegTypeColumn : IndexedColumn ModData Msg
+modRegTypeColumn =
+    { header = el [ height <| px 30 ] <| el headerTextAttr <| text "Register Type"
+    , width = fillPortion 1
+    , view = \i md -> viewCell i <| getRegType md.modRegType
+    }
+
+modAddressColumn : IndexedColumn ModData Msg
+modAddressColumn =
+    { header = el [ height <| px 30 ] <| el headerTextAttr <| text "Register Address"
+    , width = fillPortion 1
+    , view = \i md -> viewCell i <| String.fromInt md.modAddress
+    }
+
+modValueTypeColumn : IndexedColumn ModData Msg
+modValueTypeColumn =
+    { header = el [ height <| px 30 ] <| el headerTextAttr <| text "Value Type"
+    , width = fillPortion 1
+    , view = \i md -> viewCell i <| getModValueType md.modValue
+    }
+
+modValueColumn : IndexedColumn ModData Msg
+modValueColumn =
+    { header = el [ height <| px 30 ] <| el headerTextAttr <| text "Value"
+    , width = fillPortion 1
+    , view = \i md -> viewCell i <| Maybe.withDefault "Nothing" <| getModValue md.modValue
+    }
+
+modUidColumn : IndexedColumn ModData Msg
+modUidColumn =
+    { header = el [ height <| px 30 ] <| el headerTextAttr <| text "Unit Id"
+    , width = fillPortion 1
+    , view = \i md -> viewCell i <| String.fromInt md.modUid
+    }
+
+modDescriptionColumn : IndexedColumn ModData Msg
+modDescriptionColumn =
+    { header = el [ height <| px 30 ] <| el [alignLeft , centerY ] <| text "Description"
+    , width = fillPortion 4
+    , view = \i md -> viewDescCell i md.modDescription
+    }
+
+selectColumn : Model -> IndexedColumn ModData Msg
+selectColumn model =
+    { header =
+        el
+            [ height <| px 30 ] <| el [alignLeft , centerY ]
+            <| Input.checkbox
+                []
+                { onChange = SelectAllChecked
+                , icon = Input.defaultCheckbox
+                , checked = model.selectAllCheckbox
+                , label = Input.labelHidden "Select all"
+                }
+    , width = px 30
+    , view = \i md -> viewCheckedCell i md.selected
+    }
+
+headerTextAttr : List (Attribute Msg)
+headerTextAttr =
+    [ centerX , centerY ]
+
+viewCell : Int -> String -> Element Msg
+viewCell idx str =
+    el
+        [ Background.color <| tableCellColor idx
+        , Font.color greyWhite
+        , height <| px 30
+        , Font.center
+        ]
+        ( el [centerX , centerY ] <| text str )
+
+viewDescCell : Int -> String -> Element Msg
+viewDescCell idx str =
+    el
+        [ Background.color <| tableCellColor idx
+        , Font.color greyWhite
+        , height <| px 30
+        , Font.center
+        ]
+        ( el [alignLeft, centerY ] <| text str )
+
+viewCheckedCell : Int -> Bool -> Element Msg
+viewCheckedCell idx selected =
+    el
+        [ Background.color <| tableCellColor idx
+        , Font.color greyWhite
+        , height <| px 30
+        , Font.center
+        ]
+        <| Input.checkbox
+                [alignLeft , centerY]
+                { onChange = ModDataChecked idx
+                , icon = Input.defaultCheckbox
+                , checked = selected
+                , label = Input.labelHidden "Select Field"
+                }
+
+tableCellColor : Int -> Color
+tableCellColor idx =
+    if modBy 2 idx == 0
+    then lightGrey
+    else grey
 
 inputRegistersTable : Model -> Element Msg
 inputRegistersTable model = newRegisterTable model
@@ -221,7 +359,7 @@ newCommandButton str action =
         , height <| px 30
         , width fill
         , paddingXY 0 0
-        , Font.color lightGrey
+        , Font.color greyWhite
         , Font.center
         ]
         { onPress = action
@@ -336,7 +474,7 @@ connectButton model =
         , height <| px 30
         , width fill
         , paddingXY 0 0
-        , Font.color lightGrey
+        , Font.color greyWhite
         , Font.center
         , focused []
         ]
@@ -361,7 +499,7 @@ disconnectButton model =
         , height <| px 30
         , width fill
         , paddingXY 0 0
-        , Font.color lightGrey
+        , Font.color greyWhite
         , Font.center
         , focused []
         ]
@@ -407,7 +545,7 @@ loadCSVButton =
         , height <| px 30
         , width fill
         , paddingXY 0 0
-        , Font.color lightGrey
+        , Font.color greyWhite
         , Font.center
         , focused []
         ]

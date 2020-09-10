@@ -1,7 +1,7 @@
 module Palette exposing
-    ( dimGrey
+    ( darkGrey
     , grey
-    , lightGrey
+    , greyWhite
     , purpleDark
     , steelBlue
     , blueSapphire
@@ -9,7 +9,7 @@ module Palette exposing
     , maximumBluePurple
     , darkBluePurple
     , smallFont
-    , maximumBluePurpleLight, lightGreen
+    , maximumBluePurpleLight, lightGreen, lightGrey, black
     )
 
 import Element exposing (Color, Attribute, rgb255)
@@ -33,17 +33,20 @@ import Types exposing (Msg)
 -- ,{"name":"Steel Blue","hex":"457eac","rgb":[69,126,172],"cmyk":[60,27,0,33],"hsb":[207,60,67],"hsl":[207,43,47],"lab":[51,-5,-30]}
 -- ,{"name":"Blue Sapphire","hex":"2d5d7b","rgb":[45,93,123],"cmyk":[63,24,0,52],"hsb":[203,63,48],"hsl":[203,46,33],"lab":[38,-6,-22]}]
 
-dimGrey : Color
-dimGrey = rgb255 104 104 104
+darkGrey : Color
+darkGrey = rgb255 50 50 50
 
 darkBluePurple : Color
 darkBluePurple = rgb255 114 112 143
 
 grey : Color
-grey = rgb255 125 125 125
+grey = rgb255 90 90 90
 
 lightGrey : Color
-lightGrey = rgb255 220 220 220
+lightGrey = rgb255 122 122 122
+
+greyWhite : Color
+greyWhite = rgb255 220 220 220
 
 purpleDark : Color
 purpleDark = rgb255 145 145 233
@@ -68,4 +71,7 @@ lightGreen = rgb255 82 172 162
 
 smallFont : Attribute Msg
 smallFont = Font.size 14
+
+black : Color
+black = rgb255 0 0 0 
 

@@ -37,6 +37,7 @@ initModel =
     , activeTable = ModDataTable
     , csvFileName = Nothing
     , csvContent = Nothing
+    , selectAllCheckbox = False
     }
 
 initModData : List ModData
@@ -47,6 +48,7 @@ initModData =
       , modValue = ModWord (Just 1)
       , modUid = 1
       , modDescription = "A register for tesing purposes"
+      , selected = False
       }
     , { modName = "second"
       , modRegType = InputRegister
@@ -54,6 +56,7 @@ initModData =
       , modValue = ModWord (Just 2)
       , modUid = 1
       , modDescription = "A register for tesing purposes"
+      , selected = False
       }
     , { modName = "1500"
       , modRegType = InputRegister
@@ -61,6 +64,7 @@ initModData =
       , modValue = ModWord Nothing
       , modUid = 1
       , modDescription = "A register for tesing purposes"
+      , selected = False
       }
     , { modName = "1700"
       , modRegType = HoldingRegister
@@ -68,5 +72,6 @@ initModData =
       , modValue = ModWord Nothing
       , modUid = 1
       , modDescription = "A register for tesing purposes"
+      , selected = False
       }
     ]

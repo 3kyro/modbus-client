@@ -14,7 +14,7 @@ module Types exposing
     , encodeRegister
     , decodeModData
     , ActiveMenu (..)
-    , ActiveTable (..), showLoadedFileName
+    , ActiveTable (..), replaceModData, getModValue, getModValueType, showLoadedFileName
     , getChangedMenu
     , encodeIpPort
     )
@@ -50,6 +50,8 @@ type Msg
     | CsvLoaded String
     | ModDataRequest
     | ReceivedModData ( Result Http.Error (List ModData))
+    | SelectAllChecked Bool
+    | ModDataChecked Int Bool
 
 type alias Model =
     { modData : List ModData
@@ -62,6 +64,7 @@ type alias Model =
     , activeTable : ActiveTable
     , csvFileName : Maybe String
     , csvContent : Maybe String
+    , selectAllCheckbox : Bool
     }
 type ConnectStatus
     = Connect
@@ -128,6 +131,7 @@ type alias ModData =
     , modValue : ModValue
     , modUid : Int
     , modDescription : String
+    , selected : Bool
     }
 
 type RegType
@@ -142,6 +146,18 @@ getRegType rt =
     case rt of
         InputRegister -> "input register"
         HoldingRegister -> "holding register"
+
+getModValueType : ModValue -> String
+getModValueType mv =
+    case mv of
+        ModWord _ -> "Word"
+        ModFloat _ -> "Float"
+
+getModValue : ModValue -> Maybe String
+getModValue mv =
+    case mv of
+       ModWord v -> Maybe.map String.fromInt v
+       ModFloat v -> Maybe.map String.fromFloat v
 
 encodeRegister : ModData -> E.Value
 encodeRegister md =
@@ -174,13 +190,15 @@ encodeModValue mv =
 
 decodeModData : D.Decoder ModData
 decodeModData =
-    D.map6 ModData
+    D.map7 ModData
         ( D.field "name" D.string )
         ( D.field "register type" decodeRegType )
         ( D.field "address" D.int )
         ( D.field "register value" decodeModValue )
         ( D.field "uid" D.int )
         ( D.field "description" D.string )
+        ( D.succeed False )
+
 
 decodeModValue : D.Decoder ModValue
 decodeModValue =
@@ -200,6 +218,14 @@ decodeRegType =
             "holding register" -> HoldingRegister
             _ -> InputRegister
     ) D.string
+
+replaceModData : Int -> Bool -> Int -> ModData -> ModData
+replaceModData idx checked =
+    \i md ->
+        if i == idx
+        then { md | selected = checked }
+        else md
+
 
 -- ActiveMenu
 --------------------------------------------------------------------------------------------------

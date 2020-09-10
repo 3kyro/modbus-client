@@ -6553,7 +6553,8 @@ var $author$project$App$initModData = _List_fromArray(
 		modRegType: $author$project$Types$InputRegister,
 		modUid: 1,
 		modValue: $author$project$Types$ModWord(
-			$elm$core$Maybe$Just(1))
+			$elm$core$Maybe$Just(1)),
+		selected: false
 	},
 		{
 		modAddress: 2,
@@ -6562,7 +6563,8 @@ var $author$project$App$initModData = _List_fromArray(
 		modRegType: $author$project$Types$InputRegister,
 		modUid: 1,
 		modValue: $author$project$Types$ModWord(
-			$elm$core$Maybe$Just(2))
+			$elm$core$Maybe$Just(2)),
+		selected: false
 	},
 		{
 		modAddress: 10,
@@ -6570,7 +6572,8 @@ var $author$project$App$initModData = _List_fromArray(
 		modName: '1500',
 		modRegType: $author$project$Types$InputRegister,
 		modUid: 1,
-		modValue: $author$project$Types$ModWord($elm$core$Maybe$Nothing)
+		modValue: $author$project$Types$ModWord($elm$core$Maybe$Nothing),
+		selected: false
 	},
 		{
 		modAddress: 15,
@@ -6578,7 +6581,8 @@ var $author$project$App$initModData = _List_fromArray(
 		modName: '1700',
 		modRegType: $author$project$Types$HoldingRegister,
 		modUid: 1,
-		modValue: $author$project$Types$ModWord($elm$core$Maybe$Nothing)
+		modValue: $author$project$Types$ModWord($elm$core$Maybe$Nothing),
+		selected: false
 	}
 	]);
 var $author$project$App$initModel = {
@@ -6589,6 +6593,7 @@ var $author$project$App$initModel = {
 	csvFileName: $elm$core$Maybe$Nothing,
 	ipAddress: $author$project$Types$IpAddress$defaultIpAddr,
 	modData: $author$project$App$initModData,
+	selectAllCheckbox: false,
 	socketPort: $elm$core$Maybe$Just(502),
 	status: $author$project$Types$AllGood,
 	timeout: $elm$core$Maybe$Just(1000)
@@ -6745,9 +6750,9 @@ var $elm$core$Platform$Cmd$none = $elm$core$Platform$Cmd$batch(_List_Nil);
 var $author$project$Types$ReadRegisters = function (a) {
 	return {$: 'ReadRegisters', a: a};
 };
-var $author$project$Types$ModData = F6(
-	function (modName, modRegType, modAddress, modValue, modUid, modDescription) {
-		return {modAddress: modAddress, modDescription: modDescription, modName: modName, modRegType: modRegType, modUid: modUid, modValue: modValue};
+var $author$project$Types$ModData = F7(
+	function (modName, modRegType, modAddress, modValue, modUid, modDescription, selected) {
+		return {modAddress: modAddress, modDescription: modDescription, modName: modName, modRegType: modRegType, modUid: modUid, modValue: modValue, selected: selected};
 	});
 var $author$project$Types$ModFloat = function (a) {
 	return {$: 'ModFloat', a: a};
@@ -6800,16 +6805,17 @@ var $author$project$Types$decodeRegType = A2(
 		}
 	},
 	$elm$json$Json$Decode$string);
-var $elm$json$Json$Decode$map6 = _Json_map6;
-var $author$project$Types$decodeModData = A7(
-	$elm$json$Json$Decode$map6,
+var $elm$json$Json$Decode$map7 = _Json_map7;
+var $author$project$Types$decodeModData = A8(
+	$elm$json$Json$Decode$map7,
 	$author$project$Types$ModData,
 	A2($elm$json$Json$Decode$field, 'name', $elm$json$Json$Decode$string),
 	A2($elm$json$Json$Decode$field, 'register type', $author$project$Types$decodeRegType),
 	A2($elm$json$Json$Decode$field, 'address', $elm$json$Json$Decode$int),
 	A2($elm$json$Json$Decode$field, 'register value', $author$project$Types$decodeModValue),
 	A2($elm$json$Json$Decode$field, 'uid', $elm$json$Json$Decode$int),
-	A2($elm$json$Json$Decode$field, 'description', $elm$json$Json$Decode$string));
+	A2($elm$json$Json$Decode$field, 'description', $elm$json$Json$Decode$string),
+	$elm$json$Json$Decode$succeed(false));
 var $elm$json$Json$Encode$float = _Json_wrap;
 var $author$project$Types$encodeModValue = function (mv) {
 	if (mv.$ === 'ModWord') {
@@ -6914,6 +6920,15 @@ var $author$project$Update$refreshRequest = function (regs) {
 			url: 'http://localhost:4000/register'
 		});
 };
+var $author$project$Types$replaceModData = F2(
+	function (idx, checked) {
+		return F2(
+			function (i, md) {
+				return _Utils_eq(i, idx) ? _Utils_update(
+					md,
+					{selected: checked}) : md;
+			});
+	});
 var $author$project$Types$ReceivedModData = function (a) {
 	return {$: 'ReceivedModData', a: a};
 };
@@ -7204,7 +7219,7 @@ var $author$project$Update$update = F2(
 				return _Utils_Tuple2(
 					model,
 					$author$project$Update$requestModData(model));
-			default:
+			case 'ReceivedModData':
 				if (msg.a.$ === 'Err') {
 					var err = msg.a.a;
 					return _Utils_Tuple2(
@@ -7223,6 +7238,45 @@ var $author$project$Update$update = F2(
 							{modData: md}),
 						$elm$core$Platform$Cmd$none);
 				}
+			case 'SelectAllChecked':
+				var b = msg.a;
+				var _v6 = model.activeTable;
+				if (_v6.$ === 'ModDataTable') {
+					return _Utils_Tuple2(
+						_Utils_update(
+							model,
+							{
+								modData: A2(
+									$elm$core$List$map,
+									function (md) {
+										return _Utils_update(
+											md,
+											{selected: b});
+									},
+									model.modData),
+								selectAllCheckbox: b
+							}),
+						$elm$core$Platform$Cmd$none);
+				} else {
+					return _Utils_Tuple2(
+						_Utils_update(
+							model,
+							{selectAllCheckbox: b}),
+						$elm$core$Platform$Cmd$none);
+				}
+			default:
+				var idx = msg.a;
+				var checked = msg.b;
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{
+							modData: A2(
+								$elm$core$List$indexedMap,
+								A2($author$project$Types$replaceModData, idx, checked),
+								model.modData)
+						}),
+					$elm$core$Platform$Cmd$none);
 		}
 	});
 var $mdgriffith$elm_ui$Internal$Style$classes = {above: 'a', active: 'atv', alignBottom: 'ab', alignCenterX: 'cx', alignCenterY: 'cy', alignContainerBottom: 'acb', alignContainerCenterX: 'accx', alignContainerCenterY: 'accy', alignContainerRight: 'acr', alignLeft: 'al', alignRight: 'ar', alignTop: 'at', alignedHorizontally: 'ah', alignedVertically: 'av', any: 's', behind: 'bh', below: 'b', bold: 'w7', borderDashed: 'bd', borderDotted: 'bdt', borderNone: 'bn', borderSolid: 'bs', capturePointerEvents: 'cpe', clip: 'cp', clipX: 'cpx', clipY: 'cpy', column: 'c', container: 'ctr', contentBottom: 'cb', contentCenterX: 'ccx', contentCenterY: 'ccy', contentLeft: 'cl', contentRight: 'cr', contentTop: 'ct', cursorPointer: 'cptr', cursorText: 'ctxt', focus: 'fcs', focusedWithin: 'focus-within', fullSize: 'fs', grid: 'g', hasBehind: 'hbh', heightContent: 'hc', heightExact: 'he', heightFill: 'hf', heightFillPortion: 'hfp', hover: 'hv', imageContainer: 'ic', inFront: 'fr', inputLabel: 'lbl', inputMultiline: 'iml', inputMultilineFiller: 'imlf', inputMultilineParent: 'imlp', inputMultilineWrapper: 'implw', inputText: 'it', italic: 'i', link: 'lnk', nearby: 'nb', noTextSelection: 'notxt', onLeft: 'ol', onRight: 'or', opaque: 'oq', overflowHidden: 'oh', page: 'pg', paragraph: 'p', passPointerEvents: 'ppe', root: 'ui', row: 'r', scrollbars: 'sb', scrollbarsX: 'sbx', scrollbarsY: 'sby', seButton: 'sbt', single: 'e', sizeByCapital: 'cap', spaceEvenly: 'sev', strike: 'sk', text: 't', textCenter: 'tc', textExtraBold: 'w8', textExtraLight: 'w2', textHeavy: 'w9', textJustify: 'tj', textJustifyAll: 'tja', textLeft: 'tl', textLight: 'w3', textMedium: 'w5', textNormalWeight: 'w4', textRight: 'tr', textSemiBold: 'w6', textThin: 'w1', textUnitalicized: 'tun', transition: 'ts', transparent: 'clr', underline: 'u', widthContent: 'wc', widthExact: 'we', widthFill: 'wf', widthFillPortion: 'wfp', wrapped: 'wrp'};
@@ -13291,7 +13345,7 @@ var $mdgriffith$elm_ui$Element$focused = function (decs) {
 			$mdgriffith$elm_ui$Internal$Model$Focus,
 			$mdgriffith$elm_ui$Internal$Model$unwrapDecorations(decs)));
 };
-var $author$project$Palette$lightGrey = A3($mdgriffith$elm_ui$Element$rgb255, 220, 220, 220);
+var $author$project$Palette$greyWhite = A3($mdgriffith$elm_ui$Element$rgb255, 220, 220, 220);
 var $mdgriffith$elm_ui$Internal$Model$Hover = {$: 'Hover'};
 var $mdgriffith$elm_ui$Internal$Flag$hover = $mdgriffith$elm_ui$Internal$Flag$flag(33);
 var $mdgriffith$elm_ui$Element$mouseOver = function (decs) {
@@ -13373,7 +13427,7 @@ var $author$project$View$connectButton = function (model) {
 				$mdgriffith$elm_ui$Element$px(30)),
 				$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill),
 				A2($mdgriffith$elm_ui$Element$paddingXY, 0, 0),
-				$mdgriffith$elm_ui$Element$Font$color($author$project$Palette$lightGrey),
+				$mdgriffith$elm_ui$Element$Font$color($author$project$Palette$greyWhite),
 				$mdgriffith$elm_ui$Element$Font$center,
 				$mdgriffith$elm_ui$Element$focused(_List_Nil)
 			]),
@@ -13414,7 +13468,7 @@ var $author$project$View$disconnectButton = function (model) {
 				$mdgriffith$elm_ui$Element$px(30)),
 				$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill),
 				A2($mdgriffith$elm_ui$Element$paddingXY, 0, 0),
-				$mdgriffith$elm_ui$Element$Font$color($author$project$Palette$lightGrey),
+				$mdgriffith$elm_ui$Element$Font$color($author$project$Palette$greyWhite),
 				$mdgriffith$elm_ui$Element$Font$center,
 				$mdgriffith$elm_ui$Element$focused(_List_Nil)
 			]),
@@ -14688,7 +14742,7 @@ var $author$project$View$newCommandButton = F2(
 					$mdgriffith$elm_ui$Element$px(30)),
 					$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill),
 					A2($mdgriffith$elm_ui$Element$paddingXY, 0, 0),
-					$mdgriffith$elm_ui$Element$Font$color($author$project$Palette$lightGrey),
+					$mdgriffith$elm_ui$Element$Font$color($author$project$Palette$greyWhite),
 					$mdgriffith$elm_ui$Element$Font$center
 				]),
 			{
@@ -14716,7 +14770,7 @@ var $author$project$View$loadCSVButton = A2(
 			$mdgriffith$elm_ui$Element$px(30)),
 			$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill),
 			A2($mdgriffith$elm_ui$Element$paddingXY, 0, 0),
-			$mdgriffith$elm_ui$Element$Font$color($author$project$Palette$lightGrey),
+			$mdgriffith$elm_ui$Element$Font$color($author$project$Palette$greyWhite),
 			$mdgriffith$elm_ui$Element$Font$center,
 			$mdgriffith$elm_ui$Element$focused(_List_Nil)
 		]),
@@ -14725,6 +14779,7 @@ var $author$project$View$loadCSVButton = A2(
 		onPress: $elm$core$Maybe$Just($author$project$Types$CsvRequested)
 	});
 var $author$project$Types$ModDataRequest = {$: 'ModDataRequest'};
+var $author$project$Palette$lightGrey = A3($mdgriffith$elm_ui$Element$rgb255, 122, 122, 122);
 var $author$project$View$loadRegisterTableButton = A2(
 	$mdgriffith$elm_ui$Element$Input$button,
 	_List_fromArray(
@@ -14824,20 +14879,25 @@ var $author$project$View$commandBar = function (model) {
 };
 var $mdgriffith$elm_ui$Internal$Model$Top = {$: 'Top'};
 var $mdgriffith$elm_ui$Element$alignTop = $mdgriffith$elm_ui$Internal$Model$AlignY($mdgriffith$elm_ui$Internal$Model$Top);
-var $author$project$Palette$dimGrey = A3($mdgriffith$elm_ui$Element$rgb255, 104, 104, 104);
-var $author$project$Palette$grey = A3($mdgriffith$elm_ui$Element$rgb255, 125, 125, 125);
-var $author$project$View$newSelectButton = F2(
-	function (str, action) {
+var $author$project$Palette$darkGrey = A3($mdgriffith$elm_ui$Element$rgb255, 50, 50, 50);
+var $author$project$Types$HeartbeatTable = {$: 'HeartbeatTable'};
+var $author$project$Types$ChangeActiveTable = function (a) {
+	return {$: 'ChangeActiveTable', a: a};
+};
+var $author$project$Palette$grey = A3($mdgriffith$elm_ui$Element$rgb255, 90, 90, 90);
+var $author$project$View$selectButtonBgdColor = F2(
+	function (model, table) {
+		return _Utils_eq(model.activeTable, table) ? $author$project$Palette$grey : $author$project$Palette$darkGrey;
+	});
+var $author$project$View$newSelectButton = F3(
+	function (model, str, table) {
 		return A2(
 			$mdgriffith$elm_ui$Element$Input$button,
 			_List_fromArray(
 				[
-					$mdgriffith$elm_ui$Element$focused(
-					_List_fromArray(
-						[
-							$mdgriffith$elm_ui$Element$Background$color($author$project$Palette$grey),
-							$mdgriffith$elm_ui$Element$Font$color($author$project$Palette$white)
-						])),
+					$mdgriffith$elm_ui$Element$Background$color(
+					A2($author$project$View$selectButtonBgdColor, model, table)),
+					$mdgriffith$elm_ui$Element$focused(_List_Nil),
 					$mdgriffith$elm_ui$Element$mouseOver(
 					_List_fromArray(
 						[
@@ -14846,33 +14906,51 @@ var $author$project$View$newSelectButton = F2(
 					$mdgriffith$elm_ui$Element$Border$width(0),
 					$mdgriffith$elm_ui$Element$height($mdgriffith$elm_ui$Element$fill),
 					A2($mdgriffith$elm_ui$Element$paddingXY, 10, 0),
-					$mdgriffith$elm_ui$Element$Font$color($author$project$Palette$lightGrey)
+					$mdgriffith$elm_ui$Element$Font$color($author$project$Palette$greyWhite)
 				]),
 			{
 				label: $mdgriffith$elm_ui$Element$text(str),
-				onPress: action
+				onPress: $elm$core$Maybe$Just(
+					$author$project$Types$ChangeActiveTable(table))
 			});
 	});
-var $author$project$View$heartbeatButton = A2($author$project$View$newSelectButton, 'Heartbeat Signals', $elm$core$Maybe$Nothing);
-var $author$project$View$holdingRegistersButton = A2($author$project$View$newSelectButton, 'Holding Registers', $elm$core$Maybe$Nothing);
-var $author$project$View$inputRegistersButton = A2($author$project$View$newSelectButton, 'Input Registers', $elm$core$Maybe$Nothing);
-var $author$project$View$registerTableButton = A2($author$project$View$newSelectButton, 'Register Table', $elm$core$Maybe$Nothing);
-var $author$project$View$tableSelectBar = A2(
-	$mdgriffith$elm_ui$Element$row,
-	_List_fromArray(
-		[
-			$mdgriffith$elm_ui$Element$Background$color($author$project$Palette$dimGrey),
-			$mdgriffith$elm_ui$Element$alignTop,
-			$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill),
-			$mdgriffith$elm_ui$Element$height(
-			$mdgriffith$elm_ui$Element$px(30)),
-			A2($mdgriffith$elm_ui$Element$paddingXY, 10, 0),
-			$mdgriffith$elm_ui$Element$spacing(0)
-		]),
-	_List_fromArray(
-		[$author$project$View$inputRegistersButton, $author$project$View$holdingRegistersButton, $author$project$View$registerTableButton, $author$project$View$heartbeatButton]));
-var $mdgriffith$elm_ui$Element$InternalColumn = function (a) {
-	return {$: 'InternalColumn', a: a};
+var $author$project$View$heartbeatButton = function (model) {
+	return A3($author$project$View$newSelectButton, model, 'Heartbeat Signals', $author$project$Types$HeartbeatTable);
+};
+var $author$project$Types$HoldingRegistersTable = {$: 'HoldingRegistersTable'};
+var $author$project$View$holdingRegistersButton = function (model) {
+	return A3($author$project$View$newSelectButton, model, 'Holding Registers', $author$project$Types$HoldingRegistersTable);
+};
+var $author$project$Types$InputRegistersTable = {$: 'InputRegistersTable'};
+var $author$project$View$inputRegistersButton = function (model) {
+	return A3($author$project$View$newSelectButton, model, 'Input Registers', $author$project$Types$InputRegistersTable);
+};
+var $author$project$View$registerTableButton = function (model) {
+	return A3($author$project$View$newSelectButton, model, 'Register Table', $author$project$Types$ModDataTable);
+};
+var $author$project$View$tableSelectBar = function (model) {
+	return A2(
+		$mdgriffith$elm_ui$Element$row,
+		_List_fromArray(
+			[
+				$mdgriffith$elm_ui$Element$Background$color($author$project$Palette$darkGrey),
+				$mdgriffith$elm_ui$Element$alignTop,
+				$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill),
+				$mdgriffith$elm_ui$Element$height(
+				$mdgriffith$elm_ui$Element$px(30)),
+				A2($mdgriffith$elm_ui$Element$paddingXY, 10, 0),
+				$mdgriffith$elm_ui$Element$spacing(0)
+			]),
+		_List_fromArray(
+			[
+				$author$project$View$inputRegistersButton(model),
+				$author$project$View$holdingRegistersButton(model),
+				$author$project$View$registerTableButton(model),
+				$author$project$View$heartbeatButton(model)
+			]));
+};
+var $mdgriffith$elm_ui$Element$InternalIndexedColumn = function (a) {
+	return {$: 'InternalIndexedColumn', a: a};
 };
 var $mdgriffith$elm_ui$Internal$Model$GridPosition = function (a) {
 	return {$: 'GridPosition', a: a};
@@ -15085,26 +15163,460 @@ var $mdgriffith$elm_ui$Element$tableHelper = F2(
 					}
 				}()));
 	});
-var $mdgriffith$elm_ui$Element$table = F2(
+var $mdgriffith$elm_ui$Element$indexedTable = F2(
 	function (attrs, config) {
 		return A2(
 			$mdgriffith$elm_ui$Element$tableHelper,
 			attrs,
 			{
-				columns: A2($elm$core$List$map, $mdgriffith$elm_ui$Element$InternalColumn, config.columns),
+				columns: A2($elm$core$List$map, $mdgriffith$elm_ui$Element$InternalIndexedColumn, config.columns),
 				data: config.data
 			});
 	});
+var $mdgriffith$elm_ui$Element$fillPortion = $mdgriffith$elm_ui$Internal$Model$Fill;
+var $mdgriffith$elm_ui$Internal$Model$CenterX = {$: 'CenterX'};
+var $mdgriffith$elm_ui$Element$centerX = $mdgriffith$elm_ui$Internal$Model$AlignX($mdgriffith$elm_ui$Internal$Model$CenterX);
+var $mdgriffith$elm_ui$Internal$Model$CenterY = {$: 'CenterY'};
+var $mdgriffith$elm_ui$Element$centerY = $mdgriffith$elm_ui$Internal$Model$AlignY($mdgriffith$elm_ui$Internal$Model$CenterY);
+var $author$project$View$headerTextAttr = _List_fromArray(
+	[$mdgriffith$elm_ui$Element$centerX, $mdgriffith$elm_ui$Element$centerY]);
+var $elm$core$Basics$modBy = _Basics_modBy;
+var $author$project$View$tableCellColor = function (idx) {
+	return (!A2($elm$core$Basics$modBy, 2, idx)) ? $author$project$Palette$lightGrey : $author$project$Palette$grey;
+};
+var $author$project$View$viewCell = F2(
+	function (idx, str) {
+		return A2(
+			$mdgriffith$elm_ui$Element$el,
+			_List_fromArray(
+				[
+					$mdgriffith$elm_ui$Element$Background$color(
+					$author$project$View$tableCellColor(idx)),
+					$mdgriffith$elm_ui$Element$Font$color($author$project$Palette$greyWhite),
+					$mdgriffith$elm_ui$Element$height(
+					$mdgriffith$elm_ui$Element$px(30)),
+					$mdgriffith$elm_ui$Element$Font$center
+				]),
+			A2(
+				$mdgriffith$elm_ui$Element$el,
+				_List_fromArray(
+					[$mdgriffith$elm_ui$Element$centerX, $mdgriffith$elm_ui$Element$centerY]),
+				$mdgriffith$elm_ui$Element$text(str)));
+	});
+var $author$project$View$modAddressColumn = {
+	header: A2(
+		$mdgriffith$elm_ui$Element$el,
+		_List_fromArray(
+			[
+				$mdgriffith$elm_ui$Element$height(
+				$mdgriffith$elm_ui$Element$px(30))
+			]),
+		A2(
+			$mdgriffith$elm_ui$Element$el,
+			$author$project$View$headerTextAttr,
+			$mdgriffith$elm_ui$Element$text('Register Address'))),
+	view: F2(
+		function (i, md) {
+			return A2(
+				$author$project$View$viewCell,
+				i,
+				$elm$core$String$fromInt(md.modAddress));
+		}),
+	width: $mdgriffith$elm_ui$Element$fillPortion(1)
+};
+var $mdgriffith$elm_ui$Internal$Model$Left = {$: 'Left'};
+var $mdgriffith$elm_ui$Element$alignLeft = $mdgriffith$elm_ui$Internal$Model$AlignX($mdgriffith$elm_ui$Internal$Model$Left);
+var $author$project$View$viewDescCell = F2(
+	function (idx, str) {
+		return A2(
+			$mdgriffith$elm_ui$Element$el,
+			_List_fromArray(
+				[
+					$mdgriffith$elm_ui$Element$Background$color(
+					$author$project$View$tableCellColor(idx)),
+					$mdgriffith$elm_ui$Element$Font$color($author$project$Palette$greyWhite),
+					$mdgriffith$elm_ui$Element$height(
+					$mdgriffith$elm_ui$Element$px(30)),
+					$mdgriffith$elm_ui$Element$Font$center
+				]),
+			A2(
+				$mdgriffith$elm_ui$Element$el,
+				_List_fromArray(
+					[$mdgriffith$elm_ui$Element$alignLeft, $mdgriffith$elm_ui$Element$centerY]),
+				$mdgriffith$elm_ui$Element$text(str)));
+	});
+var $author$project$View$modDescriptionColumn = {
+	header: A2(
+		$mdgriffith$elm_ui$Element$el,
+		_List_fromArray(
+			[
+				$mdgriffith$elm_ui$Element$height(
+				$mdgriffith$elm_ui$Element$px(30))
+			]),
+		A2(
+			$mdgriffith$elm_ui$Element$el,
+			_List_fromArray(
+				[$mdgriffith$elm_ui$Element$alignLeft, $mdgriffith$elm_ui$Element$centerY]),
+			$mdgriffith$elm_ui$Element$text('Description'))),
+	view: F2(
+		function (i, md) {
+			return A2($author$project$View$viewDescCell, i, md.modDescription);
+		}),
+	width: $mdgriffith$elm_ui$Element$fillPortion(4)
+};
+var $author$project$View$modNameColumn = {
+	header: A2(
+		$mdgriffith$elm_ui$Element$el,
+		_List_fromArray(
+			[
+				$mdgriffith$elm_ui$Element$height(
+				$mdgriffith$elm_ui$Element$px(30))
+			]),
+		A2(
+			$mdgriffith$elm_ui$Element$el,
+			$author$project$View$headerTextAttr,
+			$mdgriffith$elm_ui$Element$text('Name'))),
+	view: F2(
+		function (i, md) {
+			return A2($author$project$View$viewCell, i, md.modName);
+		}),
+	width: $mdgriffith$elm_ui$Element$fillPortion(1)
+};
+var $author$project$View$modRegTypeColumn = {
+	header: A2(
+		$mdgriffith$elm_ui$Element$el,
+		_List_fromArray(
+			[
+				$mdgriffith$elm_ui$Element$height(
+				$mdgriffith$elm_ui$Element$px(30))
+			]),
+		A2(
+			$mdgriffith$elm_ui$Element$el,
+			$author$project$View$headerTextAttr,
+			$mdgriffith$elm_ui$Element$text('Register Type'))),
+	view: F2(
+		function (i, md) {
+			return A2(
+				$author$project$View$viewCell,
+				i,
+				$author$project$Types$getRegType(md.modRegType));
+		}),
+	width: $mdgriffith$elm_ui$Element$fillPortion(1)
+};
+var $author$project$View$modUidColumn = {
+	header: A2(
+		$mdgriffith$elm_ui$Element$el,
+		_List_fromArray(
+			[
+				$mdgriffith$elm_ui$Element$height(
+				$mdgriffith$elm_ui$Element$px(30))
+			]),
+		A2(
+			$mdgriffith$elm_ui$Element$el,
+			$author$project$View$headerTextAttr,
+			$mdgriffith$elm_ui$Element$text('Unit Id'))),
+	view: F2(
+		function (i, md) {
+			return A2(
+				$author$project$View$viewCell,
+				i,
+				$elm$core$String$fromInt(md.modUid));
+		}),
+	width: $mdgriffith$elm_ui$Element$fillPortion(1)
+};
+var $author$project$Types$getModValue = function (mv) {
+	if (mv.$ === 'ModWord') {
+		var v = mv.a;
+		return A2($elm$core$Maybe$map, $elm$core$String$fromInt, v);
+	} else {
+		var v = mv.a;
+		return A2($elm$core$Maybe$map, $elm$core$String$fromFloat, v);
+	}
+};
+var $author$project$View$modValueColumn = {
+	header: A2(
+		$mdgriffith$elm_ui$Element$el,
+		_List_fromArray(
+			[
+				$mdgriffith$elm_ui$Element$height(
+				$mdgriffith$elm_ui$Element$px(30))
+			]),
+		A2(
+			$mdgriffith$elm_ui$Element$el,
+			$author$project$View$headerTextAttr,
+			$mdgriffith$elm_ui$Element$text('Value'))),
+	view: F2(
+		function (i, md) {
+			return A2(
+				$author$project$View$viewCell,
+				i,
+				A2(
+					$elm$core$Maybe$withDefault,
+					'Nothing',
+					$author$project$Types$getModValue(md.modValue)));
+		}),
+	width: $mdgriffith$elm_ui$Element$fillPortion(1)
+};
+var $author$project$Types$getModValueType = function (mv) {
+	if (mv.$ === 'ModWord') {
+		return 'Word';
+	} else {
+		return 'Float';
+	}
+};
+var $author$project$View$modValueTypeColumn = {
+	header: A2(
+		$mdgriffith$elm_ui$Element$el,
+		_List_fromArray(
+			[
+				$mdgriffith$elm_ui$Element$height(
+				$mdgriffith$elm_ui$Element$px(30))
+			]),
+		A2(
+			$mdgriffith$elm_ui$Element$el,
+			$author$project$View$headerTextAttr,
+			$mdgriffith$elm_ui$Element$text('Value Type'))),
+	view: F2(
+		function (i, md) {
+			return A2(
+				$author$project$View$viewCell,
+				i,
+				$author$project$Types$getModValueType(md.modValue));
+		}),
+	width: $mdgriffith$elm_ui$Element$fillPortion(1)
+};
+var $author$project$Types$SelectAllChecked = function (a) {
+	return {$: 'SelectAllChecked', a: a};
+};
+var $mdgriffith$elm_ui$Element$Input$tabindex = A2($elm$core$Basics$composeL, $mdgriffith$elm_ui$Internal$Model$Attr, $elm$html$Html$Attributes$tabindex);
+var $mdgriffith$elm_ui$Element$Input$checkbox = F2(
+	function (attrs, _v0) {
+		var label = _v0.label;
+		var icon = _v0.icon;
+		var checked = _v0.checked;
+		var onChange = _v0.onChange;
+		var attributes = _Utils_ap(
+			_List_fromArray(
+				[
+					$mdgriffith$elm_ui$Element$Input$isHiddenLabel(label) ? $mdgriffith$elm_ui$Internal$Model$NoAttribute : $mdgriffith$elm_ui$Element$spacing(6),
+					$mdgriffith$elm_ui$Internal$Model$Attr(
+					$elm$html$Html$Events$onClick(
+						onChange(!checked))),
+					$mdgriffith$elm_ui$Element$Region$announce,
+					$mdgriffith$elm_ui$Element$Input$onKeyLookup(
+					function (code) {
+						return _Utils_eq(code, $mdgriffith$elm_ui$Element$Input$enter) ? $elm$core$Maybe$Just(
+							onChange(!checked)) : (_Utils_eq(code, $mdgriffith$elm_ui$Element$Input$space) ? $elm$core$Maybe$Just(
+							onChange(!checked)) : $elm$core$Maybe$Nothing);
+					}),
+					$mdgriffith$elm_ui$Element$Input$tabindex(0),
+					$mdgriffith$elm_ui$Element$pointer,
+					$mdgriffith$elm_ui$Element$alignLeft,
+					$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill)
+				]),
+			attrs);
+		return A3(
+			$mdgriffith$elm_ui$Element$Input$applyLabel,
+			A2(
+				$elm$core$List$cons,
+				$mdgriffith$elm_ui$Internal$Model$Attr(
+					A2($elm$html$Html$Attributes$attribute, 'role', 'checkbox')),
+				A2(
+					$elm$core$List$cons,
+					$mdgriffith$elm_ui$Internal$Model$Attr(
+						A2(
+							$elm$html$Html$Attributes$attribute,
+							'aria-checked',
+							checked ? 'true' : 'false')),
+					A2(
+						$elm$core$List$cons,
+						$mdgriffith$elm_ui$Element$Input$hiddenLabelAttribute(label),
+						attributes))),
+			label,
+			A4(
+				$mdgriffith$elm_ui$Internal$Model$element,
+				$mdgriffith$elm_ui$Internal$Model$asEl,
+				$mdgriffith$elm_ui$Internal$Model$div,
+				_List_fromArray(
+					[
+						$mdgriffith$elm_ui$Element$centerY,
+						$mdgriffith$elm_ui$Element$height($mdgriffith$elm_ui$Element$fill),
+						$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$shrink)
+					]),
+				$mdgriffith$elm_ui$Internal$Model$Unkeyed(
+					_List_fromArray(
+						[
+							icon(checked)
+						]))));
+	});
+var $elm$core$Basics$pi = _Basics_pi;
+var $elm$core$Basics$degrees = function (angleInDegrees) {
+	return (angleInDegrees * $elm$core$Basics$pi) / 180;
+};
+var $mdgriffith$elm_ui$Internal$Model$Rotate = F2(
+	function (a, b) {
+		return {$: 'Rotate', a: a, b: b};
+	});
+var $mdgriffith$elm_ui$Internal$Flag$rotate = $mdgriffith$elm_ui$Internal$Flag$flag(24);
+var $mdgriffith$elm_ui$Element$rotate = function (angle) {
+	return A2(
+		$mdgriffith$elm_ui$Internal$Model$TransformComponent,
+		$mdgriffith$elm_ui$Internal$Flag$rotate,
+		A2(
+			$mdgriffith$elm_ui$Internal$Model$Rotate,
+			_Utils_Tuple3(0, 0, 1),
+			angle));
+};
+var $mdgriffith$elm_ui$Element$Font$size = function (i) {
+	return A2(
+		$mdgriffith$elm_ui$Internal$Model$StyleClass,
+		$mdgriffith$elm_ui$Internal$Flag$fontSize,
+		$mdgriffith$elm_ui$Internal$Model$FontSize(i));
+};
+var $mdgriffith$elm_ui$Element$transparent = function (on) {
+	return on ? A2(
+		$mdgriffith$elm_ui$Internal$Model$StyleClass,
+		$mdgriffith$elm_ui$Internal$Flag$transparency,
+		A2($mdgriffith$elm_ui$Internal$Model$Transparency, 'transparent', 1.0)) : A2(
+		$mdgriffith$elm_ui$Internal$Model$StyleClass,
+		$mdgriffith$elm_ui$Internal$Flag$transparency,
+		A2($mdgriffith$elm_ui$Internal$Model$Transparency, 'visible', 0.0));
+};
+var $mdgriffith$elm_ui$Element$Input$defaultCheckbox = function (checked) {
+	return A2(
+		$mdgriffith$elm_ui$Element$el,
+		_List_fromArray(
+			[
+				$mdgriffith$elm_ui$Internal$Model$htmlClass('focusable'),
+				$mdgriffith$elm_ui$Element$width(
+				$mdgriffith$elm_ui$Element$px(14)),
+				$mdgriffith$elm_ui$Element$height(
+				$mdgriffith$elm_ui$Element$px(14)),
+				$mdgriffith$elm_ui$Element$Font$color($mdgriffith$elm_ui$Element$Input$white),
+				$mdgriffith$elm_ui$Element$centerY,
+				$mdgriffith$elm_ui$Element$Font$size(9),
+				$mdgriffith$elm_ui$Element$Font$center,
+				$mdgriffith$elm_ui$Element$Border$rounded(3),
+				$mdgriffith$elm_ui$Element$Border$color(
+				checked ? A3($mdgriffith$elm_ui$Element$rgb, 59 / 255, 153 / 255, 252 / 255) : A3($mdgriffith$elm_ui$Element$rgb, 211 / 255, 211 / 255, 211 / 255)),
+				$mdgriffith$elm_ui$Element$Border$shadow(
+				{
+					blur: 1,
+					color: checked ? A4($mdgriffith$elm_ui$Element$rgba, 238 / 255, 238 / 255, 238 / 255, 0) : A3($mdgriffith$elm_ui$Element$rgb, 238 / 255, 238 / 255, 238 / 255),
+					offset: _Utils_Tuple2(0, 0),
+					size: 1
+				}),
+				$mdgriffith$elm_ui$Element$Background$color(
+				checked ? A3($mdgriffith$elm_ui$Element$rgb, 59 / 255, 153 / 255, 252 / 255) : $mdgriffith$elm_ui$Element$Input$white),
+				$mdgriffith$elm_ui$Element$Border$width(
+				checked ? 0 : 1),
+				$mdgriffith$elm_ui$Element$inFront(
+				A2(
+					$mdgriffith$elm_ui$Element$el,
+					_List_fromArray(
+						[
+							$mdgriffith$elm_ui$Element$Border$color($mdgriffith$elm_ui$Element$Input$white),
+							$mdgriffith$elm_ui$Element$height(
+							$mdgriffith$elm_ui$Element$px(6)),
+							$mdgriffith$elm_ui$Element$width(
+							$mdgriffith$elm_ui$Element$px(9)),
+							$mdgriffith$elm_ui$Element$rotate(
+							$elm$core$Basics$degrees(-45)),
+							$mdgriffith$elm_ui$Element$centerX,
+							$mdgriffith$elm_ui$Element$centerY,
+							$mdgriffith$elm_ui$Element$moveUp(1),
+							$mdgriffith$elm_ui$Element$transparent(!checked),
+							$mdgriffith$elm_ui$Element$Border$widthEach(
+							{bottom: 2, left: 2, right: 0, top: 0})
+						]),
+					$mdgriffith$elm_ui$Element$none))
+			]),
+		$mdgriffith$elm_ui$Element$none);
+};
+var $author$project$Types$ModDataChecked = F2(
+	function (a, b) {
+		return {$: 'ModDataChecked', a: a, b: b};
+	});
+var $author$project$View$viewCheckedCell = F2(
+	function (idx, selected) {
+		return A2(
+			$mdgriffith$elm_ui$Element$el,
+			_List_fromArray(
+				[
+					$mdgriffith$elm_ui$Element$Background$color(
+					$author$project$View$tableCellColor(idx)),
+					$mdgriffith$elm_ui$Element$Font$color($author$project$Palette$greyWhite),
+					$mdgriffith$elm_ui$Element$height(
+					$mdgriffith$elm_ui$Element$px(30)),
+					$mdgriffith$elm_ui$Element$Font$center
+				]),
+			A2(
+				$mdgriffith$elm_ui$Element$Input$checkbox,
+				_List_fromArray(
+					[$mdgriffith$elm_ui$Element$alignLeft, $mdgriffith$elm_ui$Element$centerY]),
+				{
+					checked: selected,
+					icon: $mdgriffith$elm_ui$Element$Input$defaultCheckbox,
+					label: $mdgriffith$elm_ui$Element$Input$labelHidden('Select Field'),
+					onChange: $author$project$Types$ModDataChecked(idx)
+				}));
+	});
+var $author$project$View$selectColumn = function (model) {
+	return {
+		header: A2(
+			$mdgriffith$elm_ui$Element$el,
+			_List_fromArray(
+				[
+					$mdgriffith$elm_ui$Element$height(
+					$mdgriffith$elm_ui$Element$px(30))
+				]),
+			A2(
+				$mdgriffith$elm_ui$Element$el,
+				_List_fromArray(
+					[$mdgriffith$elm_ui$Element$alignLeft, $mdgriffith$elm_ui$Element$centerY]),
+				A2(
+					$mdgriffith$elm_ui$Element$Input$checkbox,
+					_List_Nil,
+					{
+						checked: model.selectAllCheckbox,
+						icon: $mdgriffith$elm_ui$Element$Input$defaultCheckbox,
+						label: $mdgriffith$elm_ui$Element$Input$labelHidden('Select all'),
+						onChange: $author$project$Types$SelectAllChecked
+					}))),
+		view: F2(
+			function (i, md) {
+				return A2($author$project$View$viewCheckedCell, i, md.selected);
+			}),
+		width: $mdgriffith$elm_ui$Element$px(30)
+	};
+};
+var $author$project$View$modDataColumns = function (model) {
+	return _List_fromArray(
+		[
+			$author$project$View$modNameColumn,
+			$author$project$View$modRegTypeColumn,
+			$author$project$View$modAddressColumn,
+			$author$project$View$modValueTypeColumn,
+			$author$project$View$modValueColumn,
+			$author$project$View$modUidColumn,
+			$author$project$View$modDescriptionColumn,
+			$author$project$View$selectColumn(model)
+		]);
+};
 var $author$project$View$newRegisterTable = function (model) {
 	return A2(
-		$mdgriffith$elm_ui$Element$table,
+		$mdgriffith$elm_ui$Element$indexedTable,
 		_List_fromArray(
 			[
 				$mdgriffith$elm_ui$Element$Background$color($author$project$Palette$grey),
 				$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill),
-				$mdgriffith$elm_ui$Element$height($mdgriffith$elm_ui$Element$fill)
+				$mdgriffith$elm_ui$Element$height($mdgriffith$elm_ui$Element$fill),
+				$mdgriffith$elm_ui$Element$Font$center
 			]),
-		{columns: _List_Nil, data: _List_Nil});
+		{
+			columns: $author$project$View$modDataColumns(model),
+			data: model.modData
+		});
 };
 var $author$project$View$heartbeatTable = function (model) {
 	return $author$project$View$newRegisterTable(model);
@@ -15141,7 +15653,7 @@ var $author$project$View$registerCell = function (model) {
 			]),
 		_List_fromArray(
 			[
-				$author$project$View$tableSelectBar,
+				$author$project$View$tableSelectBar(model),
 				$author$project$View$tablesCell(model)
 			]));
 };
@@ -15158,12 +15670,6 @@ var $author$project$View$mainCell = function (model) {
 				$author$project$View$registerCell(model),
 				$author$project$View$commandBar(model)
 			]));
-};
-var $mdgriffith$elm_ui$Element$Font$size = function (i) {
-	return A2(
-		$mdgriffith$elm_ui$Internal$Model$StyleClass,
-		$mdgriffith$elm_ui$Internal$Flag$fontSize,
-		$mdgriffith$elm_ui$Internal$Model$FontSize(i));
 };
 var $author$project$Palette$smallFont = $mdgriffith$elm_ui$Element$Font$size(14);
 var $mdgriffith$elm_ui$Internal$Model$Bottom = {$: 'Bottom'};
