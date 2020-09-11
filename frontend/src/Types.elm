@@ -14,7 +14,9 @@ module Types exposing
     , encodeRegister
     , decodeModData
     , ActiveTab (..)
-    , replaceModData
+    , replaceModDataWrite
+    , writeableReg
+    , replaceModDataSelected
     , getModValue
     , getModValueType
     , getModSelected
@@ -53,6 +55,8 @@ type Msg
     | ReceivedModData ( Result Http.Error (List ModData))
     | SelectAllChecked Bool
     | ModDataChecked Int Bool
+    | ToggleWriteAll Bool
+    | ModDataWrite Int Bool
 
 type alias Model =
     { modData : List ModData
@@ -67,6 +71,7 @@ type alias Model =
     , csvLoaded : Bool
     , selectAllCheckbox : Bool
     , selectSome : Bool
+    , toggleWriteAll : Bool
     }
 type ConnectStatus
     = Connect
@@ -130,11 +135,18 @@ type alias ModData =
     , modUid : Int
     , modDescription : String
     , selected : Bool
+    , write : Bool
     }
 
 type RegType
     = InputRegister
     | HoldingRegister
+
+writeableReg : ModData -> Bool
+writeableReg md =
+    case md.modRegType of
+        InputRegister -> False
+        HoldingRegister -> True
 
 type ModValue
     = ModWord (Maybe Int)
@@ -188,13 +200,14 @@ encodeModValue mv =
 
 decodeModData : D.Decoder ModData
 decodeModData =
-    D.map7 ModData
+    D.map8 ModData
         ( D.field "name" D.string )
         ( D.field "register type" decodeRegType )
         ( D.field "address" D.int )
         ( D.field "register value" decodeModValue )
         ( D.field "uid" D.int )
         ( D.field "description" D.string )
+        ( D.succeed False )
         ( D.succeed False )
 
 
@@ -217,11 +230,18 @@ decodeRegType =
             _ -> InputRegister
     ) D.string
 
-replaceModData : Int -> Bool -> Int -> ModData -> ModData
-replaceModData idx checked =
+replaceModDataSelected : Int -> Bool -> Int -> ModData -> ModData
+replaceModDataSelected idx checked =
     \i md ->
         if i == idx
         then { md | selected = checked }
+        else md
+
+replaceModDataWrite : Int -> Bool -> Int -> ModData -> ModData
+replaceModDataWrite idx flag =
+    \i md ->
+        if i == idx && writeableReg md
+        then { md | write = flag }
         else md
 
 getModSelected : ModData -> Bool

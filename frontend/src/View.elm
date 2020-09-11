@@ -64,6 +64,8 @@ import Palette exposing
     , scampi
     , slateGrey
     )
+import Types exposing (getModSelected)
+import Types exposing (writeableReg)
 
 view : Model -> Html Msg
 view model = layout [] <| page model
@@ -416,6 +418,7 @@ modDataColumns model =
     , modValueColumn
     , modUidColumn
     , modDescriptionColumn
+    , readWriteColumn model
     , selectColumn model
     ]
 
@@ -468,11 +471,39 @@ modDescriptionColumn =
     , view = \i md -> viewDescCell i md.modDescription
     }
 
+readWriteColumn : Model -> IndexedColumn ModData Msg
+readWriteColumn model =
+    { header =
+        el
+            [ height <| px 30
+            ]
+            <| readWriteButton
+                (readWriteButtonText model.toggleWriteAll)
+                <| Just <| ToggleWriteAll <| not model.toggleWriteAll
+    , width = px 50
+    , view = \i md -> viewReadWriteCell model i md
+    }
+
+readWriteButton : Element Msg -> Maybe Msg -> Element Msg
+readWriteButton lbl msg =
+    Input.button
+        [ centerY ]
+        { onPress = msg
+        , label = lbl
+        }
+
+readWriteButtonText : Bool -> Element Msg
+readWriteButtonText flag =
+    if flag
+    then text "Write"
+    else text "Read"
+
 selectColumn : Model -> IndexedColumn ModData Msg
 selectColumn model =
     { header =
         el
-            [ height <| px 30 ] <| el [alignLeft , centerY ]
+            [ height <| px 30 ]
+            <| el [alignLeft , centerY ]
             <| Input.checkbox
                 []
                 { onChange = SelectAllChecked
@@ -524,6 +555,26 @@ viewCheckedCell idx selected =
                 , label = Input.labelHidden "Select Field"
                 }
 
+viewReadWriteCell : Model -> Int -> ModData ->  Element Msg
+viewReadWriteCell model idx md =
+    case model.activeTab of
+        ModDataTable -> viewReadWriteModDataCell idx md
+        HoldingRegistersTable -> none
+        _ -> none
+
+viewReadWriteModDataCell : Int -> ModData -> Element Msg
+viewReadWriteModDataCell idx md =
+    el
+        [ Background.color <| tableCellColor idx
+        ,  Font.color greyWhite
+        , height <| px 30
+        , Font.center
+        ]
+        <| if writeableReg md
+           then readWriteButton
+                (readWriteButtonText md.write)
+                <| Just <| ModDataWrite idx <| not md.write
+           else none
 tableCellColor : Int -> Color
 tableCellColor idx =
     if modBy 2 idx == 0
@@ -563,8 +614,19 @@ modDataCommand model =
             [ Background.color scampi
             , width <| px 300
             , height fill
-            ] []
+            ]
+            [ updateSelectedButton model ]
     else none
+
+updateSelectedButton : Model -> Element Msg
+updateSelectedButton model =
+    Input.button
+        [ Background.color lightGrey
+
+        ]
+        { onPress = Just <| RefreshRequest <| List.filter getModSelected model.modData
+        , label = text "Update Selected"
+        }
 ------------------------------------------------------------------------------------------------------------------
 -- Status Bar
 

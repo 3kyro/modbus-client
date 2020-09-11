@@ -6553,17 +6553,19 @@ var $author$project$App$initModData = _List_fromArray(
 		modUid: 1,
 		modValue: $author$project$Types$ModWord(
 			$elm$core$Maybe$Just(1)),
-		selected: false
+		selected: false,
+		write: false
 	},
 		{
 		modAddress: 2,
 		modDescription: 'A register for tesing purposes',
 		modName: 'second',
-		modRegType: $author$project$Types$InputRegister,
+		modRegType: $author$project$Types$HoldingRegister,
 		modUid: 1,
 		modValue: $author$project$Types$ModWord(
 			$elm$core$Maybe$Just(2)),
-		selected: false
+		selected: false,
+		write: false
 	},
 		{
 		modAddress: 10,
@@ -6572,7 +6574,8 @@ var $author$project$App$initModData = _List_fromArray(
 		modRegType: $author$project$Types$InputRegister,
 		modUid: 1,
 		modValue: $author$project$Types$ModWord($elm$core$Maybe$Nothing),
-		selected: false
+		selected: false,
+		write: false
 	},
 		{
 		modAddress: 15,
@@ -6581,7 +6584,8 @@ var $author$project$App$initModData = _List_fromArray(
 		modRegType: $author$project$Types$HoldingRegister,
 		modUid: 1,
 		modValue: $author$project$Types$ModWord($elm$core$Maybe$Nothing),
-		selected: false
+		selected: false,
+		write: false
 	}
 	]);
 var $author$project$App$initModel = {
@@ -6596,7 +6600,8 @@ var $author$project$App$initModel = {
 	selectSome: false,
 	socketPort: $elm$core$Maybe$Just(502),
 	status: $author$project$Types$AllGood,
-	timeout: $elm$core$Maybe$Just(1000)
+	timeout: $elm$core$Maybe$Just(1000),
+	toggleWriteAll: false
 };
 var $elm$core$Platform$Sub$batch = _Platform_batch;
 var $elm$core$Platform$Sub$none = $elm$core$Platform$Sub$batch(_List_Nil);
@@ -6770,9 +6775,9 @@ var $elm$core$Platform$Cmd$none = $elm$core$Platform$Cmd$batch(_List_Nil);
 var $author$project$Types$ReadRegisters = function (a) {
 	return {$: 'ReadRegisters', a: a};
 };
-var $author$project$Types$ModData = F7(
-	function (modName, modRegType, modAddress, modValue, modUid, modDescription, selected) {
-		return {modAddress: modAddress, modDescription: modDescription, modName: modName, modRegType: modRegType, modUid: modUid, modValue: modValue, selected: selected};
+var $author$project$Types$ModData = F8(
+	function (modName, modRegType, modAddress, modValue, modUid, modDescription, selected, write) {
+		return {modAddress: modAddress, modDescription: modDescription, modName: modName, modRegType: modRegType, modUid: modUid, modValue: modValue, selected: selected, write: write};
 	});
 var $author$project$Types$ModFloat = function (a) {
 	return {$: 'ModFloat', a: a};
@@ -6825,9 +6830,9 @@ var $author$project$Types$decodeRegType = A2(
 		}
 	},
 	$elm$json$Json$Decode$string);
-var $elm$json$Json$Decode$map7 = _Json_map7;
-var $author$project$Types$decodeModData = A8(
-	$elm$json$Json$Decode$map7,
+var $elm$json$Json$Decode$map8 = _Json_map8;
+var $author$project$Types$decodeModData = A9(
+	$elm$json$Json$Decode$map8,
 	$author$project$Types$ModData,
 	A2($elm$json$Json$Decode$field, 'name', $elm$json$Json$Decode$string),
 	A2($elm$json$Json$Decode$field, 'register type', $author$project$Types$decodeRegType),
@@ -6835,6 +6840,7 @@ var $author$project$Types$decodeModData = A8(
 	A2($elm$json$Json$Decode$field, 'register value', $author$project$Types$decodeModValue),
 	A2($elm$json$Json$Decode$field, 'uid', $elm$json$Json$Decode$int),
 	A2($elm$json$Json$Decode$field, 'description', $elm$json$Json$Decode$string),
+	$elm$json$Json$Decode$succeed(false),
 	$elm$json$Json$Decode$succeed(false));
 var $elm$json$Json$Encode$float = _Json_wrap;
 var $author$project$Types$encodeModValue = function (mv) {
@@ -6940,13 +6946,30 @@ var $author$project$Update$refreshRequest = function (regs) {
 			url: 'http://localhost:4000/register'
 		});
 };
-var $author$project$Types$replaceModData = F2(
+var $author$project$Types$replaceModDataSelected = F2(
 	function (idx, checked) {
 		return F2(
 			function (i, md) {
 				return _Utils_eq(i, idx) ? _Utils_update(
 					md,
 					{selected: checked}) : md;
+			});
+	});
+var $author$project$Types$writeableReg = function (md) {
+	var _v0 = md.modRegType;
+	if (_v0.$ === 'InputRegister') {
+		return false;
+	} else {
+		return true;
+	}
+};
+var $author$project$Types$replaceModDataWrite = F2(
+	function (idx, flag) {
+		return F2(
+			function (i, md) {
+				return (_Utils_eq(i, idx) && $author$project$Types$writeableReg(md)) ? _Utils_update(
+					md,
+					{write: flag}) : md;
 			});
 	});
 var $author$project$Types$ReceivedModData = function (a) {
@@ -7277,12 +7300,12 @@ var $author$project$Update$update = F2(
 							{selectAllCheckbox: b}),
 						$elm$core$Platform$Cmd$none);
 				}
-			default:
+			case 'ModDataChecked':
 				var idx = msg.a;
 				var checked = msg.b;
 				var newMd = A2(
 					$elm$core$List$indexedMap,
-					A2($author$project$Types$replaceModData, idx, checked),
+					A2($author$project$Types$replaceModDataSelected, idx, checked),
 					model.modData);
 				return _Utils_Tuple2(
 					_Utils_update(
@@ -7291,6 +7314,40 @@ var $author$project$Update$update = F2(
 							modData: newMd,
 							selectSome: A2($elm$core$List$any, $author$project$Types$getModSelected, newMd)
 						}),
+					$elm$core$Platform$Cmd$none);
+			case 'ToggleWriteAll':
+				var b = msg.a;
+				var _v7 = model.activeTab;
+				if (_v7.$ === 'ModDataTable') {
+					return _Utils_Tuple2(
+						_Utils_update(
+							model,
+							{
+								modData: A2(
+									$elm$core$List$map,
+									function (md) {
+										return $author$project$Types$writeableReg(md) ? _Utils_update(
+											md,
+											{write: b}) : md;
+									},
+									model.modData),
+								toggleWriteAll: b
+							}),
+						$elm$core$Platform$Cmd$none);
+				} else {
+					return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
+				}
+			default:
+				var idx = msg.a;
+				var flag = msg.b;
+				var newMd = A2(
+					$elm$core$List$indexedMap,
+					A2($author$project$Types$replaceModDataWrite, idx, flag),
+					model.modData);
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{modData: newMd}),
 					$elm$core$Platform$Cmd$none);
 		}
 	});
@@ -13018,46 +13075,9 @@ var $mdgriffith$elm_ui$Internal$Model$Px = function (a) {
 };
 var $mdgriffith$elm_ui$Element$px = $mdgriffith$elm_ui$Internal$Model$Px;
 var $author$project$Palette$scampi = A3($mdgriffith$elm_ui$Element$rgb255, 113, 109, 142);
-var $author$project$View$modDataCommand = function (model) {
-	return model.selectSome ? A2(
-		$mdgriffith$elm_ui$Element$column,
-		_List_fromArray(
-			[
-				$mdgriffith$elm_ui$Element$Background$color($author$project$Palette$scampi),
-				$mdgriffith$elm_ui$Element$width(
-				$mdgriffith$elm_ui$Element$px(300)),
-				$mdgriffith$elm_ui$Element$height($mdgriffith$elm_ui$Element$fill)
-			]),
-		_List_Nil) : $mdgriffith$elm_ui$Element$none;
+var $author$project$Types$RefreshRequest = function (a) {
+	return {$: 'RefreshRequest', a: a};
 };
-var $author$project$View$commandArea = function (model) {
-	var _v0 = model.activeTab;
-	switch (_v0.$) {
-		case 'ConnectMenu':
-			return $mdgriffith$elm_ui$Element$none;
-		case 'ImportMenu':
-			return $mdgriffith$elm_ui$Element$none;
-		case 'InputRegistersTable':
-			return $mdgriffith$elm_ui$Element$none;
-		case 'HoldingRegistersTable':
-			return $mdgriffith$elm_ui$Element$none;
-		case 'ModDataTable':
-			return $author$project$View$modDataCommand(model);
-		default:
-			return $mdgriffith$elm_ui$Element$none;
-	}
-};
-var $mdgriffith$elm_ui$Internal$Model$AlignX = function (a) {
-	return {$: 'AlignX', a: a};
-};
-var $mdgriffith$elm_ui$Internal$Model$CenterX = {$: 'CenterX'};
-var $mdgriffith$elm_ui$Element$centerX = $mdgriffith$elm_ui$Internal$Model$AlignX($mdgriffith$elm_ui$Internal$Model$CenterX);
-var $mdgriffith$elm_ui$Internal$Model$AlignY = function (a) {
-	return {$: 'AlignY', a: a};
-};
-var $mdgriffith$elm_ui$Internal$Model$CenterY = {$: 'CenterY'};
-var $mdgriffith$elm_ui$Element$centerY = $mdgriffith$elm_ui$Internal$Model$AlignY($mdgriffith$elm_ui$Internal$Model$CenterY);
-var $author$project$Types$ConnectRequest = {$: 'ConnectRequest'};
 var $mdgriffith$elm_ui$Internal$Model$Button = {$: 'Button'};
 var $mdgriffith$elm_ui$Internal$Model$Describe = function (a) {
 	return {$: 'Describe', a: a};
@@ -13211,6 +13231,70 @@ var $mdgriffith$elm_ui$Element$Input$button = F2(
 				_List_fromArray(
 					[label])));
 	});
+var $author$project$Palette$lightGrey = A3($mdgriffith$elm_ui$Element$rgb255, 122, 122, 122);
+var $mdgriffith$elm_ui$Internal$Model$Text = function (a) {
+	return {$: 'Text', a: a};
+};
+var $mdgriffith$elm_ui$Element$text = function (content) {
+	return $mdgriffith$elm_ui$Internal$Model$Text(content);
+};
+var $author$project$View$updateSelectedButton = function (model) {
+	return A2(
+		$mdgriffith$elm_ui$Element$Input$button,
+		_List_fromArray(
+			[
+				$mdgriffith$elm_ui$Element$Background$color($author$project$Palette$lightGrey)
+			]),
+		{
+			label: $mdgriffith$elm_ui$Element$text('Update Selected'),
+			onPress: $elm$core$Maybe$Just(
+				$author$project$Types$RefreshRequest(
+					A2($elm$core$List$filter, $author$project$Types$getModSelected, model.modData)))
+		});
+};
+var $author$project$View$modDataCommand = function (model) {
+	return model.selectSome ? A2(
+		$mdgriffith$elm_ui$Element$column,
+		_List_fromArray(
+			[
+				$mdgriffith$elm_ui$Element$Background$color($author$project$Palette$scampi),
+				$mdgriffith$elm_ui$Element$width(
+				$mdgriffith$elm_ui$Element$px(300)),
+				$mdgriffith$elm_ui$Element$height($mdgriffith$elm_ui$Element$fill)
+			]),
+		_List_fromArray(
+			[
+				$author$project$View$updateSelectedButton(model)
+			])) : $mdgriffith$elm_ui$Element$none;
+};
+var $author$project$View$commandArea = function (model) {
+	var _v0 = model.activeTab;
+	switch (_v0.$) {
+		case 'ConnectMenu':
+			return $mdgriffith$elm_ui$Element$none;
+		case 'ImportMenu':
+			return $mdgriffith$elm_ui$Element$none;
+		case 'InputRegistersTable':
+			return $mdgriffith$elm_ui$Element$none;
+		case 'HoldingRegistersTable':
+			return $mdgriffith$elm_ui$Element$none;
+		case 'ModDataTable':
+			return $author$project$View$modDataCommand(model);
+		default:
+			return $mdgriffith$elm_ui$Element$none;
+	}
+};
+var $mdgriffith$elm_ui$Internal$Model$AlignX = function (a) {
+	return {$: 'AlignX', a: a};
+};
+var $mdgriffith$elm_ui$Internal$Model$CenterX = {$: 'CenterX'};
+var $mdgriffith$elm_ui$Element$centerX = $mdgriffith$elm_ui$Internal$Model$AlignX($mdgriffith$elm_ui$Internal$Model$CenterX);
+var $mdgriffith$elm_ui$Internal$Model$AlignY = function (a) {
+	return {$: 'AlignY', a: a};
+};
+var $mdgriffith$elm_ui$Internal$Model$CenterY = {$: 'CenterY'};
+var $mdgriffith$elm_ui$Element$centerY = $mdgriffith$elm_ui$Internal$Model$AlignY($mdgriffith$elm_ui$Internal$Model$CenterY);
+var $author$project$Types$ConnectRequest = {$: 'ConnectRequest'};
 var $mdgriffith$elm_ui$Internal$Flag$fontAlignment = $mdgriffith$elm_ui$Internal$Flag$flag(12);
 var $mdgriffith$elm_ui$Element$Font$center = A2($mdgriffith$elm_ui$Internal$Model$Class, $mdgriffith$elm_ui$Internal$Flag$fontAlignment, $mdgriffith$elm_ui$Internal$Style$classes.textCenter);
 var $mdgriffith$elm_ui$Element$Font$color = function (fontColor) {
@@ -13224,7 +13308,6 @@ var $mdgriffith$elm_ui$Element$Font$color = function (fontColor) {
 			fontColor));
 };
 var $author$project$Palette$lightGreen = A3($mdgriffith$elm_ui$Element$rgb255, 82, 172, 162);
-var $author$project$Palette$lightGrey = A3($mdgriffith$elm_ui$Element$rgb255, 122, 122, 122);
 var $author$project$View$connectButtonBgd = function (model) {
 	var _v0 = model.connectStatus;
 	switch (_v0.$) {
@@ -13252,9 +13335,6 @@ var $mdgriffith$elm_ui$Internal$Model$TransformComponent = F2(
 	function (a, b) {
 		return {$: 'TransformComponent', a: a, b: b};
 	});
-var $mdgriffith$elm_ui$Internal$Model$Text = function (a) {
-	return {$: 'Text', a: a};
-};
 var $elm$virtual_dom$VirtualDom$map = _VirtualDom_map;
 var $mdgriffith$elm_ui$Internal$Model$map = F2(
 	function (fn, el) {
@@ -13435,9 +13515,6 @@ var $author$project$Types$showConnectStatus = function (st) {
 		default:
 			return 'Disconnecting';
 	}
-};
-var $mdgriffith$elm_ui$Element$text = function (content) {
-	return $mdgriffith$elm_ui$Internal$Model$Text(content);
 };
 var $author$project$Palette$white = A3($mdgriffith$elm_ui$Element$rgb255, 245, 245, 245);
 var $author$project$View$connectButton = function (model) {
@@ -15287,6 +15364,76 @@ var $author$project$View$modValueTypeColumn = {
 		}),
 	width: $mdgriffith$elm_ui$Element$fillPortion(1)
 };
+var $author$project$Types$ToggleWriteAll = function (a) {
+	return {$: 'ToggleWriteAll', a: a};
+};
+var $author$project$View$readWriteButton = F2(
+	function (lbl, msg) {
+		return A2(
+			$mdgriffith$elm_ui$Element$Input$button,
+			_List_fromArray(
+				[$mdgriffith$elm_ui$Element$centerY]),
+			{label: lbl, onPress: msg});
+	});
+var $author$project$View$readWriteButtonText = function (flag) {
+	return flag ? $mdgriffith$elm_ui$Element$text('Write') : $mdgriffith$elm_ui$Element$text('Read');
+};
+var $author$project$Types$ModDataWrite = F2(
+	function (a, b) {
+		return {$: 'ModDataWrite', a: a, b: b};
+	});
+var $author$project$View$viewReadWriteModDataCell = F2(
+	function (idx, md) {
+		return A2(
+			$mdgriffith$elm_ui$Element$el,
+			_List_fromArray(
+				[
+					$mdgriffith$elm_ui$Element$Background$color(
+					$author$project$View$tableCellColor(idx)),
+					$mdgriffith$elm_ui$Element$Font$color($author$project$Palette$greyWhite),
+					$mdgriffith$elm_ui$Element$height(
+					$mdgriffith$elm_ui$Element$px(30)),
+					$mdgriffith$elm_ui$Element$Font$center
+				]),
+			$author$project$Types$writeableReg(md) ? A2(
+				$author$project$View$readWriteButton,
+				$author$project$View$readWriteButtonText(md.write),
+				$elm$core$Maybe$Just(
+					A2($author$project$Types$ModDataWrite, idx, !md.write))) : $mdgriffith$elm_ui$Element$none);
+	});
+var $author$project$View$viewReadWriteCell = F3(
+	function (model, idx, md) {
+		var _v0 = model.activeTab;
+		switch (_v0.$) {
+			case 'ModDataTable':
+				return A2($author$project$View$viewReadWriteModDataCell, idx, md);
+			case 'HoldingRegistersTable':
+				return $mdgriffith$elm_ui$Element$none;
+			default:
+				return $mdgriffith$elm_ui$Element$none;
+		}
+	});
+var $author$project$View$readWriteColumn = function (model) {
+	return {
+		header: A2(
+			$mdgriffith$elm_ui$Element$el,
+			_List_fromArray(
+				[
+					$mdgriffith$elm_ui$Element$height(
+					$mdgriffith$elm_ui$Element$px(30))
+				]),
+			A2(
+				$author$project$View$readWriteButton,
+				$author$project$View$readWriteButtonText(model.toggleWriteAll),
+				$elm$core$Maybe$Just(
+					$author$project$Types$ToggleWriteAll(!model.toggleWriteAll)))),
+		view: F2(
+			function (i, md) {
+				return A3($author$project$View$viewReadWriteCell, model, i, md);
+			}),
+		width: $mdgriffith$elm_ui$Element$px(50)
+	};
+};
 var $author$project$Types$SelectAllChecked = function (a) {
 	return {$: 'SelectAllChecked', a: a};
 };
@@ -15531,6 +15678,7 @@ var $author$project$View$modDataColumns = function (model) {
 			$author$project$View$modValueColumn,
 			$author$project$View$modUidColumn,
 			$author$project$View$modDescriptionColumn,
+			$author$project$View$readWriteColumn(model),
 			$author$project$View$selectColumn(model)
 		]);
 };

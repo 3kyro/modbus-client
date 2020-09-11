@@ -15,14 +15,16 @@ import Types exposing
     , ModValue (..)
     , Status (..)
     , ModData
+    , replaceModDataWrite
     , ConnectStatus(..)
     , decodeConnInfo
     , encodeRegister
     , decodeModData
     , encodeIpPort
-    , replaceModData
+    , replaceModDataSelected
     , getModSelected
     , ActiveTab(..)
+    , writeableReg
     )
 
 import Types.IpAddress exposing (setIpAddressByte)
@@ -156,7 +158,7 @@ update msg model =
 
         ModDataChecked idx checked ->
             let
-                newMd = List.indexedMap (replaceModData idx checked) model.modData
+                newMd = List.indexedMap (replaceModDataSelected idx checked) model.modData
             in
                 ( { model
                     | modData = newMd
@@ -165,6 +167,28 @@ update msg model =
                 , Cmd.none
                 )
 
+        ToggleWriteAll b ->
+            case model.activeTab of
+                ModDataTable ->
+                    (
+                    { model
+                    | toggleWriteAll = b
+                    , modData = List.map
+                        (\md ->
+                            if writeableReg md
+                            then { md | write = b }
+                            else md
+                        ) model.modData
+                    }
+                    , Cmd.none
+                    )
+                _ -> ( model , Cmd.none )
+
+        ModDataWrite idx flag ->
+            let
+                newMd = List.indexedMap (replaceModDataWrite idx flag) model.modData
+            in
+                ( { model | modData = newMd } , Cmd.none )
 
 
 initCmd : Cmd Msg
