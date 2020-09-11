@@ -50,21 +50,19 @@ runServer ip portNum order tm = do
     case OS.os of
         Nothing -> putStrLn "Operating system not detected"
         Just os -> spawnBrowser $ OS.unOS os
-            
+
     run 4000 $ server st
 
 spawnBrowser :: String -> IO ()
-spawnBrowser os =
-    if elem "Linux" osInfo
-    then do
-        PS.spawnProcess "xdg-open" ["http://localhost:4000/index.html"]
-        putStrLn $ "Running at " ++ os 
-    else 
-        if elem "Windows" osInfo
-        then PS.spawnProcess "start" ["http://localhost:4000/index.html"] >> pure ()
-        else putStrLn 
-                $ "Cannot start default browser\n"
-                ++ "To run the application, open http://localhost:4000/index.html in a browser"
+spawnBrowser os
+    | "Linux" `elem` osInfo
+    = PS.spawnProcess "xdg-open" ["http://localhost:4000/index.html"] >> pure ()
+    | "Windows" `elem` osInfo
+    = PS.spawnProcess "start" ["http://localhost:4000/index.html"] >> pure ()
+    | otherwise
+    = putStrLn
+        $ "Cannot start default browser\n"
+        ++ "To run the application, open http://localhost:4000/index.html in a browser"
   where
       osInfo = words os 
 
