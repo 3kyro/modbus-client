@@ -27,6 +27,7 @@ import Element exposing
     , IndexedColumn
     , Attribute
     , fillPortion
+    , padding
     )
 import Element.Background as Background
 import Element.Border as Border
@@ -67,7 +68,10 @@ import Palette exposing
     , smallFont
     , scampi
     , slateGrey
+    , blueSapphire
+    , fireBrick
     )
+
 
 view : Model -> Html Msg
 view model = layout [] <| page model
@@ -478,21 +482,32 @@ readWriteColumn model =
     { header =
         el
             [ height <| px 30
+            , Font.color greyWhite
             ]
-            <| readWriteButton
-                ( readWriteButtonText model.readWriteAll )
+            <| readWriteButton model.readWriteAll
                 <| Just <| ToggleWriteAll <| flipRW model.readWriteAll
     , width = px 50
     , view = \i md -> viewReadWriteCell model i md
     }
 
-readWriteButton : Element Msg -> Maybe Msg -> Element Msg
-readWriteButton lbl msg =
+readWriteButton : ReadWrite -> Maybe Msg -> Element Msg
+readWriteButton rw msg =
     Input.button
-        [ centerY ]
+        [ Background.color <| rwButtonBGClr rw
+        , centerY
+        , padding 3
+        , focused []
+        ]
+
         { onPress = msg
-        , label = lbl
+        , label = readWriteButtonText rw
         }
+
+rwButtonBGClr : ReadWrite -> Color
+rwButtonBGClr rw =
+    case rw of
+        Read -> blueSapphire
+        Write -> fireBrick
 
 readWriteButtonText : ReadWrite -> Element Msg
 readWriteButtonText rw =
@@ -573,8 +588,7 @@ viewReadWriteModDataCell idx md =
         , Font.center
         ]
         <| if writeableReg md
-           then readWriteButton
-                (readWriteButtonText md.rw)
+           then readWriteButton md.rw
                 <| Just <| ModDataWrite idx <| flipRW md.rw
            else none
 tableCellColor : Int -> Color

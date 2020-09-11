@@ -15376,14 +15376,19 @@ var $author$project$Types$flipRW = function (rw) {
 		return $author$project$Types$Read;
 	}
 };
-var $author$project$View$readWriteButton = F2(
-	function (lbl, msg) {
-		return A2(
-			$mdgriffith$elm_ui$Element$Input$button,
-			_List_fromArray(
-				[$mdgriffith$elm_ui$Element$centerY]),
-			{label: lbl, onPress: msg});
-	});
+var $mdgriffith$elm_ui$Element$padding = function (x) {
+	var f = x;
+	return A2(
+		$mdgriffith$elm_ui$Internal$Model$StyleClass,
+		$mdgriffith$elm_ui$Internal$Flag$padding,
+		A5(
+			$mdgriffith$elm_ui$Internal$Model$PaddingStyle,
+			'p-' + $elm$core$String$fromInt(x),
+			f,
+			f,
+			f,
+			f));
+};
 var $author$project$View$readWriteButtonText = function (rw) {
 	if (rw.$ === 'Read') {
 		return $mdgriffith$elm_ui$Element$text('Read');
@@ -15391,6 +15396,32 @@ var $author$project$View$readWriteButtonText = function (rw) {
 		return $mdgriffith$elm_ui$Element$text('Write');
 	}
 };
+var $author$project$Palette$blueSapphire = A3($mdgriffith$elm_ui$Element$rgb255, 45, 93, 123);
+var $author$project$Palette$fireBrick = A3($mdgriffith$elm_ui$Element$rgb255, 179, 45, 17);
+var $author$project$View$rwButtonBGClr = function (rw) {
+	if (rw.$ === 'Read') {
+		return $author$project$Palette$blueSapphire;
+	} else {
+		return $author$project$Palette$fireBrick;
+	}
+};
+var $author$project$View$readWriteButton = F2(
+	function (rw, msg) {
+		return A2(
+			$mdgriffith$elm_ui$Element$Input$button,
+			_List_fromArray(
+				[
+					$mdgriffith$elm_ui$Element$Background$color(
+					$author$project$View$rwButtonBGClr(rw)),
+					$mdgriffith$elm_ui$Element$centerY,
+					$mdgriffith$elm_ui$Element$padding(3),
+					$mdgriffith$elm_ui$Element$focused(_List_Nil)
+				]),
+			{
+				label: $author$project$View$readWriteButtonText(rw),
+				onPress: msg
+			});
+	});
 var $author$project$Types$ModDataWrite = F2(
 	function (a, b) {
 		return {$: 'ModDataWrite', a: a, b: b};
@@ -15410,7 +15441,7 @@ var $author$project$View$viewReadWriteModDataCell = F2(
 				]),
 			$author$project$Types$writeableReg(md) ? A2(
 				$author$project$View$readWriteButton,
-				$author$project$View$readWriteButtonText(md.rw),
+				md.rw,
 				$elm$core$Maybe$Just(
 					A2(
 						$author$project$Types$ModDataWrite,
@@ -15436,11 +15467,12 @@ var $author$project$View$readWriteColumn = function (model) {
 			_List_fromArray(
 				[
 					$mdgriffith$elm_ui$Element$height(
-					$mdgriffith$elm_ui$Element$px(30))
+					$mdgriffith$elm_ui$Element$px(30)),
+					$mdgriffith$elm_ui$Element$Font$color($author$project$Palette$greyWhite)
 				]),
 			A2(
 				$author$project$View$readWriteButton,
-				$author$project$View$readWriteButtonText(model.readWriteAll),
+				model.readWriteAll,
 				$elm$core$Maybe$Just(
 					$author$project$Types$ToggleWriteAll(
 						$author$project$Types$flipRW(model.readWriteAll))))),
