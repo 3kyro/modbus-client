@@ -15660,6 +15660,19 @@ var $mdgriffith$elm_ui$Element$Input$defaultCheckbox = function (checked) {
 			]),
 		$mdgriffith$elm_ui$Element$none);
 };
+var $author$project$View$selectCheckbox = F2(
+	function (msg, flag) {
+		return A2(
+			$mdgriffith$elm_ui$Element$Input$checkbox,
+			_List_fromArray(
+				[$mdgriffith$elm_ui$Element$alignLeft, $mdgriffith$elm_ui$Element$centerY]),
+			{
+				checked: flag,
+				icon: $mdgriffith$elm_ui$Element$Input$defaultCheckbox,
+				label: $mdgriffith$elm_ui$Element$Input$labelHidden('Select Checkbox'),
+				onChange: msg
+			});
+	});
 var $author$project$Types$ModDataChecked = F2(
 	function (a, b) {
 		return {$: 'ModDataChecked', a: a, b: b};
@@ -15678,15 +15691,9 @@ var $author$project$View$viewCheckedCell = F2(
 					$mdgriffith$elm_ui$Element$Font$center
 				]),
 			A2(
-				$mdgriffith$elm_ui$Element$Input$checkbox,
-				_List_fromArray(
-					[$mdgriffith$elm_ui$Element$alignLeft, $mdgriffith$elm_ui$Element$centerY]),
-				{
-					checked: selected,
-					icon: $mdgriffith$elm_ui$Element$Input$defaultCheckbox,
-					label: $mdgriffith$elm_ui$Element$Input$labelHidden('Select Field'),
-					onChange: $author$project$Types$ModDataChecked(idx)
-				}));
+				$author$project$View$selectCheckbox,
+				$author$project$Types$ModDataChecked(idx),
+				selected));
 	});
 var $author$project$View$selectColumn = function (model) {
 	return {
@@ -15697,19 +15704,7 @@ var $author$project$View$selectColumn = function (model) {
 					$mdgriffith$elm_ui$Element$height(
 					$mdgriffith$elm_ui$Element$px(30))
 				]),
-			A2(
-				$mdgriffith$elm_ui$Element$el,
-				_List_fromArray(
-					[$mdgriffith$elm_ui$Element$alignLeft, $mdgriffith$elm_ui$Element$centerY]),
-				A2(
-					$mdgriffith$elm_ui$Element$Input$checkbox,
-					_List_Nil,
-					{
-						checked: model.selectAllCheckbox,
-						icon: $mdgriffith$elm_ui$Element$Input$defaultCheckbox,
-						label: $mdgriffith$elm_ui$Element$Input$labelHidden('Select all'),
-						onChange: $author$project$Types$SelectAllChecked
-					}))),
+			A2($author$project$View$selectCheckbox, $author$project$Types$SelectAllChecked, model.selectAllCheckbox)),
 		view: F2(
 			function (i, md) {
 				return A2($author$project$View$viewCheckedCell, i, md.selected);

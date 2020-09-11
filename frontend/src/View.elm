@@ -520,17 +520,21 @@ selectColumn model =
     { header =
         el
             [ height <| px 30 ]
-            <| el [alignLeft , centerY ]
-            <| Input.checkbox
-                []
-                { onChange = SelectAllChecked
-                , icon = Input.defaultCheckbox
-                , checked = model.selectAllCheckbox
-                , label = Input.labelHidden "Select all"
-                }
+            <| selectCheckbox SelectAllChecked model.selectAllCheckbox
     , width = px 30
     , view = \i md -> viewCheckedCell i md.selected
     }
+
+selectCheckbox : (Bool -> Msg) -> Bool ->  Element Msg
+selectCheckbox msg flag =
+    Input.checkbox
+        [ alignLeft , centerY
+        ]
+        { onChange = msg
+        , icon = Input.defaultCheckbox
+        , checked = flag
+        , label = Input.labelHidden "Select Checkbox"
+        }
 
 headerTextAttr : List (Attribute Msg)
 headerTextAttr =
@@ -564,13 +568,7 @@ viewCheckedCell idx selected =
         , height <| px 30
         , Font.center
         ]
-        <| Input.checkbox
-                [alignLeft , centerY]
-                { onChange = ModDataChecked idx
-                , icon = Input.defaultCheckbox
-                , checked = selected
-                , label = Input.labelHidden "Select Field"
-                }
+        <| selectCheckbox (ModDataChecked idx) selected
 
 viewReadWriteCell : Model -> Int -> ModData ->  Element Msg
 viewReadWriteCell model idx md =
