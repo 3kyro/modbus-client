@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 42b8b88bc56a6409f44291d4902c6a2e430549e7bee084e7f24118745c085051
+-- hash: dcf5b0a9dca220af1c1af22fb62ecf5e5fac2862c5e3a70afcbc4eacff29ab2c
 
 name:           modbus-serve
 version:        0.1.0.0
@@ -70,6 +70,7 @@ library
     , scotty
     , servant-server
     , stm
+    , system-info
     , text
     , transformers
     , wai
@@ -107,6 +108,7 @@ executable modbus-serve-exe
     , scotty
     , servant-server
     , stm
+    , system-info
     , text
     , transformers
     , wai
@@ -149,6 +151,7 @@ test-suite modbus-serve-test
     , scotty
     , servant-server
     , stm
+    , system-info
     , text
     , transformers
     , wai

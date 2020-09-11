@@ -46,6 +46,7 @@ dependencies:
 - wai
 - warp
 - stm
+- system-info
 
 library:
   source-dirs: src
