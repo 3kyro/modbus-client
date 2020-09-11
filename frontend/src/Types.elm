@@ -17,6 +17,7 @@ module Types exposing
     , replaceModData
     , getModValue
     , getModValueType
+    , getModSelected
     , encodeIpPort
     )
 
@@ -65,6 +66,7 @@ type alias Model =
     , csvContent : Maybe String
     , csvLoaded : Bool
     , selectAllCheckbox : Bool
+    , selectSome : Bool
     }
 type ConnectStatus
     = Connect
@@ -222,6 +224,8 @@ replaceModData idx checked =
         then { md | selected = checked }
         else md
 
+getModSelected : ModData -> Bool
+getModSelected md = md.selected
 
 -- ActiveTab
 --------------------------------------------------------------------------------------------------

@@ -59,9 +59,10 @@ import Palette exposing
     , lightGrey
     , greyWhite
     , white
-    , maximumBluePurple
     , lightGreen
     , smallFont
+    , scampi
+    , slateGrey
     )
 
 view : Model -> Html Msg
@@ -70,12 +71,14 @@ view model = layout [] <| page model
 page : Model -> Element Msg
 page model =
     column
-        [ width fill
+        [ Background.color grey
+        , width fill
         , height fill
         , smallFont
         ]
         [ menuBar model
-        , tabSelect model
+        , mainTab model
+        , statusExpanded
         , statusBar model
         ]
 
@@ -146,15 +149,26 @@ heartbeatButton : Model -> Element Msg
 heartbeatButton model =
     newSelectButton model "Heartbeat Signals" HeartbeatTable
 
-tabSelect : Model -> Element Msg
-tabSelect model =
+mainTab : Model -> Element Msg
+mainTab model =
+    row
+        [ width fill
+        , height fill
+        ]
+        [ infoArea model
+        , commandArea model
+        ]
+    
+
+infoArea : Model -> Element Msg
+infoArea model =
     case model.activeTab of
         ConnectMenu -> connectTab model
         ImportMenu -> importTab model
         InputRegistersTable -> inputRegistersTable
         HoldingRegistersTable -> holdingRegistersTable
         ModDataTable -> modDataTable model
-        HeartbeatTable -> heartbeatTable 
+        HeartbeatTable -> heartbeatTable
 
 ------------------------------------------------------------------------------------------------------------------
 -- Connect Menu
@@ -529,12 +543,35 @@ heartbeatTable : Element Msg
 heartbeatTable = newRegisterTable [] []
 
 ------------------------------------------------------------------------------------------------------------------
+-- Command Area
+
+commandArea : Model -> Element Msg
+commandArea model =
+    case model.activeTab of
+        ConnectMenu -> none
+        ImportMenu -> none
+        InputRegistersTable -> none
+        HoldingRegistersTable -> none
+        ModDataTable -> modDataCommand model
+        HeartbeatTable -> none
+
+modDataCommand : Model -> Element Msg
+modDataCommand model =
+    if model.selectSome
+    then
+        column
+            [ Background.color scampi
+            , width <| px 300
+            , height fill
+            ] []
+    else none
+------------------------------------------------------------------------------------------------------------------
 -- Status Bar
 
 statusBar : Model -> Element Msg
 statusBar model =
     row
-        [ Background.color maximumBluePurple
+        [ Background.color slateGrey
         , width fill
         , height <| px 30
         , alignBottom
@@ -542,3 +579,5 @@ statusBar model =
         [ text <| showStatus model.status ]
 
 
+statusExpanded : Element Msg
+statusExpanded = none

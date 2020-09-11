@@ -21,6 +21,7 @@ import Types exposing
     , decodeModData
     , encodeIpPort
     , replaceModData
+    , getModSelected
     , ActiveTab(..)
     )
 
@@ -145,6 +146,7 @@ update msg model =
                     (
                     { model |
                         selectAllCheckbox = b
+                        , selectSome = b
                         , modData = List.map (\md -> { md | selected = b}) model.modData
                     }
                     , Cmd.none
@@ -153,7 +155,15 @@ update msg model =
 
 
         ModDataChecked idx checked ->
-            ( { model | modData = List.indexedMap (replaceModData idx checked) model.modData }, Cmd.none)
+            let
+                newMd = List.indexedMap (replaceModData idx checked) model.modData
+            in
+                ( { model
+                    | modData = newMd
+                    , selectSome = List.any getModSelected newMd
+                    }
+                , Cmd.none
+                )
 
 
 

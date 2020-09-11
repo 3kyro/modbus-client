@@ -6593,6 +6593,7 @@ var $author$project$App$initModel = {
 	ipAddress: $author$project$Types$IpAddress$defaultIpAddr,
 	modData: $author$project$App$initModData,
 	selectAllCheckbox: false,
+	selectSome: false,
 	socketPort: $elm$core$Maybe$Just(502),
 	status: $author$project$Types$AllGood,
 	timeout: $elm$core$Maybe$Just(1000)
@@ -6612,6 +6613,27 @@ var $author$project$Types$CsvSelected = function (a) {
 };
 var $author$project$Types$Disconnecting = {$: 'Disconnecting'};
 var $author$project$Types$Loading = {$: 'Loading'};
+var $elm$core$List$any = F2(
+	function (isOkay, list) {
+		any:
+		while (true) {
+			if (!list.b) {
+				return false;
+			} else {
+				var x = list.a;
+				var xs = list.b;
+				if (isOkay(x)) {
+					return true;
+				} else {
+					var $temp$isOkay = isOkay,
+						$temp$list = xs;
+					isOkay = $temp$isOkay;
+					list = $temp$list;
+					continue any;
+				}
+			}
+		}
+	});
 var $author$project$Types$ConnectedResponse = function (a) {
 	return {$: 'ConnectedResponse', a: a};
 };
@@ -6739,6 +6761,9 @@ var $elm$file$File$Select$file = F2(
 			toMsg,
 			_File_uploadOne(mimes));
 	});
+var $author$project$Types$getModSelected = function (md) {
+	return md.selected;
+};
 var $elm$file$File$name = _File_name;
 var $elm$core$Platform$Cmd$batch = _Platform_batch;
 var $elm$core$Platform$Cmd$none = $elm$core$Platform$Cmd$batch(_List_Nil);
@@ -7241,7 +7266,8 @@ var $author$project$Update$update = F2(
 											{selected: b});
 									},
 									model.modData),
-								selectAllCheckbox: b
+								selectAllCheckbox: b,
+								selectSome: b
 							}),
 						$elm$core$Platform$Cmd$none);
 				} else {
@@ -7254,14 +7280,16 @@ var $author$project$Update$update = F2(
 			default:
 				var idx = msg.a;
 				var checked = msg.b;
+				var newMd = A2(
+					$elm$core$List$indexedMap,
+					A2($author$project$Types$replaceModData, idx, checked),
+					model.modData);
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
 						{
-							modData: A2(
-								$elm$core$List$indexedMap,
-								A2($author$project$Types$replaceModData, idx, checked),
-								model.modData)
+							modData: newMd,
+							selectSome: A2($elm$core$List$any, $author$project$Types$getModSelected, newMd)
 						}),
 					$elm$core$Platform$Cmd$none);
 		}
@@ -9834,27 +9862,6 @@ var $mdgriffith$elm_ui$Internal$Model$staticRoot = function (opts) {
 				_List_Nil);
 	}
 };
-var $elm$core$List$any = F2(
-	function (isOkay, list) {
-		any:
-		while (true) {
-			if (!list.b) {
-				return false;
-			} else {
-				var x = list.a;
-				var xs = list.b;
-				if (isOkay(x)) {
-					return true;
-				} else {
-					var $temp$isOkay = isOkay,
-						$temp$list = xs;
-					isOkay = $temp$isOkay;
-					list = $temp$list;
-					continue any;
-				}
-			}
-		}
-	});
 var $mdgriffith$elm_ui$Internal$Model$fontName = function (font) {
 	switch (font.$) {
 		case 'Serif':
@@ -12955,6 +12962,16 @@ var $mdgriffith$elm_ui$Element$layoutWith = F3(
 	});
 var $mdgriffith$elm_ui$Element$layout = $mdgriffith$elm_ui$Element$layoutWith(
 	{options: _List_Nil});
+var $mdgriffith$elm_ui$Element$Background$color = function (clr) {
+	return A2(
+		$mdgriffith$elm_ui$Internal$Model$StyleClass,
+		$mdgriffith$elm_ui$Internal$Flag$bgColor,
+		A3(
+			$mdgriffith$elm_ui$Internal$Model$Colored,
+			'bg-' + $mdgriffith$elm_ui$Internal$Model$formatColorClass(clr),
+			'background-color',
+			clr));
+};
 var $mdgriffith$elm_ui$Internal$Model$AsColumn = {$: 'AsColumn'};
 var $mdgriffith$elm_ui$Internal$Model$asColumn = $mdgriffith$elm_ui$Internal$Model$AsColumn;
 var $mdgriffith$elm_ui$Internal$Model$Height = function (a) {
@@ -12989,24 +13006,58 @@ var $mdgriffith$elm_ui$Internal$Model$Fill = function (a) {
 	return {$: 'Fill', a: a};
 };
 var $mdgriffith$elm_ui$Element$fill = $mdgriffith$elm_ui$Internal$Model$Fill(1);
+var $mdgriffith$elm_ui$Element$rgb255 = F3(
+	function (red, green, blue) {
+		return A4($mdgriffith$elm_ui$Internal$Model$Rgba, red / 255, green / 255, blue / 255, 1);
+	});
+var $author$project$Palette$grey = A3($mdgriffith$elm_ui$Element$rgb255, 90, 90, 90);
+var $mdgriffith$elm_ui$Internal$Model$Empty = {$: 'Empty'};
+var $mdgriffith$elm_ui$Element$none = $mdgriffith$elm_ui$Internal$Model$Empty;
+var $mdgriffith$elm_ui$Internal$Model$Px = function (a) {
+	return {$: 'Px', a: a};
+};
+var $mdgriffith$elm_ui$Element$px = $mdgriffith$elm_ui$Internal$Model$Px;
+var $author$project$Palette$scampi = A3($mdgriffith$elm_ui$Element$rgb255, 113, 109, 142);
+var $author$project$View$modDataCommand = function (model) {
+	return model.selectSome ? A2(
+		$mdgriffith$elm_ui$Element$column,
+		_List_fromArray(
+			[
+				$mdgriffith$elm_ui$Element$Background$color($author$project$Palette$scampi),
+				$mdgriffith$elm_ui$Element$width(
+				$mdgriffith$elm_ui$Element$px(300)),
+				$mdgriffith$elm_ui$Element$height($mdgriffith$elm_ui$Element$fill)
+			]),
+		_List_Nil) : $mdgriffith$elm_ui$Element$none;
+};
+var $author$project$View$commandArea = function (model) {
+	var _v0 = model.activeTab;
+	switch (_v0.$) {
+		case 'ConnectMenu':
+			return $mdgriffith$elm_ui$Element$none;
+		case 'ImportMenu':
+			return $mdgriffith$elm_ui$Element$none;
+		case 'InputRegistersTable':
+			return $mdgriffith$elm_ui$Element$none;
+		case 'HoldingRegistersTable':
+			return $mdgriffith$elm_ui$Element$none;
+		case 'ModDataTable':
+			return $author$project$View$modDataCommand(model);
+		default:
+			return $mdgriffith$elm_ui$Element$none;
+	}
+};
+var $mdgriffith$elm_ui$Internal$Model$AlignX = function (a) {
+	return {$: 'AlignX', a: a};
+};
+var $mdgriffith$elm_ui$Internal$Model$CenterX = {$: 'CenterX'};
+var $mdgriffith$elm_ui$Element$centerX = $mdgriffith$elm_ui$Internal$Model$AlignX($mdgriffith$elm_ui$Internal$Model$CenterX);
 var $mdgriffith$elm_ui$Internal$Model$AlignY = function (a) {
 	return {$: 'AlignY', a: a};
 };
-var $mdgriffith$elm_ui$Internal$Model$Top = {$: 'Top'};
-var $mdgriffith$elm_ui$Element$alignTop = $mdgriffith$elm_ui$Internal$Model$AlignY($mdgriffith$elm_ui$Internal$Model$Top);
-var $mdgriffith$elm_ui$Element$Background$color = function (clr) {
-	return A2(
-		$mdgriffith$elm_ui$Internal$Model$StyleClass,
-		$mdgriffith$elm_ui$Internal$Flag$bgColor,
-		A3(
-			$mdgriffith$elm_ui$Internal$Model$Colored,
-			'bg-' + $mdgriffith$elm_ui$Internal$Model$formatColorClass(clr),
-			'background-color',
-			clr));
-};
-var $author$project$Types$ChangeActiveTab = function (a) {
-	return {$: 'ChangeActiveTab', a: a};
-};
+var $mdgriffith$elm_ui$Internal$Model$CenterY = {$: 'CenterY'};
+var $mdgriffith$elm_ui$Element$centerY = $mdgriffith$elm_ui$Internal$Model$AlignY($mdgriffith$elm_ui$Internal$Model$CenterY);
+var $author$project$Types$ConnectRequest = {$: 'ConnectRequest'};
 var $mdgriffith$elm_ui$Internal$Model$Button = {$: 'Button'};
 var $mdgriffith$elm_ui$Internal$Model$Describe = function (a) {
 	return {$: 'Describe', a: a};
@@ -13160,6 +13211,8 @@ var $mdgriffith$elm_ui$Element$Input$button = F2(
 				_List_fromArray(
 					[label])));
 	});
+var $mdgriffith$elm_ui$Internal$Flag$fontAlignment = $mdgriffith$elm_ui$Internal$Flag$flag(12);
+var $mdgriffith$elm_ui$Element$Font$center = A2($mdgriffith$elm_ui$Internal$Model$Class, $mdgriffith$elm_ui$Internal$Flag$fontAlignment, $mdgriffith$elm_ui$Internal$Style$classes.textCenter);
 var $mdgriffith$elm_ui$Element$Font$color = function (fontColor) {
 	return A2(
 		$mdgriffith$elm_ui$Internal$Model$StyleClass,
@@ -13170,15 +13223,27 @@ var $mdgriffith$elm_ui$Element$Font$color = function (fontColor) {
 			'color',
 			fontColor));
 };
+var $author$project$Palette$lightGreen = A3($mdgriffith$elm_ui$Element$rgb255, 82, 172, 162);
+var $author$project$Palette$lightGrey = A3($mdgriffith$elm_ui$Element$rgb255, 122, 122, 122);
+var $author$project$View$connectButtonBgd = function (model) {
+	var _v0 = model.connectStatus;
+	switch (_v0.$) {
+		case 'Connect':
+			return $author$project$Palette$lightGrey;
+		case 'Connecting':
+			return $author$project$Palette$lightGrey;
+		case 'Connected':
+			return $author$project$Palette$lightGreen;
+		default:
+			return $author$project$Palette$lightGrey;
+	}
+};
 var $mdgriffith$elm_ui$Internal$Model$Focus = {$: 'Focus'};
 var $mdgriffith$elm_ui$Internal$Model$PseudoSelector = F2(
 	function (a, b) {
 		return {$: 'PseudoSelector', a: a, b: b};
 	});
 var $mdgriffith$elm_ui$Internal$Flag$focus = $mdgriffith$elm_ui$Internal$Flag$flag(31);
-var $mdgriffith$elm_ui$Internal$Model$AlignX = function (a) {
-	return {$: 'AlignX', a: a};
-};
 var $mdgriffith$elm_ui$Internal$Model$Nearby = F2(
 	function (a, b) {
 		return {$: 'Nearby', a: a, b: b};
@@ -13187,7 +13252,6 @@ var $mdgriffith$elm_ui$Internal$Model$TransformComponent = F2(
 	function (a, b) {
 		return {$: 'TransformComponent', a: a, b: b};
 	});
-var $mdgriffith$elm_ui$Internal$Model$Empty = {$: 'Empty'};
 var $mdgriffith$elm_ui$Internal$Model$Text = function (a) {
 	return {$: 'Text', a: a};
 };
@@ -13314,10 +13378,6 @@ var $mdgriffith$elm_ui$Element$focused = function (decs) {
 			$mdgriffith$elm_ui$Internal$Model$Focus,
 			$mdgriffith$elm_ui$Internal$Model$unwrapDecorations(decs)));
 };
-var $mdgriffith$elm_ui$Element$rgb255 = F3(
-	function (red, green, blue) {
-		return A4($mdgriffith$elm_ui$Internal$Model$Rgba, red / 255, green / 255, blue / 255, 1);
-	});
 var $author$project$Palette$greyWhite = A3($mdgriffith$elm_ui$Element$rgb255, 220, 220, 220);
 var $mdgriffith$elm_ui$Internal$Model$Hover = {$: 'Hover'};
 var $mdgriffith$elm_ui$Internal$Flag$hover = $mdgriffith$elm_ui$Internal$Flag$flag(33);
@@ -13364,210 +13424,6 @@ var $mdgriffith$elm_ui$Element$paddingXY = F2(
 					xFloat));
 		}
 	});
-var $author$project$Palette$darkGrey = A3($mdgriffith$elm_ui$Element$rgb255, 50, 50, 50);
-var $author$project$Palette$grey = A3($mdgriffith$elm_ui$Element$rgb255, 90, 90, 90);
-var $author$project$View$selectButtonBgdColor = F2(
-	function (model, table) {
-		return _Utils_eq(model.activeTab, table) ? $author$project$Palette$grey : $author$project$Palette$darkGrey;
-	});
-var $mdgriffith$elm_ui$Element$text = function (content) {
-	return $mdgriffith$elm_ui$Internal$Model$Text(content);
-};
-var $author$project$Palette$white = A3($mdgriffith$elm_ui$Element$rgb255, 245, 245, 245);
-var $mdgriffith$elm_ui$Internal$Model$BorderWidth = F5(
-	function (a, b, c, d, e) {
-		return {$: 'BorderWidth', a: a, b: b, c: c, d: d, e: e};
-	});
-var $mdgriffith$elm_ui$Element$Border$width = function (v) {
-	return A2(
-		$mdgriffith$elm_ui$Internal$Model$StyleClass,
-		$mdgriffith$elm_ui$Internal$Flag$borderWidth,
-		A5(
-			$mdgriffith$elm_ui$Internal$Model$BorderWidth,
-			'b-' + $elm$core$String$fromInt(v),
-			v,
-			v,
-			v,
-			v));
-};
-var $author$project$View$newSelectButton = F3(
-	function (model, str, table) {
-		return A2(
-			$mdgriffith$elm_ui$Element$Input$button,
-			_List_fromArray(
-				[
-					$mdgriffith$elm_ui$Element$Background$color(
-					A2($author$project$View$selectButtonBgdColor, model, table)),
-					$mdgriffith$elm_ui$Element$focused(
-					_List_fromArray(
-						[
-							$mdgriffith$elm_ui$Element$Font$color($author$project$Palette$white)
-						])),
-					$mdgriffith$elm_ui$Element$mouseOver(
-					_List_fromArray(
-						[
-							$mdgriffith$elm_ui$Element$Font$color($author$project$Palette$white)
-						])),
-					$mdgriffith$elm_ui$Element$Border$width(0),
-					$mdgriffith$elm_ui$Element$height($mdgriffith$elm_ui$Element$fill),
-					A2($mdgriffith$elm_ui$Element$paddingXY, 10, 0),
-					$mdgriffith$elm_ui$Element$Font$color($author$project$Palette$greyWhite)
-				]),
-			{
-				label: $mdgriffith$elm_ui$Element$text(str),
-				onPress: $elm$core$Maybe$Just(
-					$author$project$Types$ChangeActiveTab(table))
-			});
-	});
-var $author$project$View$connectTabButton = function (model) {
-	return A3($author$project$View$newSelectButton, model, 'Connect', $author$project$Types$ConnectMenu);
-};
-var $author$project$Types$HeartbeatTable = {$: 'HeartbeatTable'};
-var $author$project$View$heartbeatButton = function (model) {
-	return A3($author$project$View$newSelectButton, model, 'Heartbeat Signals', $author$project$Types$HeartbeatTable);
-};
-var $author$project$Types$HoldingRegistersTable = {$: 'HoldingRegistersTable'};
-var $author$project$View$holdingRegistersButton = function (model) {
-	return A3($author$project$View$newSelectButton, model, 'Holding Registers', $author$project$Types$HoldingRegistersTable);
-};
-var $author$project$Types$ImportMenu = {$: 'ImportMenu'};
-var $author$project$View$importRegisterTableButton = function (model) {
-	return A3($author$project$View$newSelectButton, model, 'Import', $author$project$Types$ImportMenu);
-};
-var $author$project$Types$InputRegistersTable = {$: 'InputRegistersTable'};
-var $author$project$View$inputRegistersButton = function (model) {
-	return A3($author$project$View$newSelectButton, model, 'Input Registers', $author$project$Types$InputRegistersTable);
-};
-var $mdgriffith$elm_ui$Internal$Model$Px = function (a) {
-	return {$: 'Px', a: a};
-};
-var $mdgriffith$elm_ui$Element$px = $mdgriffith$elm_ui$Internal$Model$Px;
-var $author$project$Types$ModDataTable = {$: 'ModDataTable'};
-var $author$project$View$registerTableButton = function (model) {
-	return A3($author$project$View$newSelectButton, model, 'Register Table', $author$project$Types$ModDataTable);
-};
-var $mdgriffith$elm_ui$Internal$Model$AsRow = {$: 'AsRow'};
-var $mdgriffith$elm_ui$Internal$Model$asRow = $mdgriffith$elm_ui$Internal$Model$AsRow;
-var $mdgriffith$elm_ui$Element$row = F2(
-	function (attrs, children) {
-		return A4(
-			$mdgriffith$elm_ui$Internal$Model$element,
-			$mdgriffith$elm_ui$Internal$Model$asRow,
-			$mdgriffith$elm_ui$Internal$Model$div,
-			A2(
-				$elm$core$List$cons,
-				$mdgriffith$elm_ui$Internal$Model$htmlClass($mdgriffith$elm_ui$Internal$Style$classes.contentLeft + (' ' + $mdgriffith$elm_ui$Internal$Style$classes.contentCenterY)),
-				A2(
-					$elm$core$List$cons,
-					$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$shrink),
-					A2(
-						$elm$core$List$cons,
-						$mdgriffith$elm_ui$Element$height($mdgriffith$elm_ui$Element$shrink),
-						attrs))),
-			$mdgriffith$elm_ui$Internal$Model$Unkeyed(children));
-	});
-var $mdgriffith$elm_ui$Internal$Model$SpacingStyle = F3(
-	function (a, b, c) {
-		return {$: 'SpacingStyle', a: a, b: b, c: c};
-	});
-var $mdgriffith$elm_ui$Internal$Flag$spacing = $mdgriffith$elm_ui$Internal$Flag$flag(3);
-var $mdgriffith$elm_ui$Internal$Model$spacingName = F2(
-	function (x, y) {
-		return 'spacing-' + ($elm$core$String$fromInt(x) + ('-' + $elm$core$String$fromInt(y)));
-	});
-var $mdgriffith$elm_ui$Element$spacing = function (x) {
-	return A2(
-		$mdgriffith$elm_ui$Internal$Model$StyleClass,
-		$mdgriffith$elm_ui$Internal$Flag$spacing,
-		A3(
-			$mdgriffith$elm_ui$Internal$Model$SpacingStyle,
-			A2($mdgriffith$elm_ui$Internal$Model$spacingName, x, x),
-			x,
-			x));
-};
-var $author$project$View$menuBar = function (model) {
-	return A2(
-		$mdgriffith$elm_ui$Element$row,
-		_List_fromArray(
-			[
-				$mdgriffith$elm_ui$Element$Background$color($author$project$Palette$darkGrey),
-				$mdgriffith$elm_ui$Element$alignTop,
-				$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill),
-				$mdgriffith$elm_ui$Element$height(
-				$mdgriffith$elm_ui$Element$px(30)),
-				A2($mdgriffith$elm_ui$Element$paddingXY, 10, 0),
-				$mdgriffith$elm_ui$Element$spacing(0)
-			]),
-		_List_fromArray(
-			[
-				$author$project$View$connectTabButton(model),
-				$author$project$View$importRegisterTableButton(model),
-				$author$project$View$inputRegistersButton(model),
-				$author$project$View$holdingRegistersButton(model),
-				$author$project$View$registerTableButton(model),
-				$author$project$View$heartbeatButton(model)
-			]));
-};
-var $mdgriffith$elm_ui$Element$Font$size = function (i) {
-	return A2(
-		$mdgriffith$elm_ui$Internal$Model$StyleClass,
-		$mdgriffith$elm_ui$Internal$Flag$fontSize,
-		$mdgriffith$elm_ui$Internal$Model$FontSize(i));
-};
-var $author$project$Palette$smallFont = $mdgriffith$elm_ui$Element$Font$size(14);
-var $mdgriffith$elm_ui$Internal$Model$Bottom = {$: 'Bottom'};
-var $mdgriffith$elm_ui$Element$alignBottom = $mdgriffith$elm_ui$Internal$Model$AlignY($mdgriffith$elm_ui$Internal$Model$Bottom);
-var $author$project$Palette$maximumBluePurple = A3($mdgriffith$elm_ui$Element$rgb255, 145, 145, 233);
-var $author$project$Types$showStatus = function (status) {
-	switch (status.$) {
-		case 'AllGood':
-			return 'all good';
-		case 'Loading':
-			return 'getting stuff from the server';
-		default:
-			var err = status.a;
-			return err;
-	}
-};
-var $author$project$View$statusBar = function (model) {
-	return A2(
-		$mdgriffith$elm_ui$Element$row,
-		_List_fromArray(
-			[
-				$mdgriffith$elm_ui$Element$Background$color($author$project$Palette$maximumBluePurple),
-				$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill),
-				$mdgriffith$elm_ui$Element$height(
-				$mdgriffith$elm_ui$Element$px(30)),
-				$mdgriffith$elm_ui$Element$alignBottom
-			]),
-		_List_fromArray(
-			[
-				$mdgriffith$elm_ui$Element$text(
-				$author$project$Types$showStatus(model.status))
-			]));
-};
-var $mdgriffith$elm_ui$Internal$Model$CenterX = {$: 'CenterX'};
-var $mdgriffith$elm_ui$Element$centerX = $mdgriffith$elm_ui$Internal$Model$AlignX($mdgriffith$elm_ui$Internal$Model$CenterX);
-var $mdgriffith$elm_ui$Internal$Model$CenterY = {$: 'CenterY'};
-var $mdgriffith$elm_ui$Element$centerY = $mdgriffith$elm_ui$Internal$Model$AlignY($mdgriffith$elm_ui$Internal$Model$CenterY);
-var $author$project$Types$ConnectRequest = {$: 'ConnectRequest'};
-var $mdgriffith$elm_ui$Internal$Flag$fontAlignment = $mdgriffith$elm_ui$Internal$Flag$flag(12);
-var $mdgriffith$elm_ui$Element$Font$center = A2($mdgriffith$elm_ui$Internal$Model$Class, $mdgriffith$elm_ui$Internal$Flag$fontAlignment, $mdgriffith$elm_ui$Internal$Style$classes.textCenter);
-var $author$project$Palette$lightGreen = A3($mdgriffith$elm_ui$Element$rgb255, 82, 172, 162);
-var $author$project$Palette$lightGrey = A3($mdgriffith$elm_ui$Element$rgb255, 122, 122, 122);
-var $author$project$View$connectButtonBgd = function (model) {
-	var _v0 = model.connectStatus;
-	switch (_v0.$) {
-		case 'Connect':
-			return $author$project$Palette$lightGrey;
-		case 'Connecting':
-			return $author$project$Palette$lightGrey;
-		case 'Connected':
-			return $author$project$Palette$lightGreen;
-		default:
-			return $author$project$Palette$lightGrey;
-	}
-};
 var $author$project$Types$showConnectStatus = function (st) {
 	switch (st.$) {
 		case 'Connect':
@@ -13580,6 +13436,10 @@ var $author$project$Types$showConnectStatus = function (st) {
 			return 'Disconnecting';
 	}
 };
+var $mdgriffith$elm_ui$Element$text = function (content) {
+	return $mdgriffith$elm_ui$Internal$Model$Text(content);
+};
+var $author$project$Palette$white = A3($mdgriffith$elm_ui$Element$rgb255, 245, 245, 245);
 var $author$project$View$connectButton = function (model) {
 	return A2(
 		$mdgriffith$elm_ui$Element$Input$button,
@@ -13746,6 +13606,8 @@ var $mdgriffith$elm_ui$Element$Input$TextInputNode = function (a) {
 var $mdgriffith$elm_ui$Element$Input$TextArea = {$: 'TextArea'};
 var $mdgriffith$elm_ui$Internal$Model$LivePolite = {$: 'LivePolite'};
 var $mdgriffith$elm_ui$Element$Region$announce = $mdgriffith$elm_ui$Internal$Model$Describe($mdgriffith$elm_ui$Internal$Model$LivePolite);
+var $mdgriffith$elm_ui$Internal$Model$AsRow = {$: 'AsRow'};
+var $mdgriffith$elm_ui$Internal$Model$asRow = $mdgriffith$elm_ui$Internal$Model$AsRow;
 var $mdgriffith$elm_ui$Element$Input$applyLabel = F3(
 	function (attrs, label, input) {
 		if (label.$ === 'HiddenLabel') {
@@ -13904,7 +13766,42 @@ var $mdgriffith$elm_ui$Element$Border$rounded = function (radius) {
 			'border-radius',
 			$elm$core$String$fromInt(radius) + 'px'));
 };
+var $mdgriffith$elm_ui$Internal$Model$SpacingStyle = F3(
+	function (a, b, c) {
+		return {$: 'SpacingStyle', a: a, b: b, c: c};
+	});
+var $mdgriffith$elm_ui$Internal$Flag$spacing = $mdgriffith$elm_ui$Internal$Flag$flag(3);
+var $mdgriffith$elm_ui$Internal$Model$spacingName = F2(
+	function (x, y) {
+		return 'spacing-' + ($elm$core$String$fromInt(x) + ('-' + $elm$core$String$fromInt(y)));
+	});
+var $mdgriffith$elm_ui$Element$spacing = function (x) {
+	return A2(
+		$mdgriffith$elm_ui$Internal$Model$StyleClass,
+		$mdgriffith$elm_ui$Internal$Flag$spacing,
+		A3(
+			$mdgriffith$elm_ui$Internal$Model$SpacingStyle,
+			A2($mdgriffith$elm_ui$Internal$Model$spacingName, x, x),
+			x,
+			x));
+};
 var $mdgriffith$elm_ui$Element$Input$white = A3($mdgriffith$elm_ui$Element$rgb, 1, 1, 1);
+var $mdgriffith$elm_ui$Internal$Model$BorderWidth = F5(
+	function (a, b, c, d, e) {
+		return {$: 'BorderWidth', a: a, b: b, c: c, d: d, e: e};
+	});
+var $mdgriffith$elm_ui$Element$Border$width = function (v) {
+	return A2(
+		$mdgriffith$elm_ui$Internal$Model$StyleClass,
+		$mdgriffith$elm_ui$Internal$Flag$borderWidth,
+		A5(
+			$mdgriffith$elm_ui$Internal$Model$BorderWidth,
+			'b-' + $elm$core$String$fromInt(v),
+			v,
+			v,
+			v,
+			v));
+};
 var $mdgriffith$elm_ui$Element$Input$defaultTextBoxStyle = _List_fromArray(
 	[
 		$mdgriffith$elm_ui$Element$Input$defaultTextPadding,
@@ -14663,6 +14560,24 @@ var $author$project$View$ipAddressInput = F2(
 				text: A2($author$project$Types$IpAddress$showIpAddressByte, _byte, ip)
 			});
 	});
+var $mdgriffith$elm_ui$Element$row = F2(
+	function (attrs, children) {
+		return A4(
+			$mdgriffith$elm_ui$Internal$Model$element,
+			$mdgriffith$elm_ui$Internal$Model$asRow,
+			$mdgriffith$elm_ui$Internal$Model$div,
+			A2(
+				$elm$core$List$cons,
+				$mdgriffith$elm_ui$Internal$Model$htmlClass($mdgriffith$elm_ui$Internal$Style$classes.contentLeft + (' ' + $mdgriffith$elm_ui$Internal$Style$classes.contentCenterY)),
+				A2(
+					$elm$core$List$cons,
+					$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$shrink),
+					A2(
+						$elm$core$List$cons,
+						$mdgriffith$elm_ui$Element$height($mdgriffith$elm_ui$Element$shrink),
+						attrs))),
+			$mdgriffith$elm_ui$Internal$Model$Unkeyed(children));
+	});
 var $author$project$View$ipaddress = function (model) {
 	return A2(
 		$mdgriffith$elm_ui$Element$row,
@@ -15089,7 +15004,6 @@ var $author$project$View$csvLoadButtonText = F2(
 	function (flag, str) {
 		return flag ? (str + ' registers imported!') : ('Import registers from ' + str);
 	});
-var $mdgriffith$elm_ui$Element$none = $mdgriffith$elm_ui$Internal$Model$Empty;
 var $author$project$View$showCSVFile = function (model) {
 	var _v0 = model.csvFileName;
 	if (_v0.$ === 'Nothing') {
@@ -15455,6 +15369,12 @@ var $mdgriffith$elm_ui$Element$rotate = function (angle) {
 			_Utils_Tuple3(0, 0, 1),
 			angle));
 };
+var $mdgriffith$elm_ui$Element$Font$size = function (i) {
+	return A2(
+		$mdgriffith$elm_ui$Internal$Model$StyleClass,
+		$mdgriffith$elm_ui$Internal$Flag$fontSize,
+		$mdgriffith$elm_ui$Internal$Model$FontSize(i));
+};
 var $mdgriffith$elm_ui$Element$transparent = function (on) {
 	return on ? A2(
 		$mdgriffith$elm_ui$Internal$Model$StyleClass,
@@ -15620,7 +15540,7 @@ var $author$project$View$modDataTable = function (model) {
 		model.modData,
 		$author$project$View$modDataColumns(model));
 };
-var $author$project$View$tabSelect = function (model) {
+var $author$project$View$infoArea = function (model) {
 	var _v0 = model.activeTab;
 	switch (_v0.$) {
 		case 'ConnectMenu':
@@ -15637,11 +15557,144 @@ var $author$project$View$tabSelect = function (model) {
 			return $author$project$View$heartbeatTable;
 	}
 };
+var $author$project$View$mainTab = function (model) {
+	return A2(
+		$mdgriffith$elm_ui$Element$row,
+		_List_fromArray(
+			[
+				$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill),
+				$mdgriffith$elm_ui$Element$height($mdgriffith$elm_ui$Element$fill)
+			]),
+		_List_fromArray(
+			[
+				$author$project$View$infoArea(model),
+				$author$project$View$commandArea(model)
+			]));
+};
+var $mdgriffith$elm_ui$Internal$Model$Top = {$: 'Top'};
+var $mdgriffith$elm_ui$Element$alignTop = $mdgriffith$elm_ui$Internal$Model$AlignY($mdgriffith$elm_ui$Internal$Model$Top);
+var $author$project$Types$ChangeActiveTab = function (a) {
+	return {$: 'ChangeActiveTab', a: a};
+};
+var $author$project$Palette$darkGrey = A3($mdgriffith$elm_ui$Element$rgb255, 50, 50, 50);
+var $author$project$View$selectButtonBgdColor = F2(
+	function (model, table) {
+		return _Utils_eq(model.activeTab, table) ? $author$project$Palette$grey : $author$project$Palette$darkGrey;
+	});
+var $author$project$View$newSelectButton = F3(
+	function (model, str, table) {
+		return A2(
+			$mdgriffith$elm_ui$Element$Input$button,
+			_List_fromArray(
+				[
+					$mdgriffith$elm_ui$Element$Background$color(
+					A2($author$project$View$selectButtonBgdColor, model, table)),
+					$mdgriffith$elm_ui$Element$focused(
+					_List_fromArray(
+						[
+							$mdgriffith$elm_ui$Element$Font$color($author$project$Palette$white)
+						])),
+					$mdgriffith$elm_ui$Element$mouseOver(
+					_List_fromArray(
+						[
+							$mdgriffith$elm_ui$Element$Font$color($author$project$Palette$white)
+						])),
+					$mdgriffith$elm_ui$Element$Border$width(0),
+					$mdgriffith$elm_ui$Element$height($mdgriffith$elm_ui$Element$fill),
+					A2($mdgriffith$elm_ui$Element$paddingXY, 10, 0),
+					$mdgriffith$elm_ui$Element$Font$color($author$project$Palette$greyWhite)
+				]),
+			{
+				label: $mdgriffith$elm_ui$Element$text(str),
+				onPress: $elm$core$Maybe$Just(
+					$author$project$Types$ChangeActiveTab(table))
+			});
+	});
+var $author$project$View$connectTabButton = function (model) {
+	return A3($author$project$View$newSelectButton, model, 'Connect', $author$project$Types$ConnectMenu);
+};
+var $author$project$Types$HeartbeatTable = {$: 'HeartbeatTable'};
+var $author$project$View$heartbeatButton = function (model) {
+	return A3($author$project$View$newSelectButton, model, 'Heartbeat Signals', $author$project$Types$HeartbeatTable);
+};
+var $author$project$Types$HoldingRegistersTable = {$: 'HoldingRegistersTable'};
+var $author$project$View$holdingRegistersButton = function (model) {
+	return A3($author$project$View$newSelectButton, model, 'Holding Registers', $author$project$Types$HoldingRegistersTable);
+};
+var $author$project$Types$ImportMenu = {$: 'ImportMenu'};
+var $author$project$View$importRegisterTableButton = function (model) {
+	return A3($author$project$View$newSelectButton, model, 'Import', $author$project$Types$ImportMenu);
+};
+var $author$project$Types$InputRegistersTable = {$: 'InputRegistersTable'};
+var $author$project$View$inputRegistersButton = function (model) {
+	return A3($author$project$View$newSelectButton, model, 'Input Registers', $author$project$Types$InputRegistersTable);
+};
+var $author$project$Types$ModDataTable = {$: 'ModDataTable'};
+var $author$project$View$registerTableButton = function (model) {
+	return A3($author$project$View$newSelectButton, model, 'Register Table', $author$project$Types$ModDataTable);
+};
+var $author$project$View$menuBar = function (model) {
+	return A2(
+		$mdgriffith$elm_ui$Element$row,
+		_List_fromArray(
+			[
+				$mdgriffith$elm_ui$Element$Background$color($author$project$Palette$darkGrey),
+				$mdgriffith$elm_ui$Element$alignTop,
+				$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill),
+				$mdgriffith$elm_ui$Element$height(
+				$mdgriffith$elm_ui$Element$px(30)),
+				A2($mdgriffith$elm_ui$Element$paddingXY, 10, 0),
+				$mdgriffith$elm_ui$Element$spacing(0)
+			]),
+		_List_fromArray(
+			[
+				$author$project$View$connectTabButton(model),
+				$author$project$View$importRegisterTableButton(model),
+				$author$project$View$inputRegistersButton(model),
+				$author$project$View$holdingRegistersButton(model),
+				$author$project$View$registerTableButton(model),
+				$author$project$View$heartbeatButton(model)
+			]));
+};
+var $author$project$Palette$smallFont = $mdgriffith$elm_ui$Element$Font$size(14);
+var $mdgriffith$elm_ui$Internal$Model$Bottom = {$: 'Bottom'};
+var $mdgriffith$elm_ui$Element$alignBottom = $mdgriffith$elm_ui$Internal$Model$AlignY($mdgriffith$elm_ui$Internal$Model$Bottom);
+var $author$project$Types$showStatus = function (status) {
+	switch (status.$) {
+		case 'AllGood':
+			return 'all good';
+		case 'Loading':
+			return 'getting stuff from the server';
+		default:
+			var err = status.a;
+			return err;
+	}
+};
+var $author$project$Palette$slateGrey = A3($mdgriffith$elm_ui$Element$rgb255, 109, 122, 142);
+var $author$project$View$statusBar = function (model) {
+	return A2(
+		$mdgriffith$elm_ui$Element$row,
+		_List_fromArray(
+			[
+				$mdgriffith$elm_ui$Element$Background$color($author$project$Palette$slateGrey),
+				$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill),
+				$mdgriffith$elm_ui$Element$height(
+				$mdgriffith$elm_ui$Element$px(30)),
+				$mdgriffith$elm_ui$Element$alignBottom
+			]),
+		_List_fromArray(
+			[
+				$mdgriffith$elm_ui$Element$text(
+				$author$project$Types$showStatus(model.status))
+			]));
+};
+var $author$project$View$statusExpanded = $mdgriffith$elm_ui$Element$none;
 var $author$project$View$page = function (model) {
 	return A2(
 		$mdgriffith$elm_ui$Element$column,
 		_List_fromArray(
 			[
+				$mdgriffith$elm_ui$Element$Background$color($author$project$Palette$grey),
 				$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill),
 				$mdgriffith$elm_ui$Element$height($mdgriffith$elm_ui$Element$fill),
 				$author$project$Palette$smallFont
@@ -15649,7 +15702,8 @@ var $author$project$View$page = function (model) {
 		_List_fromArray(
 			[
 				$author$project$View$menuBar(model),
-				$author$project$View$tabSelect(model),
+				$author$project$View$mainTab(model),
+				$author$project$View$statusExpanded,
 				$author$project$View$statusBar(model)
 			]));
 };

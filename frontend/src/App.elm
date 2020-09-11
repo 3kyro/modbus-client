@@ -37,6 +37,7 @@ initModel =
     , csvContent = Nothing
     , csvLoaded = False
     , selectAllCheckbox = False
+    , selectSome = False
     }
 
 initModData : List ModData
