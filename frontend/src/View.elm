@@ -625,9 +625,12 @@ modDataCommand model =
     if model.selectSome
     then
         column
-            [ Background.color scampi
+            [ Background.color grey
             , width <| px 300
             , height fill
+            , Border.widthXY 1 0
+            , Border.color lightGrey
+            , padding 10
             ]
             [ updateSelectedButton model ]
     else none
@@ -636,7 +639,10 @@ updateSelectedButton : Model -> Element Msg
 updateSelectedButton model =
     Input.button
         [ Background.color lightGrey
-
+        , width fill
+        , Font.center
+        , Font.color greyWhite
+        , paddingXY 0 10
         ]
         { onPress = Just <| RefreshRequest <| List.filter getModSelected model.modData
         , label = text "Update Selected"
@@ -647,7 +653,7 @@ updateSelectedButton model =
 statusBar : Model -> Element Msg
 statusBar model =
     row
-        [ Background.color slateGrey
+        [ Background.color blueSapphire
         , width fill
         , height <| px 30
         , alignBottom
