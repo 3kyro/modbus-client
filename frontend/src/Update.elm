@@ -19,14 +19,12 @@ import Types exposing
     , decodeConnInfo
     , encodeRegister
     , decodeModData
-    , getChangedMenu
     , encodeIpPort
     , replaceModData
+    , ActiveTab(..)
     )
 
 import Types.IpAddress exposing (setIpAddressByte)
-import Array exposing (indexedMap)
-import Types exposing (ActiveTable(..))
 
 update : Msg -> Model -> ( Model, Cmd Msg)
 update msg model =
@@ -113,9 +111,7 @@ update msg model =
             , Cmd.none
             )
 
-        ChangeActiveMenu menu -> ( { model | activeMenu = getChangedMenu model menu }, Cmd.none )
-
-        ChangeActiveTable table -> ( { model | activeTable = table }, Cmd.none )
+        ChangeActiveTab tab -> ( { model | activeTab = tab }, Cmd.none )
 
         CsvRequested -> ( model , Select.file [] CsvSelected )
 
@@ -134,7 +130,7 @@ update msg model =
             ( { model | modData = md }, Cmd.none )
 
         SelectAllChecked b ->
-            case model.activeTable of
+            case model.activeTab of
                 ModDataTable ->
                     (
                     { model |

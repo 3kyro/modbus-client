@@ -12,8 +12,7 @@ import Types exposing
     , Status (..)
     , RegType (..)
     , ConnectStatus(..)
-    , ActiveMenu(..)
-    , ActiveTable(..)
+    , ActiveTab(..)
     )
 import Types.IpAddress exposing (defaultIpAddr)
 
@@ -33,8 +32,7 @@ initModel =
     , ipAddress = defaultIpAddr
     , socketPort = Just 502
     , timeout = Just 1000
-    , activeMenu = NoneActive
-    , activeTable = ModDataTable
+    , activeTab = ConnectMenu
     , csvFileName = Nothing
     , csvContent = Nothing
     , selectAllCheckbox = False

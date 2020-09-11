@@ -9,7 +9,7 @@ module Palette exposing
     , maximumBluePurple
     , darkBluePurple
     , smallFont
-    , maximumBluePurpleLight, lightGreen, lightGrey, black
+    , maximumBluePurpleLight, lightGreen, lightGrey, black, gray14
     )
 
 import Element exposing (Color, Attribute, rgb255)
@@ -73,5 +73,8 @@ smallFont : Attribute Msg
 smallFont = Font.size 14
 
 black : Color
-black = rgb255 0 0 0 
+black = rgb255 0 0 0
+
+gray14 : Color
+gray14 = rgb255 36 36 36
 

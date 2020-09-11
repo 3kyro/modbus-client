@@ -13,9 +13,11 @@ module Types exposing
     , decodeConnInfo
     , encodeRegister
     , decodeModData
-    , ActiveMenu (..)
-    , ActiveTable (..), replaceModData, getModValue, getModValueType, showLoadedFileName
-    , getChangedMenu
+    , ActiveTab (..)
+    , replaceModData
+    , getModValue
+    , getModValueType
+    , showLoadedFileName
     , encodeIpPort
     )
 
@@ -43,8 +45,7 @@ type Msg
     | ChangeTimeout String
     | DisconnectRequest
     | DisconnectedResponse (Result Http.Error () )
-    | ChangeActiveMenu ActiveMenu
-    | ChangeActiveTable ActiveTable
+    | ChangeActiveTab ActiveTab
     | CsvRequested
     | CsvSelected File
     | CsvLoaded String
@@ -60,8 +61,7 @@ type alias Model =
     , ipAddress : IpAddress
     , socketPort : Maybe Int
     , timeout : Maybe Int
-    , activeMenu : ActiveMenu
-    , activeTable : ActiveTable
+    , activeTab : ActiveTab
     , csvFileName : Maybe String
     , csvContent : Maybe String
     , selectAllCheckbox : Bool
@@ -227,25 +227,13 @@ replaceModData idx checked =
         else md
 
 
--- ActiveMenu
+-- ActiveTab
 --------------------------------------------------------------------------------------------------
 
-type ActiveMenu
-    = NoneActive
-    | ConnectMenu
-    | ImportRegistersMenu
-
-getChangedMenu : Model -> ActiveMenu -> ActiveMenu
-getChangedMenu model newActive =
-    if
-        model.activeMenu == newActive
-    then
-        NoneActive
-    else
-        newActive
-
-type ActiveTable
-    = InputRegistersTable
+type ActiveTab
+    = ConnectMenu
+    | ImportMenu
+    | InputRegistersTable
     | HoldingRegistersTable
     | ModDataTable
     | HeartbeatTable

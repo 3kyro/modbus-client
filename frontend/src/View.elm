@@ -38,14 +38,13 @@ import Html.Attributes
 
 import Types exposing
     ( Msg(..)
-    , ActiveMenu (..)
+    , ActiveTab (..)
     , Model
     , showStatus
     , Status (..)
-    , ActiveTable(..)
-    , showConnectStatus
     , showLoadedFileName
     , ConnectStatus(..)
+    , showConnectStatus
     , ModData
     , getRegType
     , getModValueType
@@ -64,9 +63,10 @@ import Palette exposing
     , white
     , maximumBluePurple
     , maximumBluePurpleLight
-    , darkBluePurple
+    , lightGrey
     , lightGreen
     , smallFont
+    , gray14
     )
 
 view : Model -> Html Msg
@@ -79,43 +79,17 @@ page model =
         , height fill
         , smallFont
         ]
-        [ mainCell model
+        [ menuBar model
+        , tabSelect model
         , statusBar model
         ]
 
 
-
 ------------------------------------------------------------------------------------------------------------------
--- Main Cell
+-- Menu Bar
 
-mainCell : Model -> Element Msg
-mainCell model =
-    row
-        [ width fill
-        , height fill ]
-        [ registerCell model
-        , commandBar model
-        ]
-
-
-------------------------------------------------------------------------------------------------------------------
--- Registers Cell
-
-registerCell : Model -> Element Msg
-registerCell model =
-    column
-        [ height fill
-        , width fill
-        ]
-        [ tableSelectBar model
-        , tablesCell model
-        ]
-
-------------------------------------------------------------------------------------------------------------------
--- Tables Select Bar
-
-tableSelectBar : Model -> Element Msg
-tableSelectBar model =
+menuBar : Model -> Element Msg
+menuBar model =
     row
         [ Background.color darkGrey
         , alignTop
@@ -124,32 +98,42 @@ tableSelectBar model =
         , paddingXY 10 0
         , spacing 0
         ]
-        [ inputRegistersButton model
+        [ connectTabButton model
+        , importRegisterTableButton model
+        , inputRegistersButton model
         , holdingRegistersButton model
         , registerTableButton model
         , heartbeatButton model
         ]
 
-newSelectButton : Model -> String -> ActiveTable -> Element Msg
+newSelectButton : Model -> String -> ActiveTab -> Element Msg
 newSelectButton model str table =
     Input.button
         [ Background.color <| selectButtonBgdColor model table
-        , focused []
+        , focused [ Font.color white ]
         , mouseOver [ Font.color white ]
         , Border.width 0
         , height fill
         , paddingXY 10 0
         , Font.color greyWhite
         ]
-        { onPress = Just <| ChangeActiveTable table
+        { onPress = Just <| ChangeActiveTab table
         , label = text str
         }
 
-selectButtonBgdColor : Model -> ActiveTable -> Color
+selectButtonBgdColor : Model -> ActiveTab -> Color
 selectButtonBgdColor model table =
-    if model.activeTable == table
+    if model.activeTab == table
     then grey
     else darkGrey
+
+connectTabButton : Model -> Element Msg
+connectTabButton model =
+    newSelectButton model "Connect" ConnectMenu
+
+importRegisterTableButton : Model -> Element Msg
+importRegisterTableButton model =
+    newSelectButton model "Import" ImportMenu
 
 inputRegistersButton : Model -> Element Msg
 inputRegistersButton model =
@@ -167,16 +151,211 @@ heartbeatButton : Model -> Element Msg
 heartbeatButton model =
     newSelectButton model "Heartbeat Signals" HeartbeatTable
 
-------------------------------------------------------------------------------------------------------------------
--- Tables Cell
-
-tablesCell : Model -> Element Msg
-tablesCell model =
-    case model.activeTable of
+tabSelect : Model -> Element Msg
+tabSelect model =
+    case model.activeTab of
+        ConnectMenu -> connectTab model
+        ImportMenu -> importActiveMenu model
         InputRegistersTable -> inputRegistersTable model
         HoldingRegistersTable -> holdingRegistersTable model
         ModDataTable -> modDataTable model
         HeartbeatTable -> heartbeatTable model
+
+------------------------------------------------------------------------------------------------------------------
+-- Connect Menu
+
+connectTab : Model -> Element Msg
+connectTab model =
+    el
+        [ Background.color grey
+        , width fill
+        , height fill
+        ]
+        <| connectIsland model
+
+connectIsland : Model -> Element Msg
+connectIsland model =
+    column
+        [ Background.color grey
+        , centerX
+        , centerY
+        , width <| px 500
+        , height <| px 500
+        , spacing 20
+        , paddingXY 10 20
+        ]
+        [ ipaddress model
+        , portNum model
+        , timeout model
+        , connectButton model
+        , disconnectButton model
+        ]
+
+ipaddress : Model -> Element Msg
+ipaddress model =
+    row
+        [ spacing 5
+        , Font.color white
+        ]
+        [ el [ width <| px 100 ] <| text "IP Address"
+        , ipAddressInput Byte0 model.ipAddress
+        , ipAddressInput Byte1 model.ipAddress
+        , ipAddressInput Byte2 model.ipAddress
+        , ipAddressInput Byte3 model.ipAddress
+         ]
+
+ipAddressInput :  IpAddressByte -> IpAddress -> Element Msg
+ipAddressInput byte ip =
+    Input.text
+        [ width <| px 70
+        , Background.color lightGrey
+        , htmlAttribute <| Html.Attributes.maxlength 3
+        , Font.color white
+        , focused [ Border.glow white 1 ]
+        ]
+        { onChange = ChangeIpAddress byte
+        , text = showIpAddressByte byte ip
+        , placeholder = Nothing
+        , label = Input.labelHidden "Byte"
+        }
+
+portNum : Model -> Element Msg
+portNum model =
+    Input.text
+        [ width <| px 70
+        , Background.color lightGrey
+        , htmlAttribute <| Html.Attributes.maxlength 5
+        , Font.color white
+        , focused [ Border.glow white 1 ]
+        ]
+        { onChange = ChangePort
+        , text = Maybe.withDefault "" <| Maybe.map String.fromInt model.socketPort
+        , placeholder = Nothing
+        , label = Input.labelLeft [ Font.color white ] <| el [ width <| px 100 ] (text "Port")
+        }
+
+
+timeout : Model -> Element Msg
+timeout model =
+    Input.text
+        [ width <| px 70
+        , Background.color lightGrey
+        , htmlAttribute <| Html.Attributes.maxlength 5
+        , Font.color white
+        , focused [ Border.glow white 1 ]
+        ]
+        { onChange = ChangeTimeout
+        , text = Maybe.withDefault "" <| Maybe.map String.fromInt model.timeout
+        , placeholder = Nothing
+        , label = Input.labelLeft [ Font.color white ] <| el [ width <| px 100 ] (text "Timeout (ms)")
+        }
+
+connectButton : Model -> Element Msg
+connectButton model =
+    Input.button
+        [ Background.color <| connectButtonBgd model
+        , mouseOver [ Font.color white ]
+        , height <| px 30
+        , width fill
+        , paddingXY 0 0
+        , Font.color greyWhite
+        , Font.center
+        , focused []
+        ]
+        { onPress = Just ConnectRequest
+        , label = text <| showConnectStatus model.connectStatus
+        }
+
+connectButtonBgd : Model -> Color
+connectButtonBgd model =
+    case model.connectStatus of
+        Connect -> lightGrey
+        Connecting -> lightGrey
+        Connected -> lightGreen
+        Disconnecting -> lightGrey
+
+disconnectButton : Model -> Element Msg
+disconnectButton model =
+    Input.button
+        [ Background.color <| disconnectButtonBgd model
+        , mouseOver [ Font.color white ]
+        , height <| px 30
+        , width fill
+        , paddingXY 0 0
+        , Font.color greyWhite
+        , Font.center
+        , focused []
+        ]
+        { onPress = Just DisconnectRequest
+        , label = text "Disconnect"
+        }
+
+disconnectButtonBgd : Model -> Color
+disconnectButtonBgd model =
+    case model.connectStatus of
+        Connect -> grey
+        Connecting -> grey
+        Connected -> lightGrey
+        Disconnecting -> grey
+
+------------------------------------------------------------------------------------------------------------------
+-- Import Menu
+
+importActiveMenu : Model -> Element Msg
+importActiveMenu model =
+    column
+        [ Background.color grey
+        , width fill
+        , height fill
+        , spacing 20
+        , paddingXY 10 20
+        ]
+        [ loadCSVButton
+        , showCSVFile model
+        , loadRegisterTableButton
+        ]
+
+loadCSVButton : Element Msg
+loadCSVButton =
+    Input.button
+        [ Background.color maximumBluePurpleLight
+        , mouseOver [ Font.color white ]
+        , height <| px 30
+        , width fill
+        , paddingXY 0 0
+        , Font.color greyWhite
+        , Font.center
+        , focused []
+        ]
+        { onPress = Just CsvRequested
+        , label = text "Load CSV File"
+        }
+
+showCSVFile : Model -> Element Msg
+showCSVFile model =
+    el
+        []
+        ( text <| showLoadedFileName model )
+
+
+loadRegisterTableButton : Element Msg
+loadRegisterTableButton =
+    Input.button
+        [ Background.color maximumBluePurpleLight
+        , mouseOver [ Font.color white ]
+        , height <| px 30
+        , width fill
+        , paddingXY 0 0
+        , Font.color lightGrey
+        , Font.center
+        , focused []
+        ]
+        { onPress = Just ModDataRequest
+        , label = text "Load Register Table"
+        }
+
+------------------------------------------------------------------------------------------------------------------
+-- Registers Menu
 
 newRegisterTable : Model -> Element Msg
 newRegisterTable model =
@@ -324,256 +503,6 @@ modDataTable model = newRegisterTable model
 
 heartbeatTable : Model -> Element Msg
 heartbeatTable model = newRegisterTable model
-
-------------------------------------------------------------------------------------------------------------------
--- Command Bar
-
-commandBar : Model -> Element Msg
-commandBar model =
-    column
-        [ width ( fill |> maximum 500 )
-        , height fill
-        , Background.color darkBluePurple
-        , Font.color white ]
-        [ connectionButton
-        , connectMenu model
-        , importRegTableButton
-        , importMenu model
-        ]
-
-newCommandButton : String -> Maybe Msg -> Element Msg
-newCommandButton str action =
-    Input.button
-        [
-         focused
-            [ Background.color maximumBluePurpleLight
-            , Font.color white
-            ]
-        , mouseOver [ Font.color white ]
-        , Border.widthEach
-            { bottom = 1
-            , left = 0
-            , right = 0
-            , top = 0
-            }
-        , height <| px 30
-        , width fill
-        , paddingXY 0 0
-        , Font.color greyWhite
-        , Font.center
-        ]
-        { onPress = action
-        , label = text str
-        }
-
-connectionButton : Element Msg
-connectionButton =
-    newCommandButton "Connection" <| Just <|ChangeActiveMenu ConnectMenu
-connectMenu : Model -> Element Msg
-connectMenu model =
-    case model.activeMenu of
-        ConnectMenu -> connectionActiveMenu model
-        _ -> none
-
-importRegTableButton : Element Msg
-importRegTableButton =
-    newCommandButton "Import" <| Just <| ChangeActiveMenu ImportRegistersMenu
-
-importMenu : Model -> Element Msg
-importMenu model =
-    case model.activeMenu of
-        ImportRegistersMenu -> importActiveMenu model
-        _ -> none
-
-------------------------------------------------------------------------------------------------------------------
--- Connect Menu
-
-connectionActiveMenu : Model -> Element Msg
-connectionActiveMenu model =
-    column
-        [ width fill
-        , Border.widthEach
-            { bottom = 1
-            , left = 0
-            , right = 0
-            , top = 0
-            }
-        , spacing 20
-        , paddingXY 10 20
-        ]
-        [ ipaddress model
-        , portNum model
-        , timeout model
-        , connectButton model
-        , disconnectButton model
-        ]
-
-
-
-ipaddress : Model -> Element Msg
-ipaddress model =
-    row
-        [ width fill
-        , spacing 5
-        ]
-        [ el [ width <| px 100 ] <| text "IP Address"
-        , ipAddressInput Byte0 model.ipAddress
-        , ipAddressInput Byte1 model.ipAddress
-        , ipAddressInput Byte2 model.ipAddress
-        , ipAddressInput Byte3 model.ipAddress
-         ]
-
-ipAddressInput :  IpAddressByte -> IpAddress -> Element Msg
-ipAddressInput byte ip =
-    Input.text
-        [
-          width <| px 70
-        , Background.color darkBluePurple
-        , htmlAttribute <| Html.Attributes.maxlength 3
-        , focused [ Border.glow white 1 ]
-        ]
-        { onChange = ChangeIpAddress byte
-        , text = showIpAddressByte byte ip
-        , placeholder = Nothing
-        , label = Input.labelHidden "Byte"
-        }
-
-portNum : Model -> Element Msg
-portNum model =
-    Input.text
-        [ width <| px 70
-        , Background.color darkBluePurple
-        , htmlAttribute <| Html.Attributes.maxlength 5
-        , focused [ Border.glow white 1 ]
-        ]
-        { onChange = ChangePort
-        , text = Maybe.withDefault "" <| Maybe.map String.fromInt model.socketPort
-        , placeholder = Nothing
-        , label = Input.labelLeft [] <| el [ width <| px 100 ] (text "Port")
-        }
-
-timeout : Model -> Element Msg
-timeout model =
-    Input.text
-        [ width <| px 70
-        , Background.color darkBluePurple
-        , htmlAttribute <| Html.Attributes.maxlength 5
-        , focused [ Border.glow white 1 ]
-        ]
-        { onChange = ChangeTimeout
-        , text = Maybe.withDefault "" <| Maybe.map String.fromInt model.timeout
-        , placeholder = Nothing
-        , label = Input.labelLeft [] <| el [ width <| px 100 ] (text "Timeout (ms)")
-        }
-
-connectButton : Model -> Element Msg
-connectButton model =
-    Input.button
-        [ Background.color <| connectButtonBgd model
-        , mouseOver [ Font.color white ]
-        , height <| px 30
-        , width fill
-        , paddingXY 0 0
-        , Font.color greyWhite
-        , Font.center
-        , focused []
-        ]
-        { onPress = Just ConnectRequest
-        , label = text <| showConnectStatus model.connectStatus
-        }
-
-connectButtonBgd : Model -> Color
-connectButtonBgd model =
-    case model.connectStatus of
-        Connect -> maximumBluePurpleLight
-        Connecting -> maximumBluePurpleLight
-        Connected -> lightGreen
-        Disconnecting -> maximumBluePurple
-
-
-disconnectButton : Model -> Element Msg
-disconnectButton model =
-    Input.button
-        [ Background.color <| disconnectButtonBgd model
-        , mouseOver [ Font.color white ]
-        , height <| px 30
-        , width fill
-        , paddingXY 0 0
-        , Font.color greyWhite
-        , Font.center
-        , focused []
-        ]
-        { onPress = Just DisconnectRequest
-        , label = text "Disconnect"
-        }
-
-disconnectButtonBgd : Model -> Color
-disconnectButtonBgd model =
-    case model.connectStatus of
-        Connect -> darkBluePurple
-        Connecting -> darkBluePurple
-        Connected -> maximumBluePurpleLight
-        Disconnecting -> darkBluePurple
-
-------------------------------------------------------------------------------------------------------------------
--- Import Menu
-
-importActiveMenu : Model -> Element Msg
-importActiveMenu model =
-    column
-        [ width fill
-        , Border.widthEach
-            { bottom = 1
-            , left = 0
-            , right = 0
-            , top = 0
-            }
-        , spacing 20
-        , paddingXY 10 20
-        ]
-        [ loadCSVButton
-        , showCSVFile model
-        , loadRegisterTableButton
-        -- , showNumOfLoadedRegs
-        ]
-
-loadCSVButton : Element Msg
-loadCSVButton =
-    Input.button
-        [ Background.color maximumBluePurpleLight
-        , mouseOver [ Font.color white ]
-        , height <| px 30
-        , width fill
-        , paddingXY 0 0
-        , Font.color greyWhite
-        , Font.center
-        , focused []
-        ]
-        { onPress = Just CsvRequested
-        , label = text "Load CSV File"
-        }
-
-showCSVFile : Model -> Element Msg
-showCSVFile model =
-    el
-        []
-        ( text <| showLoadedFileName model )
-loadRegisterTableButton : Element Msg
-loadRegisterTableButton =
-    Input.button
-        [ Background.color maximumBluePurpleLight
-        , mouseOver [ Font.color white ]
-        , height <| px 30
-        , width fill
-        , paddingXY 0 0
-        , Font.color lightGrey
-        , Font.center
-        , focused []
-        ]
-        { onPress = Just ModDataRequest
-        , label = text "Load Register Table"
-        }
-
 
 ------------------------------------------------------------------------------------------------------------------
 -- Status Bar
