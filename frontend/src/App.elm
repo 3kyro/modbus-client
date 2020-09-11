@@ -13,6 +13,7 @@ import Types exposing
     , RegType (..)
     , ConnectStatus(..)
     , ActiveTab(..)
+    , ReadWrite(..)
     )
 import Types.IpAddress exposing (defaultIpAddr)
 
@@ -38,7 +39,7 @@ initModel =
     , csvLoaded = False
     , selectAllCheckbox = False
     , selectSome = False
-    , toggleWriteAll = False
+    , readWriteAll = Read
     }
 
 initModData : List ModData
@@ -50,7 +51,7 @@ initModData =
       , modUid = 1
       , modDescription = "A register for tesing purposes"
       , selected = False
-      , write = False
+      , rw = Read
       }
     , { modName = "second"
       , modRegType = HoldingRegister
@@ -59,7 +60,7 @@ initModData =
       , modUid = 1
       , modDescription = "A register for tesing purposes"
       , selected = False
-      , write = False
+      , rw = Read
       }
     , { modName = "1500"
       , modRegType = InputRegister
@@ -68,7 +69,7 @@ initModData =
       , modUid = 1
       , modDescription = "A register for tesing purposes"
       , selected = False
-      , write = False
+      , rw = Read
       }
     , { modName = "1700"
       , modRegType = HoldingRegister
@@ -77,6 +78,6 @@ initModData =
       , modUid = 1
       , modDescription = "A register for tesing purposes"
       , selected = False
-      , write = False
+      , rw = Read
       }
     ]

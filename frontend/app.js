@@ -6532,6 +6532,7 @@ var $author$project$Update$initCmd = $author$project$Update$connectionInfoReques
 var $author$project$Types$AllGood = {$: 'AllGood'};
 var $author$project$Types$Connect = {$: 'Connect'};
 var $author$project$Types$ConnectMenu = {$: 'ConnectMenu'};
+var $author$project$Types$Read = {$: 'Read'};
 var $author$project$Types$IpAddress$defaultIpAddr = A4(
 	$author$project$Types$IpAddress$IpAddress,
 	$elm$core$Maybe$Just(192),
@@ -6553,8 +6554,8 @@ var $author$project$App$initModData = _List_fromArray(
 		modUid: 1,
 		modValue: $author$project$Types$ModWord(
 			$elm$core$Maybe$Just(1)),
-		selected: false,
-		write: false
+		rw: $author$project$Types$Read,
+		selected: false
 	},
 		{
 		modAddress: 2,
@@ -6564,8 +6565,8 @@ var $author$project$App$initModData = _List_fromArray(
 		modUid: 1,
 		modValue: $author$project$Types$ModWord(
 			$elm$core$Maybe$Just(2)),
-		selected: false,
-		write: false
+		rw: $author$project$Types$Read,
+		selected: false
 	},
 		{
 		modAddress: 10,
@@ -6574,8 +6575,8 @@ var $author$project$App$initModData = _List_fromArray(
 		modRegType: $author$project$Types$InputRegister,
 		modUid: 1,
 		modValue: $author$project$Types$ModWord($elm$core$Maybe$Nothing),
-		selected: false,
-		write: false
+		rw: $author$project$Types$Read,
+		selected: false
 	},
 		{
 		modAddress: 15,
@@ -6584,8 +6585,8 @@ var $author$project$App$initModData = _List_fromArray(
 		modRegType: $author$project$Types$HoldingRegister,
 		modUid: 1,
 		modValue: $author$project$Types$ModWord($elm$core$Maybe$Nothing),
-		selected: false,
-		write: false
+		rw: $author$project$Types$Read,
+		selected: false
 	}
 	]);
 var $author$project$App$initModel = {
@@ -6596,12 +6597,12 @@ var $author$project$App$initModel = {
 	csvLoaded: false,
 	ipAddress: $author$project$Types$IpAddress$defaultIpAddr,
 	modData: $author$project$App$initModData,
+	readWriteAll: $author$project$Types$Read,
 	selectAllCheckbox: false,
 	selectSome: false,
 	socketPort: $elm$core$Maybe$Just(502),
 	status: $author$project$Types$AllGood,
-	timeout: $elm$core$Maybe$Just(1000),
-	toggleWriteAll: false
+	timeout: $elm$core$Maybe$Just(1000)
 };
 var $elm$core$Platform$Sub$batch = _Platform_batch;
 var $elm$core$Platform$Sub$none = $elm$core$Platform$Sub$batch(_List_Nil);
@@ -6776,8 +6777,8 @@ var $author$project$Types$ReadRegisters = function (a) {
 	return {$: 'ReadRegisters', a: a};
 };
 var $author$project$Types$ModData = F8(
-	function (modName, modRegType, modAddress, modValue, modUid, modDescription, selected, write) {
-		return {modAddress: modAddress, modDescription: modDescription, modName: modName, modRegType: modRegType, modUid: modUid, modValue: modValue, selected: selected, write: write};
+	function (modName, modRegType, modAddress, modValue, modUid, modDescription, selected, rw) {
+		return {modAddress: modAddress, modDescription: modDescription, modName: modName, modRegType: modRegType, modUid: modUid, modValue: modValue, rw: rw, selected: selected};
 	});
 var $author$project$Types$ModFloat = function (a) {
 	return {$: 'ModFloat', a: a};
@@ -6841,7 +6842,7 @@ var $author$project$Types$decodeModData = A9(
 	A2($elm$json$Json$Decode$field, 'uid', $elm$json$Json$Decode$int),
 	A2($elm$json$Json$Decode$field, 'description', $elm$json$Json$Decode$string),
 	$elm$json$Json$Decode$succeed(false),
-	$elm$json$Json$Decode$succeed(false));
+	$elm$json$Json$Decode$succeed($author$project$Types$Read));
 var $elm$json$Json$Encode$float = _Json_wrap;
 var $author$project$Types$encodeModValue = function (mv) {
 	if (mv.$ === 'ModWord') {
@@ -6964,12 +6965,12 @@ var $author$project$Types$writeableReg = function (md) {
 	}
 };
 var $author$project$Types$replaceModDataWrite = F2(
-	function (idx, flag) {
+	function (idx, rw) {
 		return F2(
 			function (i, md) {
 				return (_Utils_eq(i, idx) && $author$project$Types$writeableReg(md)) ? _Utils_update(
 					md,
-					{write: flag}) : md;
+					{rw: rw}) : md;
 			});
 	});
 var $author$project$Types$ReceivedModData = function (a) {
@@ -7328,10 +7329,10 @@ var $author$project$Update$update = F2(
 									function (md) {
 										return $author$project$Types$writeableReg(md) ? _Utils_update(
 											md,
-											{write: b}) : md;
+											{rw: b}) : md;
 									},
 									model.modData),
-								toggleWriteAll: b
+								readWriteAll: b
 							}),
 						$elm$core$Platform$Cmd$none);
 				} else {
@@ -15367,6 +15368,14 @@ var $author$project$View$modValueTypeColumn = {
 var $author$project$Types$ToggleWriteAll = function (a) {
 	return {$: 'ToggleWriteAll', a: a};
 };
+var $author$project$Types$Write = {$: 'Write'};
+var $author$project$Types$flipRW = function (rw) {
+	if (rw.$ === 'Read') {
+		return $author$project$Types$Write;
+	} else {
+		return $author$project$Types$Read;
+	}
+};
 var $author$project$View$readWriteButton = F2(
 	function (lbl, msg) {
 		return A2(
@@ -15375,8 +15384,12 @@ var $author$project$View$readWriteButton = F2(
 				[$mdgriffith$elm_ui$Element$centerY]),
 			{label: lbl, onPress: msg});
 	});
-var $author$project$View$readWriteButtonText = function (flag) {
-	return flag ? $mdgriffith$elm_ui$Element$text('Write') : $mdgriffith$elm_ui$Element$text('Read');
+var $author$project$View$readWriteButtonText = function (rw) {
+	if (rw.$ === 'Read') {
+		return $mdgriffith$elm_ui$Element$text('Read');
+	} else {
+		return $mdgriffith$elm_ui$Element$text('Write');
+	}
 };
 var $author$project$Types$ModDataWrite = F2(
 	function (a, b) {
@@ -15397,9 +15410,12 @@ var $author$project$View$viewReadWriteModDataCell = F2(
 				]),
 			$author$project$Types$writeableReg(md) ? A2(
 				$author$project$View$readWriteButton,
-				$author$project$View$readWriteButtonText(md.write),
+				$author$project$View$readWriteButtonText(md.rw),
 				$elm$core$Maybe$Just(
-					A2($author$project$Types$ModDataWrite, idx, !md.write))) : $mdgriffith$elm_ui$Element$none);
+					A2(
+						$author$project$Types$ModDataWrite,
+						idx,
+						$author$project$Types$flipRW(md.rw)))) : $mdgriffith$elm_ui$Element$none);
 	});
 var $author$project$View$viewReadWriteCell = F3(
 	function (model, idx, md) {
@@ -15424,9 +15440,10 @@ var $author$project$View$readWriteColumn = function (model) {
 				]),
 			A2(
 				$author$project$View$readWriteButton,
-				$author$project$View$readWriteButtonText(model.toggleWriteAll),
+				$author$project$View$readWriteButtonText(model.readWriteAll),
 				$elm$core$Maybe$Just(
-					$author$project$Types$ToggleWriteAll(!model.toggleWriteAll)))),
+					$author$project$Types$ToggleWriteAll(
+						$author$project$Types$flipRW(model.readWriteAll))))),
 		view: F2(
 			function (i, md) {
 				return A3($author$project$View$viewReadWriteCell, model, i, md);

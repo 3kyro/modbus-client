@@ -47,6 +47,10 @@ import Types exposing
     , getRegType
     , getModValueType
     , getModValue
+    , ReadWrite(..)
+    , flipRW
+    , writeableReg
+    , getModSelected
     )
 import Types.IpAddress exposing
     ( IpAddress
@@ -64,8 +68,6 @@ import Palette exposing
     , scampi
     , slateGrey
     )
-import Types exposing (getModSelected)
-import Types exposing (writeableReg)
 
 view : Model -> Html Msg
 view model = layout [] <| page model
@@ -478,8 +480,8 @@ readWriteColumn model =
             [ height <| px 30
             ]
             <| readWriteButton
-                (readWriteButtonText model.toggleWriteAll)
-                <| Just <| ToggleWriteAll <| not model.toggleWriteAll
+                ( readWriteButtonText model.readWriteAll )
+                <| Just <| ToggleWriteAll <| flipRW model.readWriteAll
     , width = px 50
     , view = \i md -> viewReadWriteCell model i md
     }
@@ -492,11 +494,11 @@ readWriteButton lbl msg =
         , label = lbl
         }
 
-readWriteButtonText : Bool -> Element Msg
-readWriteButtonText flag =
-    if flag
-    then text "Write"
-    else text "Read"
+readWriteButtonText : ReadWrite -> Element Msg
+readWriteButtonText rw =
+    case rw of
+        Read -> text "Read"
+        Write -> text "Write"
 
 selectColumn : Model -> IndexedColumn ModData Msg
 selectColumn model =
@@ -572,8 +574,8 @@ viewReadWriteModDataCell idx md =
         ]
         <| if writeableReg md
            then readWriteButton
-                (readWriteButtonText md.write)
-                <| Just <| ModDataWrite idx <| not md.write
+                (readWriteButtonText md.rw)
+                <| Just <| ModDataWrite idx <| flipRW md.rw
            else none
 tableCellColor : Int -> Color
 tableCellColor idx =

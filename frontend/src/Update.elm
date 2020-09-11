@@ -172,11 +172,11 @@ update msg model =
                 ModDataTable ->
                     (
                     { model
-                    | toggleWriteAll = b
+                    | readWriteAll = b
                     , modData = List.map
                         (\md ->
                             if writeableReg md
-                            then { md | write = b }
+                            then { md | rw = b }
                             else md
                         ) model.modData
                     }

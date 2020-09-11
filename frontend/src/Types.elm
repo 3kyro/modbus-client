@@ -21,6 +21,8 @@ module Types exposing
     , getModValueType
     , getModSelected
     , encodeIpPort
+    , ReadWrite (..)
+    , flipRW
     )
 
 
@@ -55,8 +57,8 @@ type Msg
     | ReceivedModData ( Result Http.Error (List ModData))
     | SelectAllChecked Bool
     | ModDataChecked Int Bool
-    | ToggleWriteAll Bool
-    | ModDataWrite Int Bool
+    | ToggleWriteAll ReadWrite
+    | ModDataWrite Int ReadWrite
 
 type alias Model =
     { modData : List ModData
@@ -71,7 +73,7 @@ type alias Model =
     , csvLoaded : Bool
     , selectAllCheckbox : Bool
     , selectSome : Bool
-    , toggleWriteAll : Bool
+    , readWriteAll : ReadWrite
     }
 type ConnectStatus
     = Connect
@@ -105,7 +107,6 @@ type alias ConnectionInfo =
     , timeout : Int
     }
 
-
 decodeConnInfo : D.Decoder ConnectionInfo
 decodeConnInfo =
     D.map3 ConnectionInfo
@@ -135,7 +136,7 @@ type alias ModData =
     , modUid : Int
     , modDescription : String
     , selected : Bool
-    , write : Bool
+    , rw : ReadWrite
     }
 
 type RegType
@@ -208,7 +209,7 @@ decodeModData =
         ( D.field "uid" D.int )
         ( D.field "description" D.string )
         ( D.succeed False )
-        ( D.succeed False )
+        ( D.succeed Read )
 
 
 decodeModValue : D.Decoder ModValue
@@ -237,15 +238,26 @@ replaceModDataSelected idx checked =
         then { md | selected = checked }
         else md
 
-replaceModDataWrite : Int -> Bool -> Int -> ModData -> ModData
-replaceModDataWrite idx flag =
+replaceModDataWrite : Int -> ReadWrite -> Int -> ModData -> ModData
+replaceModDataWrite idx rw =
     \i md ->
         if i == idx && writeableReg md
-        then { md | write = flag }
+        then { md | rw = rw }
         else md
+
 
 getModSelected : ModData -> Bool
 getModSelected md = md.selected
+
+type ReadWrite
+    = Read
+    | Write
+
+flipRW : ReadWrite -> ReadWrite
+flipRW rw =
+    case rw of
+        Read -> Write
+        Write -> Read
 
 -- ActiveTab
 --------------------------------------------------------------------------------------------------
