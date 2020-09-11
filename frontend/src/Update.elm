@@ -119,7 +119,12 @@ update msg model =
             ( { model | csvFileName = Just <| File.name file } , Task.perform CsvLoaded (File.toString file) )
 
         CsvLoaded content ->
-            ( { model | csvContent = Just content }, Cmd.none )
+            ( { model
+                    | csvContent = Just content
+                    , csvLoaded = False
+              }
+            , Cmd.none
+            )
 
         ModDataRequest -> ( model, requestModData model )
 
@@ -127,7 +132,12 @@ update msg model =
             ( { model | status = Bad <| showHttpError err }, Cmd.none )
 
         ReceivedModData (Ok md) ->
-            ( { model | modData = md }, Cmd.none )
+            ( { model
+                | modData = md
+                , csvLoaded = True
+                }
+            , Cmd.none
+            )
 
         SelectAllChecked b ->
             case model.activeTab of

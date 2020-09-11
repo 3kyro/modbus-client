@@ -6589,6 +6589,7 @@ var $author$project$App$initModel = {
 	connectStatus: $author$project$Types$Connect,
 	csvContent: $elm$core$Maybe$Nothing,
 	csvFileName: $elm$core$Maybe$Nothing,
+	csvLoaded: false,
 	ipAddress: $author$project$Types$IpAddress$defaultIpAddr,
 	modData: $author$project$App$initModData,
 	selectAllCheckbox: false,
@@ -7197,7 +7198,8 @@ var $author$project$Update$update = F2(
 					_Utils_update(
 						model,
 						{
-							csvContent: $elm$core$Maybe$Just(content)
+							csvContent: $elm$core$Maybe$Just(content),
+							csvLoaded: false
 						}),
 					$elm$core$Platform$Cmd$none);
 			case 'ModDataRequest':
@@ -7220,7 +7222,7 @@ var $author$project$Update$update = F2(
 					return _Utils_Tuple2(
 						_Utils_update(
 							model,
-							{modData: md}),
+							{csvLoaded: true, modData: md}),
 						$elm$core$Platform$Cmd$none);
 				}
 			case 'SelectAllChecked':
@@ -15508,12 +15510,11 @@ var $author$project$View$holdingRegistersTable = function (model) {
 	return $author$project$View$newRegisterTable(model);
 };
 var $author$project$Types$CsvRequested = {$: 'CsvRequested'};
-var $author$project$Palette$maximumBluePurpleLight = A3($mdgriffith$elm_ui$Element$rgb255, 194, 175, 240);
 var $author$project$View$loadCSVButton = A2(
 	$mdgriffith$elm_ui$Element$Input$button,
 	_List_fromArray(
 		[
-			$mdgriffith$elm_ui$Element$Background$color($author$project$Palette$maximumBluePurpleLight),
+			$mdgriffith$elm_ui$Element$Background$color($author$project$Palette$lightGrey),
 			$mdgriffith$elm_ui$Element$mouseOver(
 			_List_fromArray(
 				[
@@ -15532,61 +15533,91 @@ var $author$project$View$loadCSVButton = A2(
 		onPress: $elm$core$Maybe$Just($author$project$Types$CsvRequested)
 	});
 var $author$project$Types$ModDataRequest = {$: 'ModDataRequest'};
-var $author$project$View$loadRegisterTableButton = A2(
-	$mdgriffith$elm_ui$Element$Input$button,
-	_List_fromArray(
-		[
-			$mdgriffith$elm_ui$Element$Background$color($author$project$Palette$maximumBluePurpleLight),
-			$mdgriffith$elm_ui$Element$mouseOver(
-			_List_fromArray(
-				[
-					$mdgriffith$elm_ui$Element$Font$color($author$project$Palette$white)
-				])),
-			$mdgriffith$elm_ui$Element$height(
-			$mdgriffith$elm_ui$Element$px(30)),
-			$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill),
-			A2($mdgriffith$elm_ui$Element$paddingXY, 0, 0),
-			$mdgriffith$elm_ui$Element$Font$color($author$project$Palette$lightGrey),
-			$mdgriffith$elm_ui$Element$Font$center,
-			$mdgriffith$elm_ui$Element$focused(_List_Nil)
-		]),
-	{
-		label: $mdgriffith$elm_ui$Element$text('Load Register Table'),
-		onPress: $elm$core$Maybe$Just($author$project$Types$ModDataRequest)
-	});
-var $author$project$Types$showLoadedFileName = function (model) {
-	var _v0 = model.csvFileName;
-	if (_v0.$ === 'Nothing') {
-		return 'No file loaded';
+var $author$project$View$loadRegsButtonClr = function (model) {
+	var _v0 = model.csvContent;
+	if (_v0.$ === 'Just') {
+		return model.csvLoaded ? $author$project$Palette$lightGreen : $author$project$Palette$lightGrey;
 	} else {
-		var name = _v0.a;
-		return 'Loaded: ' + name;
+		return $author$project$Palette$grey;
 	}
 };
+var $author$project$View$csvLoadButtonText = F2(
+	function (flag, str) {
+		return flag ? (str + ' registers imported!') : ('Import registers from ' + str);
+	});
 var $author$project$View$showCSVFile = function (model) {
-	return A2(
-		$mdgriffith$elm_ui$Element$el,
-		_List_Nil,
-		$mdgriffith$elm_ui$Element$text(
-			$author$project$Types$showLoadedFileName(model)));
+	var _v0 = model.csvFileName;
+	if (_v0.$ === 'Nothing') {
+		return $mdgriffith$elm_ui$Element$none;
+	} else {
+		var filename = _v0.a;
+		return A2(
+			$mdgriffith$elm_ui$Element$el,
+			_List_fromArray(
+				[
+					$mdgriffith$elm_ui$Element$Font$color($author$project$Palette$white),
+					$mdgriffith$elm_ui$Element$centerX
+				]),
+			$mdgriffith$elm_ui$Element$text(
+				A2($author$project$View$csvLoadButtonText, model.csvLoaded, filename)));
+	}
 };
-var $author$project$View$importActiveMenu = function (model) {
+var $author$project$View$loadRegisterTableButton = function (model) {
+	return A2(
+		$mdgriffith$elm_ui$Element$Input$button,
+		_List_fromArray(
+			[
+				$mdgriffith$elm_ui$Element$Background$color(
+				$author$project$View$loadRegsButtonClr(model)),
+				$mdgriffith$elm_ui$Element$mouseOver(
+				_List_fromArray(
+					[
+						$mdgriffith$elm_ui$Element$Font$color($author$project$Palette$white)
+					])),
+				$mdgriffith$elm_ui$Element$height(
+				$mdgriffith$elm_ui$Element$px(30)),
+				$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill),
+				A2($mdgriffith$elm_ui$Element$paddingXY, 0, 0),
+				$mdgriffith$elm_ui$Element$Font$color($author$project$Palette$greyWhite),
+				$mdgriffith$elm_ui$Element$Font$center,
+				$mdgriffith$elm_ui$Element$focused(_List_Nil)
+			]),
+		{
+			label: $author$project$View$showCSVFile(model),
+			onPress: $elm$core$Maybe$Just($author$project$Types$ModDataRequest)
+		});
+};
+var $author$project$View$importActiveTab = function (model) {
 	return A2(
 		$mdgriffith$elm_ui$Element$column,
 		_List_fromArray(
 			[
 				$mdgriffith$elm_ui$Element$Background$color($author$project$Palette$grey),
-				$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill),
-				$mdgriffith$elm_ui$Element$height($mdgriffith$elm_ui$Element$fill),
+				$mdgriffith$elm_ui$Element$width(
+				$mdgriffith$elm_ui$Element$px(500)),
+				$mdgriffith$elm_ui$Element$height(
+				$mdgriffith$elm_ui$Element$px(500)),
 				$mdgriffith$elm_ui$Element$spacing(20),
-				A2($mdgriffith$elm_ui$Element$paddingXY, 10, 20)
+				A2($mdgriffith$elm_ui$Element$paddingXY, 10, 20),
+				$mdgriffith$elm_ui$Element$centerX,
+				$mdgriffith$elm_ui$Element$centerY
 			]),
 		_List_fromArray(
 			[
 				$author$project$View$loadCSVButton,
-				$author$project$View$showCSVFile(model),
-				$author$project$View$loadRegisterTableButton
+				$author$project$View$loadRegisterTableButton(model)
 			]));
+};
+var $author$project$View$importTab = function (model) {
+	return A2(
+		$mdgriffith$elm_ui$Element$el,
+		_List_fromArray(
+			[
+				$mdgriffith$elm_ui$Element$Background$color($author$project$Palette$grey),
+				$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill),
+				$mdgriffith$elm_ui$Element$height($mdgriffith$elm_ui$Element$fill)
+			]),
+		$author$project$View$importActiveTab(model));
 };
 var $author$project$View$inputRegistersTable = function (model) {
 	return $author$project$View$newRegisterTable(model);
@@ -15600,7 +15631,7 @@ var $author$project$View$tabSelect = function (model) {
 		case 'ConnectMenu':
 			return $author$project$View$connectTab(model);
 		case 'ImportMenu':
-			return $author$project$View$importActiveMenu(model);
+			return $author$project$View$importTab(model);
 		case 'InputRegistersTable':
 			return $author$project$View$inputRegistersTable(model);
 		case 'HoldingRegistersTable':

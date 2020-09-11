@@ -35,6 +35,7 @@ initModel =
     , activeTab = ConnectMenu
     , csvFileName = Nothing
     , csvContent = Nothing
+    , csvLoaded = False
     , selectAllCheckbox = False
     }
 

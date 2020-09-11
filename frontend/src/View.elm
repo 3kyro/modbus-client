@@ -1,4 +1,4 @@
-module View exposing (view, page)
+module View exposing (view)
 
 import Element exposing
     ( Element
@@ -21,7 +21,6 @@ import Element exposing
     , alignLeft
     , centerX
     , centerY
-    , maximum
     , indexedTable
     , htmlAttribute
     , Color
@@ -42,7 +41,6 @@ import Types exposing
     , Model
     , showStatus
     , Status (..)
-    , showLoadedFileName
     , ConnectStatus(..)
     , showConnectStatus
     , ModData
@@ -62,11 +60,8 @@ import Palette exposing
     , greyWhite
     , white
     , maximumBluePurple
-    , maximumBluePurpleLight
-    , lightGrey
     , lightGreen
     , smallFont
-    , gray14
     )
 
 view : Model -> Html Msg
@@ -155,7 +150,7 @@ tabSelect : Model -> Element Msg
 tabSelect model =
     case model.activeTab of
         ConnectMenu -> connectTab model
-        ImportMenu -> importActiveMenu model
+        ImportMenu -> importTab model
         InputRegistersTable -> inputRegistersTable model
         HoldingRegistersTable -> holdingRegistersTable model
         ModDataTable -> modDataTable model
@@ -301,24 +296,34 @@ disconnectButtonBgd model =
 ------------------------------------------------------------------------------------------------------------------
 -- Import Menu
 
-importActiveMenu : Model -> Element Msg
-importActiveMenu model =
-    column
+importTab : Model -> Element Msg
+importTab model =
+    el
         [ Background.color grey
         , width fill
         , height fill
+        ]
+        <| importActiveTab model
+
+importActiveTab : Model -> Element Msg
+importActiveTab model =
+    column
+        [ Background.color grey
+        , width <| px 500
+        , height <| px 500
         , spacing 20
         , paddingXY 10 20
+        , centerX
+        , centerY
         ]
         [ loadCSVButton
-        , showCSVFile model
-        , loadRegisterTableButton
+        , loadRegisterTableButton model
         ]
 
 loadCSVButton : Element Msg
 loadCSVButton =
     Input.button
-        [ Background.color maximumBluePurpleLight
+        [ Background.color lightGrey
         , mouseOver [ Font.color white ]
         , height <| px 30
         , width fill
@@ -333,26 +338,45 @@ loadCSVButton =
 
 showCSVFile : Model -> Element Msg
 showCSVFile model =
-    el
-        []
-        ( text <| showLoadedFileName model )
+    case model.csvFileName of
+        Nothing -> none
+        Just filename ->
+            el
+                [ Font.color white, centerX ]
+                ( text <| csvLoadButtonText model.csvLoaded filename  )
+
+csvLoadButtonText : Bool -> String -> String
+csvLoadButtonText flag str =
+    if flag
+    then str ++ " registers imported!"
+    else "Import registers from " ++ str
 
 
-loadRegisterTableButton : Element Msg
-loadRegisterTableButton =
+loadRegisterTableButton : Model ->  Element Msg
+loadRegisterTableButton model =
     Input.button
-        [ Background.color maximumBluePurpleLight
+        [ Background.color <| loadRegsButtonClr model
         , mouseOver [ Font.color white ]
         , height <| px 30
         , width fill
         , paddingXY 0 0
-        , Font.color lightGrey
+        , Font.color greyWhite
         , Font.center
         , focused []
         ]
         { onPress = Just ModDataRequest
-        , label = text "Load Register Table"
+        , label = showCSVFile model
         }
+
+loadRegsButtonClr : Model -> Color
+loadRegsButtonClr model =
+    case model.csvContent of
+       Just _ ->
+        if model.csvLoaded
+        then lightGreen
+        else lightGrey
+       Nothing -> grey
+
 
 ------------------------------------------------------------------------------------------------------------------
 -- Registers Menu

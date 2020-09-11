@@ -17,7 +17,6 @@ module Types exposing
     , replaceModData
     , getModValue
     , getModValueType
-    , showLoadedFileName
     , encodeIpPort
     )
 
@@ -64,6 +63,7 @@ type alias Model =
     , activeTab : ActiveTab
     , csvFileName : Maybe String
     , csvContent : Maybe String
+    , csvLoaded : Bool
     , selectAllCheckbox : Bool
     }
 type ConnectStatus
@@ -116,11 +116,7 @@ encodeIpPort model =
         , ( "timeout", E.int <| Maybe.withDefault 0  model.timeout)
         ]
 
-showLoadedFileName : Model -> String
-showLoadedFileName model =
-    case model.csvFileName of
-        Nothing -> "No file loaded"
-        Just name -> "Loaded: " ++ name
+
 -- ModData
 --------------------------------------------------------------------------------------------------
 
