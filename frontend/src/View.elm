@@ -151,10 +151,10 @@ tabSelect model =
     case model.activeTab of
         ConnectMenu -> connectTab model
         ImportMenu -> importTab model
-        InputRegistersTable -> inputRegistersTable model
-        HoldingRegistersTable -> holdingRegistersTable model
+        InputRegistersTable -> inputRegistersTable
+        HoldingRegistersTable -> holdingRegistersTable
         ModDataTable -> modDataTable model
-        HeartbeatTable -> heartbeatTable model
+        HeartbeatTable -> heartbeatTable 
 
 ------------------------------------------------------------------------------------------------------------------
 -- Connect Menu
@@ -381,16 +381,16 @@ loadRegsButtonClr model =
 ------------------------------------------------------------------------------------------------------------------
 -- Registers Menu
 
-newRegisterTable : Model -> Element Msg
-newRegisterTable model =
+newRegisterTable : List records -> List (IndexedColumn records Msg) -> Element Msg
+newRegisterTable dt cl =
     indexedTable
         [ Background.color grey
         , width fill
         , height fill
         , Font.center
         ]
-        { data = model.modData
-        , columns = modDataColumns model
+        { data = dt
+        , columns = cl
         }
 
 modDataColumns : Model -> List ( IndexedColumn ModData Msg )
@@ -516,17 +516,17 @@ tableCellColor idx =
     then lightGrey
     else grey
 
-inputRegistersTable : Model -> Element Msg
-inputRegistersTable model = newRegisterTable model
+inputRegistersTable : Element Msg
+inputRegistersTable = newRegisterTable [] []
 
-holdingRegistersTable : Model -> Element Msg
-holdingRegistersTable model = newRegisterTable model
+holdingRegistersTable : Element Msg
+holdingRegistersTable = newRegisterTable [] []
 
 modDataTable : Model -> Element Msg
-modDataTable model = newRegisterTable model
+modDataTable model = newRegisterTable model.modData <| modDataColumns model
 
-heartbeatTable : Model -> Element Msg
-heartbeatTable model = newRegisterTable model
+heartbeatTable : Element Msg
+heartbeatTable = newRegisterTable [] []
 
 ------------------------------------------------------------------------------------------------------------------
 -- Status Bar
