@@ -51,27 +51,27 @@ initModData =
       , modAddress = 1
       , modValue = ModFloat (Just <| fromFloat 1)
       , modUid = 1
-      , modDescription = "A register for tesing purposes"
+      , modDescription = "A register for testing purposes"
       }
     , { modName = "second"
       , modRegType = HoldingRegister
       , modAddress = 2
       , modValue = ModWord (Just 2)
       , modUid = 1
-      , modDescription = "A register for tesing purposes"
+      , modDescription = "A register for testing purposes"
       }
     , { modName = "1500"
       , modRegType = InputRegister
       , modAddress = 10
       , modValue = ModWord Nothing
       , modUid = 1
-      , modDescription = "A register for tesing purposes"
+      , modDescription = "A register for testing purposes"
       }
     , { modName = "1700"
       , modRegType = HoldingRegister
       , modAddress = 15
       , modValue = ModWord Nothing
       , modUid = 1
-      , modDescription = "A register for tesing purposes"
+      , modDescription = "A register for testing purposes"
       }
     ]
