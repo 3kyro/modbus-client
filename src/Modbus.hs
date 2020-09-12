@@ -57,7 +57,7 @@ modSession md order =
   in
     mapM (`genReadSession` order) md'
 
-modUpdateSession :: [ModDataUpdate] -> ByteOrder -> MB.Session [ModData]
+modUpdateSession :: [ModDataUpdate] -> ByteOrder -> MB.Session [ModDataUpdate]
 modUpdateSession md order =
   let
     md' = zip [0 ..] md
@@ -74,27 +74,37 @@ genReadSession (idx, md) order =
         HoldingRegister -> readHoldingModData md idx order
         _ -> throwError $ MB.OtherException "Invalid function type requested"
 
-genWriteSession :: (Word16, ModData) -> ByteOrder -> MB.Session ModData
-genWriteSession (idx, md) order =
+genReadUpdateSession :: (Word16, ModDataUpdate) -> ByteOrder -> MB.Session ModDataUpdate
+genReadUpdateSession (idx, mdu) order =
   let
-    tp = modRegType md
+    tp = modRegType $ mduModData mdu
+  in
+    case tp of
+        InputRegister -> readInputModDataUpdate mdu idx order
+        HoldingRegister -> readHoldingModDataUpdate mdu idx order
+        _ -> throwError $ MB.OtherException "Invalid function type requested"
+
+genWriteUpdateSession :: (Word16, ModDataUpdate) -> ByteOrder -> MB.Session ModDataUpdate
+genWriteUpdateSession (idx, mdu) order =
+  let
+    tp = modRegType $ mduModData mdu
   in
     case tp of
         InputRegister -> throwError $ MB.OtherException "Invalid function type requested"
-        HoldingRegister -> writeHoldingModData md idx order
+        HoldingRegister -> writeHoldingModDataUpdate mdu idx order
         _ -> throwError $ MB.OtherException "Invalid function type requested"
 
-genUpdateSession :: (Word16, ModDataUpdate) -> ByteOrder -> MB.Session ModData
+genUpdateSession :: (Word16, ModDataUpdate) -> ByteOrder -> MB.Session ModDataUpdate
 genUpdateSession (idx, mdu) order =
     if not $ mduSelected mdu
-    then return $ mduModData mdu
+    then return mdu
     else case mduRW mdu of
-        MDURead -> genReadSession (idx, mduModData mdu) order
-        MDUWrite -> genWriteSession (idx, mduModData mdu) order
+        MDURead -> genReadUpdateSession (idx, mdu) order
+        MDUWrite -> genWriteUpdateSession (idx, mdu) order
 
 
 readInputModData :: ModData -> Word16 -> ByteOrder -> MB.Session ModData
-readInputModData md idx order = 
+readInputModData md idx order =
     case modValue md of
         ModWord _ -> do
             resp <- listToMaybe <$> MB.readInputRegisters (MB.TransactionId idx) 0 uid addr 1
@@ -102,7 +112,7 @@ readInputModData md idx order =
         ModFloat _ -> do
             xs <- MB.readInputRegisters (MB.TransactionId idx) 0 uid addr 2
             case xs of
-                [msw,lsw] -> return md {modValue = ModFloat $ Just $ word2Float order (msw,lsw)} 
+                [msw,lsw] -> return md {modValue = ModFloat $ Just $ word2Float order (msw,lsw)}
                 _ -> throwError $ MB.OtherException $ 
                             "Error reading Float from input register addr: "
                             ++ show addr
@@ -111,6 +121,26 @@ readInputModData md idx order =
   where
     addr = MB.RegAddress $ modAddress md
     uid = MB.UnitId $ modUid md
+
+
+readInputModDataUpdate :: ModDataUpdate -> Word16 -> ByteOrder -> MB.Session ModDataUpdate
+readInputModDataUpdate mdu idx order =
+    case modValue $ mduModData mdu of
+        ModWord _ -> do
+            resp <- listToMaybe <$> MB.readInputRegisters (MB.TransactionId idx) 0 uid addr 1
+            return $ setMDUModValue mdu $ ModWord resp
+        ModFloat _ -> do
+            xs <- MB.readInputRegisters (MB.TransactionId idx) 0 uid addr 2
+            case xs of
+                [msw,lsw] -> return $ setMDUModValue mdu $ ModFloat $ Just $ word2Float order (msw,lsw)
+                _ -> throwError $ MB.OtherException $ 
+                            "Error reading Float from input register addr: "
+                            ++ show addr
+                            ++ ", "
+                            ++ show (addr + 1)
+  where
+    addr = MB.RegAddress $ modAddress $ mduModData mdu
+    uid = MB.UnitId $ modUid $ mduModData mdu
             
             
 readHoldingModData :: ModData -> Word16 -> ByteOrder -> MB.Session ModData
@@ -132,21 +162,40 @@ readHoldingModData md idx order =
     addr = MB.RegAddress $ modAddress md
     uid = MB.UnitId $ modUid md
 
--- TODO : FIXMEByteorder!!!!!
-writeHoldingModData :: ModData -> Word16 -> ByteOrder -> MB.Session ModData
-writeHoldingModData md idx _ =
-    case modValue md of
+readHoldingModDataUpdate :: ModDataUpdate -> Word16 -> ByteOrder -> MB.Session ModDataUpdate
+readHoldingModDataUpdate mdu idx order =
+    case modValue $ mduModData mdu of
+        ModWord _ -> do
+            resp <- listToMaybe <$> MB.readHoldingRegisters (MB.TransactionId idx) 0 uid addr 1
+            return $ setMDUModValue mdu $ ModWord resp
+        ModFloat _ -> do
+            xs <- MB.readHoldingRegisters (MB.TransactionId idx) 0 uid addr 2
+            case xs of
+                [msw,lsw] -> return $ setMDUModValue mdu $ ModFloat $ Just $ word2Float order (msw,lsw)
+                _ -> throwError $ MB.OtherException $
+                            "Error reading Float from holding register address: "
+                            ++ show addr
+                            ++ ", "
+                            ++ show (addr + 1)
+  where
+    addr = MB.RegAddress $ modAddress $ mduModData mdu
+    uid = MB.UnitId $ modUid $ mduModData mdu
+
+-- TODO : Byteorder!!!!!
+writeHoldingModDataUpdate :: ModDataUpdate -> Word16 -> ByteOrder -> MB.Session ModDataUpdate
+writeHoldingModDataUpdate mdu idx _ =
+    case modValue $ mduModData mdu of
         ModWord (Just v) -> do
             MB.writeSingleRegister (MB.TransactionId idx) 0 uid addr v
-            return md
-        ModWord Nothing -> return md
+            return mdu
+        ModWord Nothing -> return mdu
         ModFloat (Just v) -> do
             MB.writeMultipleRegisters (MB.TransactionId idx) 0 uid addr [fst (float2Word v), snd (float2Word v)]
-            return md
-        ModFloat Nothing -> return md
+            return mdu
+        ModFloat Nothing -> return mdu
   where
-    addr = MB.RegAddress $ modAddress md
-    uid = MB.UnitId $ modUid md
+    addr = MB.RegAddress $ modAddress $ mduModData mdu
+    uid = MB.UnitId $ modUid $ mduModData mdu
 
 
 -- Converts a list of words to a list of floats

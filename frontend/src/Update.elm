@@ -21,10 +21,12 @@ import Types exposing
     , decodeModData
     , encodeIpPort
     , replaceModDataSelected
-    , getModSelected
     , ActiveTab(..)
     , writeableReg
     , encodeModDataUpdate
+    , ModDataUpdate
+    , decodeModDataUpdate
+    , newModDataUpdate
     )
 
 import Types.IpAddress exposing (setIpAddressByte)
@@ -34,7 +36,13 @@ update : Msg -> Model -> ( Model, Cmd Msg)
 update msg model =
     case msg of
         ReadRegisters (Ok regs) ->
-            ( { model | modData = regs , status = AllGood } , Cmd.none )
+            (
+                { model
+                | modDataUpdate = regs
+                , status = AllGood
+                }
+                , Cmd.none
+            )
 
         ReadRegisters (Err err) ->
             ( { model | status = Bad <| showHttpError err }, Cmd.none )
@@ -137,12 +145,13 @@ update msg model =
 
         ReceivedModData (Ok md) ->
             ( { model
-                | modData = md
+                | modDataUpdate = newModDataUpdate md
                 , csvLoaded = True
                 }
             , Cmd.none
             )
 
+        -- Set the flag select All in the ModData table
         SelectAllChecked b ->
             case model.activeTab of
                 ModDataTable ->
@@ -150,7 +159,7 @@ update msg model =
                     { model |
                         selectAllCheckbox = b
                         , selectSome = b
-                        , modData = List.map (\md -> { md | selected = b}) model.modData
+                        , modDataUpdate = List.map (\mdu -> { mdu | mduSelected = b}) model.modDataUpdate
                     }
                     , Cmd.none
                     )
@@ -159,61 +168,64 @@ update msg model =
 
         ModDataChecked idx checked ->
             let
-                newMd = List.indexedMap (replaceModDataSelected idx checked) model.modData
+                newMd = List.indexedMap (replaceModDataSelected idx checked) model.modDataUpdate
             in
                 ( { model
-                    | modData = newMd
-                    , selectSome = List.any getModSelected newMd
+                    | modDataUpdate = newMd
+                    , selectSome = List.any (\mdu -> mdu.mduSelected) newMd
                     }
                 , Cmd.none
                 )
 
+        -- Toggles the write all button in the ModData tab
         ToggleWriteAll b ->
             case model.activeTab of
                 ModDataTable ->
                     (
                     { model
                     | readWriteAll = b
-                    , modData = List.map
-                        (\md ->
-                            if writeableReg md
-                            then { md | rw = b }
-                            else md
-                        ) model.modData
+                    , modDataUpdate = List.map
+                        (\mdu ->
+                            if writeableReg mdu.mduModData
+                            then { mdu | mduRW = b }
+                            else mdu
+                        ) model.modDataUpdate
                     }
                     , Cmd.none
                     )
                 _ -> ( model , Cmd.none )
 
+        -- Toggles the write flag in a single modData in the modData table
         ModDataWrite idx flag ->
             let
-                newMd = List.indexedMap (replaceModDataWrite idx flag) model.modData
+                newMd = List.indexedMap (replaceModDataWrite idx flag) model.modDataUpdate
             in
-                ( { model | modData = newMd } , Cmd.none )
+                ( { model | modDataUpdate = newMd } , Cmd.none )
 
+        -- Change the value of a mod data inside the Mod Data tab
         ChangeModDataValue idx str ->
             let
-                -- get an array of the ModData
-                arrMD = Array.fromList model.modData
-                -- Maybe a moddata from the array
-                maybeMD = Array.get idx arrMD
+                -- get an array of the ModDataUpdate
+                arrMDU = Array.fromList model.modDataUpdate
+                -- Maybe a moddataUpdate from the array
+                maybeMDU = Array.get idx arrMDU
                 -- change the Modvamue of the Maybe modData
-                newMaybeMd = Maybe.map (\md -> { md | modValue = fromModType md str } ) maybeMD
+                newMaybeMd = Maybe.map (\mdu -> { mdu | mduModData = fromModType mdu.mduModData str } ) maybeMDU
             in
                 case newMaybeMd of
                     Nothing -> ( model , Cmd.none )
                     Just md ->
                         ( { model |
-                            modData = Array.toList <| Array.set idx md arrMD
+                            modDataUpdate = Array.toList <| Array.set idx md arrMDU
                         }, Cmd.none)
 
 
 
-fromModType : ModData -> String -> ModValue
+fromModType : ModData -> String -> ModData
 fromModType md str =
     case md.modValue of
-        ModWord _ -> ModWord <| String.toInt str
-        ModFloat _-> ModFloat <| String.toFloat str
+        ModWord _ -> { md | modValue = ModWord <| String.toInt str }
+        ModFloat _-> { md | modValue = ModFloat <| String.toFloat str }
 
 initCmd : Cmd Msg
 initCmd = connectionInfoRequest
@@ -249,12 +261,12 @@ showHttpError err =
        Http.BadStatus s -> "Bad status " ++ String.fromInt s
        Http.BadBody s -> s
 
-updateModDataRequest : List ModData -> Cmd Msg
+updateModDataRequest : List ModDataUpdate -> Cmd Msg
 updateModDataRequest regs =
     Http.post
         { url = "http://localhost:4000/modData"
         , body = Http.jsonBody <| E.list encodeModDataUpdate regs
-        , expect = Http.expectJson ReadRegisters <| D.list decodeModData
+        , expect = Http.expectJson ReadRegisters <| D.list decodeModDataUpdate
         }
 
 requestModData : Model -> Cmd Msg

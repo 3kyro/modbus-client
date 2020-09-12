@@ -51,6 +51,7 @@ import Types exposing
     , ReadWrite(..)
     , flipRW
     , writeableReg
+    , ModDataUpdate
     )
 import Types.IpAddress exposing
     ( IpAddress
@@ -412,7 +413,7 @@ newRegisterTable dt cl =
         , columns = cl
         }
 
-modDataColumns : Model -> List ( IndexedColumn ModData Msg )
+modDataColumns : Model -> List ( IndexedColumn ModDataUpdate Msg )
 modDataColumns model =
     [ modNameColumn
     , modRegTypeColumn
@@ -425,52 +426,52 @@ modDataColumns model =
     , selectColumn model
     ]
 
-modNameColumn : IndexedColumn ModData Msg
+modNameColumn : IndexedColumn ModDataUpdate Msg
 modNameColumn =
     { header = el [ height <| px 38 ] <| el headerTextAttr <| text "Name"
     , width = fillPortion 1
-    , view = \i md -> viewCell i md.modName
+    , view = \i md -> viewCell i md.mduModData.modName
     }
 
-modRegTypeColumn : IndexedColumn ModData Msg
+modRegTypeColumn : IndexedColumn ModDataUpdate Msg
 modRegTypeColumn =
     { header = el [ height <| px 38 ] <| el headerTextAttr <| text "Register Type"
     , width = fillPortion 1
-    , view = \i md -> viewCell i <| getRegType md.modRegType
+    , view = \i md -> viewCell i <| getRegType md.mduModData.modRegType
     }
 
-modAddressColumn : IndexedColumn ModData Msg
+modAddressColumn : IndexedColumn ModDataUpdate Msg
 modAddressColumn =
     { header = el [ height <| px 38 ] <| el headerTextAttr <| text "Register Address"
     , width = fillPortion 1
-    , view = \i md -> viewCell i <| String.fromInt md.modAddress
+    , view = \i md -> viewCell i <| String.fromInt md.mduModData.modAddress
     }
 
-modValueTypeColumn : IndexedColumn ModData Msg
+modValueTypeColumn : IndexedColumn ModDataUpdate Msg
 modValueTypeColumn =
     { header = el [ height <| px 38 ] <| el headerTextAttr <| text "Value Type"
     , width = fillPortion 1
-    , view = \i md -> viewCell i <| getModValueType md.modValue
+    , view = \i md -> viewCell i <| getModValueType md.mduModData.modValue
     }
 
-modValueColumn : IndexedColumn ModData Msg
+modValueColumn : IndexedColumn ModDataUpdate Msg
 modValueColumn =
     { header = el [ height <| px 38 ] <| el headerTextAttr <| text "Value"
     , width = fillPortion 1
     , view = \idx md -> viewModValueColumn idx md
     }
 
-viewModValueColumn : Int -> ModData -> Element Msg
+viewModValueColumn : Int -> ModDataUpdate -> Element Msg
 viewModValueColumn idx md =
-    case md.rw of
+    case md.mduRW of
         Read -> viewReadModValue idx md
-        Write -> viewWriteModValue idx md
+        Write -> viewWriteModValue idx md.mduModData
 
-viewReadModValue : Int -> ModData -> Element Msg
+viewReadModValue : Int -> ModDataUpdate -> Element Msg
 viewReadModValue idx md =
     viewCell idx
     <| Maybe.withDefault "Nothing"
-    <| getModValue md.modValue
+    <| getModValue md.mduModData.modValue
 
 viewWriteModValue : Int -> ModData -> Element Msg
 viewWriteModValue idx md =
@@ -492,21 +493,21 @@ viewWriteModValue idx md =
             , label = Input.labelHidden "Value Input"
             }
 
-modUidColumn : IndexedColumn ModData Msg
+modUidColumn : IndexedColumn ModDataUpdate Msg
 modUidColumn =
     { header = el [ height <| px 38 ] <| el headerTextAttr <| text "Unit Id"
     , width = fillPortion 1
-    , view = \i md -> viewCell i <| String.fromInt md.modUid
+    , view = \i md -> viewCell i <| String.fromInt md.mduModData.modUid
     }
 
-modDescriptionColumn : IndexedColumn ModData Msg
+modDescriptionColumn : IndexedColumn ModDataUpdate Msg
 modDescriptionColumn =
     { header = el [ height <| px 38 ] <| el [alignLeft , centerY ] <| text "Description"
     , width = fillPortion 4
-    , view = \i md -> viewDescCell i md.modDescription
+    , view = \i md -> viewDescCell i md.mduModData.modDescription
     }
 
-readWriteColumn : Model -> IndexedColumn ModData Msg
+readWriteColumn : Model -> IndexedColumn ModDataUpdate Msg
 readWriteColumn model =
     { header =
         el
@@ -544,14 +545,14 @@ readWriteButtonText rw =
         Read -> text "Read"
         Write -> text "Write"
 
-selectColumn : Model -> IndexedColumn ModData Msg
+selectColumn : Model -> IndexedColumn ModDataUpdate Msg
 selectColumn model =
     { header =
         el
             [ height <| px 38 ]
             <| selectCheckbox SelectAllChecked model.selectAllCheckbox
     , width = px 30
-    , view = \i md -> viewCheckedCell i md.selected
+    , view = \i md -> viewCheckedCell i md.mduSelected
     }
 
 selectCheckbox : (Bool -> Msg) -> Bool ->  Element Msg
@@ -599,14 +600,14 @@ viewCheckedCell idx selected =
         ]
         <| selectCheckbox (ModDataChecked idx) selected
 
-viewReadWriteCell : Model -> Int -> ModData ->  Element Msg
+viewReadWriteCell : Model -> Int -> ModDataUpdate ->  Element Msg
 viewReadWriteCell model idx md =
     case model.activeTab of
         ModDataTable -> viewReadWriteModDataCell idx md
         HoldingRegistersTable -> none
         _ -> none
 
-viewReadWriteModDataCell : Int -> ModData -> Element Msg
+viewReadWriteModDataCell : Int -> ModDataUpdate -> Element Msg
 viewReadWriteModDataCell idx md =
     el
         [ Background.color <| tableCellColor idx
@@ -614,9 +615,9 @@ viewReadWriteModDataCell idx md =
         , height <| px 38
         , Font.center
         ]
-        <| if writeableReg md
-           then readWriteButton md.rw
-                <| Just <| ModDataWrite idx <| flipRW md.rw
+        <| if writeableReg md.mduModData
+           then readWriteButton md.mduRW
+                <| Just <| ModDataWrite idx <| flipRW md.mduRW
            else none
 tableCellColor : Int -> Color
 tableCellColor idx =
@@ -631,7 +632,7 @@ holdingRegistersTable : Element Msg
 holdingRegistersTable = newRegisterTable [] []
 
 modDataTable : Model -> Element Msg
-modDataTable model = newRegisterTable model.modData <| modDataColumns model
+modDataTable model = newRegisterTable model.modDataUpdate <| modDataColumns model
 
 heartbeatTable : Element Msg
 heartbeatTable = newRegisterTable [] []
@@ -674,7 +675,7 @@ updateSelectedButton model =
         , Font.color greyWhite
         , paddingXY 0 10
         ]
-        { onPress = Just <| RefreshRequest model.modData
+        { onPress = Just <| RefreshRequest model.modDataUpdate
         , label = text "Update Selected"
         }
 ------------------------------------------------------------------------------------------------------------------

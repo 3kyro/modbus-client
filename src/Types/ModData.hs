@@ -11,7 +11,7 @@ module Types.ModData
     , serializeModData
     , ModDataUpdate (..)
     , ReadWrite (..)
-    )
+    ,setMDUModValue)
     where
 
 import Data.Aeson
@@ -249,6 +249,12 @@ instance FromJSON ReadWrite where
             _ -> fail "Not a ReadWrite"
     parseJSON _ = fail "Not a ReadWrite"
 
+instance ToJSON ReadWrite where
+    toJSON rw =
+        case rw of
+            MDURead -> String "read"
+            MDUWrite -> String "write"
+
 data ModDataUpdate = MDU
     { mduModData :: ModData
     , mduSelected :: Bool
@@ -256,9 +262,23 @@ data ModDataUpdate = MDU
     }
     deriving (Show)
 
+setMDUModValue :: ModDataUpdate -> ModValue -> ModDataUpdate
+setMDUModValue mdu mv =
+    mdu { mduModData = (mduModData mdu) { modValue = mv}}
+
 instance FromJSON ModDataUpdate where
     parseJSON (Object o) = do
         md <- o .: "modData"
         sl <- o .: "selected"
         rw <- o .: "rw"
         return $ MDU md sl rw
+
+instance ToJSON ModDataUpdate where
+    toJSON mdu = object
+        [ "modData" .= mduModData mdu
+        , "selected" .= mduSelected mdu
+        , "rw" .= mduRW mdu
+        ]
+
+
+

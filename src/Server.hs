@@ -33,7 +33,7 @@ import Control.Monad.Except (runExceptT)
 import CsvParser (runpCSV)
 
 type ServerAPI
-    = "modData" :> ReqBody '[JSON] [ModDataUpdate] :> Post '[JSON] [ModData]
+    = "modData" :> ReqBody '[JSON] [ModDataUpdate] :> Post '[JSON] [ModDataUpdate]
     :<|> "connect" :> ReqBody '[JSON] ConnectionData :> Post '[JSON] ()
     :<|> "connectInfo" :> Get '[JSON] (Maybe ConnectionData)
     :<|> "disconnect" :> ReqBody '[JSON] String :> Post '[JSON] ()
@@ -82,9 +82,8 @@ serverAPI state
     :<|> parseAndSend
     :<|> serveDirectoryWebApp "frontend"
 
-updateModData :: TVar ServState -> [ModDataUpdate] -> Handler [ModData]
+updateModData :: TVar ServState -> [ModDataUpdate] -> Handler [ModDataUpdate]
 updateModData state md = do
-    liftIO $ print md
     ServState conn order _ _ <- liftIO $ readTVarIO state
     case conn of
         Nothing -> throwError err400

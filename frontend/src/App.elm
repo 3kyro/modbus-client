@@ -14,6 +14,7 @@ import Types exposing
     , ConnectStatus(..)
     , ActiveTab(..)
     , ReadWrite(..)
+    , newModDataUpdate
     )
 import Types.IpAddress exposing (defaultIpAddr)
 
@@ -27,7 +28,7 @@ main = Browser.element
 
 initModel : Model
 initModel =
-    { modData = initModData
+    { modDataUpdate = newModDataUpdate initModData
     , status = AllGood
     , connectStatus = Connect
     , ipAddress = defaultIpAddr
@@ -50,8 +51,6 @@ initModData =
       , modValue = ModWord (Just 1)
       , modUid = 1
       , modDescription = "A register for tesing purposes"
-      , selected = False
-      , rw = Read
       }
     , { modName = "second"
       , modRegType = HoldingRegister
@@ -59,8 +58,6 @@ initModData =
       , modValue = ModWord (Just 2)
       , modUid = 1
       , modDescription = "A register for tesing purposes"
-      , selected = False
-      , rw = Read
       }
     , { modName = "1500"
       , modRegType = InputRegister
@@ -68,8 +65,6 @@ initModData =
       , modValue = ModWord Nothing
       , modUid = 1
       , modDescription = "A register for tesing purposes"
-      , selected = False
-      , rw = Read
       }
     , { modName = "1700"
       , modRegType = HoldingRegister
@@ -77,7 +72,5 @@ initModData =
       , modValue = ModWord Nothing
       , modUid = 1
       , modDescription = "A register for tesing purposes"
-      , selected = False
-      , rw = Read
       }
     ]

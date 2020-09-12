@@ -4,6 +4,7 @@ module Types exposing
     , RegType (..)
     , ModValue (..)
     , ModData
+    , ModDataUpdate
     , getRegType
     , Status (..)
     , showStatus
@@ -19,10 +20,10 @@ module Types exposing
     , replaceModDataSelected
     , getModValue
     , getModValueType
-    , getModSelected
     , encodeIpPort
-    , ReadWrite (..), encodeModDataUpdate
+    , ReadWrite (..), newModDataUpdate, encodeModDataUpdate
     , flipRW
+    , decodeModDataUpdate
     )
 
 
@@ -39,9 +40,9 @@ import Types.IpAddress exposing
     )
 
 type Msg
-    = ReadRegisters (Result Http.Error (List ModData))
+    = ReadRegisters (Result Http.Error (List ModDataUpdate))
     | ReceivedConnectionInfo ( Result Http.Error (Maybe ConnectionInfo))
-    | RefreshRequest (List ModData)
+    | RefreshRequest (List ModDataUpdate)
     | ConnectRequest
     | ConnectedResponse (Result Http.Error () )
     | ChangeIpAddress IpAddressByte String
@@ -62,7 +63,7 @@ type Msg
     | ChangeModDataValue Int String
 
 type alias Model =
-    { modData : List ModData
+    { modDataUpdate : List ModDataUpdate
     , status : Status
     , connectStatus : ConnectStatus
     , ipAddress : IpAddress
@@ -81,6 +82,10 @@ type ConnectStatus
     | Connecting
     | Connected
     | Disconnecting
+
+newModDataUpdate : List ModData -> List ModDataUpdate
+newModDataUpdate mds =
+    List.map (\md -> ModDataUpdate md False Read )  mds
 
 showConnectStatus : ConnectStatus -> String
 showConnectStatus st =
@@ -136,9 +141,14 @@ type alias ModData =
     , modValue : ModValue
     , modUid : Int
     , modDescription : String
-    , selected : Bool
-    , rw : ReadWrite
     }
+
+type alias ModDataUpdate =
+    { mduModData : ModData
+    , mduSelected : Bool
+    , mduRW : ReadWrite
+    }
+
 
 type RegType
     = InputRegister
@@ -171,14 +181,6 @@ getModValue mv =
        ModWord v -> Maybe.map String.fromInt v
        ModFloat v -> Maybe.map String.fromFloat v
 
-encodeModDataUpdate : ModData -> E.Value
-encodeModDataUpdate md =
-    E.object
-        [ ( "modData", encodeModData md)
-        , ( "selected" , E.bool <| md.selected )
-        , ( "rw", encodeRW md.rw )
-        ]
-
 encodeModData : ModData -> E.Value
 encodeModData md =
     E.object
@@ -189,6 +191,21 @@ encodeModData md =
         , ( "uid", E.int md.modUid )
         , ( "description", E.string md.modDescription )
         ]
+
+encodeModDataUpdate : ModDataUpdate -> E.Value
+encodeModDataUpdate mdu =
+    E.object
+        [ ( "modData", encodeModData mdu.mduModData)
+        , ( "selected" , E.bool <| mdu.mduSelected )
+        , ( "rw", encodeRW mdu.mduRW )
+        ]
+
+decodeModDataUpdate : D.Decoder ModDataUpdate
+decodeModDataUpdate =
+    D.map3 ModDataUpdate
+        ( D.field "modData" decodeModData )
+        ( D.field "selected" D.bool )
+        ( D.field "rw" decodeRW )
 
 encodeModValue : ModValue -> E.Value
 encodeModValue mv =
@@ -210,15 +227,13 @@ encodeModValue mv =
 
 decodeModData : D.Decoder ModData
 decodeModData =
-    D.map8 ModData
+    D.map6 ModData
         ( D.field "name" D.string )
         ( D.field "register type" decodeRegType )
         ( D.field "address" D.int )
         ( D.field "register value" decodeModValue )
         ( D.field "uid" D.int )
         ( D.field "description" D.string )
-        ( D.succeed False )
-        ( D.succeed Read )
 
 
 decodeModValue : D.Decoder ModValue
@@ -230,33 +245,31 @@ decodeModValue =
             _ -> D.fail "Not a valid ModValue"
     )
 
--- find a way to fail on non valid input
 decodeRegType : D.Decoder RegType
 decodeRegType =
-    D.map (\s ->
-        case s of
-            "input register" -> InputRegister
-            "holding register" -> HoldingRegister
-            _ -> InputRegister
-    ) D.string
+    D.string
+    |> D.andThen
+        (\s ->
+            case s of
+                "input register" -> D.succeed InputRegister
+                "holding register" -> D.succeed HoldingRegister
+                _ -> D.fail "Not a Register Type"
+        )
 
-replaceModDataSelected : Int -> Bool -> Int -> ModData -> ModData
+replaceModDataSelected : Int -> Bool -> Int -> ModDataUpdate -> ModDataUpdate
 replaceModDataSelected idx checked =
     \i md ->
         if i == idx
-        then { md | selected = checked }
+        then { md | mduSelected = checked }
         else md
 
-replaceModDataWrite : Int -> ReadWrite -> Int -> ModData -> ModData
+replaceModDataWrite : Int -> ReadWrite -> Int -> ModDataUpdate -> ModDataUpdate
 replaceModDataWrite idx rw =
     \i md ->
-        if i == idx && writeableReg md
-        then { md | rw = rw }
+        if i == idx && writeableReg md.mduModData
+
+        then { md | mduRW = rw }
         else md
-
-
-getModSelected : ModData -> Bool
-getModSelected md = md.selected
 
 type ReadWrite
     = Read
@@ -273,6 +286,17 @@ encodeRW rw =
     case rw of
         Read -> E.string "read"
         Write -> E.string "write"
+
+decodeRW : D.Decoder ReadWrite
+decodeRW =
+    D.string
+    |> D.andThen
+        (\s ->
+            case s of
+                "read" -> D.succeed Read
+                "write" -> D.succeed Write
+                _ -> D.fail "Neither Read or Write"
+        )
 
 -- ActiveTab
 --------------------------------------------------------------------------------------------------

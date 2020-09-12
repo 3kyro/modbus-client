@@ -6553,9 +6553,7 @@ var $author$project$App$initModData = _List_fromArray(
 		modRegType: $author$project$Types$HoldingRegister,
 		modUid: 1,
 		modValue: $author$project$Types$ModWord(
-			$elm$core$Maybe$Just(1)),
-		rw: $author$project$Types$Read,
-		selected: false
+			$elm$core$Maybe$Just(1))
 	},
 		{
 		modAddress: 2,
@@ -6564,9 +6562,7 @@ var $author$project$App$initModData = _List_fromArray(
 		modRegType: $author$project$Types$HoldingRegister,
 		modUid: 1,
 		modValue: $author$project$Types$ModWord(
-			$elm$core$Maybe$Just(2)),
-		rw: $author$project$Types$Read,
-		selected: false
+			$elm$core$Maybe$Just(2))
 	},
 		{
 		modAddress: 10,
@@ -6574,9 +6570,7 @@ var $author$project$App$initModData = _List_fromArray(
 		modName: '1500',
 		modRegType: $author$project$Types$InputRegister,
 		modUid: 1,
-		modValue: $author$project$Types$ModWord($elm$core$Maybe$Nothing),
-		rw: $author$project$Types$Read,
-		selected: false
+		modValue: $author$project$Types$ModWord($elm$core$Maybe$Nothing)
 	},
 		{
 		modAddress: 15,
@@ -6584,11 +6578,21 @@ var $author$project$App$initModData = _List_fromArray(
 		modName: '1700',
 		modRegType: $author$project$Types$HoldingRegister,
 		modUid: 1,
-		modValue: $author$project$Types$ModWord($elm$core$Maybe$Nothing),
-		rw: $author$project$Types$Read,
-		selected: false
+		modValue: $author$project$Types$ModWord($elm$core$Maybe$Nothing)
 	}
 	]);
+var $author$project$Types$ModDataUpdate = F3(
+	function (mduModData, mduSelected, mduRW) {
+		return {mduModData: mduModData, mduRW: mduRW, mduSelected: mduSelected};
+	});
+var $author$project$Types$newModDataUpdate = function (mds) {
+	return A2(
+		$elm$core$List$map,
+		function (md) {
+			return A3($author$project$Types$ModDataUpdate, md, false, $author$project$Types$Read);
+		},
+		mds);
+};
 var $author$project$App$initModel = {
 	activeTab: $author$project$Types$ConnectMenu,
 	connectStatus: $author$project$Types$Connect,
@@ -6596,7 +6600,7 @@ var $author$project$App$initModel = {
 	csvFileName: $elm$core$Maybe$Nothing,
 	csvLoaded: false,
 	ipAddress: $author$project$Types$IpAddress$defaultIpAddr,
-	modData: $author$project$App$initModData,
+	modDataUpdate: $author$project$Types$newModDataUpdate($author$project$App$initModData),
 	readWriteAll: $author$project$Types$Read,
 	selectAllCheckbox: false,
 	selectSome: false,
@@ -6775,16 +6779,21 @@ var $author$project$Update$fromModType = F2(
 	function (md, str) {
 		var _v0 = md.modValue;
 		if (_v0.$ === 'ModWord') {
-			return $author$project$Types$ModWord(
-				$elm$core$String$toInt(str));
+			return _Utils_update(
+				md,
+				{
+					modValue: $author$project$Types$ModWord(
+						$elm$core$String$toInt(str))
+				});
 		} else {
-			return $author$project$Types$ModFloat(
-				$elm$core$String$toFloat(str));
+			return _Utils_update(
+				md,
+				{
+					modValue: $author$project$Types$ModFloat(
+						$elm$core$String$toFloat(str))
+				});
 		}
 	});
-var $author$project$Types$getModSelected = function (md) {
-	return md.selected;
-};
 var $elm$file$File$name = _File_name;
 var $elm$core$Platform$Cmd$batch = _Platform_batch;
 var $elm$core$Platform$Cmd$none = $elm$core$Platform$Cmd$batch(_List_Nil);
@@ -6794,7 +6803,7 @@ var $author$project$Types$replaceModDataSelected = F2(
 			function (i, md) {
 				return _Utils_eq(i, idx) ? _Utils_update(
 					md,
-					{selected: checked}) : md;
+					{mduSelected: checked}) : md;
 			});
 	});
 var $author$project$Types$writeableReg = function (md) {
@@ -6809,17 +6818,17 @@ var $author$project$Types$replaceModDataWrite = F2(
 	function (idx, rw) {
 		return F2(
 			function (i, md) {
-				return (_Utils_eq(i, idx) && $author$project$Types$writeableReg(md)) ? _Utils_update(
+				return (_Utils_eq(i, idx) && $author$project$Types$writeableReg(md.mduModData)) ? _Utils_update(
 					md,
-					{rw: rw}) : md;
+					{mduRW: rw}) : md;
 			});
 	});
 var $author$project$Types$ReceivedModData = function (a) {
 	return {$: 'ReceivedModData', a: a};
 };
-var $author$project$Types$ModData = F8(
-	function (modName, modRegType, modAddress, modValue, modUid, modDescription, selected, rw) {
-		return {modAddress: modAddress, modDescription: modDescription, modName: modName, modRegType: modRegType, modUid: modUid, modValue: modValue, rw: rw, selected: selected};
+var $author$project$Types$ModData = F6(
+	function (modName, modRegType, modAddress, modValue, modUid, modDescription) {
+		return {modAddress: modAddress, modDescription: modDescription, modName: modName, modRegType: modRegType, modUid: modUid, modValue: modValue};
 	});
 var $elm$json$Json$Decode$float = _Json_decodeFloat;
 var $elm$json$Json$Decode$null = _Json_decodeNull;
@@ -6857,30 +6866,28 @@ var $author$project$Types$decodeModValue = A2(
 	},
 	A2($elm$json$Json$Decode$field, 'type', $elm$json$Json$Decode$string));
 var $author$project$Types$decodeRegType = A2(
-	$elm$json$Json$Decode$map,
+	$elm$json$Json$Decode$andThen,
 	function (s) {
 		switch (s) {
 			case 'input register':
-				return $author$project$Types$InputRegister;
+				return $elm$json$Json$Decode$succeed($author$project$Types$InputRegister);
 			case 'holding register':
-				return $author$project$Types$HoldingRegister;
+				return $elm$json$Json$Decode$succeed($author$project$Types$HoldingRegister);
 			default:
-				return $author$project$Types$InputRegister;
+				return $elm$json$Json$Decode$fail('Not a Register Type');
 		}
 	},
 	$elm$json$Json$Decode$string);
-var $elm$json$Json$Decode$map8 = _Json_map8;
-var $author$project$Types$decodeModData = A9(
-	$elm$json$Json$Decode$map8,
+var $elm$json$Json$Decode$map6 = _Json_map6;
+var $author$project$Types$decodeModData = A7(
+	$elm$json$Json$Decode$map6,
 	$author$project$Types$ModData,
 	A2($elm$json$Json$Decode$field, 'name', $elm$json$Json$Decode$string),
 	A2($elm$json$Json$Decode$field, 'register type', $author$project$Types$decodeRegType),
 	A2($elm$json$Json$Decode$field, 'address', $elm$json$Json$Decode$int),
 	A2($elm$json$Json$Decode$field, 'register value', $author$project$Types$decodeModValue),
 	A2($elm$json$Json$Decode$field, 'uid', $elm$json$Json$Decode$int),
-	A2($elm$json$Json$Decode$field, 'description', $elm$json$Json$Decode$string),
-	$elm$json$Json$Decode$succeed(false),
-	$elm$json$Json$Decode$succeed($author$project$Types$Read));
+	A2($elm$json$Json$Decode$field, 'description', $elm$json$Json$Decode$string));
 var $elm$json$Json$Decode$list = _Json_decodeList;
 var $author$project$Update$requestModData = function (model) {
 	return $elm$http$Http$post(
@@ -6980,6 +6987,27 @@ var $elm$file$File$toString = _File_toString;
 var $author$project$Types$ReadRegisters = function (a) {
 	return {$: 'ReadRegisters', a: a};
 };
+var $elm$json$Json$Decode$bool = _Json_decodeBool;
+var $author$project$Types$Write = {$: 'Write'};
+var $author$project$Types$decodeRW = A2(
+	$elm$json$Json$Decode$andThen,
+	function (s) {
+		switch (s) {
+			case 'read':
+				return $elm$json$Json$Decode$succeed($author$project$Types$Read);
+			case 'write':
+				return $elm$json$Json$Decode$succeed($author$project$Types$Write);
+			default:
+				return $elm$json$Json$Decode$fail('Neither Read or Write');
+		}
+	},
+	$elm$json$Json$Decode$string);
+var $author$project$Types$decodeModDataUpdate = A4(
+	$elm$json$Json$Decode$map3,
+	$author$project$Types$ModDataUpdate,
+	A2($elm$json$Json$Decode$field, 'modData', $author$project$Types$decodeModData),
+	A2($elm$json$Json$Decode$field, 'selected', $elm$json$Json$Decode$bool),
+	A2($elm$json$Json$Decode$field, 'rw', $author$project$Types$decodeRW));
 var $elm$json$Json$Encode$bool = _Json_wrap;
 var $elm$json$Json$Encode$float = _Json_wrap;
 var $author$project$Types$encodeModValue = function (mv) {
@@ -7070,19 +7098,19 @@ var $author$project$Types$encodeRW = function (rw) {
 		return $elm$json$Json$Encode$string('write');
 	}
 };
-var $author$project$Types$encodeModDataUpdate = function (md) {
+var $author$project$Types$encodeModDataUpdate = function (mdu) {
 	return $elm$json$Json$Encode$object(
 		_List_fromArray(
 			[
 				_Utils_Tuple2(
 				'modData',
-				$author$project$Types$encodeModData(md)),
+				$author$project$Types$encodeModData(mdu.mduModData)),
 				_Utils_Tuple2(
 				'selected',
-				$elm$json$Json$Encode$bool(md.selected)),
+				$elm$json$Json$Encode$bool(mdu.mduSelected)),
 				_Utils_Tuple2(
 				'rw',
-				$author$project$Types$encodeRW(md.rw))
+				$author$project$Types$encodeRW(mdu.mduRW))
 			]));
 };
 var $elm$json$Json$Encode$list = F2(
@@ -7102,7 +7130,7 @@ var $author$project$Update$updateModDataRequest = function (regs) {
 			expect: A2(
 				$elm$http$Http$expectJson,
 				$author$project$Types$ReadRegisters,
-				$elm$json$Json$Decode$list($author$project$Types$decodeModData)),
+				$elm$json$Json$Decode$list($author$project$Types$decodeModDataUpdate)),
 			url: 'http://localhost:4000/modData'
 		});
 };
@@ -7115,7 +7143,7 @@ var $author$project$Update$update = F2(
 					return _Utils_Tuple2(
 						_Utils_update(
 							model,
-							{modData: regs, status: $author$project$Types$AllGood}),
+							{modDataUpdate: regs, status: $author$project$Types$AllGood}),
 						$elm$core$Platform$Cmd$none);
 				} else {
 					var err = msg.a.a;
@@ -7349,7 +7377,10 @@ var $author$project$Update$update = F2(
 					return _Utils_Tuple2(
 						_Utils_update(
 							model,
-							{csvLoaded: true, modData: md}),
+							{
+								csvLoaded: true,
+								modDataUpdate: $author$project$Types$newModDataUpdate(md)
+							}),
 						$elm$core$Platform$Cmd$none);
 				}
 			case 'SelectAllChecked':
@@ -7360,14 +7391,14 @@ var $author$project$Update$update = F2(
 						_Utils_update(
 							model,
 							{
-								modData: A2(
+								modDataUpdate: A2(
 									$elm$core$List$map,
-									function (md) {
+									function (mdu) {
 										return _Utils_update(
-											md,
-											{selected: b});
+											mdu,
+											{mduSelected: b});
 									},
-									model.modData),
+									model.modDataUpdate),
 								selectAllCheckbox: b,
 								selectSome: b
 							}),
@@ -7385,13 +7416,18 @@ var $author$project$Update$update = F2(
 				var newMd = A2(
 					$elm$core$List$indexedMap,
 					A2($author$project$Types$replaceModDataSelected, idx, checked),
-					model.modData);
+					model.modDataUpdate);
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
 						{
-							modData: newMd,
-							selectSome: A2($elm$core$List$any, $author$project$Types$getModSelected, newMd)
+							modDataUpdate: newMd,
+							selectSome: A2(
+								$elm$core$List$any,
+								function (mdu) {
+									return mdu.mduSelected;
+								},
+								newMd)
 						}),
 					$elm$core$Platform$Cmd$none);
 			case 'ToggleWriteAll':
@@ -7402,14 +7438,14 @@ var $author$project$Update$update = F2(
 						_Utils_update(
 							model,
 							{
-								modData: A2(
+								modDataUpdate: A2(
 									$elm$core$List$map,
-									function (md) {
-										return $author$project$Types$writeableReg(md) ? _Utils_update(
-											md,
-											{rw: b}) : md;
+									function (mdu) {
+										return $author$project$Types$writeableReg(mdu.mduModData) ? _Utils_update(
+											mdu,
+											{mduRW: b}) : mdu;
 									},
-									model.modData),
+									model.modDataUpdate),
 								readWriteAll: b
 							}),
 						$elm$core$Platform$Cmd$none);
@@ -7422,27 +7458,27 @@ var $author$project$Update$update = F2(
 				var newMd = A2(
 					$elm$core$List$indexedMap,
 					A2($author$project$Types$replaceModDataWrite, idx, flag),
-					model.modData);
+					model.modDataUpdate);
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
-						{modData: newMd}),
+						{modDataUpdate: newMd}),
 					$elm$core$Platform$Cmd$none);
 			default:
 				var idx = msg.a;
 				var str = msg.b;
-				var arrMD = $elm$core$Array$fromList(model.modData);
-				var maybeMD = A2($elm$core$Array$get, idx, arrMD);
+				var arrMDU = $elm$core$Array$fromList(model.modDataUpdate);
+				var maybeMDU = A2($elm$core$Array$get, idx, arrMDU);
 				var newMaybeMd = A2(
 					$elm$core$Maybe$map,
-					function (md) {
+					function (mdu) {
 						return _Utils_update(
-							md,
+							mdu,
 							{
-								modValue: A2($author$project$Update$fromModType, md, str)
+								mduModData: A2($author$project$Update$fromModType, mdu.mduModData, str)
 							});
 					},
-					maybeMD);
+					maybeMDU);
 				if (newMaybeMd.$ === 'Nothing') {
 					return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
 				} else {
@@ -7451,8 +7487,8 @@ var $author$project$Update$update = F2(
 						_Utils_update(
 							model,
 							{
-								modData: $elm$core$Array$toList(
-									A3($elm$core$Array$set, idx, md, arrMD))
+								modDataUpdate: $elm$core$Array$toList(
+									A3($elm$core$Array$set, idx, md, arrMDU))
 							}),
 						$elm$core$Platform$Cmd$none);
 				}
@@ -13428,7 +13464,7 @@ var $author$project$View$updateSelectedButton = function (model) {
 		{
 			label: $mdgriffith$elm_ui$Element$text('Update Selected'),
 			onPress: $elm$core$Maybe$Just(
-				$author$project$Types$RefreshRequest(model.modData))
+				$author$project$Types$RefreshRequest(model.modDataUpdate))
 		});
 };
 var $mdgriffith$elm_ui$Internal$Model$BorderWidth = F5(
@@ -15336,7 +15372,7 @@ var $author$project$View$modAddressColumn = {
 			return A2(
 				$author$project$View$viewCell,
 				i,
-				$elm$core$String$fromInt(md.modAddress));
+				$elm$core$String$fromInt(md.mduModData.modAddress));
 		}),
 	width: $mdgriffith$elm_ui$Element$fillPortion(1)
 };
@@ -15376,7 +15412,7 @@ var $author$project$View$modDescriptionColumn = {
 			$mdgriffith$elm_ui$Element$text('Description'))),
 	view: F2(
 		function (i, md) {
-			return A2($author$project$View$viewDescCell, i, md.modDescription);
+			return A2($author$project$View$viewDescCell, i, md.mduModData.modDescription);
 		}),
 	width: $mdgriffith$elm_ui$Element$fillPortion(4)
 };
@@ -15394,7 +15430,7 @@ var $author$project$View$modNameColumn = {
 			$mdgriffith$elm_ui$Element$text('Name'))),
 	view: F2(
 		function (i, md) {
-			return A2($author$project$View$viewCell, i, md.modName);
+			return A2($author$project$View$viewCell, i, md.mduModData.modName);
 		}),
 	width: $mdgriffith$elm_ui$Element$fillPortion(1)
 };
@@ -15415,7 +15451,7 @@ var $author$project$View$modRegTypeColumn = {
 			return A2(
 				$author$project$View$viewCell,
 				i,
-				$author$project$Types$getRegType(md.modRegType));
+				$author$project$Types$getRegType(md.mduModData.modRegType));
 		}),
 	width: $mdgriffith$elm_ui$Element$fillPortion(1)
 };
@@ -15436,7 +15472,7 @@ var $author$project$View$modUidColumn = {
 			return A2(
 				$author$project$View$viewCell,
 				i,
-				$elm$core$String$fromInt(md.modUid));
+				$elm$core$String$fromInt(md.mduModData.modUid));
 		}),
 	width: $mdgriffith$elm_ui$Element$fillPortion(1)
 };
@@ -15457,7 +15493,7 @@ var $author$project$View$viewReadModValue = F2(
 			A2(
 				$elm$core$Maybe$withDefault,
 				'Nothing',
-				$author$project$Types$getModValue(md.modValue)));
+				$author$project$Types$getModValue(md.mduModData.modValue)));
 	});
 var $author$project$Types$ChangeModDataValue = F2(
 	function (a, b) {
@@ -15498,11 +15534,11 @@ var $author$project$View$viewWriteModValue = F2(
 	});
 var $author$project$View$viewModValueColumn = F2(
 	function (idx, md) {
-		var _v0 = md.rw;
+		var _v0 = md.mduRW;
 		if (_v0.$ === 'Read') {
 			return A2($author$project$View$viewReadModValue, idx, md);
 		} else {
-			return A2($author$project$View$viewWriteModValue, idx, md);
+			return A2($author$project$View$viewWriteModValue, idx, md.mduModData);
 		}
 	});
 var $author$project$View$modValueColumn = {
@@ -15547,14 +15583,13 @@ var $author$project$View$modValueTypeColumn = {
 			return A2(
 				$author$project$View$viewCell,
 				i,
-				$author$project$Types$getModValueType(md.modValue));
+				$author$project$Types$getModValueType(md.mduModData.modValue));
 		}),
 	width: $mdgriffith$elm_ui$Element$fillPortion(1)
 };
 var $author$project$Types$ToggleWriteAll = function (a) {
 	return {$: 'ToggleWriteAll', a: a};
 };
-var $author$project$Types$Write = {$: 'Write'};
 var $author$project$Types$flipRW = function (rw) {
 	if (rw.$ === 'Read') {
 		return $author$project$Types$Write;
@@ -15612,14 +15647,14 @@ var $author$project$View$viewReadWriteModDataCell = F2(
 					$mdgriffith$elm_ui$Element$px(38)),
 					$mdgriffith$elm_ui$Element$Font$center
 				]),
-			$author$project$Types$writeableReg(md) ? A2(
+			$author$project$Types$writeableReg(md.mduModData) ? A2(
 				$author$project$View$readWriteButton,
-				md.rw,
+				md.mduRW,
 				$elm$core$Maybe$Just(
 					A2(
 						$author$project$Types$ModDataWrite,
 						idx,
-						$author$project$Types$flipRW(md.rw)))) : $mdgriffith$elm_ui$Element$none);
+						$author$project$Types$flipRW(md.mduRW)))) : $mdgriffith$elm_ui$Element$none);
 	});
 var $author$project$View$viewReadWriteCell = F3(
 	function (model, idx, md) {
@@ -15867,7 +15902,7 @@ var $author$project$View$selectColumn = function (model) {
 			A2($author$project$View$selectCheckbox, $author$project$Types$SelectAllChecked, model.selectAllCheckbox)),
 		view: F2(
 			function (i, md) {
-				return A2($author$project$View$viewCheckedCell, i, md.selected);
+				return A2($author$project$View$viewCheckedCell, i, md.mduSelected);
 			}),
 		width: $mdgriffith$elm_ui$Element$px(30)
 	};
@@ -15889,7 +15924,7 @@ var $author$project$View$modDataColumns = function (model) {
 var $author$project$View$modDataTable = function (model) {
 	return A2(
 		$author$project$View$newRegisterTable,
-		model.modData,
+		model.modDataUpdate,
 		$author$project$View$modDataColumns(model));
 };
 var $author$project$View$infoArea = function (model) {
