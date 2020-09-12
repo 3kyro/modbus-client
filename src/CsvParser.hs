@@ -144,7 +144,7 @@ pMaybeFloat = Just <$> combinations <|> nothing
 -- scientific representation: eg 3.24e-12
 pFloat :: Parser Float
 pFloat = 
-        pFloatLeadingDot 
+        pFloatLeadingDot
     <|> try (only $ fromIntegral <$> pInt) 
     <|> try (only pFloatNoFractional) 
     <|> try (only pFloatDotted) 

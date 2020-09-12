@@ -6541,8 +6541,22 @@ var $author$project$Types$IpAddress$defaultIpAddr = A4(
 	$elm$core$Maybe$Just(1));
 var $author$project$Types$HoldingRegister = {$: 'HoldingRegister'};
 var $author$project$Types$InputRegister = {$: 'InputRegister'};
+var $author$project$Types$ModFloat = function (a) {
+	return {$: 'ModFloat', a: a};
+};
 var $author$project$Types$ModWord = function (a) {
 	return {$: 'ModWord', a: a};
+};
+var $author$project$Types$MFloat = F2(
+	function (str, flt) {
+		return {flt: flt, str: str};
+	});
+var $elm$core$String$fromFloat = _String_fromNumber;
+var $author$project$Types$fromFloat = function (f) {
+	return A2(
+		$author$project$Types$MFloat,
+		$elm$core$String$fromFloat(f),
+		f);
 };
 var $author$project$App$initModData = _List_fromArray(
 	[
@@ -6552,8 +6566,9 @@ var $author$project$App$initModData = _List_fromArray(
 		modName: 'first',
 		modRegType: $author$project$Types$HoldingRegister,
 		modUid: 1,
-		modValue: $author$project$Types$ModWord(
-			$elm$core$Maybe$Just(1))
+		modValue: $author$project$Types$ModFloat(
+			$elm$core$Maybe$Just(
+				$author$project$Types$fromFloat(1)))
 	},
 		{
 		modAddress: 2,
@@ -6771,10 +6786,13 @@ var $elm$file$File$Select$file = F2(
 			toMsg,
 			_File_uploadOne(mimes));
 	});
-var $author$project$Types$ModFloat = function (a) {
-	return {$: 'ModFloat', a: a};
-};
 var $elm$core$String$toFloat = _String_toFloat;
+var $author$project$Types$toMFloat = function (s) {
+	return A2(
+		$elm$core$Maybe$map,
+		$author$project$Types$MFloat(s),
+		$elm$core$String$toFloat(s));
+};
 var $author$project$Update$fromModType = F2(
 	function (md, str) {
 		var _v0 = md.modValue;
@@ -6790,7 +6808,7 @@ var $author$project$Update$fromModType = F2(
 				md,
 				{
 					modValue: $author$project$Types$ModFloat(
-						$elm$core$String$toFloat(str))
+						$author$project$Types$toMFloat(str))
 				});
 		}
 	});
@@ -6831,6 +6849,7 @@ var $author$project$Types$ModData = F6(
 		return {modAddress: modAddress, modDescription: modDescription, modName: modName, modRegType: modRegType, modUid: modUid, modValue: modValue};
 	});
 var $elm$json$Json$Decode$float = _Json_decodeFloat;
+var $author$project$Types$decodeMFloat = A2($elm$json$Json$Decode$map, $author$project$Types$fromFloat, $elm$json$Json$Decode$float);
 var $elm$json$Json$Decode$null = _Json_decodeNull;
 var $elm$json$Json$Decode$nullable = function (decoder) {
 	return $elm$json$Json$Decode$oneOf(
@@ -6859,7 +6878,7 @@ var $author$project$Types$decodeModValue = A2(
 					A2(
 						$elm$json$Json$Decode$field,
 						'value',
-						$elm$json$Json$Decode$nullable($elm$json$Json$Decode$float)));
+						$elm$json$Json$Decode$nullable($author$project$Types$decodeMFloat)));
 			default:
 				return $elm$json$Json$Decode$fail('Not a valid ModValue');
 		}
@@ -7045,7 +7064,7 @@ var $author$project$Types$encodeModValue = function (mv) {
 						$elm$json$Json$Encode$string('float')),
 						_Utils_Tuple2(
 						'value',
-						$elm$json$Json$Encode$float(x))
+						$elm$json$Json$Encode$float(x.flt))
 					]));
 		} else {
 			var _v2 = mv.a;
@@ -7833,7 +7852,6 @@ var $mdgriffith$elm_ui$Internal$Model$Style = F2(
 var $mdgriffith$elm_ui$Internal$Style$dot = function (c) {
 	return '.' + c;
 };
-var $elm$core$String$fromFloat = _String_fromNumber;
 var $mdgriffith$elm_ui$Internal$Model$formatColor = function (_v0) {
 	var red = _v0.a;
 	var green = _v0.b;
@@ -15478,13 +15496,16 @@ var $author$project$View$modUidColumn = {
 		}),
 	width: $mdgriffith$elm_ui$Element$fillPortion(1)
 };
+var $author$project$Types$showMFloat = function (mf) {
+	return mf.str;
+};
 var $author$project$Types$getModValue = function (mv) {
 	if (mv.$ === 'ModWord') {
 		var v = mv.a;
 		return A2($elm$core$Maybe$map, $elm$core$String$fromInt, v);
 	} else {
 		var v = mv.a;
-		return A2($elm$core$Maybe$map, $elm$core$String$fromFloat, v);
+		return A2($elm$core$Maybe$map, $author$project$Types$showMFloat, v);
 	}
 };
 var $author$project$View$viewReadModValue = F2(

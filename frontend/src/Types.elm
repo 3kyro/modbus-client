@@ -24,6 +24,9 @@ module Types exposing
     , ReadWrite (..), newModDataUpdate, encodeModDataUpdate
     , flipRW
     , decodeModDataUpdate
+    , MFloat
+    , toMFloat
+    , fromFloat
     )
 
 
@@ -38,6 +41,7 @@ import Types.IpAddress exposing
     , IpAddressByte
     , unsafeShowIp
     )
+import String exposing (fromFloat)
 
 type Msg
     = ReadRegisters (Result Http.Error (List ModDataUpdate))
@@ -162,7 +166,7 @@ writeableReg md =
 
 type ModValue
     = ModWord (Maybe Int)
-    | ModFloat (Maybe Float)
+    | ModFloat (Maybe MFloat)
 getRegType : RegType -> String
 getRegType rt =
     case rt of
@@ -179,7 +183,15 @@ getModValue : ModValue -> Maybe String
 getModValue mv =
     case mv of
        ModWord v -> Maybe.map String.fromInt v
-       ModFloat v -> Maybe.map String.fromFloat v
+       ModFloat v -> Maybe.map showMFloat v
+
+-- ss : String -> Maybe Float
+-- ss  s =
+--     if String.endsWith "."
+--     then
+--          case String.fromFloat s of
+--             Nothing -> Nothing
+--             Just _ -> s
 
 encodeModData : ModData -> E.Value
 encodeModData md =
@@ -219,7 +231,7 @@ encodeModValue mv =
             ]
         ModFloat (Just x) -> E.object
             [ ( "type", E.string "float" )
-            , ( "value", E.float x)
+            , ( "value", E.float x.flt)
             ]
         ModFloat Nothing -> E.object
             [ ( "type", E.string "float" )
@@ -241,7 +253,7 @@ decodeModValue =
     D.field "type" D.string |> D.andThen (\s ->
         case s of
             "word" -> D.map ModWord <| D.field "value" (D.nullable D.int)
-            "float" -> D.map ModFloat <| D.field "value" (D.nullable D.float)
+            "float" -> D.map ModFloat <| D.field "value" (D.nullable decodeMFloat)
             _ -> D.fail "Not a valid ModValue"
     )
 
@@ -255,6 +267,10 @@ decodeRegType =
                 "holding register" -> D.succeed HoldingRegister
                 _ -> D.fail "Not a Register Type"
         )
+
+decodeMFloat : D.Decoder MFloat
+decodeMFloat =
+    D.map fromFloat D.float
 
 replaceModDataSelected : Int -> Bool -> Int -> ModDataUpdate -> ModDataUpdate
 replaceModDataSelected idx checked =
@@ -308,3 +324,23 @@ type ActiveTab
     | HoldingRegistersTable
     | ModDataTable
     | HeartbeatTable
+
+
+-- Custom type to overcome a limitaion of elm when updating float inputs
+-- Speciffically "1." is a valid float that is shown as "1"
+-- This blocks inputs after a dot is typed
+type alias MFloat =
+    { str : String
+    , flt : Float
+    }
+
+-- always show the string, not the float
+showMFloat : MFloat -> String
+showMFloat mf = mf.str
+
+-- save the string in case of a valid parse
+toMFloat : String -> Maybe MFloat
+toMFloat s = Maybe.map (MFloat s) <| String.toFloat s
+
+fromFloat : Float -> MFloat
+fromFloat f = MFloat (String.fromFloat f) f

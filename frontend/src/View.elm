@@ -474,6 +474,7 @@ viewReadModValue idx md =
     <| getModValue md.mduModData.modValue
 
 viewWriteModValue : Int -> ModData -> Element Msg
+
 viewWriteModValue idx md =
     el
         [ Background.color <| tableCellColor idx

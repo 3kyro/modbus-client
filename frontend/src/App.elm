@@ -15,6 +15,7 @@ import Types exposing
     , ActiveTab(..)
     , ReadWrite(..)
     , newModDataUpdate
+    , fromFloat
     )
 import Types.IpAddress exposing (defaultIpAddr)
 
@@ -48,7 +49,7 @@ initModData =
     [ { modName = "first"
       , modRegType = HoldingRegister
       , modAddress = 1
-      , modValue = ModWord (Just 1)
+      , modValue = ModFloat (Just <| fromFloat 1)
       , modUid = 1
       , modDescription = "A register for tesing purposes"
       }

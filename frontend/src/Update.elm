@@ -31,6 +31,7 @@ import Types exposing
 
 import Types.IpAddress exposing (setIpAddressByte)
 import Array
+import Types exposing (toMFloat)
 
 update : Msg -> Model -> ( Model, Cmd Msg)
 update msg model =
@@ -227,7 +228,7 @@ fromModType : ModData -> String -> ModData
 fromModType md str =
     case md.modValue of
         ModWord _ -> { md | modValue = ModWord <| String.toInt str }
-        ModFloat _-> { md | modValue = ModFloat <| String.toFloat str }
+        ModFloat _-> { md | modValue = ModFloat <| toMFloat str }
 
 initCmd : Cmd Msg
 initCmd = connectionInfoRequest
