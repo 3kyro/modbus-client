@@ -147,6 +147,8 @@ update msg model =
             ( { model
                 | modDataUpdate = newModDataUpdate md
                 , csvLoaded = True
+                , selectAllCheckbox = False
+                , selectSome = False
                 }
             , Cmd.none
             )

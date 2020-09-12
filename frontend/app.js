@@ -7379,7 +7379,9 @@ var $author$project$Update$update = F2(
 							model,
 							{
 								csvLoaded: true,
-								modDataUpdate: $author$project$Types$newModDataUpdate(md)
+								modDataUpdate: $author$project$Types$newModDataUpdate(md),
+								selectAllCheckbox: false,
+								selectSome: false
 							}),
 						$elm$core$Platform$Cmd$none);
 				}
