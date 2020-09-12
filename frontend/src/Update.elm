@@ -28,6 +28,8 @@ import Types exposing
     )
 
 import Types.IpAddress exposing (setIpAddressByte)
+import Array
+import Types exposing (getModValueType)
 
 update : Msg -> Model -> ( Model, Cmd Msg)
 update msg model =
@@ -190,6 +192,29 @@ update msg model =
             in
                 ( { model | modData = newMd } , Cmd.none )
 
+        ChangeModDataValue idx str ->
+            let
+                -- get an array of the ModData
+                arrMD = Array.fromList model.modData
+                -- Maybe a moddata from the array
+                maybeMD = Array.get idx arrMD
+                -- change the Modvamue of the Maybe modData
+                newMaybeMd = Maybe.map (\md -> { md | modValue = fromModType md str } ) maybeMD
+            in
+                case newMaybeMd of
+                    Nothing -> ( model , Cmd.none )
+                    Just md ->
+                        ( { model |
+                            modData = Array.toList <| Array.set idx md arrMD
+                        }, Cmd.none)
+
+
+
+fromModType : ModData -> String -> ModValue
+fromModType md str =
+    case md.modValue of
+        ModWord _ -> ModWord <| String.toInt str
+        ModFloat _-> ModFloat <| String.toFloat str
 
 initCmd : Cmd Msg
 initCmd = connectionInfoRequest

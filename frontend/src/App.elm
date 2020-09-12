@@ -45,7 +45,7 @@ initModel =
 initModData : List ModData
 initModData =
     [ { modName = "first"
-      , modRegType = InputRegister
+      , modRegType = HoldingRegister
       , modAddress = 1
       , modValue = ModWord (Just 1)
       , modUid = 1

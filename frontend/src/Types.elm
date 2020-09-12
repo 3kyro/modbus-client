@@ -59,6 +59,7 @@ type Msg
     | ModDataChecked Int Bool
     | ToggleWriteAll ReadWrite
     | ModDataWrite Int ReadWrite
+    | ChangeModDataValue Int String
 
 type alias Model =
     { modData : List ModData
@@ -258,6 +259,8 @@ flipRW rw =
     case rw of
         Read -> Write
         Write -> Read
+
+
 
 -- ActiveTab
 --------------------------------------------------------------------------------------------------

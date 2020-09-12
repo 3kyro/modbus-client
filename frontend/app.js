@@ -6550,7 +6550,7 @@ var $author$project$App$initModData = _List_fromArray(
 		modAddress: 1,
 		modDescription: 'A register for tesing purposes',
 		modName: 'first',
-		modRegType: $author$project$Types$InputRegister,
+		modRegType: $author$project$Types$HoldingRegister,
 		modUid: 1,
 		modValue: $author$project$Types$ModWord(
 			$elm$core$Maybe$Just(1)),
@@ -6767,6 +6767,21 @@ var $elm$file$File$Select$file = F2(
 			toMsg,
 			_File_uploadOne(mimes));
 	});
+var $author$project$Types$ModFloat = function (a) {
+	return {$: 'ModFloat', a: a};
+};
+var $elm$core$String$toFloat = _String_toFloat;
+var $author$project$Update$fromModType = F2(
+	function (md, str) {
+		var _v0 = md.modValue;
+		if (_v0.$ === 'ModWord') {
+			return $author$project$Types$ModWord(
+				$elm$core$String$toInt(str));
+		} else {
+			return $author$project$Types$ModFloat(
+				$elm$core$String$toFloat(str));
+		}
+	});
 var $author$project$Types$getModSelected = function (md) {
 	return md.selected;
 };
@@ -6780,9 +6795,6 @@ var $author$project$Types$ModData = F8(
 	function (modName, modRegType, modAddress, modValue, modUid, modDescription, selected, rw) {
 		return {modAddress: modAddress, modDescription: modDescription, modName: modName, modRegType: modRegType, modUid: modUid, modValue: modValue, rw: rw, selected: selected};
 	});
-var $author$project$Types$ModFloat = function (a) {
-	return {$: 'ModFloat', a: a};
-};
 var $elm$json$Json$Decode$float = _Json_decodeFloat;
 var $elm$json$Json$Decode$null = _Json_decodeNull;
 var $elm$json$Json$Decode$nullable = function (decoder) {
@@ -6989,6 +7001,49 @@ var $author$project$Update$requestModData = function (model) {
 			url: 'http://localhost:4000/parseModData'
 		});
 };
+var $elm$core$Elm$JsArray$unsafeSet = _JsArray_unsafeSet;
+var $elm$core$Array$setHelp = F4(
+	function (shift, index, value, tree) {
+		var pos = $elm$core$Array$bitMask & (index >>> shift);
+		var _v0 = A2($elm$core$Elm$JsArray$unsafeGet, pos, tree);
+		if (_v0.$ === 'SubTree') {
+			var subTree = _v0.a;
+			var newSub = A4($elm$core$Array$setHelp, shift - $elm$core$Array$shiftStep, index, value, subTree);
+			return A3(
+				$elm$core$Elm$JsArray$unsafeSet,
+				pos,
+				$elm$core$Array$SubTree(newSub),
+				tree);
+		} else {
+			var values = _v0.a;
+			var newLeaf = A3($elm$core$Elm$JsArray$unsafeSet, $elm$core$Array$bitMask & index, value, values);
+			return A3(
+				$elm$core$Elm$JsArray$unsafeSet,
+				pos,
+				$elm$core$Array$Leaf(newLeaf),
+				tree);
+		}
+	});
+var $elm$core$Array$set = F3(
+	function (index, value, array) {
+		var len = array.a;
+		var startShift = array.b;
+		var tree = array.c;
+		var tail = array.d;
+		return ((index < 0) || (_Utils_cmp(index, len) > -1)) ? array : ((_Utils_cmp(
+			index,
+			$elm$core$Array$tailIndex(len)) > -1) ? A4(
+			$elm$core$Array$Array_elm_builtin,
+			len,
+			startShift,
+			tree,
+			A3($elm$core$Elm$JsArray$unsafeSet, $elm$core$Array$bitMask & index, value, tail)) : A4(
+			$elm$core$Array$Array_elm_builtin,
+			len,
+			startShift,
+			A4($elm$core$Array$setHelp, startShift, index, value, tree),
+			tail));
+	});
 var $author$project$Types$IpAddress$setIpAddressByte = F3(
 	function (_byte, ip, mint) {
 		switch (_byte.$) {
@@ -7338,7 +7393,7 @@ var $author$project$Update$update = F2(
 				} else {
 					return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
 				}
-			default:
+			case 'ModDataWrite':
 				var idx = msg.a;
 				var flag = msg.b;
 				var newMd = A2(
@@ -7350,6 +7405,34 @@ var $author$project$Update$update = F2(
 						model,
 						{modData: newMd}),
 					$elm$core$Platform$Cmd$none);
+			default:
+				var idx = msg.a;
+				var str = msg.b;
+				var arrMD = $elm$core$Array$fromList(model.modData);
+				var maybeMD = A2($elm$core$Array$get, idx, arrMD);
+				var newMaybeMd = A2(
+					$elm$core$Maybe$map,
+					function (md) {
+						return _Utils_update(
+							md,
+							{
+								modValue: A2($author$project$Update$fromModType, md, str)
+							});
+					},
+					maybeMD);
+				if (newMaybeMd.$ === 'Nothing') {
+					return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
+				} else {
+					var md = newMaybeMd.a;
+					return _Utils_Tuple2(
+						_Utils_update(
+							model,
+							{
+								modData: $elm$core$Array$toList(
+									A3($elm$core$Array$set, idx, md, arrMD))
+							}),
+						$elm$core$Platform$Cmd$none);
+				}
 		}
 	});
 var $mdgriffith$elm_ui$Internal$Style$classes = {above: 'a', active: 'atv', alignBottom: 'ab', alignCenterX: 'cx', alignCenterY: 'cy', alignContainerBottom: 'acb', alignContainerCenterX: 'accx', alignContainerCenterY: 'accy', alignContainerRight: 'acr', alignLeft: 'al', alignRight: 'ar', alignTop: 'at', alignedHorizontally: 'ah', alignedVertically: 'av', any: 's', behind: 'bh', below: 'b', bold: 'w7', borderDashed: 'bd', borderDotted: 'bdt', borderNone: 'bn', borderSolid: 'bs', capturePointerEvents: 'cpe', clip: 'cp', clipX: 'cpx', clipY: 'cpy', column: 'c', container: 'ctr', contentBottom: 'cb', contentCenterX: 'ccx', contentCenterY: 'ccy', contentLeft: 'cl', contentRight: 'cr', contentTop: 'ct', cursorPointer: 'cptr', cursorText: 'ctxt', focus: 'fcs', focusedWithin: 'focus-within', fullSize: 'fs', grid: 'g', hasBehind: 'hbh', heightContent: 'hc', heightExact: 'he', heightFill: 'hf', heightFillPortion: 'hfp', hover: 'hv', imageContainer: 'ic', inFront: 'fr', inputLabel: 'lbl', inputMultiline: 'iml', inputMultilineFiller: 'imlf', inputMultilineParent: 'imlp', inputMultilineWrapper: 'implw', inputText: 'it', italic: 'i', link: 'lnk', nearby: 'nb', noTextSelection: 'notxt', onLeft: 'ol', onRight: 'or', opaque: 'oq', overflowHidden: 'oh', page: 'pg', paragraph: 'p', passPointerEvents: 'ppe', root: 'ui', row: 'r', scrollbars: 'sb', scrollbarsX: 'sbx', scrollbarsY: 'sby', seButton: 'sbt', single: 'e', sizeByCapital: 'cap', spaceEvenly: 'sev', strike: 'sk', text: 't', textCenter: 'tc', textExtraBold: 'w8', textExtraLight: 'w2', textHeavy: 'w9', textJustify: 'tj', textJustifyAll: 'tja', textLeft: 'tl', textLight: 'w3', textMedium: 'w5', textNormalWeight: 'w4', textRight: 'tr', textSemiBold: 'w6', textThin: 'w1', textUnitalicized: 'tun', transition: 'ts', transparent: 'clr', underline: 'u', widthContent: 'wc', widthExact: 'we', widthFill: 'wf', widthFillPortion: 'wfp', wrapped: 'wrp'};
@@ -13578,7 +13661,7 @@ var $author$project$View$connectButton = function (model) {
 						$mdgriffith$elm_ui$Element$Font$color($author$project$Palette$white)
 					])),
 				$mdgriffith$elm_ui$Element$height(
-				$mdgriffith$elm_ui$Element$px(30)),
+				$mdgriffith$elm_ui$Element$px(38)),
 				$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill),
 				A2($mdgriffith$elm_ui$Element$paddingXY, 0, 0),
 				$mdgriffith$elm_ui$Element$Font$color($author$project$Palette$greyWhite),
@@ -13618,7 +13701,7 @@ var $author$project$View$disconnectButton = function (model) {
 						$mdgriffith$elm_ui$Element$Font$color($author$project$Palette$white)
 					])),
 				$mdgriffith$elm_ui$Element$height(
-				$mdgriffith$elm_ui$Element$px(30)),
+				$mdgriffith$elm_ui$Element$px(38)),
 				$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill),
 				A2($mdgriffith$elm_ui$Element$paddingXY, 0, 0),
 				$mdgriffith$elm_ui$Element$Font$color($author$project$Palette$greyWhite),
@@ -15090,7 +15173,7 @@ var $author$project$View$loadCSVButton = A2(
 					$mdgriffith$elm_ui$Element$Font$color($author$project$Palette$white)
 				])),
 			$mdgriffith$elm_ui$Element$height(
-			$mdgriffith$elm_ui$Element$px(30)),
+			$mdgriffith$elm_ui$Element$px(38)),
 			$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill),
 			A2($mdgriffith$elm_ui$Element$paddingXY, 0, 0),
 			$mdgriffith$elm_ui$Element$Font$color($author$project$Palette$greyWhite),
@@ -15144,7 +15227,7 @@ var $author$project$View$loadRegisterTableButton = function (model) {
 						$mdgriffith$elm_ui$Element$Font$color($author$project$Palette$white)
 					])),
 				$mdgriffith$elm_ui$Element$height(
-				$mdgriffith$elm_ui$Element$px(30)),
+				$mdgriffith$elm_ui$Element$px(38)),
 				$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill),
 				A2($mdgriffith$elm_ui$Element$paddingXY, 0, 0),
 				$mdgriffith$elm_ui$Element$Font$color($author$project$Palette$greyWhite),
@@ -15206,7 +15289,7 @@ var $author$project$View$viewCell = F2(
 					$author$project$View$tableCellColor(idx)),
 					$mdgriffith$elm_ui$Element$Font$color($author$project$Palette$greyWhite),
 					$mdgriffith$elm_ui$Element$height(
-					$mdgriffith$elm_ui$Element$px(30)),
+					$mdgriffith$elm_ui$Element$px(38)),
 					$mdgriffith$elm_ui$Element$Font$center
 				]),
 			A2(
@@ -15221,7 +15304,7 @@ var $author$project$View$modAddressColumn = {
 		_List_fromArray(
 			[
 				$mdgriffith$elm_ui$Element$height(
-				$mdgriffith$elm_ui$Element$px(30))
+				$mdgriffith$elm_ui$Element$px(38))
 			]),
 		A2(
 			$mdgriffith$elm_ui$Element$el,
@@ -15248,7 +15331,7 @@ var $author$project$View$viewDescCell = F2(
 					$author$project$View$tableCellColor(idx)),
 					$mdgriffith$elm_ui$Element$Font$color($author$project$Palette$greyWhite),
 					$mdgriffith$elm_ui$Element$height(
-					$mdgriffith$elm_ui$Element$px(30)),
+					$mdgriffith$elm_ui$Element$px(38)),
 					$mdgriffith$elm_ui$Element$Font$center
 				]),
 			A2(
@@ -15263,7 +15346,7 @@ var $author$project$View$modDescriptionColumn = {
 		_List_fromArray(
 			[
 				$mdgriffith$elm_ui$Element$height(
-				$mdgriffith$elm_ui$Element$px(30))
+				$mdgriffith$elm_ui$Element$px(38))
 			]),
 		A2(
 			$mdgriffith$elm_ui$Element$el,
@@ -15282,7 +15365,7 @@ var $author$project$View$modNameColumn = {
 		_List_fromArray(
 			[
 				$mdgriffith$elm_ui$Element$height(
-				$mdgriffith$elm_ui$Element$px(30))
+				$mdgriffith$elm_ui$Element$px(38))
 			]),
 		A2(
 			$mdgriffith$elm_ui$Element$el,
@@ -15300,7 +15383,7 @@ var $author$project$View$modRegTypeColumn = {
 		_List_fromArray(
 			[
 				$mdgriffith$elm_ui$Element$height(
-				$mdgriffith$elm_ui$Element$px(30))
+				$mdgriffith$elm_ui$Element$px(38))
 			]),
 		A2(
 			$mdgriffith$elm_ui$Element$el,
@@ -15321,7 +15404,7 @@ var $author$project$View$modUidColumn = {
 		_List_fromArray(
 			[
 				$mdgriffith$elm_ui$Element$height(
-				$mdgriffith$elm_ui$Element$px(30))
+				$mdgriffith$elm_ui$Element$px(38))
 			]),
 		A2(
 			$mdgriffith$elm_ui$Element$el,
@@ -15345,27 +15428,77 @@ var $author$project$Types$getModValue = function (mv) {
 		return A2($elm$core$Maybe$map, $elm$core$String$fromFloat, v);
 	}
 };
+var $author$project$View$viewReadModValue = F2(
+	function (idx, md) {
+		return A2(
+			$author$project$View$viewCell,
+			idx,
+			A2(
+				$elm$core$Maybe$withDefault,
+				'Nothing',
+				$author$project$Types$getModValue(md.modValue)));
+	});
+var $author$project$Types$ChangeModDataValue = F2(
+	function (a, b) {
+		return {$: 'ChangeModDataValue', a: a, b: b};
+	});
+var $author$project$View$viewWriteModValue = F2(
+	function (idx, md) {
+		return A2(
+			$mdgriffith$elm_ui$Element$el,
+			_List_fromArray(
+				[
+					$mdgriffith$elm_ui$Element$Background$color(
+					$author$project$View$tableCellColor(idx)),
+					$mdgriffith$elm_ui$Element$Font$center
+				]),
+			A2(
+				$mdgriffith$elm_ui$Element$Input$text,
+				_List_fromArray(
+					[
+						$mdgriffith$elm_ui$Element$Background$color(
+						$author$project$View$tableCellColor(idx)),
+						$mdgriffith$elm_ui$Element$Font$color($author$project$Palette$greyWhite),
+						$mdgriffith$elm_ui$Element$Border$width(1),
+						$mdgriffith$elm_ui$Element$height(
+						$mdgriffith$elm_ui$Element$px(38)),
+						A2($mdgriffith$elm_ui$Element$paddingXY, 0, 11),
+						$mdgriffith$elm_ui$Element$focused(_List_Nil)
+					]),
+				{
+					label: $mdgriffith$elm_ui$Element$Input$labelHidden('Value Input'),
+					onChange: $author$project$Types$ChangeModDataValue(idx),
+					placeholder: $elm$core$Maybe$Nothing,
+					text: A2(
+						$elm$core$Maybe$withDefault,
+						'',
+						$author$project$Types$getModValue(md.modValue))
+				}));
+	});
+var $author$project$View$viewModValueColumn = F2(
+	function (idx, md) {
+		var _v0 = md.rw;
+		if (_v0.$ === 'Read') {
+			return A2($author$project$View$viewReadModValue, idx, md);
+		} else {
+			return A2($author$project$View$viewWriteModValue, idx, md);
+		}
+	});
 var $author$project$View$modValueColumn = {
 	header: A2(
 		$mdgriffith$elm_ui$Element$el,
 		_List_fromArray(
 			[
 				$mdgriffith$elm_ui$Element$height(
-				$mdgriffith$elm_ui$Element$px(30))
+				$mdgriffith$elm_ui$Element$px(38))
 			]),
 		A2(
 			$mdgriffith$elm_ui$Element$el,
 			$author$project$View$headerTextAttr,
 			$mdgriffith$elm_ui$Element$text('Value'))),
 	view: F2(
-		function (i, md) {
-			return A2(
-				$author$project$View$viewCell,
-				i,
-				A2(
-					$elm$core$Maybe$withDefault,
-					'Nothing',
-					$author$project$Types$getModValue(md.modValue)));
+		function (idx, md) {
+			return A2($author$project$View$viewModValueColumn, idx, md);
 		}),
 	width: $mdgriffith$elm_ui$Element$fillPortion(1)
 };
@@ -15382,7 +15515,7 @@ var $author$project$View$modValueTypeColumn = {
 		_List_fromArray(
 			[
 				$mdgriffith$elm_ui$Element$height(
-				$mdgriffith$elm_ui$Element$px(30))
+				$mdgriffith$elm_ui$Element$px(38))
 			]),
 		A2(
 			$mdgriffith$elm_ui$Element$el,
@@ -15455,7 +15588,7 @@ var $author$project$View$viewReadWriteModDataCell = F2(
 					$author$project$View$tableCellColor(idx)),
 					$mdgriffith$elm_ui$Element$Font$color($author$project$Palette$greyWhite),
 					$mdgriffith$elm_ui$Element$height(
-					$mdgriffith$elm_ui$Element$px(30)),
+					$mdgriffith$elm_ui$Element$px(38)),
 					$mdgriffith$elm_ui$Element$Font$center
 				]),
 			$author$project$Types$writeableReg(md) ? A2(
@@ -15486,7 +15619,7 @@ var $author$project$View$readWriteColumn = function (model) {
 			_List_fromArray(
 				[
 					$mdgriffith$elm_ui$Element$height(
-					$mdgriffith$elm_ui$Element$px(30)),
+					$mdgriffith$elm_ui$Element$px(38)),
 					$mdgriffith$elm_ui$Element$Font$color($author$project$Palette$greyWhite)
 				]),
 			A2(
@@ -15693,7 +15826,7 @@ var $author$project$View$viewCheckedCell = F2(
 					$author$project$View$tableCellColor(idx)),
 					$mdgriffith$elm_ui$Element$Font$color($author$project$Palette$greyWhite),
 					$mdgriffith$elm_ui$Element$height(
-					$mdgriffith$elm_ui$Element$px(30)),
+					$mdgriffith$elm_ui$Element$px(38)),
 					$mdgriffith$elm_ui$Element$Font$center
 				]),
 			A2(
@@ -15708,7 +15841,7 @@ var $author$project$View$selectColumn = function (model) {
 			_List_fromArray(
 				[
 					$mdgriffith$elm_ui$Element$height(
-					$mdgriffith$elm_ui$Element$px(30))
+					$mdgriffith$elm_ui$Element$px(38))
 				]),
 			A2($author$project$View$selectCheckbox, $author$project$Types$SelectAllChecked, model.selectAllCheckbox)),
 		view: F2(
@@ -15840,7 +15973,7 @@ var $author$project$View$menuBar = function (model) {
 				$mdgriffith$elm_ui$Element$alignTop,
 				$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill),
 				$mdgriffith$elm_ui$Element$height(
-				$mdgriffith$elm_ui$Element$px(30)),
+				$mdgriffith$elm_ui$Element$px(38)),
 				A2($mdgriffith$elm_ui$Element$paddingXY, 10, 0),
 				$mdgriffith$elm_ui$Element$spacing(0)
 			]),
@@ -15876,7 +16009,7 @@ var $author$project$View$statusBar = function (model) {
 				$mdgriffith$elm_ui$Element$Background$color($author$project$Palette$blueSapphire),
 				$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill),
 				$mdgriffith$elm_ui$Element$height(
-				$mdgriffith$elm_ui$Element$px(30)),
+				$mdgriffith$elm_ui$Element$px(38)),
 				$mdgriffith$elm_ui$Element$alignBottom
 			]),
 		_List_fromArray(

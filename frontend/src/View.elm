@@ -71,6 +71,7 @@ import Palette exposing
     , blueSapphire
     , fireBrick
     )
+import Element.Input exposing (labelHidden)
 
 
 view : Model -> Html Msg
@@ -100,7 +101,7 @@ menuBar model =
         [ Background.color darkGrey
         , alignTop
         , width fill
-        , height <| px 30
+        , height <| px 38
         , paddingXY 10 0
         , spacing 0
         ]
@@ -272,7 +273,7 @@ connectButton model =
     Input.button
         [ Background.color <| connectButtonBgd model
         , mouseOver [ Font.color white ]
-        , height <| px 30
+        , height <| px 38
         , width fill
         , paddingXY 0 0
         , Font.color greyWhite
@@ -296,7 +297,7 @@ disconnectButton model =
     Input.button
         [ Background.color <| disconnectButtonBgd model
         , mouseOver [ Font.color white ]
-        , height <| px 30
+        , height <| px 38
         , width fill
         , paddingXY 0 0
         , Font.color greyWhite
@@ -347,7 +348,7 @@ loadCSVButton =
     Input.button
         [ Background.color lightGrey
         , mouseOver [ Font.color white ]
-        , height <| px 30
+        , height <| px 38
         , width fill
         , paddingXY 0 0
         , Font.color greyWhite
@@ -379,7 +380,7 @@ loadRegisterTableButton model =
     Input.button
         [ Background.color <| loadRegsButtonClr model
         , mouseOver [ Font.color white ]
-        , height <| px 30
+        , height <| px 38
         , width fill
         , paddingXY 0 0
         , Font.color greyWhite
@@ -430,49 +431,81 @@ modDataColumns model =
 
 modNameColumn : IndexedColumn ModData Msg
 modNameColumn =
-    { header = el [ height <| px 30 ] <| el headerTextAttr <| text "Name"
+    { header = el [ height <| px 38 ] <| el headerTextAttr <| text "Name"
     , width = fillPortion 1
     , view = \i md -> viewCell i md.modName
     }
 
 modRegTypeColumn : IndexedColumn ModData Msg
 modRegTypeColumn =
-    { header = el [ height <| px 30 ] <| el headerTextAttr <| text "Register Type"
+    { header = el [ height <| px 38 ] <| el headerTextAttr <| text "Register Type"
     , width = fillPortion 1
     , view = \i md -> viewCell i <| getRegType md.modRegType
     }
 
 modAddressColumn : IndexedColumn ModData Msg
 modAddressColumn =
-    { header = el [ height <| px 30 ] <| el headerTextAttr <| text "Register Address"
+    { header = el [ height <| px 38 ] <| el headerTextAttr <| text "Register Address"
     , width = fillPortion 1
     , view = \i md -> viewCell i <| String.fromInt md.modAddress
     }
 
 modValueTypeColumn : IndexedColumn ModData Msg
 modValueTypeColumn =
-    { header = el [ height <| px 30 ] <| el headerTextAttr <| text "Value Type"
+    { header = el [ height <| px 38 ] <| el headerTextAttr <| text "Value Type"
     , width = fillPortion 1
     , view = \i md -> viewCell i <| getModValueType md.modValue
     }
 
 modValueColumn : IndexedColumn ModData Msg
 modValueColumn =
-    { header = el [ height <| px 30 ] <| el headerTextAttr <| text "Value"
+    { header = el [ height <| px 38 ] <| el headerTextAttr <| text "Value"
     , width = fillPortion 1
-    , view = \i md -> viewCell i <| Maybe.withDefault "Nothing" <| getModValue md.modValue
+    , view = \idx md -> viewModValueColumn idx md
     }
+
+viewModValueColumn : Int -> ModData -> Element Msg
+viewModValueColumn idx md =
+    case md.rw of
+        Read -> viewReadModValue idx md
+        Write -> viewWriteModValue idx md
+
+viewReadModValue : Int -> ModData -> Element Msg
+viewReadModValue idx md =
+    viewCell idx
+    <| Maybe.withDefault "Nothing"
+    <| getModValue md.modValue
+
+viewWriteModValue : Int -> ModData -> Element Msg
+viewWriteModValue idx md =
+    el
+        [ Background.color <| tableCellColor idx
+        , Font.center
+        ]
+        <| Input.text
+            [ Background.color <| tableCellColor idx
+            , Font.color greyWhite
+            , Border.width 1
+            , height <| px 38
+            -- 11 is a magic number here :(
+            , paddingXY 0 11
+            , focused [] ]
+            { onChange = ChangeModDataValue idx
+            , text = Maybe.withDefault "" <| getModValue md.modValue
+            , placeholder = Nothing
+            , label = labelHidden "Value Input"
+            }
 
 modUidColumn : IndexedColumn ModData Msg
 modUidColumn =
-    { header = el [ height <| px 30 ] <| el headerTextAttr <| text "Unit Id"
+    { header = el [ height <| px 38 ] <| el headerTextAttr <| text "Unit Id"
     , width = fillPortion 1
     , view = \i md -> viewCell i <| String.fromInt md.modUid
     }
 
 modDescriptionColumn : IndexedColumn ModData Msg
 modDescriptionColumn =
-    { header = el [ height <| px 30 ] <| el [alignLeft , centerY ] <| text "Description"
+    { header = el [ height <| px 38 ] <| el [alignLeft , centerY ] <| text "Description"
     , width = fillPortion 4
     , view = \i md -> viewDescCell i md.modDescription
     }
@@ -481,7 +514,7 @@ readWriteColumn : Model -> IndexedColumn ModData Msg
 readWriteColumn model =
     { header =
         el
-            [ height <| px 30
+            [ height <| px 38
             , Font.color greyWhite
             ]
             <| readWriteButton model.readWriteAll
@@ -519,7 +552,7 @@ selectColumn : Model -> IndexedColumn ModData Msg
 selectColumn model =
     { header =
         el
-            [ height <| px 30 ]
+            [ height <| px 38 ]
             <| selectCheckbox SelectAllChecked model.selectAllCheckbox
     , width = px 30
     , view = \i md -> viewCheckedCell i md.selected
@@ -545,7 +578,7 @@ viewCell idx str =
     el
         [ Background.color <| tableCellColor idx
         , Font.color greyWhite
-        , height <| px 30
+        , height <| px 38
         , Font.center
         ]
         ( el [centerX , centerY ] <| text str )
@@ -555,7 +588,7 @@ viewDescCell idx str =
     el
         [ Background.color <| tableCellColor idx
         , Font.color greyWhite
-        , height <| px 30
+        , height <| px 38
         , Font.center
         ]
         ( el [alignLeft, centerY ] <| text str )
@@ -565,7 +598,7 @@ viewCheckedCell idx selected =
     el
         [ Background.color <| tableCellColor idx
         , Font.color greyWhite
-        , height <| px 30
+        , height <| px 38
         , Font.center
         ]
         <| selectCheckbox (ModDataChecked idx) selected
@@ -582,7 +615,7 @@ viewReadWriteModDataCell idx md =
     el
         [ Background.color <| tableCellColor idx
         ,  Font.color greyWhite
-        , height <| px 30
+        , height <| px 38
         , Font.center
         ]
         <| if writeableReg md
@@ -655,7 +688,7 @@ statusBar model =
     row
         [ Background.color blueSapphire
         , width fill
-        , height <| px 30
+        , height <| px 38
         , alignBottom
         ]
         [ text <| showStatus model.status ]
