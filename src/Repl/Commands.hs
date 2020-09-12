@@ -141,7 +141,7 @@ writeMultipleRegistersWord (address:values) =
 writeMultipleRegistersWord _ = invalidCmd
 
 writeMultipleRegistersFloat :: [String] -> Repl ()
-writeMultipleRegistersFloat (address:values) = 
+writeMultipleRegistersFloat (address:values) =
     replWriteRegisters address values (ModFloat Nothing)
 writeMultipleRegistersFloat _ = invalidCmd
 

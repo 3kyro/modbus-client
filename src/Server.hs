@@ -20,13 +20,20 @@ import qualified System.Modbus.TCP as MB
 import qualified System.OS as OS 
 import qualified System.Process as PS
 
-import Types (ConnectionData (..), ByteOrder, ServState (..), ModData (..))
-import Modbus (modSession, modbusConnection, maybeConnect, getAddr)
+import Types
+    ( ConnectionData (..)
+    , ByteOrder
+    , ServState (..)
+    , ModData (..)
+    , ModDataUpdate (..)
+    )
+
+import Modbus (modUpdateSession, modbusConnection, maybeConnect, getAddr)
 import Control.Monad.Except (runExceptT)
 import CsvParser (runpCSV)
 
 type ServerAPI
-    = "register" :> ReqBody '[JSON] [ModData] :> Post '[JSON] [ModData]
+    = "modData" :> ReqBody '[JSON] [ModDataUpdate] :> Post '[JSON] [ModData]
     :<|> "connect" :> ReqBody '[JSON] ConnectionData :> Post '[JSON] ()
     :<|> "connectInfo" :> Get '[JSON] (Maybe ConnectionData)
     :<|> "disconnect" :> ReqBody '[JSON] String :> Post '[JSON] ()
@@ -68,20 +75,21 @@ spawnBrowser os
 
 serverAPI :: TVar ServState -> Server ServerAPI
 serverAPI state
-    = readModData state
+    = updateModData state
     :<|> connect state
     :<|> getConnectionInfo state
     :<|> disconnect state
     :<|> parseAndSend
     :<|> serveDirectoryWebApp "frontend"
 
-readModData :: TVar ServState -> [ModData] -> Handler [ModData]
-readModData state md = do
+updateModData :: TVar ServState -> [ModDataUpdate] -> Handler [ModData]
+updateModData state md = do
+    liftIO $ print md
     ServState conn order _ _ <- liftIO $ readTVarIO state
     case conn of
         Nothing -> throwError err400
         Just (_, mbc) -> do
-            resp <- liftIO $ runExceptT $ MB.runSession mbc (modSession md order)
+            resp <- liftIO $ runExceptT $ MB.runSession mbc (modUpdateSession md order)
             case resp of
                 Left _ -> throwError err500
                 Right md' -> return md'

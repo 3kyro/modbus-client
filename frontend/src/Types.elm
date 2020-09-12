@@ -11,7 +11,7 @@ module Types exposing
     , showConnectStatus
     , ConnectionInfo
     , decodeConnInfo
-    , encodeRegister
+    , encodeModData
     , decodeModData
     , ActiveTab (..)
     , replaceModDataWrite
@@ -21,7 +21,7 @@ module Types exposing
     , getModValueType
     , getModSelected
     , encodeIpPort
-    , ReadWrite (..)
+    , ReadWrite (..), encodeModDataUpdate
     , flipRW
     )
 
@@ -171,8 +171,16 @@ getModValue mv =
        ModWord v -> Maybe.map String.fromInt v
        ModFloat v -> Maybe.map String.fromFloat v
 
-encodeRegister : ModData -> E.Value
-encodeRegister md =
+encodeModDataUpdate : ModData -> E.Value
+encodeModDataUpdate md =
+    E.object
+        [ ( "modData", encodeModData md)
+        , ( "selected" , E.bool <| md.selected )
+        , ( "rw", encodeRW md.rw )
+        ]
+
+encodeModData : ModData -> E.Value
+encodeModData md =
     E.object
         [ ( "name" , E.string md.modName)
         , ( "register type" , E.string <| getRegType md.modRegType )
@@ -260,7 +268,11 @@ flipRW rw =
         Read -> Write
         Write -> Read
 
-
+encodeRW : ReadWrite -> E.Value
+encodeRW rw =
+    case rw of
+        Read -> E.string "read"
+        Write -> E.string "write"
 
 -- ActiveTab
 --------------------------------------------------------------------------------------------------

@@ -18,18 +18,17 @@ import Types exposing
     , replaceModDataWrite
     , ConnectStatus(..)
     , decodeConnInfo
-    , encodeRegister
     , decodeModData
     , encodeIpPort
     , replaceModDataSelected
     , getModSelected
     , ActiveTab(..)
     , writeableReg
+    , encodeModDataUpdate
     )
 
 import Types.IpAddress exposing (setIpAddressByte)
 import Array
-import Types exposing (getModValueType)
 
 update : Msg -> Model -> ( Model, Cmd Msg)
 update msg model =
@@ -55,7 +54,7 @@ update msg model =
         ReceivedConnectionInfo (Err err) ->
             ( { model | status = Bad <| showHttpError err }, Cmd.none )
 
-        RefreshRequest regs -> ( { model | status = Loading } , refreshRequest regs )
+        RefreshRequest regs -> ( { model | status = Loading } , updateModDataRequest regs )
 
         ConnectRequest -> ( { model | connectStatus = Connecting } , connectRequest model )
 
@@ -250,11 +249,11 @@ showHttpError err =
        Http.BadStatus s -> "Bad status " ++ String.fromInt s
        Http.BadBody s -> s
 
-refreshRequest : List ModData -> Cmd Msg
-refreshRequest regs =
+updateModDataRequest : List ModData -> Cmd Msg
+updateModDataRequest regs =
     Http.post
-        { url = "http://localhost:4000/register"
-        , body = Http.jsonBody <| E.list encodeRegister regs
+        { url = "http://localhost:4000/modData"
+        , body = Http.jsonBody <| E.list encodeModDataUpdate regs
         , expect = Http.expectJson ReadRegisters <| D.list decodeModData
         }
 

@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE OverloadedStrings #-}
 module Types.ModData
@@ -8,6 +9,8 @@ module Types.ModData
     , NameArb (..)
     , getModValueMult
     , serializeModData
+    , ModDataUpdate (..)
+    , ReadWrite (..)
     )
     where
 
@@ -230,4 +233,32 @@ instance FromJSON RegType where
             "coil" -> return Coil
             "input register" -> return InputRegister
             "holding register" -> return HoldingRegister
+            _ -> fail "Not a RegType"
     parseJSON _ = fail "Not a RegType"
+
+data ReadWrite
+    = MDURead
+    | MDUWrite
+    deriving (Show)
+
+instance FromJSON ReadWrite where
+    parseJSON (String s) =
+        case s of
+            "read" -> return MDURead
+            "write" -> return MDUWrite
+            _ -> fail "Not a ReadWrite"
+    parseJSON _ = fail "Not a ReadWrite"
+
+data ModDataUpdate = MDU
+    { mduModData :: ModData
+    , mduSelected :: Bool
+    , mduRW :: ReadWrite
+    }
+    deriving (Show)
+
+instance FromJSON ModDataUpdate where
+    parseJSON (Object o) = do
+        md <- o .: "modData"
+        sl <- o .: "selected"
+        rw <- o .: "rw"
+        return $ MDU md sl rw

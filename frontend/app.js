@@ -6788,8 +6788,34 @@ var $author$project$Types$getModSelected = function (md) {
 var $elm$file$File$name = _File_name;
 var $elm$core$Platform$Cmd$batch = _Platform_batch;
 var $elm$core$Platform$Cmd$none = $elm$core$Platform$Cmd$batch(_List_Nil);
-var $author$project$Types$ReadRegisters = function (a) {
-	return {$: 'ReadRegisters', a: a};
+var $author$project$Types$replaceModDataSelected = F2(
+	function (idx, checked) {
+		return F2(
+			function (i, md) {
+				return _Utils_eq(i, idx) ? _Utils_update(
+					md,
+					{selected: checked}) : md;
+			});
+	});
+var $author$project$Types$writeableReg = function (md) {
+	var _v0 = md.modRegType;
+	if (_v0.$ === 'InputRegister') {
+		return false;
+	} else {
+		return true;
+	}
+};
+var $author$project$Types$replaceModDataWrite = F2(
+	function (idx, rw) {
+		return F2(
+			function (i, md) {
+				return (_Utils_eq(i, idx) && $author$project$Types$writeableReg(md)) ? _Utils_update(
+					md,
+					{rw: rw}) : md;
+			});
+	});
+var $author$project$Types$ReceivedModData = function (a) {
+	return {$: 'ReceivedModData', a: a};
 };
 var $author$project$Types$ModData = F8(
 	function (modName, modRegType, modAddress, modValue, modUid, modDescription, selected, rw) {
@@ -6855,139 +6881,7 @@ var $author$project$Types$decodeModData = A9(
 	A2($elm$json$Json$Decode$field, 'description', $elm$json$Json$Decode$string),
 	$elm$json$Json$Decode$succeed(false),
 	$elm$json$Json$Decode$succeed($author$project$Types$Read));
-var $elm$json$Json$Encode$float = _Json_wrap;
-var $author$project$Types$encodeModValue = function (mv) {
-	if (mv.$ === 'ModWord') {
-		if (mv.a.$ === 'Just') {
-			var x = mv.a.a;
-			return $elm$json$Json$Encode$object(
-				_List_fromArray(
-					[
-						_Utils_Tuple2(
-						'type',
-						$elm$json$Json$Encode$string('word')),
-						_Utils_Tuple2(
-						'value',
-						$elm$json$Json$Encode$int(x))
-					]));
-		} else {
-			var _v1 = mv.a;
-			return $elm$json$Json$Encode$object(
-				_List_fromArray(
-					[
-						_Utils_Tuple2(
-						'type',
-						$elm$json$Json$Encode$string('word'))
-					]));
-		}
-	} else {
-		if (mv.a.$ === 'Just') {
-			var x = mv.a.a;
-			return $elm$json$Json$Encode$object(
-				_List_fromArray(
-					[
-						_Utils_Tuple2(
-						'type',
-						$elm$json$Json$Encode$string('float')),
-						_Utils_Tuple2(
-						'value',
-						$elm$json$Json$Encode$float(x))
-					]));
-		} else {
-			var _v2 = mv.a;
-			return $elm$json$Json$Encode$object(
-				_List_fromArray(
-					[
-						_Utils_Tuple2(
-						'type',
-						$elm$json$Json$Encode$string('float'))
-					]));
-		}
-	}
-};
-var $author$project$Types$getRegType = function (rt) {
-	if (rt.$ === 'InputRegister') {
-		return 'input register';
-	} else {
-		return 'holding register';
-	}
-};
-var $author$project$Types$encodeRegister = function (md) {
-	return $elm$json$Json$Encode$object(
-		_List_fromArray(
-			[
-				_Utils_Tuple2(
-				'name',
-				$elm$json$Json$Encode$string(md.modName)),
-				_Utils_Tuple2(
-				'register type',
-				$elm$json$Json$Encode$string(
-					$author$project$Types$getRegType(md.modRegType))),
-				_Utils_Tuple2(
-				'address',
-				$elm$json$Json$Encode$int(md.modAddress)),
-				_Utils_Tuple2(
-				'register value',
-				$author$project$Types$encodeModValue(md.modValue)),
-				_Utils_Tuple2(
-				'uid',
-				$elm$json$Json$Encode$int(md.modUid)),
-				_Utils_Tuple2(
-				'description',
-				$elm$json$Json$Encode$string(md.modDescription))
-			]));
-};
 var $elm$json$Json$Decode$list = _Json_decodeList;
-var $elm$json$Json$Encode$list = F2(
-	function (func, entries) {
-		return _Json_wrap(
-			A3(
-				$elm$core$List$foldl,
-				_Json_addEntry(func),
-				_Json_emptyArray(_Utils_Tuple0),
-				entries));
-	});
-var $author$project$Update$refreshRequest = function (regs) {
-	return $elm$http$Http$post(
-		{
-			body: $elm$http$Http$jsonBody(
-				A2($elm$json$Json$Encode$list, $author$project$Types$encodeRegister, regs)),
-			expect: A2(
-				$elm$http$Http$expectJson,
-				$author$project$Types$ReadRegisters,
-				$elm$json$Json$Decode$list($author$project$Types$decodeModData)),
-			url: 'http://localhost:4000/register'
-		});
-};
-var $author$project$Types$replaceModDataSelected = F2(
-	function (idx, checked) {
-		return F2(
-			function (i, md) {
-				return _Utils_eq(i, idx) ? _Utils_update(
-					md,
-					{selected: checked}) : md;
-			});
-	});
-var $author$project$Types$writeableReg = function (md) {
-	var _v0 = md.modRegType;
-	if (_v0.$ === 'InputRegister') {
-		return false;
-	} else {
-		return true;
-	}
-};
-var $author$project$Types$replaceModDataWrite = F2(
-	function (idx, rw) {
-		return F2(
-			function (i, md) {
-				return (_Utils_eq(i, idx) && $author$project$Types$writeableReg(md)) ? _Utils_update(
-					md,
-					{rw: rw}) : md;
-			});
-	});
-var $author$project$Types$ReceivedModData = function (a) {
-	return {$: 'ReceivedModData', a: a};
-};
 var $author$project$Update$requestModData = function (model) {
 	return $elm$http$Http$post(
 		{
@@ -7083,6 +6977,135 @@ var $author$project$Update$showHttpError = function (err) {
 	}
 };
 var $elm$file$File$toString = _File_toString;
+var $author$project$Types$ReadRegisters = function (a) {
+	return {$: 'ReadRegisters', a: a};
+};
+var $elm$json$Json$Encode$bool = _Json_wrap;
+var $elm$json$Json$Encode$float = _Json_wrap;
+var $author$project$Types$encodeModValue = function (mv) {
+	if (mv.$ === 'ModWord') {
+		if (mv.a.$ === 'Just') {
+			var x = mv.a.a;
+			return $elm$json$Json$Encode$object(
+				_List_fromArray(
+					[
+						_Utils_Tuple2(
+						'type',
+						$elm$json$Json$Encode$string('word')),
+						_Utils_Tuple2(
+						'value',
+						$elm$json$Json$Encode$int(x))
+					]));
+		} else {
+			var _v1 = mv.a;
+			return $elm$json$Json$Encode$object(
+				_List_fromArray(
+					[
+						_Utils_Tuple2(
+						'type',
+						$elm$json$Json$Encode$string('word'))
+					]));
+		}
+	} else {
+		if (mv.a.$ === 'Just') {
+			var x = mv.a.a;
+			return $elm$json$Json$Encode$object(
+				_List_fromArray(
+					[
+						_Utils_Tuple2(
+						'type',
+						$elm$json$Json$Encode$string('float')),
+						_Utils_Tuple2(
+						'value',
+						$elm$json$Json$Encode$float(x))
+					]));
+		} else {
+			var _v2 = mv.a;
+			return $elm$json$Json$Encode$object(
+				_List_fromArray(
+					[
+						_Utils_Tuple2(
+						'type',
+						$elm$json$Json$Encode$string('float'))
+					]));
+		}
+	}
+};
+var $author$project$Types$getRegType = function (rt) {
+	if (rt.$ === 'InputRegister') {
+		return 'input register';
+	} else {
+		return 'holding register';
+	}
+};
+var $author$project$Types$encodeModData = function (md) {
+	return $elm$json$Json$Encode$object(
+		_List_fromArray(
+			[
+				_Utils_Tuple2(
+				'name',
+				$elm$json$Json$Encode$string(md.modName)),
+				_Utils_Tuple2(
+				'register type',
+				$elm$json$Json$Encode$string(
+					$author$project$Types$getRegType(md.modRegType))),
+				_Utils_Tuple2(
+				'address',
+				$elm$json$Json$Encode$int(md.modAddress)),
+				_Utils_Tuple2(
+				'register value',
+				$author$project$Types$encodeModValue(md.modValue)),
+				_Utils_Tuple2(
+				'uid',
+				$elm$json$Json$Encode$int(md.modUid)),
+				_Utils_Tuple2(
+				'description',
+				$elm$json$Json$Encode$string(md.modDescription))
+			]));
+};
+var $author$project$Types$encodeRW = function (rw) {
+	if (rw.$ === 'Read') {
+		return $elm$json$Json$Encode$string('read');
+	} else {
+		return $elm$json$Json$Encode$string('write');
+	}
+};
+var $author$project$Types$encodeModDataUpdate = function (md) {
+	return $elm$json$Json$Encode$object(
+		_List_fromArray(
+			[
+				_Utils_Tuple2(
+				'modData',
+				$author$project$Types$encodeModData(md)),
+				_Utils_Tuple2(
+				'selected',
+				$elm$json$Json$Encode$bool(md.selected)),
+				_Utils_Tuple2(
+				'rw',
+				$author$project$Types$encodeRW(md.rw))
+			]));
+};
+var $elm$json$Json$Encode$list = F2(
+	function (func, entries) {
+		return _Json_wrap(
+			A3(
+				$elm$core$List$foldl,
+				_Json_addEntry(func),
+				_Json_emptyArray(_Utils_Tuple0),
+				entries));
+	});
+var $author$project$Update$updateModDataRequest = function (regs) {
+	return $elm$http$Http$post(
+		{
+			body: $elm$http$Http$jsonBody(
+				A2($elm$json$Json$Encode$list, $author$project$Types$encodeModDataUpdate, regs)),
+			expect: A2(
+				$elm$http$Http$expectJson,
+				$author$project$Types$ReadRegisters,
+				$elm$json$Json$Decode$list($author$project$Types$decodeModData)),
+			url: 'http://localhost:4000/modData'
+		});
+};
 var $author$project$Update$update = F2(
 	function (msg, model) {
 		switch (msg.$) {
@@ -7140,7 +7163,7 @@ var $author$project$Update$update = F2(
 					_Utils_update(
 						model,
 						{status: $author$project$Types$Loading}),
-					$author$project$Update$refreshRequest(regs));
+					$author$project$Update$updateModDataRequest(regs));
 			case 'ConnectRequest':
 				return _Utils_Tuple2(
 					_Utils_update(
@@ -13195,7 +13218,6 @@ var $mdgriffith$elm_ui$Internal$Model$Button = {$: 'Button'};
 var $mdgriffith$elm_ui$Internal$Model$Describe = function (a) {
 	return {$: 'Describe', a: a};
 };
-var $elm$json$Json$Encode$bool = _Json_wrap;
 var $elm$html$Html$Attributes$boolProperty = F2(
 	function (key, bool) {
 		return A2(
@@ -13406,8 +13428,7 @@ var $author$project$View$updateSelectedButton = function (model) {
 		{
 			label: $mdgriffith$elm_ui$Element$text('Update Selected'),
 			onPress: $elm$core$Maybe$Just(
-				$author$project$Types$RefreshRequest(
-					A2($elm$core$List$filter, $author$project$Types$getModSelected, model.modData)))
+				$author$project$Types$RefreshRequest(model.modData))
 		});
 };
 var $mdgriffith$elm_ui$Internal$Model$BorderWidth = F5(

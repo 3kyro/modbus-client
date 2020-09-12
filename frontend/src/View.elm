@@ -51,7 +51,6 @@ import Types exposing
     , ReadWrite(..)
     , flipRW
     , writeableReg
-    , getModSelected
     )
 import Types.IpAddress exposing
     ( IpAddress
@@ -66,12 +65,9 @@ import Palette exposing
     , white
     , lightGreen
     , smallFont
-    , scampi
-    , slateGrey
     , blueSapphire
     , fireBrick
     )
-import Element.Input exposing (labelHidden)
 
 
 view : Model -> Html Msg
@@ -493,7 +489,7 @@ viewWriteModValue idx md =
             { onChange = ChangeModDataValue idx
             , text = Maybe.withDefault "" <| getModValue md.modValue
             , placeholder = Nothing
-            , label = labelHidden "Value Input"
+            , label = Input.labelHidden "Value Input"
             }
 
 modUidColumn : IndexedColumn ModData Msg
@@ -669,6 +665,7 @@ modDataCommand model =
     else none
 
 updateSelectedButton : Model -> Element Msg
+
 updateSelectedButton model =
     Input.button
         [ Background.color lightGrey
@@ -677,7 +674,7 @@ updateSelectedButton model =
         , Font.color greyWhite
         , paddingXY 0 10
         ]
-        { onPress = Just <| RefreshRequest <| List.filter getModSelected model.modData
+        { onPress = Just <| RefreshRequest model.modData
         , label = text "Update Selected"
         }
 ------------------------------------------------------------------------------------------------------------------
