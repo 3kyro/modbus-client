@@ -16,7 +16,7 @@ import Control.Monad.Trans.Except
 import Control.Monad.IO.Class ()
 import Data.Either.Combinators (mapLeft)
 
-import qualified System.Modbus.TCP as MB
+import qualified Network.Modbus.TCP as MB
 
 import PrettyPrint (ppError)
 import Types (Repl, AppError (..))

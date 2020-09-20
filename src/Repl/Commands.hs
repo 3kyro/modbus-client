@@ -13,7 +13,7 @@ import Data.List (uncons)
 import Data.Maybe (fromJust, listToMaybe)
 import Data.Word (Word16)
 
-import qualified System.Modbus.TCP as MB
+import qualified Network.Modbus.TCP as MB
 
 import CsvParser (serializeCSVFile, parseCSVFile)
 import Modbus

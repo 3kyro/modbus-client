@@ -5,12 +5,16 @@
 
 packages:
 - completed:
-    hackage: modbus-tcp-0.5@sha256:26d927e57d06adac8c046275cc9588583313fe67c2c675c5b92c4593bc5c49f0,1065
+    name: modbus-tcp
+    version: '0.6'
+    git: https://github.com/3kyro/modbus-tcp.git
     pantry-tree:
-      size: 220
-      sha256: a110d71c17a24a1abc68f06f1e7a344a9a1db0d1a24e0fa12f76cec918eaac57
+      size: 1198
+      sha256: ef4b8e7c743cdac7cee8d9381526d12d590cbd069d6bd174be20ce09b4ca2851
+    commit: b3ba4bdbd9e7b3ea622820c6b00cf3be176aba1b
   original:
-    hackage: modbus-tcp-0.5
+    git: https://github.com/3kyro/modbus-tcp.git
+    commit: b3ba4bdbd9e7b3ea622820c6b00cf3be176aba1b
 - completed:
     hackage: either-5.0.1.1@sha256:41167573bf575b7e0e24283a52fba8ce7bed5a7cc2984bba0dce305a0ab66f0d,1973
     pantry-tree:
@@ -18,9 +22,16 @@ packages:
       sha256: f4355cd0091ec38301af2b98729fe2d6eb0a41bd7f01cc66be8202da90a6cb0e
   original:
     hackage: either-5.0.1.1
+- completed:
+    hackage: monad-batcher-0.0.0.0@sha256:2a2554f8b8aaf0c153f4b8893a2217108b17b73c007854b9a8f13655fd8489d4,848
+    pantry-tree:
+      size: 276
+      sha256: 370540911d5377b2e12bba81cab2f4b7d4af60a6c35a3246cd5b3827722e93fe
+  original:
+    hackage: monad-batcher-0.0.0.0
 snapshots:
 - completed:
-    size: 532381
-    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/16/13.yaml
-    sha256: 6ee17f7996e5bc75ae4406250841f1362ad4196418a4d90a0615ff4f26ac98df
-  original: lts-16.13
+    size: 532382
+    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/16/14.yaml
+    sha256: 1ef27e36f38824abafc43224ca612211b3828fa9ffd31ba0fc2867ae2e19ba90
+  original: lts-16.14

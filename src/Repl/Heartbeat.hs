@@ -15,7 +15,7 @@ import Data.Word (Word8, Word16)
 import Network.Socket.ByteString (recv, send)
 
 import qualified Network.Socket as S
-import qualified System.Modbus.TCP as MB
+import qualified Network.Modbus.TCP as MB
 
 import Modbus (maybeConnect)
 import Repl.Error (replRunExceptT, runReplSession)

@@ -5,7 +5,7 @@ import Data.Word (Word8)
 
 import qualified Data.Text.IO as T
 import qualified Network.Socket as S
-import qualified System.Modbus.TCP as MB
+import qualified Network.Modbus.TCP as MB
 
 import CsvParser (parseCSVFile)
 import Modbus

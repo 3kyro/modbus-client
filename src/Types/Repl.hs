@@ -18,7 +18,7 @@ import Data.Word (Word8, Word16)
 import System.Console.Repline (HaskelineT)
 
 import qualified Network.Socket as S
-import qualified System.Modbus.TCP as MB
+import qualified Network.Modbus.TCP as MB
 
 import Types.ModData (ModData (..), ByteOrder (..))
 

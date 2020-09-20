@@ -33,7 +33,7 @@ import Data.Binary.Get
 import Network.Socket.ByteString (recv, send)
 
 import qualified Network.Socket as S
-import qualified System.Modbus.TCP as MB
+import qualified Network.Modbus.TCP as MB
 
 import Types
 import Control.Exception.Safe (SomeException, try, bracket)

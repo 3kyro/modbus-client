@@ -11,7 +11,7 @@ import Control.Monad.IO.Class ()
 import Data.Word (Word16)
 import Text.Parsec (ParseError)
 
-import qualified System.Modbus.TCP as MB
+import qualified Network.Modbus.TCP as MB
 
 import Types.Repl
 import Types.ModData

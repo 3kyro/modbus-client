@@ -16,7 +16,7 @@ import Servant
 
 import qualified Data.Text as T
 import qualified Network.Socket as S
-import qualified System.Modbus.TCP as MB
+import qualified Network.Modbus.TCP as MB
 import qualified System.OS as OS 
 import qualified System.Process as PS
 

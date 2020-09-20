@@ -63,6 +63,8 @@ executables:
     - -Wall
     dependencies:
     - modbus-serve
+    - modbus-tcp
+
 
 tests:
   modbus-serve-test:

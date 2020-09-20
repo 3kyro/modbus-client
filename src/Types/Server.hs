@@ -6,7 +6,7 @@ module Types.Server
     ) where
 
 import qualified Network.Socket as S
-import qualified System.Modbus.TCP as MB
+import qualified Network.Modbus.TCP as MB
 
 import Types.Repl (ThreadState (..))
 import Data.IP (IPv4)
