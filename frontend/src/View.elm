@@ -42,6 +42,7 @@ import Types exposing
     , Model
     , showStatus
     , Status (..)
+    , StatusBarState(..)
     , ConnectStatus(..)
     , showConnectStatus
     , ModData
@@ -69,6 +70,8 @@ import Palette exposing
     , blueSapphire
     , fireBrick
     )
+import Palette exposing (black)
+import Element.Input exposing (Label)
 
 
 view : Model -> Html Msg
@@ -84,7 +87,7 @@ page model =
         ]
         [ menuBar model
         , mainTab model
-        , statusExpanded
+        , statusExpanded model
         , statusBar model
         ]
 
@@ -690,8 +693,34 @@ statusBar model =
         , height <| px 38
         , alignBottom
         ]
-        [ text <| showStatus model.status ]
+        [ text <| showStatus model.status]
 
+expandButton : Model -> Element Msg
+expandButton model =
+    Input.button
+        [ Background.color black
+        , width fill
+        , height <| px 10
+        ]
+        { onPress = Just <| ExpandStatus
+        , label = none
+        }
 
-statusExpanded : Element Msg
-statusExpanded = none
+statusExpanded : Model -> Element Msg
+statusExpanded model =
+    column
+        [ width fill
+        ]
+        [ expandButton model
+        , messageArea model
+        ]
+
+messageArea : Model -> Element Msg
+messageArea model =
+    case model.statusBarState of
+        Retracted -> none
+        Expanded ->
+            row
+                [ height <| px 300
+                ]
+                [ text "yo" ]

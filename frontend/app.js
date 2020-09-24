@@ -6533,6 +6533,7 @@ var $author$project$Types$AllGood = {$: 'AllGood'};
 var $author$project$Types$Connect = {$: 'Connect'};
 var $author$project$Types$ConnectMenu = {$: 'ConnectMenu'};
 var $author$project$Types$Read = {$: 'Read'};
+var $author$project$Types$Retracted = {$: 'Retracted'};
 var $author$project$Types$IpAddress$defaultIpAddr = A4(
 	$author$project$Types$IpAddress$IpAddress,
 	$elm$core$Maybe$Just(192),
@@ -6562,7 +6563,7 @@ var $author$project$App$initModData = _List_fromArray(
 	[
 		{
 		modAddress: 1,
-		modDescription: 'A register for tesing purposes',
+		modDescription: 'A register for testing purposes',
 		modName: 'first',
 		modRegType: $author$project$Types$HoldingRegister,
 		modUid: 1,
@@ -6572,7 +6573,7 @@ var $author$project$App$initModData = _List_fromArray(
 	},
 		{
 		modAddress: 2,
-		modDescription: 'A register for tesing purposes',
+		modDescription: 'A register for testing purposes',
 		modName: 'second',
 		modRegType: $author$project$Types$HoldingRegister,
 		modUid: 1,
@@ -6581,7 +6582,7 @@ var $author$project$App$initModData = _List_fromArray(
 	},
 		{
 		modAddress: 10,
-		modDescription: 'A register for tesing purposes',
+		modDescription: 'A register for testing purposes',
 		modName: '1500',
 		modRegType: $author$project$Types$InputRegister,
 		modUid: 1,
@@ -6589,7 +6590,7 @@ var $author$project$App$initModData = _List_fromArray(
 	},
 		{
 		modAddress: 15,
-		modDescription: 'A register for tesing purposes',
+		modDescription: 'A register for testing purposes',
 		modName: '1700',
 		modRegType: $author$project$Types$HoldingRegister,
 		modUid: 1,
@@ -6621,6 +6622,7 @@ var $author$project$App$initModel = {
 	selectSome: false,
 	socketPort: $elm$core$Maybe$Just(502),
 	status: $author$project$Types$AllGood,
+	statusBarState: $author$project$Types$Retracted,
 	timeout: $elm$core$Maybe$Just(1000)
 };
 var $elm$core$Platform$Sub$batch = _Platform_batch;
@@ -6637,6 +6639,7 @@ var $author$project$Types$CsvSelected = function (a) {
 	return {$: 'CsvSelected', a: a};
 };
 var $author$project$Types$Disconnecting = {$: 'Disconnecting'};
+var $author$project$Types$Expanded = {$: 'Expanded'};
 var $author$project$Types$Loading = {$: 'Loading'};
 var $elm$core$List$any = F2(
 	function (isOkay, list) {
@@ -7485,7 +7488,7 @@ var $author$project$Update$update = F2(
 						model,
 						{modDataUpdate: newMd}),
 					$elm$core$Platform$Cmd$none);
-			default:
+			case 'ChangeModDataValue':
 				var idx = msg.a;
 				var str = msg.b;
 				var arrMDU = $elm$core$Array$fromList(model.modDataUpdate);
@@ -7511,6 +7514,21 @@ var $author$project$Update$update = F2(
 								modDataUpdate: $elm$core$Array$toList(
 									A3($elm$core$Array$set, idx, md, arrMDU))
 							}),
+						$elm$core$Platform$Cmd$none);
+				}
+			default:
+				var _v9 = model.statusBarState;
+				if (_v9.$ === 'Expanded') {
+					return _Utils_Tuple2(
+						_Utils_update(
+							model,
+							{statusBarState: $author$project$Types$Retracted}),
+						$elm$core$Platform$Cmd$none);
+				} else {
+					return _Utils_Tuple2(
+						_Utils_update(
+							model,
+							{statusBarState: $author$project$Types$Expanded}),
 						$elm$core$Platform$Cmd$none);
 				}
 		}
@@ -16097,7 +16115,54 @@ var $author$project$View$statusBar = function (model) {
 				$author$project$Types$showStatus(model.status))
 			]));
 };
-var $author$project$View$statusExpanded = $mdgriffith$elm_ui$Element$none;
+var $author$project$Types$ExpandStatus = {$: 'ExpandStatus'};
+var $author$project$Palette$black = A3($mdgriffith$elm_ui$Element$rgb255, 0, 0, 0);
+var $author$project$View$expandButton = function (model) {
+	return A2(
+		$mdgriffith$elm_ui$Element$Input$button,
+		_List_fromArray(
+			[
+				$mdgriffith$elm_ui$Element$Background$color($author$project$Palette$black),
+				$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill),
+				$mdgriffith$elm_ui$Element$height(
+				$mdgriffith$elm_ui$Element$px(10))
+			]),
+		{
+			label: $mdgriffith$elm_ui$Element$none,
+			onPress: $elm$core$Maybe$Just($author$project$Types$ExpandStatus)
+		});
+};
+var $author$project$View$messageArea = function (model) {
+	var _v0 = model.statusBarState;
+	if (_v0.$ === 'Retracted') {
+		return $mdgriffith$elm_ui$Element$none;
+	} else {
+		return A2(
+			$mdgriffith$elm_ui$Element$row,
+			_List_fromArray(
+				[
+					$mdgriffith$elm_ui$Element$height(
+					$mdgriffith$elm_ui$Element$px(300))
+				]),
+			_List_fromArray(
+				[
+					$mdgriffith$elm_ui$Element$text('yo')
+				]));
+	}
+};
+var $author$project$View$statusExpanded = function (model) {
+	return A2(
+		$mdgriffith$elm_ui$Element$column,
+		_List_fromArray(
+			[
+				$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill)
+			]),
+		_List_fromArray(
+			[
+				$author$project$View$expandButton(model),
+				$author$project$View$messageArea(model)
+			]));
+};
 var $author$project$View$page = function (model) {
 	return A2(
 		$mdgriffith$elm_ui$Element$column,
@@ -16112,7 +16177,7 @@ var $author$project$View$page = function (model) {
 			[
 				$author$project$View$menuBar(model),
 				$author$project$View$mainTab(model),
-				$author$project$View$statusExpanded,
+				$author$project$View$statusExpanded(model),
 				$author$project$View$statusBar(model)
 			]));
 };

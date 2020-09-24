@@ -10,6 +10,7 @@ import Types exposing
     , ModData
     , ModValue (..)
     , Status (..)
+    , StatusBarState(..)
     , RegType (..)
     , ConnectStatus(..)
     , ActiveTab(..)
@@ -31,6 +32,7 @@ initModel : Model
 initModel =
     { modDataUpdate = newModDataUpdate initModData
     , status = AllGood
+    , statusBarState = Retracted
     , connectStatus = Connect
     , ipAddress = defaultIpAddr
     , socketPort = Just 502

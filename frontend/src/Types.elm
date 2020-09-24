@@ -7,6 +7,7 @@ module Types exposing
     , ModDataUpdate
     , getRegType
     , Status (..)
+    , StatusBarState (..)
     , showStatus
     , ConnectStatus (..)
     , showConnectStatus
@@ -65,10 +66,12 @@ type Msg
     | ToggleWriteAll ReadWrite
     | ModDataWrite Int ReadWrite
     | ChangeModDataValue Int String
+    | ExpandStatus
 
 type alias Model =
     { modDataUpdate : List ModDataUpdate
     , status : Status
+    , statusBarState : StatusBarState
     , connectStatus : ConnectStatus
     , ipAddress : IpAddress
     , socketPort : Maybe Int
@@ -99,17 +102,24 @@ showConnectStatus st =
         Connected -> "Connected"
         Disconnecting -> "Disconnecting"
 
+----------------------------------------------------------------------------------------------------------------------------------
 type Status
     = AllGood
     | Loading
     | Bad String
-
 showStatus : Status -> String
 showStatus status =
     case status of
         AllGood -> "all good"
         Loading -> "getting stuff from the server"
         Bad err -> err
+
+type StatusBarState
+    = Expanded
+    | Retracted
+
+
+-----------------------------------------------------------------------------------------------------------------------------------
 
 type alias ConnectionInfo =
     { ipAddress : IpAddress

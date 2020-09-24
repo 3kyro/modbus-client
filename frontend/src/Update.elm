@@ -14,6 +14,7 @@ import Types exposing
     , RegType (..)
     , ModValue (..)
     , Status (..)
+    , StatusBarState (..)
     , ModData
     , replaceModDataWrite
     , ConnectStatus(..)
@@ -222,7 +223,13 @@ update msg model =
                             modDataUpdate = Array.toList <| Array.set idx md arrMDU
                         }, Cmd.none)
 
-
+        -- Expand the status bar
+        ExpandStatus ->
+            case model.statusBarState of
+                Expanded ->
+                    ( { model | statusBarState = Retracted }, Cmd.none )
+                Retracted ->
+                    ( { model | statusBarState = Expanded }, Cmd.none )
 
 fromModType : ModData -> String -> ModData
 fromModType md str =
