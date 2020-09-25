@@ -146,7 +146,12 @@ update msg model =
                     ( model, Cmd.none )
 
         DisconnectedResponse (Ok _) ->
-            ( { model | connectStatus = Connect }, Cmd.none )
+            ({ model
+                | connectStatus = Connect
+                , notifications = pushDisconnectedNot model
+             }
+            , Cmd.none
+            )
 
         DisconnectedResponse (Err err) ->
             ( { model
@@ -391,10 +396,21 @@ getPosixTime =
 pushConnectionNotification : Model -> ConnectionInfo -> List Notification
 pushConnectionNotification model conn =
     let
-        new = 
-            Notification 
+        new =
+            Notification
                 model.timePosix
                 "Connected"
                 <| Just <| showConnInfo conn
+    in
+        new :: model.notifications
+
+pushDisconnectedNot : Model -> List Notification
+pushDisconnectedNot model =
+    let
+        new =
+            Notification
+                model.timePosix
+                "Disconnected"
+                Nothing
     in
         new :: model.notifications

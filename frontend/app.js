@@ -6916,6 +6916,10 @@ var $author$project$Update$pushConnectionNotification = F2(
 				$author$project$Types$showConnInfo(conn)));
 		return A2($elm$core$List$cons, _new, model.notifications);
 	});
+var $author$project$Update$pushDisconnectedNot = function (model) {
+	var _new = A3($author$project$Types$Notification, model.timePosix, 'Disconnected', $elm$core$Maybe$Nothing);
+	return A2($elm$core$List$cons, _new, model.notifications);
+};
 var $author$project$Types$replaceModDataSelected = F2(
 	function (idx, checked) {
 		return F2(
@@ -7430,7 +7434,10 @@ var $author$project$Update$update = F2(
 					return _Utils_Tuple2(
 						_Utils_update(
 							model,
-							{connectStatus: $author$project$Types$Connect}),
+							{
+								connectStatus: $author$project$Types$Connect,
+								notifications: $author$project$Update$pushDisconnectedNot(model)
+							}),
 						$elm$core$Platform$Cmd$none);
 				} else {
 					var err = msg.a.a;
