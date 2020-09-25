@@ -6,7 +6,6 @@ import Element
         , Color
         , Element
         , IndexedColumn
-        , alignBottom
         , alignLeft
         , alignTop
         , centerX
@@ -29,8 +28,6 @@ import Element
         , spacing
         , text
         , width
-        , scrollbarY
-        , Length
         )
 import Element.Background as Background
 import Element.Border as Border
@@ -51,7 +48,7 @@ import Palette
         , smallFont
         , white
         )
-import Time
+import StatusBar exposing (renderNotifications)
 import Types
     exposing
         ( ActiveTab(..)
@@ -68,9 +65,7 @@ import Types
         , getModValueType
         , getRegType
         , showConnectStatus
-        , showStatus
         , writeableReg
-        , Notification
         )
 import Types.IpAddress
     exposing
@@ -78,7 +73,7 @@ import Types.IpAddress
         , IpAddressByte(..)
         , showIpAddressByte
         )
-import StatusBar exposing (renderNotifications)
+
 
 view : Model -> Html Msg
 view model =
@@ -847,12 +842,10 @@ statusBar : Model -> Element Msg
 statusBar model =
     column
         [ width fill
-
         ]
         [ expandButton model
         , renderNotifications model.timeZone model.statusBarState model.notifications
         ]
-
 
 
 expandButton : Model -> Element Msg
@@ -879,8 +872,3 @@ expandButtonLabel model =
         Retracted ->
             -- "▲" '\u{25B2}'
             text <| String.fromChar '▲'
-
-
-
-
-

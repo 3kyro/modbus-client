@@ -32,6 +32,7 @@ module Types exposing
     , toMFloat
     , writeableReg
     , showConnInfo
+    , fromModType
     )
 
 import File exposing (File)
@@ -432,6 +433,14 @@ decodeRW =
             )
 
 
+fromModType : ModData -> String -> ModData
+fromModType md str =
+    case md.modValue of
+        ModWord _ ->
+            { md | modValue = ModWord <| String.toInt str }
+
+        ModFloat _ ->
+            { md | modValue = ModFloat <| toMFloat str }
 
 -- ActiveTab
 --------------------------------------------------------------------------------------------------

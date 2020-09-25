@@ -1,6 +1,7 @@
-module Update exposing (getTimeZone, initCmd, update, getPosixTime)
+module Update exposing (getPosixTime, getTimeZone, initCmd, update)
 
 import Array
+import Browser.Dom as Dom
 import File
 import File.Select as Select
 import Http
@@ -12,11 +13,12 @@ import Types
     exposing
         ( ActiveTab(..)
         , ConnectStatus(..)
-        , ModData
+        , ConnectionInfo
         , ModDataUpdate
         , ModValue(..)
         , Model
         , Msg(..)
+        , Notification
         , RegType(..)
         , Status(..)
         , StatusBarState(..)
@@ -25,22 +27,19 @@ import Types
         , decodeModDataUpdate
         , encodeIpPort
         , encodeModDataUpdate
+        , fromModType
         , newModDataUpdate
         , replaceModDataSelected
         , replaceModDataWrite
-        , toMFloat
-        , writeableReg
         , showConnInfo
-        , Notification
-        , ConnectionInfo
+        , writeableReg
         )
 import Types.IpAddress exposing (setIpAddressByte)
-import Browser.Dom as Dom
+
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-
         ReadRegisters (Ok regs) ->
             ( { model
                 | modDataUpdate = regs
@@ -62,7 +61,6 @@ update msg model =
                     pushConnectionNotification
                         model
                         conn
-
               }
             , Cmd.none
             )
@@ -147,10 +145,10 @@ update msg model =
                     ( model, Cmd.none )
 
         DisconnectedResponse (Ok _) ->
-            ({ model
+            ( { model
                 | connectStatus = Connect
                 , notifications = pushDisconnectedNot model
-             }
+              }
             , jumpToBottom "status"
             )
 
@@ -300,26 +298,21 @@ update msg model =
         InitTime time ->
             ( { model | timePosix = time }, connectionInfoRequest )
 
-        NoOp -> (model, Cmd.none)
+        NoOp ->
+            ( model, Cmd.none )
 
-
-fromModType : ModData -> String -> ModData
-fromModType md str =
-    case md.modValue of
-        ModWord _ ->
-            { md | modValue = ModWord <| String.toInt str }
-
-        ModFloat _ ->
-            { md | modValue = ModFloat <| toMFloat str }
 
 
 -- Initializastion sequence:
 -- - get the current time zone
 -- - get posix time
 -- - get connection info from the server
+
+
 initCmd : Cmd Msg
 initCmd =
     getTimeZone
+
 
 connectionInfoRequest : Cmd Msg
 connectionInfoRequest =
@@ -383,18 +376,25 @@ requestModData model =
         , expect = Http.expectJson ReceivedModData <| D.list decodeModData
         }
 
+
 getTimeZone : Cmd Msg
 getTimeZone =
     Task.perform TimeZone Time.here
 
+
+
 -- Initialise time, will only be run on page reload
+
+
 initTime : Cmd Msg
 initTime =
     Task.perform InitTime Time.now
 
+
 getPosixTime : Cmd Msg
 getPosixTime =
     Task.perform NewTime Time.now
+
 
 pushConnectionNotification : Model -> ConnectionInfo -> List Notification
 pushConnectionNotification model conn =
@@ -403,9 +403,12 @@ pushConnectionNotification model conn =
             Notification
                 model.timePosix
                 "Connected"
-                <| Just <| showConnInfo conn
+            <|
+                Just <|
+                    showConnInfo conn
     in
-        new :: model.notifications
+    new :: model.notifications
+
 
 pushDisconnectedNot : Model -> List Notification
 pushDisconnectedNot model =
@@ -416,7 +419,8 @@ pushDisconnectedNot model =
                 "Disconnected"
                 Nothing
     in
-        new :: model.notifications
+    new :: model.notifications
+
 
 jumpToBottom : String -> Cmd Msg
 jumpToBottom id =
