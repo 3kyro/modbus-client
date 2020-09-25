@@ -917,19 +917,28 @@ notificationsTable model =
 
 notificationColumns : Model -> List (IndexedColumn Notification Msg)
 notificationColumns model =
-    [ notTimeColumn model
-    , notheaderColumn
+    [ notIndexCol
+    , notTimeCol model
+    , notheaderCol
     ]
 
-notTimeColumn : Model -> IndexedColumn Notification Msg
-notTimeColumn model =
+notIndexCol : IndexedColumn Notification Msg
+notIndexCol =
+        { header = none
+        , width = px 30
+        , view = \idx _ -> text <| String.fromInt ( idx + 1 )
+        }
+
+
+notTimeCol : Model -> IndexedColumn Notification Msg
+notTimeCol model =
         { header = none
         , width = px 100
         , view = \_ not -> text <| hhmmss model.timeZone not.time
         }
 
-notheaderColumn : IndexedColumn Notification Msg
-notheaderColumn =
+notheaderCol : IndexedColumn Notification Msg
+notheaderCol =
         { header = none
         , width = fillPortion 1
         , view = \_ not -> text not.header

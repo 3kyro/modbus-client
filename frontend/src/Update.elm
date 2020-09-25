@@ -40,6 +40,7 @@ import Types.IpAddress exposing (setIpAddressByte)
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
+
         ReadRegisters (Ok regs) ->
             ( { model
                 | modDataUpdate = regs
@@ -58,7 +59,7 @@ update msg model =
                 , timeout = Just conn.timeout
                 , connectStatus = Connected
                 , notifications =
-                    pushConnectionNotification 
+                    pushConnectionNotification
                         model
                         conn
 
@@ -67,7 +68,7 @@ update msg model =
             )
 
         ReceivedConnectionInfo (Ok Nothing) ->
-            ( model, getTimeZone )
+            ( model, Cmd.none )
 
         ReceivedConnectionInfo (Err err) ->
             ( { model | status = Bad <| showHttpError err }, Cmd.none )

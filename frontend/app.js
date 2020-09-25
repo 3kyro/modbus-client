@@ -7552,7 +7552,7 @@ var $author$project$Update$update = F2(
 							$elm$core$Platform$Cmd$none);
 					} else {
 						var _v1 = msg.a.a;
-						return _Utils_Tuple2(model, $author$project$Update$getTimeZone);
+						return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
 					}
 				} else {
 					var err = msg.a.a;
@@ -16511,6 +16511,15 @@ var $author$project$View$notificationsHeight = function (model) {
 			$mdgriffith$elm_ui$Element$px(30));
 	}
 };
+var $author$project$View$notIndexCol = {
+	header: $mdgriffith$elm_ui$Element$none,
+	view: F2(
+		function (idx, _v0) {
+			return $mdgriffith$elm_ui$Element$text(
+				$elm$core$String$fromInt(idx + 1));
+		}),
+	width: $mdgriffith$elm_ui$Element$px(30)
+};
 var $elm$time$Time$flooredDiv = F2(
 	function (numerator, denominator) {
 		return $elm$core$Basics$floor(numerator / denominator);
@@ -16589,7 +16598,7 @@ var $author$project$View$hhmmss = F2(
 			A2($elm$time$Time$toMinute, zone, posix)) + (':' + $elm$core$String$fromInt(
 			A2($elm$time$Time$toSecond, zone, posix)))));
 	});
-var $author$project$View$notTimeColumn = function (model) {
+var $author$project$View$notTimeCol = function (model) {
 	return {
 		header: $mdgriffith$elm_ui$Element$none,
 		view: F2(
@@ -16600,7 +16609,7 @@ var $author$project$View$notTimeColumn = function (model) {
 		width: $mdgriffith$elm_ui$Element$px(100)
 	};
 };
-var $author$project$View$notheaderColumn = {
+var $author$project$View$notheaderCol = {
 	header: $mdgriffith$elm_ui$Element$none,
 	view: F2(
 		function (_v0, not) {
@@ -16611,8 +16620,9 @@ var $author$project$View$notheaderColumn = {
 var $author$project$View$notificationColumns = function (model) {
 	return _List_fromArray(
 		[
-			$author$project$View$notTimeColumn(model),
-			$author$project$View$notheaderColumn
+			$author$project$View$notIndexCol,
+			$author$project$View$notTimeCol(model),
+			$author$project$View$notheaderCol
 		]);
 };
 var $author$project$View$notificationsTable = function (model) {
