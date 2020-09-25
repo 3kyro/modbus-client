@@ -1,42 +1,46 @@
 module StatusBar exposing
-    ( renderNotifications
-    , expandButton
+    ( expandButton
+    , renderNotifications
     )
 
-import Element exposing
-    ( Element
-    , row
-    , el
-    , text
-    , none
-    , column
-    , Length
-    , px
-    , height
-    , scrollbarY
-    , centerY
-    , width
-    , alignBottom
-    , clipX
-    , fill
-    , htmlAttribute
-    , focused
-    )
-import Html.Attributes exposing (id)
-import Types exposing
-    ( StatusBarState(..)
-    , Notification
-    , Msg (..)
-    )
-import Time
-import Element.Input as Input
+import Element
+    exposing
+        ( Element
+        , Length
+        , alignBottom
+        , centerY
+        , clipX
+        , column
+        , el
+        , fill
+        , focused
+        , height
+        , htmlAttribute
+        , none
+        , px
+        , row
+        , scrollbarY
+        , text
+        , width
+        )
 import Element.Background as Background
-import Element.Font as Font
 import Element.Border as Border
-import Palette exposing
-    ( darkGrey
-    , black
-    )
+import Element.Font as Font
+import Element.Input as Input
+import Html.Attributes exposing (id)
+import Palette
+    exposing
+        ( black
+        , darkGrey
+        )
+import Time
+import Types
+    exposing
+        ( Msg(..)
+        , Notification
+        , StatusBarState(..)
+        )
+
 
 renderNotification : Time.Zone -> Notification -> Element msg
 renderNotification zone not =
@@ -47,50 +51,63 @@ renderNotification zone not =
         [ renderTime not zone
         ]
 
+
 renderTime : Notification -> Time.Zone -> Element msg
 renderTime not zone =
     el
-    [ centerY
-    , width fill
-    ]
-    <| text <| hhmmss zone not.time
+        [ centerY
+        , width fill
+        ]
+    <|
+        text <|
+            hhmmss zone not.time
+
 
 hhmmss : Time.Zone -> Time.Posix -> String
 hhmmss zone posix =
     String.fromInt
-        (Time.toHour zone posix) 
+        (Time.toHour zone posix)
         ++ ":"
         ++ (String.fromInt <| Time.toMinute zone posix)
         ++ ":"
         ++ (String.fromInt <| Time.toSecond zone posix)
+
 
 renderNotifications : Time.Zone -> StatusBarState -> List Notification -> Element msg
 renderNotifications zone state notifications =
     let
         elements =
             case state of
-                Expanded -> List.reverse <| List.map ( renderNotification zone ) notifications
+                Expanded ->
+                    List.reverse <| List.map (renderNotification zone) notifications
+
                 Retracted ->
                     List.singleton <|
-                    Maybe.withDefault
-                        none
-                        <| Maybe.map
-                            ( renderNotification zone )
-                            <| List.head notifications
+                        Maybe.withDefault
+                            none
+                        <|
+                            Maybe.map
+                                (renderNotification zone)
+                            <|
+                                List.head notifications
     in
-        column
-            [ height <| statusBarHeight state
-            , scrollbarY
-            , clipX
-            , htmlAttribute <| id "status"
-            ]
-            elements
+    column
+        [ height <| statusBarHeight state
+        , scrollbarY
+        , clipX
+        , htmlAttribute <| id "status"
+        ]
+        elements
+
 
 statusBarHeight : StatusBarState -> Length
 statusBarHeight state =
     case state of
-        Expanded -> px 100
-        Retracted -> px 20
+        Expanded ->
+            px 100
+
+        Retracted ->
+            px 20
 
 
 expandButton : StatusBarState -> Element Msg

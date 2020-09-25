@@ -47,10 +47,11 @@ import Palette
         , smallFont
         , white
         )
-import StatusBar exposing
-    ( renderNotifications
-    , expandButton
-    )
+import StatusBar
+    exposing
+        ( expandButton
+        , renderNotifications
+        )
 import Types
     exposing
         ( ActiveTab(..)
@@ -848,6 +849,3 @@ statusBar model =
         [ expandButton model.statusBarState
         , renderNotifications model.timeZone model.statusBarState model.notifications
         ]
-
-
-
