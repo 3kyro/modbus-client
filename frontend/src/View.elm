@@ -75,6 +75,7 @@ import Types.IpAddress
         , IpAddressByte(..)
         , showIpAddressByte
         )
+import Types exposing (Notification)
 
 
 view : Model -> Html Msg
@@ -868,11 +869,11 @@ expandButtonLabel : Model -> Element Msg
 expandButtonLabel model =
     case model.statusBarState of
         Expanded ->
-            -- "▼"
-            text <| String.fromChar '▼'
+            -- "▼" \u{25BC}'
+            text "▼"
 
         Retracted ->
-            -- "▲"
+            -- "▲" '\u{25B2}'
             text <| String.fromChar '▲'
 
 
@@ -884,7 +885,7 @@ notifications model =
         , notificationsHeight model
         , alignBottom
         ]
-        [ text <| hhmmss model.timeZone model.timePosix ]
+        [ notificationsTable model ]
 
 
 notificationsHeight : Model -> Attribute Msg
@@ -899,9 +900,37 @@ notificationsHeight model =
 
 hhmmss : Time.Zone -> Time.Posix -> String
 hhmmss zone posix =
-    String.fromInt 
+    String.fromInt
         (Time.toHour zone posix)
         ++ ":"
         ++ (String.fromInt <| Time.toMinute zone posix)
         ++ ":"
         ++ (String.fromInt <| Time.toSecond zone posix)
+
+notificationsTable : Model -> Element Msg
+notificationsTable model =
+    indexedTable
+        []
+        { data = model.notifications
+        , columns = notificationColumns model
+        }
+
+notificationColumns : Model -> List (IndexedColumn Notification Msg)
+notificationColumns model =
+    [ notTimeColumn model
+    , notheaderColumn
+    ]
+
+notTimeColumn : Model -> IndexedColumn Notification Msg
+notTimeColumn model =
+        { header = none
+        , width = px 100
+        , view = \_ not -> text <| hhmmss model.timeZone not.time
+        }
+
+notheaderColumn : IndexedColumn Notification Msg
+notheaderColumn =
+        { header = none
+        , width = fillPortion 1
+        , view = \_ not -> text not.header
+        }

@@ -31,10 +31,10 @@ import Types
         , toMFloat
         , writeableReg
         , showConnInfo
+        , Notification
+        , ConnectionInfo
         )
 import Types.IpAddress exposing (setIpAddressByte)
-import Types exposing (Notification)
-import Types exposing (ConnectionInfo)
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -57,7 +57,7 @@ update msg model =
                 , socketPort = Just conn.socketPort
                 , timeout = Just conn.timeout
                 , connectStatus = Connected
-                , notifications = 
+                , notifications =
                     pushConnectionNotification 
                         model
                         conn
@@ -283,11 +283,16 @@ update msg model =
                     ( { model | statusBarState = Expanded }, Cmd.none )
 
         TimeZone zone ->
-            ( { model | timeZone = zone }, getPosixTime )
+            ( { model | timeZone = zone }, initTime )
 
         -- Get current posix
         NewTime time ->
             ( { model | timePosix = time }, Cmd.none )
+
+        -- Part of initialisation sequence,
+        -- will only be run once per page load
+        InitTime time ->
+            ( { model | timePosix = time }, connectionInfoRequest )
 
 
 fromModType : ModData -> String -> ModData
@@ -301,11 +306,12 @@ fromModType md str =
 
 
 -- Initializastion sequence:
--- - get connection info from the server
 -- - get the current time zone
+-- - get posix time
+-- - get connection info from the server
 initCmd : Cmd Msg
 initCmd =
-    connectionInfoRequest
+    getTimeZone
 
 connectionInfoRequest : Cmd Msg
 connectionInfoRequest =
@@ -369,11 +375,14 @@ requestModData model =
         , expect = Http.expectJson ReceivedModData <| D.list decodeModData
         }
 
-
 getTimeZone : Cmd Msg
 getTimeZone =
     Task.perform TimeZone Time.here
 
+-- Initialise time, will only be run on page reload
+initTime : Cmd Msg
+initTime =
+    Task.perform InitTime Time.now
 
 getPosixTime : Cmd Msg
 getPosixTime =

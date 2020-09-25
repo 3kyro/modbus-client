@@ -4358,40 +4358,49 @@ function _Browser_load(url)
 
 
 
-var _Bitwise_and = F2(function(a, b)
+function _Time_now(millisToPosix)
 {
-	return a & b;
+	return _Scheduler_binding(function(callback)
+	{
+		callback(_Scheduler_succeed(millisToPosix(Date.now())));
+	});
+}
+
+var _Time_setInterval = F2(function(interval, task)
+{
+	return _Scheduler_binding(function(callback)
+	{
+		var id = setInterval(function() { _Scheduler_rawSpawn(task); }, interval);
+		return function() { clearInterval(id); };
+	});
 });
 
-var _Bitwise_or = F2(function(a, b)
+function _Time_here()
 {
-	return a | b;
-});
+	return _Scheduler_binding(function(callback)
+	{
+		callback(_Scheduler_succeed(
+			A2($elm$time$Time$customZone, -(new Date().getTimezoneOffset()), _List_Nil)
+		));
+	});
+}
 
-var _Bitwise_xor = F2(function(a, b)
-{
-	return a ^ b;
-});
 
-function _Bitwise_complement(a)
+function _Time_getZoneName()
 {
-	return ~a;
-};
-
-var _Bitwise_shiftLeftBy = F2(function(offset, a)
-{
-	return a << offset;
-});
-
-var _Bitwise_shiftRightBy = F2(function(offset, a)
-{
-	return a >> offset;
-});
-
-var _Bitwise_shiftRightZfBy = F2(function(offset, a)
-{
-	return a >>> offset;
-});
+	return _Scheduler_binding(function(callback)
+	{
+		try
+		{
+			var name = $elm$time$Time$Name(Intl.DateTimeFormat().resolvedOptions().timeZone);
+		}
+		catch (e)
+		{
+			var name = $elm$time$Time$Offset(new Date().getTimezoneOffset());
+		}
+		callback(_Scheduler_succeed(name));
+	});
+}
 
 
 
@@ -4570,6 +4579,43 @@ function _Http_track(router, xhr, tracker)
 }
 
 
+var _Bitwise_and = F2(function(a, b)
+{
+	return a & b;
+});
+
+var _Bitwise_or = F2(function(a, b)
+{
+	return a | b;
+});
+
+var _Bitwise_xor = F2(function(a, b)
+{
+	return a ^ b;
+});
+
+function _Bitwise_complement(a)
+{
+	return ~a;
+};
+
+var _Bitwise_shiftLeftBy = F2(function(offset, a)
+{
+	return a << offset;
+});
+
+var _Bitwise_shiftRightBy = F2(function(offset, a)
+{
+	return a >> offset;
+});
+
+var _Bitwise_shiftRightZfBy = F2(function(offset, a)
+{
+	return a >>> offset;
+});
+
+
+
 // DECODER
 
 var _File_decoder = _Json_decodePrim(function(value) {
@@ -4745,52 +4791,6 @@ function _File_toUrl(blob)
 	});
 }
 
-
-
-
-function _Time_now(millisToPosix)
-{
-	return _Scheduler_binding(function(callback)
-	{
-		callback(_Scheduler_succeed(millisToPosix(Date.now())));
-	});
-}
-
-var _Time_setInterval = F2(function(interval, task)
-{
-	return _Scheduler_binding(function(callback)
-	{
-		var id = setInterval(function() { _Scheduler_rawSpawn(task); }, interval);
-		return function() { clearInterval(id); };
-	});
-});
-
-function _Time_here()
-{
-	return _Scheduler_binding(function(callback)
-	{
-		callback(_Scheduler_succeed(
-			A2($elm$time$Time$customZone, -(new Date().getTimezoneOffset()), _List_Nil)
-		));
-	});
-}
-
-
-function _Time_getZoneName()
-{
-	return _Scheduler_binding(function(callback)
-	{
-		try
-		{
-			var name = $elm$time$Time$Name(Intl.DateTimeFormat().resolvedOptions().timeZone);
-		}
-		catch (e)
-		{
-			var name = $elm$time$Time$Offset(new Date().getTimezoneOffset());
-		}
-		callback(_Scheduler_succeed(name));
-	});
-}
 var $elm$core$Basics$EQ = {$: 'EQ'};
 var $elm$core$Basics$LT = {$: 'LT'};
 var $elm$core$List$cons = _List_cons;
@@ -5580,197 +5580,238 @@ var $elm$core$Task$perform = F2(
 				A2($elm$core$Task$map, toMessage, task)));
 	});
 var $elm$browser$Browser$element = _Browser_element;
-var $author$project$Types$ReceivedConnectionInfo = function (a) {
-	return {$: 'ReceivedConnectionInfo', a: a};
+var $author$project$Types$TimeZone = function (a) {
+	return {$: 'TimeZone', a: a};
 };
-var $author$project$Types$ConnectionInfo = F3(
-	function (ipAddress, socketPort, timeout) {
-		return {ipAddress: ipAddress, socketPort: socketPort, timeout: timeout};
-	});
-var $elm$json$Json$Decode$andThen = _Json_andThen;
-var $elm$json$Json$Decode$fail = _Json_fail;
-var $elm$core$Maybe$andThen = F2(
-	function (callback, maybeValue) {
-		if (maybeValue.$ === 'Just') {
-			var value = maybeValue.a;
-			return callback(value);
-		} else {
-			return $elm$core$Maybe$Nothing;
-		}
-	});
-var $elm$core$Array$fromListHelp = F3(
-	function (list, nodeList, nodeListSize) {
-		fromListHelp:
-		while (true) {
-			var _v0 = A2($elm$core$Elm$JsArray$initializeFromList, $elm$core$Array$branchFactor, list);
-			var jsArray = _v0.a;
-			var remainingItems = _v0.b;
-			if (_Utils_cmp(
-				$elm$core$Elm$JsArray$length(jsArray),
-				$elm$core$Array$branchFactor) < 0) {
-				return A2(
-					$elm$core$Array$builderToArray,
-					true,
-					{nodeList: nodeList, nodeListSize: nodeListSize, tail: jsArray});
-			} else {
-				var $temp$list = remainingItems,
-					$temp$nodeList = A2(
-					$elm$core$List$cons,
-					$elm$core$Array$Leaf(jsArray),
-					nodeList),
-					$temp$nodeListSize = nodeListSize + 1;
-				list = $temp$list;
-				nodeList = $temp$nodeList;
-				nodeListSize = $temp$nodeListSize;
-				continue fromListHelp;
-			}
-		}
-	});
-var $elm$core$Array$fromList = function (list) {
-	if (!list.b) {
-		return $elm$core$Array$empty;
-	} else {
-		return A3($elm$core$Array$fromListHelp, list, _List_Nil, 0);
-	}
+var $elm$time$Time$Name = function (a) {
+	return {$: 'Name', a: a};
 };
-var $elm$core$Bitwise$and = _Bitwise_and;
-var $elm$core$Bitwise$shiftRightZfBy = _Bitwise_shiftRightZfBy;
-var $elm$core$Array$bitMask = 4294967295 >>> (32 - $elm$core$Array$shiftStep);
-var $elm$core$Basics$ge = _Utils_ge;
-var $elm$core$Elm$JsArray$unsafeGet = _JsArray_unsafeGet;
-var $elm$core$Array$getHelp = F3(
-	function (shift, index, tree) {
-		getHelp:
-		while (true) {
-			var pos = $elm$core$Array$bitMask & (index >>> shift);
-			var _v0 = A2($elm$core$Elm$JsArray$unsafeGet, pos, tree);
-			if (_v0.$ === 'SubTree') {
-				var subTree = _v0.a;
-				var $temp$shift = shift - $elm$core$Array$shiftStep,
-					$temp$index = index,
-					$temp$tree = subTree;
-				shift = $temp$shift;
-				index = $temp$index;
-				tree = $temp$tree;
-				continue getHelp;
-			} else {
-				var values = _v0.a;
-				return A2($elm$core$Elm$JsArray$unsafeGet, $elm$core$Array$bitMask & index, values);
-			}
-		}
-	});
-var $elm$core$Bitwise$shiftLeftBy = _Bitwise_shiftLeftBy;
-var $elm$core$Array$tailIndex = function (len) {
-	return (len >>> 5) << 5;
+var $elm$time$Time$Offset = function (a) {
+	return {$: 'Offset', a: a};
 };
-var $elm$core$Array$get = F2(
-	function (index, _v0) {
-		var len = _v0.a;
-		var startShift = _v0.b;
-		var tree = _v0.c;
-		var tail = _v0.d;
-		return ((index < 0) || (_Utils_cmp(index, len) > -1)) ? $elm$core$Maybe$Nothing : ((_Utils_cmp(
-			index,
-			$elm$core$Array$tailIndex(len)) > -1) ? $elm$core$Maybe$Just(
-			A2($elm$core$Elm$JsArray$unsafeGet, $elm$core$Array$bitMask & index, tail)) : $elm$core$Maybe$Just(
-			A3($elm$core$Array$getHelp, startShift, index, tree)));
+var $elm$time$Time$Zone = F2(
+	function (a, b) {
+		return {$: 'Zone', a: a, b: b};
 	});
-var $author$project$Types$IpAddress$byteFromString = function (str) {
-	return A2(
-		$elm$core$Maybe$andThen,
-		function (i) {
-			return ((i < 0) || (i > 255)) ? $elm$core$Maybe$Nothing : $elm$core$Maybe$Just(i);
-		},
-		$elm$core$String$toInt(str));
-};
-var $elm$core$Maybe$map4 = F5(
-	function (func, ma, mb, mc, md) {
-		if (ma.$ === 'Nothing') {
-			return $elm$core$Maybe$Nothing;
-		} else {
-			var a = ma.a;
-			if (mb.$ === 'Nothing') {
-				return $elm$core$Maybe$Nothing;
-			} else {
-				var b = mb.a;
-				if (mc.$ === 'Nothing') {
-					return $elm$core$Maybe$Nothing;
-				} else {
-					var c = mc.a;
-					if (md.$ === 'Nothing') {
-						return $elm$core$Maybe$Nothing;
-					} else {
-						var d = md.a;
-						return $elm$core$Maybe$Just(
-							A4(func, a, b, c, d));
-					}
-				}
-			}
-		}
-	});
+var $elm$time$Time$customZone = $elm$time$Time$Zone;
+var $elm$time$Time$here = _Time_here(_Utils_Tuple0);
+var $author$project$Update$getTimeZone = A2($elm$core$Task$perform, $author$project$Types$TimeZone, $elm$time$Time$here);
+var $author$project$Update$initCmd = $author$project$Update$getTimeZone;
+var $author$project$Types$AllGood = {$: 'AllGood'};
+var $author$project$Types$Connect = {$: 'Connect'};
+var $author$project$Types$ConnectMenu = {$: 'ConnectMenu'};
+var $author$project$Types$Read = {$: 'Read'};
+var $author$project$Types$Retracted = {$: 'Retracted'};
 var $author$project$Types$IpAddress$IpAddress = F4(
 	function (b0, b1, b2, b3) {
 		return {b0: b0, b1: b1, b2: b2, b3: b3};
 	});
-var $author$project$Types$IpAddress$unsafeFromInts = F4(
-	function (b0, b1, b2, b3) {
-		return A4(
-			$author$project$Types$IpAddress$IpAddress,
-			$elm$core$Maybe$Just(b0),
-			$elm$core$Maybe$Just(b1),
-			$elm$core$Maybe$Just(b2),
-			$elm$core$Maybe$Just(b3));
-	});
-var $author$project$Types$IpAddress$getIpAddress = F4(
-	function (byte1, byte2, byte3, byte4) {
-		return A5(
-			$elm$core$Maybe$map4,
-			$author$project$Types$IpAddress$unsafeFromInts,
-			$author$project$Types$IpAddress$byteFromString(byte1),
-			$author$project$Types$IpAddress$byteFromString(byte2),
-			$author$project$Types$IpAddress$byteFromString(byte3),
-			$author$project$Types$IpAddress$byteFromString(byte4));
-	});
-var $author$project$Types$IpAddress$ipFromString = function (s) {
-	var splits = $elm$core$Array$fromList(
-		A2($elm$core$String$split, '.', s));
-	var mip = A5(
-		$elm$core$Maybe$map4,
-		$author$project$Types$IpAddress$getIpAddress,
-		A2($elm$core$Array$get, 0, splits),
-		A2($elm$core$Array$get, 1, splits),
-		A2($elm$core$Array$get, 2, splits),
-		A2($elm$core$Array$get, 3, splits));
-	return A2(
-		$elm$core$Maybe$andThen,
-		function (m) {
-			return m;
-		},
-		mip);
+var $author$project$Types$IpAddress$defaultIpAddr = A4(
+	$author$project$Types$IpAddress$IpAddress,
+	$elm$core$Maybe$Just(192),
+	$elm$core$Maybe$Just(168),
+	$elm$core$Maybe$Just(0),
+	$elm$core$Maybe$Just(1));
+var $author$project$Types$HoldingRegister = {$: 'HoldingRegister'};
+var $author$project$Types$InputRegister = {$: 'InputRegister'};
+var $author$project$Types$ModFloat = function (a) {
+	return {$: 'ModFloat', a: a};
 };
-var $elm$json$Json$Decode$string = _Json_decodeString;
-var $author$project$Types$IpAddress$decodeIpAddress = A2(
-	$elm$json$Json$Decode$andThen,
-	function (str) {
-		var _v0 = $author$project$Types$IpAddress$ipFromString(str);
-		if (_v0.$ === 'Nothing') {
-			return $elm$json$Json$Decode$fail('Not an Ip Address');
-		} else {
-			var ip = _v0.a;
-			return $elm$json$Json$Decode$succeed(ip);
-		}
+var $author$project$Types$ModWord = function (a) {
+	return {$: 'ModWord', a: a};
+};
+var $author$project$Types$MFloat = F2(
+	function (str, flt) {
+		return {flt: flt, str: str};
+	});
+var $elm$core$String$fromFloat = _String_fromNumber;
+var $author$project$Types$fromFloat = function (f) {
+	return A2(
+		$author$project$Types$MFloat,
+		$elm$core$String$fromFloat(f),
+		f);
+};
+var $author$project$App$initModData = _List_fromArray(
+	[
+		{
+		modAddress: 1,
+		modDescription: 'A register for testing purposes',
+		modName: 'first',
+		modRegType: $author$project$Types$HoldingRegister,
+		modUid: 1,
+		modValue: $author$project$Types$ModFloat(
+			$elm$core$Maybe$Just(
+				$author$project$Types$fromFloat(1)))
 	},
-	$elm$json$Json$Decode$string);
-var $elm$json$Json$Decode$field = _Json_decodeField;
-var $elm$json$Json$Decode$int = _Json_decodeInt;
-var $elm$json$Json$Decode$map3 = _Json_map3;
-var $author$project$Types$decodeConnInfo = A4(
-	$elm$json$Json$Decode$map3,
-	$author$project$Types$ConnectionInfo,
-	A2($elm$json$Json$Decode$field, 'ip address', $author$project$Types$IpAddress$decodeIpAddress),
-	A2($elm$json$Json$Decode$field, 'port', $elm$json$Json$Decode$int),
-	A2($elm$json$Json$Decode$field, 'timeout', $elm$json$Json$Decode$int));
-var $elm$json$Json$Decode$decodeString = _Json_runOnString;
+		{
+		modAddress: 2,
+		modDescription: 'A register for testing purposes',
+		modName: 'second',
+		modRegType: $author$project$Types$HoldingRegister,
+		modUid: 1,
+		modValue: $author$project$Types$ModWord(
+			$elm$core$Maybe$Just(2))
+	},
+		{
+		modAddress: 10,
+		modDescription: 'A register for testing purposes',
+		modName: '1500',
+		modRegType: $author$project$Types$InputRegister,
+		modUid: 1,
+		modValue: $author$project$Types$ModWord($elm$core$Maybe$Nothing)
+	},
+		{
+		modAddress: 15,
+		modDescription: 'A register for testing purposes',
+		modName: '1700',
+		modRegType: $author$project$Types$HoldingRegister,
+		modUid: 1,
+		modValue: $author$project$Types$ModWord($elm$core$Maybe$Nothing)
+	}
+	]);
+var $elm$time$Time$Posix = function (a) {
+	return {$: 'Posix', a: a};
+};
+var $elm$time$Time$millisToPosix = $elm$time$Time$Posix;
+var $author$project$Types$ModDataUpdate = F3(
+	function (mduModData, mduSelected, mduRW) {
+		return {mduModData: mduModData, mduRW: mduRW, mduSelected: mduSelected};
+	});
+var $author$project$Types$newModDataUpdate = function (mds) {
+	return A2(
+		$elm$core$List$map,
+		function (md) {
+			return A3($author$project$Types$ModDataUpdate, md, false, $author$project$Types$Read);
+		},
+		mds);
+};
+var $elm$time$Time$utc = A2($elm$time$Time$Zone, 0, _List_Nil);
+var $author$project$App$initModel = {
+	activeTab: $author$project$Types$ConnectMenu,
+	connectStatus: $author$project$Types$Connect,
+	csvContent: $elm$core$Maybe$Nothing,
+	csvFileName: $elm$core$Maybe$Nothing,
+	csvLoaded: false,
+	ipAddress: $author$project$Types$IpAddress$defaultIpAddr,
+	modDataUpdate: $author$project$Types$newModDataUpdate($author$project$App$initModData),
+	notifications: _List_Nil,
+	readWriteAll: $author$project$Types$Read,
+	selectAllCheckbox: false,
+	selectSome: false,
+	socketPort: $elm$core$Maybe$Just(502),
+	status: $author$project$Types$AllGood,
+	statusBarState: $author$project$Types$Retracted,
+	timePosix: $elm$time$Time$millisToPosix(0),
+	timeZone: $elm$time$Time$utc,
+	timeout: $elm$core$Maybe$Just(1000)
+};
+var $elm$core$Platform$Sub$batch = _Platform_batch;
+var $elm$core$Platform$Sub$none = $elm$core$Platform$Sub$batch(_List_Nil);
+var $author$project$Types$Bad = function (a) {
+	return {$: 'Bad', a: a};
+};
+var $author$project$Types$Connected = {$: 'Connected'};
+var $author$project$Types$Connecting = {$: 'Connecting'};
+var $author$project$Types$CsvLoaded = function (a) {
+	return {$: 'CsvLoaded', a: a};
+};
+var $author$project$Types$CsvSelected = function (a) {
+	return {$: 'CsvSelected', a: a};
+};
+var $author$project$Types$Disconnecting = {$: 'Disconnecting'};
+var $author$project$Types$Expanded = {$: 'Expanded'};
+var $author$project$Types$Loading = {$: 'Loading'};
+var $elm$core$List$any = F2(
+	function (isOkay, list) {
+		any:
+		while (true) {
+			if (!list.b) {
+				return false;
+			} else {
+				var x = list.a;
+				var xs = list.b;
+				if (isOkay(x)) {
+					return true;
+				} else {
+					var $temp$isOkay = isOkay,
+						$temp$list = xs;
+					isOkay = $temp$isOkay;
+					list = $temp$list;
+					continue any;
+				}
+			}
+		}
+	});
+var $author$project$Types$ConnectedResponse = function (a) {
+	return {$: 'ConnectedResponse', a: a};
+};
+var $elm$json$Json$Encode$int = _Json_wrap;
+var $elm$json$Json$Encode$object = function (pairs) {
+	return _Json_wrap(
+		A3(
+			$elm$core$List$foldl,
+			F2(
+				function (_v0, obj) {
+					var k = _v0.a;
+					var v = _v0.b;
+					return A3(_Json_addField, k, v, obj);
+				}),
+			_Json_emptyObject(_Utils_Tuple0),
+			pairs));
+};
+var $elm$json$Json$Encode$string = _Json_wrap;
+var $elm$core$Maybe$map = F2(
+	function (f, maybe) {
+		if (maybe.$ === 'Just') {
+			var value = maybe.a;
+			return $elm$core$Maybe$Just(
+				f(value));
+		} else {
+			return $elm$core$Maybe$Nothing;
+		}
+	});
+var $elm$core$Maybe$withDefault = F2(
+	function (_default, maybe) {
+		if (maybe.$ === 'Just') {
+			var value = maybe.a;
+			return value;
+		} else {
+			return _default;
+		}
+	});
+var $author$project$Types$IpAddress$unsafeShowIp = function (ip) {
+	return A2(
+		$elm$core$Maybe$withDefault,
+		'',
+		A2($elm$core$Maybe$map, $elm$core$String$fromInt, ip.b0)) + ('.' + (A2(
+		$elm$core$Maybe$withDefault,
+		'',
+		A2($elm$core$Maybe$map, $elm$core$String$fromInt, ip.b1)) + ('.' + (A2(
+		$elm$core$Maybe$withDefault,
+		'',
+		A2($elm$core$Maybe$map, $elm$core$String$fromInt, ip.b2)) + ('.' + A2(
+		$elm$core$Maybe$withDefault,
+		'',
+		A2($elm$core$Maybe$map, $elm$core$String$fromInt, ip.b3)))))));
+};
+var $author$project$Types$encodeIpPort = function (model) {
+	return $elm$json$Json$Encode$object(
+		_List_fromArray(
+			[
+				_Utils_Tuple2(
+				'ip address',
+				$elm$json$Json$Encode$string(
+					$author$project$Types$IpAddress$unsafeShowIp(model.ipAddress))),
+				_Utils_Tuple2(
+				'port',
+				$elm$json$Json$Encode$int(
+					A2($elm$core$Maybe$withDefault, 0, model.socketPort))),
+				_Utils_Tuple2(
+				'timeout',
+				$elm$json$Json$Encode$int(
+					A2($elm$core$Maybe$withDefault, 0, model.timeout)))
+			]));
+};
 var $elm$http$Http$BadStatus_ = F2(
 	function (a, b) {
 		return {$: 'BadStatus_', a: a, b: b};
@@ -6318,24 +6359,13 @@ var $elm$core$Basics$composeR = F3(
 		return g(
 			f(x));
 	});
-var $elm$http$Http$expectStringResponse = F2(
+var $elm$http$Http$expectBytesResponse = F2(
 	function (toMsg, toResult) {
 		return A3(
 			_Http_expect,
-			'',
-			$elm$core$Basics$identity,
+			'arraybuffer',
+			_Http_toDataView,
 			A2($elm$core$Basics$composeR, toResult, toMsg));
-	});
-var $elm$core$Result$mapError = F2(
-	function (f, result) {
-		if (result.$ === 'Ok') {
-			var v = result.a;
-			return $elm$core$Result$Ok(v);
-		} else {
-			var e = result.a;
-			return $elm$core$Result$Err(
-				f(e));
-		}
 	});
 var $elm$http$Http$BadBody = function (a) {
 	return {$: 'BadBody', a: a};
@@ -6348,6 +6378,17 @@ var $elm$http$Http$BadUrl = function (a) {
 };
 var $elm$http$Http$NetworkError = {$: 'NetworkError'};
 var $elm$http$Http$Timeout = {$: 'Timeout'};
+var $elm$core$Result$mapError = F2(
+	function (f, result) {
+		if (result.$ === 'Ok') {
+			var v = result.a;
+			return $elm$core$Result$Ok(v);
+		} else {
+			var e = result.a;
+			return $elm$core$Result$Err(
+				f(e));
+		}
+	});
 var $elm$http$Http$resolve = F2(
 	function (toResult, response) {
 		switch (response.$) {
@@ -6371,20 +6412,21 @@ var $elm$http$Http$resolve = F2(
 					toResult(body));
 		}
 	});
-var $elm$http$Http$expectJson = F2(
-	function (toMsg, decoder) {
-		return A2(
-			$elm$http$Http$expectStringResponse,
-			toMsg,
-			$elm$http$Http$resolve(
-				function (string) {
-					return A2(
-						$elm$core$Result$mapError,
-						$elm$json$Json$Decode$errorToString,
-						A2($elm$json$Json$Decode$decodeString, decoder, string));
-				}));
-	});
-var $elm$http$Http$emptyBody = _Http_emptyBody;
+var $elm$http$Http$expectWhatever = function (toMsg) {
+	return A2(
+		$elm$http$Http$expectBytesResponse,
+		toMsg,
+		$elm$http$Http$resolve(
+			function (_v0) {
+				return $elm$core$Result$Ok(_Utils_Tuple0);
+			}));
+};
+var $elm$http$Http$jsonBody = function (value) {
+	return A2(
+		_Http_pair,
+		'application/json',
+		A2($elm$json$Json$Encode$encode, 0, value));
+};
 var $elm$http$Http$Request = function (a) {
 	return {$: 'Request', a: a};
 };
@@ -6553,6 +6595,228 @@ var $elm$http$Http$request = function (r) {
 		$elm$http$Http$Request(
 			{allowCookiesFromOtherDomains: false, body: r.body, expect: r.expect, headers: r.headers, method: r.method, timeout: r.timeout, tracker: r.tracker, url: r.url}));
 };
+var $elm$http$Http$post = function (r) {
+	return $elm$http$Http$request(
+		{body: r.body, expect: r.expect, headers: _List_Nil, method: 'POST', timeout: $elm$core$Maybe$Nothing, tracker: $elm$core$Maybe$Nothing, url: r.url});
+};
+var $author$project$Update$connectRequest = function (model) {
+	return $elm$http$Http$post(
+		{
+			body: $elm$http$Http$jsonBody(
+				$author$project$Types$encodeIpPort(model)),
+			expect: $elm$http$Http$expectWhatever($author$project$Types$ConnectedResponse),
+			url: 'http://localhost:4000/connect'
+		});
+};
+var $author$project$Types$ReceivedConnectionInfo = function (a) {
+	return {$: 'ReceivedConnectionInfo', a: a};
+};
+var $author$project$Types$ConnectionInfo = F3(
+	function (ipAddress, socketPort, timeout) {
+		return {ipAddress: ipAddress, socketPort: socketPort, timeout: timeout};
+	});
+var $elm$json$Json$Decode$andThen = _Json_andThen;
+var $elm$json$Json$Decode$fail = _Json_fail;
+var $elm$core$Maybe$andThen = F2(
+	function (callback, maybeValue) {
+		if (maybeValue.$ === 'Just') {
+			var value = maybeValue.a;
+			return callback(value);
+		} else {
+			return $elm$core$Maybe$Nothing;
+		}
+	});
+var $elm$core$Array$fromListHelp = F3(
+	function (list, nodeList, nodeListSize) {
+		fromListHelp:
+		while (true) {
+			var _v0 = A2($elm$core$Elm$JsArray$initializeFromList, $elm$core$Array$branchFactor, list);
+			var jsArray = _v0.a;
+			var remainingItems = _v0.b;
+			if (_Utils_cmp(
+				$elm$core$Elm$JsArray$length(jsArray),
+				$elm$core$Array$branchFactor) < 0) {
+				return A2(
+					$elm$core$Array$builderToArray,
+					true,
+					{nodeList: nodeList, nodeListSize: nodeListSize, tail: jsArray});
+			} else {
+				var $temp$list = remainingItems,
+					$temp$nodeList = A2(
+					$elm$core$List$cons,
+					$elm$core$Array$Leaf(jsArray),
+					nodeList),
+					$temp$nodeListSize = nodeListSize + 1;
+				list = $temp$list;
+				nodeList = $temp$nodeList;
+				nodeListSize = $temp$nodeListSize;
+				continue fromListHelp;
+			}
+		}
+	});
+var $elm$core$Array$fromList = function (list) {
+	if (!list.b) {
+		return $elm$core$Array$empty;
+	} else {
+		return A3($elm$core$Array$fromListHelp, list, _List_Nil, 0);
+	}
+};
+var $elm$core$Bitwise$and = _Bitwise_and;
+var $elm$core$Bitwise$shiftRightZfBy = _Bitwise_shiftRightZfBy;
+var $elm$core$Array$bitMask = 4294967295 >>> (32 - $elm$core$Array$shiftStep);
+var $elm$core$Basics$ge = _Utils_ge;
+var $elm$core$Elm$JsArray$unsafeGet = _JsArray_unsafeGet;
+var $elm$core$Array$getHelp = F3(
+	function (shift, index, tree) {
+		getHelp:
+		while (true) {
+			var pos = $elm$core$Array$bitMask & (index >>> shift);
+			var _v0 = A2($elm$core$Elm$JsArray$unsafeGet, pos, tree);
+			if (_v0.$ === 'SubTree') {
+				var subTree = _v0.a;
+				var $temp$shift = shift - $elm$core$Array$shiftStep,
+					$temp$index = index,
+					$temp$tree = subTree;
+				shift = $temp$shift;
+				index = $temp$index;
+				tree = $temp$tree;
+				continue getHelp;
+			} else {
+				var values = _v0.a;
+				return A2($elm$core$Elm$JsArray$unsafeGet, $elm$core$Array$bitMask & index, values);
+			}
+		}
+	});
+var $elm$core$Bitwise$shiftLeftBy = _Bitwise_shiftLeftBy;
+var $elm$core$Array$tailIndex = function (len) {
+	return (len >>> 5) << 5;
+};
+var $elm$core$Array$get = F2(
+	function (index, _v0) {
+		var len = _v0.a;
+		var startShift = _v0.b;
+		var tree = _v0.c;
+		var tail = _v0.d;
+		return ((index < 0) || (_Utils_cmp(index, len) > -1)) ? $elm$core$Maybe$Nothing : ((_Utils_cmp(
+			index,
+			$elm$core$Array$tailIndex(len)) > -1) ? $elm$core$Maybe$Just(
+			A2($elm$core$Elm$JsArray$unsafeGet, $elm$core$Array$bitMask & index, tail)) : $elm$core$Maybe$Just(
+			A3($elm$core$Array$getHelp, startShift, index, tree)));
+	});
+var $author$project$Types$IpAddress$byteFromString = function (str) {
+	return A2(
+		$elm$core$Maybe$andThen,
+		function (i) {
+			return ((i < 0) || (i > 255)) ? $elm$core$Maybe$Nothing : $elm$core$Maybe$Just(i);
+		},
+		$elm$core$String$toInt(str));
+};
+var $elm$core$Maybe$map4 = F5(
+	function (func, ma, mb, mc, md) {
+		if (ma.$ === 'Nothing') {
+			return $elm$core$Maybe$Nothing;
+		} else {
+			var a = ma.a;
+			if (mb.$ === 'Nothing') {
+				return $elm$core$Maybe$Nothing;
+			} else {
+				var b = mb.a;
+				if (mc.$ === 'Nothing') {
+					return $elm$core$Maybe$Nothing;
+				} else {
+					var c = mc.a;
+					if (md.$ === 'Nothing') {
+						return $elm$core$Maybe$Nothing;
+					} else {
+						var d = md.a;
+						return $elm$core$Maybe$Just(
+							A4(func, a, b, c, d));
+					}
+				}
+			}
+		}
+	});
+var $author$project$Types$IpAddress$unsafeFromInts = F4(
+	function (b0, b1, b2, b3) {
+		return A4(
+			$author$project$Types$IpAddress$IpAddress,
+			$elm$core$Maybe$Just(b0),
+			$elm$core$Maybe$Just(b1),
+			$elm$core$Maybe$Just(b2),
+			$elm$core$Maybe$Just(b3));
+	});
+var $author$project$Types$IpAddress$getIpAddress = F4(
+	function (byte1, byte2, byte3, byte4) {
+		return A5(
+			$elm$core$Maybe$map4,
+			$author$project$Types$IpAddress$unsafeFromInts,
+			$author$project$Types$IpAddress$byteFromString(byte1),
+			$author$project$Types$IpAddress$byteFromString(byte2),
+			$author$project$Types$IpAddress$byteFromString(byte3),
+			$author$project$Types$IpAddress$byteFromString(byte4));
+	});
+var $author$project$Types$IpAddress$ipFromString = function (s) {
+	var splits = $elm$core$Array$fromList(
+		A2($elm$core$String$split, '.', s));
+	var mip = A5(
+		$elm$core$Maybe$map4,
+		$author$project$Types$IpAddress$getIpAddress,
+		A2($elm$core$Array$get, 0, splits),
+		A2($elm$core$Array$get, 1, splits),
+		A2($elm$core$Array$get, 2, splits),
+		A2($elm$core$Array$get, 3, splits));
+	return A2(
+		$elm$core$Maybe$andThen,
+		function (m) {
+			return m;
+		},
+		mip);
+};
+var $elm$json$Json$Decode$string = _Json_decodeString;
+var $author$project$Types$IpAddress$decodeIpAddress = A2(
+	$elm$json$Json$Decode$andThen,
+	function (str) {
+		var _v0 = $author$project$Types$IpAddress$ipFromString(str);
+		if (_v0.$ === 'Nothing') {
+			return $elm$json$Json$Decode$fail('Not an Ip Address');
+		} else {
+			var ip = _v0.a;
+			return $elm$json$Json$Decode$succeed(ip);
+		}
+	},
+	$elm$json$Json$Decode$string);
+var $elm$json$Json$Decode$field = _Json_decodeField;
+var $elm$json$Json$Decode$int = _Json_decodeInt;
+var $elm$json$Json$Decode$map3 = _Json_map3;
+var $author$project$Types$decodeConnInfo = A4(
+	$elm$json$Json$Decode$map3,
+	$author$project$Types$ConnectionInfo,
+	A2($elm$json$Json$Decode$field, 'ip address', $author$project$Types$IpAddress$decodeIpAddress),
+	A2($elm$json$Json$Decode$field, 'port', $elm$json$Json$Decode$int),
+	A2($elm$json$Json$Decode$field, 'timeout', $elm$json$Json$Decode$int));
+var $elm$json$Json$Decode$decodeString = _Json_runOnString;
+var $elm$http$Http$expectStringResponse = F2(
+	function (toMsg, toResult) {
+		return A3(
+			_Http_expect,
+			'',
+			$elm$core$Basics$identity,
+			A2($elm$core$Basics$composeR, toResult, toMsg));
+	});
+var $elm$http$Http$expectJson = F2(
+	function (toMsg, decoder) {
+		return A2(
+			$elm$http$Http$expectStringResponse,
+			toMsg,
+			$elm$http$Http$resolve(
+				function (string) {
+					return A2(
+						$elm$core$Result$mapError,
+						$elm$json$Json$Decode$errorToString,
+						A2($elm$json$Json$Decode$decodeString, decoder, string));
+				}));
+	});
+var $elm$http$Http$emptyBody = _Http_emptyBody;
 var $elm$http$Http$get = function (r) {
 	return $elm$http$Http$request(
 		{body: $elm$http$Http$emptyBody, expect: r.expect, headers: _List_Nil, method: 'GET', timeout: $elm$core$Maybe$Nothing, tracker: $elm$core$Maybe$Nothing, url: r.url});
@@ -6574,258 +6838,6 @@ var $author$project$Update$connectionInfoRequest = $elm$http$Http$get(
 			$elm$json$Json$Decode$maybe($author$project$Types$decodeConnInfo)),
 		url: 'http://localhost:4000/connectInfo'
 	});
-var $author$project$Update$initCmd = $author$project$Update$connectionInfoRequest;
-var $author$project$Types$AllGood = {$: 'AllGood'};
-var $author$project$Types$Connect = {$: 'Connect'};
-var $author$project$Types$ConnectMenu = {$: 'ConnectMenu'};
-var $author$project$Types$Read = {$: 'Read'};
-var $author$project$Types$Retracted = {$: 'Retracted'};
-var $author$project$Types$IpAddress$defaultIpAddr = A4(
-	$author$project$Types$IpAddress$IpAddress,
-	$elm$core$Maybe$Just(192),
-	$elm$core$Maybe$Just(168),
-	$elm$core$Maybe$Just(0),
-	$elm$core$Maybe$Just(1));
-var $author$project$Types$HoldingRegister = {$: 'HoldingRegister'};
-var $author$project$Types$InputRegister = {$: 'InputRegister'};
-var $author$project$Types$ModFloat = function (a) {
-	return {$: 'ModFloat', a: a};
-};
-var $author$project$Types$ModWord = function (a) {
-	return {$: 'ModWord', a: a};
-};
-var $author$project$Types$MFloat = F2(
-	function (str, flt) {
-		return {flt: flt, str: str};
-	});
-var $elm$core$String$fromFloat = _String_fromNumber;
-var $author$project$Types$fromFloat = function (f) {
-	return A2(
-		$author$project$Types$MFloat,
-		$elm$core$String$fromFloat(f),
-		f);
-};
-var $author$project$App$initModData = _List_fromArray(
-	[
-		{
-		modAddress: 1,
-		modDescription: 'A register for testing purposes',
-		modName: 'first',
-		modRegType: $author$project$Types$HoldingRegister,
-		modUid: 1,
-		modValue: $author$project$Types$ModFloat(
-			$elm$core$Maybe$Just(
-				$author$project$Types$fromFloat(1)))
-	},
-		{
-		modAddress: 2,
-		modDescription: 'A register for testing purposes',
-		modName: 'second',
-		modRegType: $author$project$Types$HoldingRegister,
-		modUid: 1,
-		modValue: $author$project$Types$ModWord(
-			$elm$core$Maybe$Just(2))
-	},
-		{
-		modAddress: 10,
-		modDescription: 'A register for testing purposes',
-		modName: '1500',
-		modRegType: $author$project$Types$InputRegister,
-		modUid: 1,
-		modValue: $author$project$Types$ModWord($elm$core$Maybe$Nothing)
-	},
-		{
-		modAddress: 15,
-		modDescription: 'A register for testing purposes',
-		modName: '1700',
-		modRegType: $author$project$Types$HoldingRegister,
-		modUid: 1,
-		modValue: $author$project$Types$ModWord($elm$core$Maybe$Nothing)
-	}
-	]);
-var $elm$time$Time$Posix = function (a) {
-	return {$: 'Posix', a: a};
-};
-var $elm$time$Time$millisToPosix = $elm$time$Time$Posix;
-var $author$project$Types$ModDataUpdate = F3(
-	function (mduModData, mduSelected, mduRW) {
-		return {mduModData: mduModData, mduRW: mduRW, mduSelected: mduSelected};
-	});
-var $author$project$Types$newModDataUpdate = function (mds) {
-	return A2(
-		$elm$core$List$map,
-		function (md) {
-			return A3($author$project$Types$ModDataUpdate, md, false, $author$project$Types$Read);
-		},
-		mds);
-};
-var $elm$time$Time$Zone = F2(
-	function (a, b) {
-		return {$: 'Zone', a: a, b: b};
-	});
-var $elm$time$Time$utc = A2($elm$time$Time$Zone, 0, _List_Nil);
-var $author$project$App$initModel = {
-	activeTab: $author$project$Types$ConnectMenu,
-	connectStatus: $author$project$Types$Connect,
-	csvContent: $elm$core$Maybe$Nothing,
-	csvFileName: $elm$core$Maybe$Nothing,
-	csvLoaded: false,
-	ipAddress: $author$project$Types$IpAddress$defaultIpAddr,
-	modDataUpdate: $author$project$Types$newModDataUpdate($author$project$App$initModData),
-	notifications: _List_Nil,
-	readWriteAll: $author$project$Types$Read,
-	selectAllCheckbox: false,
-	selectSome: false,
-	socketPort: $elm$core$Maybe$Just(502),
-	status: $author$project$Types$AllGood,
-	statusBarState: $author$project$Types$Retracted,
-	timePosix: $elm$time$Time$millisToPosix(0),
-	timeZone: $elm$time$Time$utc,
-	timeout: $elm$core$Maybe$Just(1000)
-};
-var $elm$core$Platform$Sub$batch = _Platform_batch;
-var $elm$core$Platform$Sub$none = $elm$core$Platform$Sub$batch(_List_Nil);
-var $author$project$Types$Bad = function (a) {
-	return {$: 'Bad', a: a};
-};
-var $author$project$Types$Connected = {$: 'Connected'};
-var $author$project$Types$Connecting = {$: 'Connecting'};
-var $author$project$Types$CsvLoaded = function (a) {
-	return {$: 'CsvLoaded', a: a};
-};
-var $author$project$Types$CsvSelected = function (a) {
-	return {$: 'CsvSelected', a: a};
-};
-var $author$project$Types$Disconnecting = {$: 'Disconnecting'};
-var $author$project$Types$Expanded = {$: 'Expanded'};
-var $author$project$Types$Loading = {$: 'Loading'};
-var $elm$core$List$any = F2(
-	function (isOkay, list) {
-		any:
-		while (true) {
-			if (!list.b) {
-				return false;
-			} else {
-				var x = list.a;
-				var xs = list.b;
-				if (isOkay(x)) {
-					return true;
-				} else {
-					var $temp$isOkay = isOkay,
-						$temp$list = xs;
-					isOkay = $temp$isOkay;
-					list = $temp$list;
-					continue any;
-				}
-			}
-		}
-	});
-var $author$project$Types$ConnectedResponse = function (a) {
-	return {$: 'ConnectedResponse', a: a};
-};
-var $elm$json$Json$Encode$int = _Json_wrap;
-var $elm$json$Json$Encode$object = function (pairs) {
-	return _Json_wrap(
-		A3(
-			$elm$core$List$foldl,
-			F2(
-				function (_v0, obj) {
-					var k = _v0.a;
-					var v = _v0.b;
-					return A3(_Json_addField, k, v, obj);
-				}),
-			_Json_emptyObject(_Utils_Tuple0),
-			pairs));
-};
-var $elm$json$Json$Encode$string = _Json_wrap;
-var $elm$core$Maybe$map = F2(
-	function (f, maybe) {
-		if (maybe.$ === 'Just') {
-			var value = maybe.a;
-			return $elm$core$Maybe$Just(
-				f(value));
-		} else {
-			return $elm$core$Maybe$Nothing;
-		}
-	});
-var $elm$core$Maybe$withDefault = F2(
-	function (_default, maybe) {
-		if (maybe.$ === 'Just') {
-			var value = maybe.a;
-			return value;
-		} else {
-			return _default;
-		}
-	});
-var $author$project$Types$IpAddress$unsafeShowIp = function (ip) {
-	return A2(
-		$elm$core$Maybe$withDefault,
-		'',
-		A2($elm$core$Maybe$map, $elm$core$String$fromInt, ip.b0)) + ('.' + (A2(
-		$elm$core$Maybe$withDefault,
-		'',
-		A2($elm$core$Maybe$map, $elm$core$String$fromInt, ip.b1)) + ('.' + (A2(
-		$elm$core$Maybe$withDefault,
-		'',
-		A2($elm$core$Maybe$map, $elm$core$String$fromInt, ip.b2)) + ('.' + A2(
-		$elm$core$Maybe$withDefault,
-		'',
-		A2($elm$core$Maybe$map, $elm$core$String$fromInt, ip.b3)))))));
-};
-var $author$project$Types$encodeIpPort = function (model) {
-	return $elm$json$Json$Encode$object(
-		_List_fromArray(
-			[
-				_Utils_Tuple2(
-				'ip address',
-				$elm$json$Json$Encode$string(
-					$author$project$Types$IpAddress$unsafeShowIp(model.ipAddress))),
-				_Utils_Tuple2(
-				'port',
-				$elm$json$Json$Encode$int(
-					A2($elm$core$Maybe$withDefault, 0, model.socketPort))),
-				_Utils_Tuple2(
-				'timeout',
-				$elm$json$Json$Encode$int(
-					A2($elm$core$Maybe$withDefault, 0, model.timeout)))
-			]));
-};
-var $elm$http$Http$expectBytesResponse = F2(
-	function (toMsg, toResult) {
-		return A3(
-			_Http_expect,
-			'arraybuffer',
-			_Http_toDataView,
-			A2($elm$core$Basics$composeR, toResult, toMsg));
-	});
-var $elm$http$Http$expectWhatever = function (toMsg) {
-	return A2(
-		$elm$http$Http$expectBytesResponse,
-		toMsg,
-		$elm$http$Http$resolve(
-			function (_v0) {
-				return $elm$core$Result$Ok(_Utils_Tuple0);
-			}));
-};
-var $elm$http$Http$jsonBody = function (value) {
-	return A2(
-		_Http_pair,
-		'application/json',
-		A2($elm$json$Json$Encode$encode, 0, value));
-};
-var $elm$http$Http$post = function (r) {
-	return $elm$http$Http$request(
-		{body: r.body, expect: r.expect, headers: _List_Nil, method: 'POST', timeout: $elm$core$Maybe$Nothing, tracker: $elm$core$Maybe$Nothing, url: r.url});
-};
-var $author$project$Update$connectRequest = function (model) {
-	return $elm$http$Http$post(
-		{
-			body: $elm$http$Http$jsonBody(
-				$author$project$Types$encodeIpPort(model)),
-			expect: $elm$http$Http$expectWhatever($author$project$Types$ConnectedResponse),
-			url: 'http://localhost:4000/connect'
-		});
-};
 var $author$project$Types$DisconnectedResponse = function (a) {
 	return {$: 'DisconnectedResponse', a: a};
 };
@@ -6869,23 +6881,11 @@ var $author$project$Update$fromModType = F2(
 				});
 		}
 	});
-var $author$project$Types$NewTime = function (a) {
-	return {$: 'NewTime', a: a};
+var $author$project$Types$InitTime = function (a) {
+	return {$: 'InitTime', a: a};
 };
-var $elm$time$Time$Name = function (a) {
-	return {$: 'Name', a: a};
-};
-var $elm$time$Time$Offset = function (a) {
-	return {$: 'Offset', a: a};
-};
-var $elm$time$Time$customZone = $elm$time$Time$Zone;
 var $elm$time$Time$now = _Time_now($elm$time$Time$millisToPosix);
-var $author$project$Update$getPosixTime = A2($elm$core$Task$perform, $author$project$Types$NewTime, $elm$time$Time$now);
-var $author$project$Types$TimeZone = function (a) {
-	return {$: 'TimeZone', a: a};
-};
-var $elm$time$Time$here = _Time_here(_Utils_Tuple0);
-var $author$project$Update$getTimeZone = A2($elm$core$Task$perform, $author$project$Types$TimeZone, $elm$time$Time$here);
+var $author$project$Update$initTime = A2($elm$core$Task$perform, $author$project$Types$InitTime, $elm$time$Time$now);
 var $elm$file$File$name = _File_name;
 var $elm$core$Platform$Cmd$batch = _Platform_batch;
 var $elm$core$Platform$Cmd$none = $elm$core$Platform$Cmd$batch(_List_Nil);
@@ -7636,14 +7636,21 @@ var $author$project$Update$update = F2(
 					_Utils_update(
 						model,
 						{timeZone: zone}),
-					$author$project$Update$getPosixTime);
-			default:
+					$author$project$Update$initTime);
+			case 'NewTime':
 				var time = msg.a;
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
 						{timePosix: time}),
 					$elm$core$Platform$Cmd$none);
+			default:
+				var time = msg.a;
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{timePosix: time}),
+					$author$project$Update$connectionInfoRequest);
 		}
 	});
 var $mdgriffith$elm_ui$Internal$Style$classes = {above: 'a', active: 'atv', alignBottom: 'ab', alignCenterX: 'cx', alignCenterY: 'cy', alignContainerBottom: 'acb', alignContainerCenterX: 'accx', alignContainerCenterY: 'accy', alignContainerRight: 'acr', alignLeft: 'al', alignRight: 'ar', alignTop: 'at', alignedHorizontally: 'ah', alignedVertically: 'av', any: 's', behind: 'bh', below: 'b', bold: 'w7', borderDashed: 'bd', borderDotted: 'bdt', borderNone: 'bn', borderSolid: 'bs', capturePointerEvents: 'cpe', clip: 'cp', clipX: 'cpx', clipY: 'cpy', column: 'c', container: 'ctr', contentBottom: 'cb', contentCenterX: 'ccx', contentCenterY: 'ccy', contentLeft: 'cl', contentRight: 'cr', contentTop: 'ct', cursorPointer: 'cptr', cursorText: 'ctxt', focus: 'fcs', focusedWithin: 'focus-within', fullSize: 'fs', grid: 'g', hasBehind: 'hbh', heightContent: 'hc', heightExact: 'he', heightFill: 'hf', heightFillPortion: 'hfp', hover: 'hv', imageContainer: 'ic', inFront: 'fr', inputLabel: 'lbl', inputMultiline: 'iml', inputMultilineFiller: 'imlf', inputMultilineParent: 'imlp', inputMultilineWrapper: 'implw', inputText: 'it', italic: 'i', link: 'lnk', nearby: 'nb', noTextSelection: 'notxt', onLeft: 'ol', onRight: 'or', opaque: 'oq', overflowHidden: 'oh', page: 'pg', paragraph: 'p', passPointerEvents: 'ppe', root: 'ui', row: 'r', scrollbars: 'sb', scrollbarsX: 'sbx', scrollbarsY: 'sby', seButton: 'sbt', single: 'e', sizeByCapital: 'cap', spaceEvenly: 'sev', strike: 'sk', text: 't', textCenter: 'tc', textExtraBold: 'w8', textExtraLight: 'w2', textHeavy: 'w9', textJustify: 'tj', textJustifyAll: 'tja', textLeft: 'tl', textLight: 'w3', textMedium: 'w5', textNormalWeight: 'w4', textRight: 'tr', textSemiBold: 'w6', textThin: 'w1', textUnitalicized: 'tun', transition: 'ts', transparent: 'clr', underline: 'u', widthContent: 'wc', widthExact: 'we', widthFill: 'wf', widthFillPortion: 'wfp', wrapped: 'wrp'};
@@ -16207,9 +16214,7 @@ var $elm$core$String$fromChar = function (_char) {
 var $author$project$View$expandButtonLabel = function (model) {
 	var _v0 = model.statusBarState;
 	if (_v0.$ === 'Expanded') {
-		return $mdgriffith$elm_ui$Element$text(
-			$elm$core$String$fromChar(
-				_Utils_chr('▼')));
+		return $mdgriffith$elm_ui$Element$text('▼');
 	} else {
 		return $mdgriffith$elm_ui$Element$text(
 			$elm$core$String$fromChar(
@@ -16239,6 +16244,16 @@ var $author$project$View$expandButton = function (model) {
 };
 var $mdgriffith$elm_ui$Internal$Model$Bottom = {$: 'Bottom'};
 var $mdgriffith$elm_ui$Element$alignBottom = $mdgriffith$elm_ui$Internal$Model$AlignY($mdgriffith$elm_ui$Internal$Model$Bottom);
+var $author$project$View$notificationsHeight = function (model) {
+	var _v0 = model.statusBarState;
+	if (_v0.$ === 'Expanded') {
+		return $mdgriffith$elm_ui$Element$height(
+			$mdgriffith$elm_ui$Element$px(300));
+	} else {
+		return $mdgriffith$elm_ui$Element$height(
+			$mdgriffith$elm_ui$Element$px(30));
+	}
+};
 var $elm$time$Time$flooredDiv = F2(
 	function (numerator, denominator) {
 		return $elm$core$Basics$floor(numerator / denominator);
@@ -16317,15 +16332,40 @@ var $author$project$View$hhmmss = F2(
 			A2($elm$time$Time$toMinute, zone, posix)) + (':' + $elm$core$String$fromInt(
 			A2($elm$time$Time$toSecond, zone, posix)))));
 	});
-var $author$project$View$notificationsHeight = function (model) {
-	var _v0 = model.statusBarState;
-	if (_v0.$ === 'Expanded') {
-		return $mdgriffith$elm_ui$Element$height(
-			$mdgriffith$elm_ui$Element$px(300));
-	} else {
-		return $mdgriffith$elm_ui$Element$height(
-			$mdgriffith$elm_ui$Element$px(30));
-	}
+var $author$project$View$notTimeColumn = function (model) {
+	return {
+		header: $mdgriffith$elm_ui$Element$none,
+		view: F2(
+			function (_v0, not) {
+				return $mdgriffith$elm_ui$Element$text(
+					A2($author$project$View$hhmmss, model.timeZone, not.time));
+			}),
+		width: $mdgriffith$elm_ui$Element$px(100)
+	};
+};
+var $author$project$View$notheaderColumn = {
+	header: $mdgriffith$elm_ui$Element$none,
+	view: F2(
+		function (_v0, not) {
+			return $mdgriffith$elm_ui$Element$text(not.header);
+		}),
+	width: $mdgriffith$elm_ui$Element$fillPortion(1)
+};
+var $author$project$View$notificationColumns = function (model) {
+	return _List_fromArray(
+		[
+			$author$project$View$notTimeColumn(model),
+			$author$project$View$notheaderColumn
+		]);
+};
+var $author$project$View$notificationsTable = function (model) {
+	return A2(
+		$mdgriffith$elm_ui$Element$indexedTable,
+		_List_Nil,
+		{
+			columns: $author$project$View$notificationColumns(model),
+			data: model.notifications
+		});
 };
 var $author$project$View$notifications = function (model) {
 	return A2(
@@ -16339,8 +16379,7 @@ var $author$project$View$notifications = function (model) {
 			]),
 		_List_fromArray(
 			[
-				$mdgriffith$elm_ui$Element$text(
-				A2($author$project$View$hhmmss, model.timeZone, model.timePosix))
+				$author$project$View$notificationsTable(model)
 			]));
 };
 var $author$project$View$statusBar = function (model) {

@@ -46,8 +46,8 @@ import Types.IpAddress
         , IpAddressByte
         , decodeIpAddress
         , unsafeShowIp
+        , showIp
         )
-import Types.IpAddress exposing (showIp)
 
 
 type Msg
@@ -74,6 +74,7 @@ type Msg
     | ChangeModDataValue Int String
     | ExpandStatus
     | TimeZone Time.Zone
+    | InitTime Time.Posix
     | NewTime Time.Posix
 
 
@@ -261,17 +262,6 @@ getModValue mv =
 
         ModFloat v ->
             Maybe.map showMFloat v
-
-
-
--- ss : String -> Maybe Float
--- ss  s =
---     if String.endsWith "."
---     then
---          case String.fromFloat s of
---             Nothing -> Nothing
---             Just _ -> s
-
 
 encodeModData : ModData -> E.Value
 encodeModData md =
