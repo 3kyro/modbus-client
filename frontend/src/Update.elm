@@ -13,7 +13,6 @@ import Types
     exposing
         ( ActiveTab(..)
         , ConnectStatus(..)
-        , ConnectionInfo
         , ModDataUpdate
         , ModValue(..)
         , Model
@@ -44,12 +43,22 @@ update msg model =
             ( { model
                 | modDataUpdate = regs
                 , status = AllGood
+                , notifications = simpleNot model "Selected registers updated"
               }
-            , Cmd.none
+            , jumpToBottom "status"
             )
 
         ReadRegisters (Err err) ->
-            ( { model | status = Bad <| showHttpError err }, Cmd.none )
+            ( { model
+                | status = Bad <| showHttpError err
+                , notifications =
+                    detailedNot
+                        model
+                        "Error reading registers"
+                        (showHttpError err)
+              }
+            , jumpToBottom "status"
+            )
 
         ReceivedConnectionInfo (Ok (Just conn)) ->
             ( { model
@@ -58,34 +67,72 @@ update msg model =
                 , timeout = Just conn.timeout
                 , connectStatus = Connected
                 , notifications =
-                    pushConnectionNotification
+                    detailedNot
                         model
-                        conn
+                        "Connected"
+                        (showConnInfo conn)
               }
-            , Cmd.none
+            , jumpToBottom "status"
             )
 
         ReceivedConnectionInfo (Ok Nothing) ->
-            ( model, Cmd.none )
+            ( { model
+                | notifications = simpleNot model "Not Connected"
+              }
+            , jumpToBottom "status"
+            )
 
         ReceivedConnectionInfo (Err err) ->
-            ( { model | status = Bad <| showHttpError err }, Cmd.none )
+            ( { model
+                | status = Bad <| showHttpError err
+                , notifications =
+                    detailedNot
+                        model
+                        "Error receiving connection info"
+                        (showHttpError err)
+              }
+            , jumpToBottom "status"
+            )
 
         RefreshRequest regs ->
-            ( { model | status = Loading }, updateModDataRequest regs )
+            ( { model
+                | status = Loading
+                , notifications =
+                    Notification
+                        model.timePosix
+                        "Updating registers"
+                        Nothing
+                        :: model.notifications
+              }
+            , updateModDataRequest regs
+            )
 
         ConnectRequest ->
-            ( { model | connectStatus = Connecting }, connectRequest model )
+            ( { model
+                | connectStatus = Connecting
+              }
+            , connectRequest model
+            )
 
         ConnectedResponse (Ok _) ->
-            ( { model | connectStatus = Connected }, Cmd.none )
+            ( { model
+                | connectStatus = Connected
+                , notifications = simpleNot model "Connected"
+              }
+            , jumpToBottom "status"
+            )
 
         ConnectedResponse (Err err) ->
             ( { model
                 | status = Bad <| showHttpError err
                 , connectStatus = Connect
+                , notifications =
+                    detailedNot
+                        model
+                        "Error connecting to client"
+                        (showHttpError err)
               }
-            , Cmd.none
+            , jumpToBottom "status"
             )
 
         ChangeIpAddress byte str ->
@@ -147,7 +194,7 @@ update msg model =
         DisconnectedResponse (Ok _) ->
             ( { model
                 | connectStatus = Connect
-                , notifications = pushDisconnectedNot model
+                , notifications = simpleNot model "Disconnected"
               }
             , jumpToBottom "status"
             )
@@ -156,8 +203,13 @@ update msg model =
             ( { model
                 | status = Bad <| showHttpError err
                 , connectStatus = Connect
+                , notifications =
+                    detailedNot
+                        model
+                        "Error disconnectiing from client"
+                        (showHttpError err)
               }
-            , Cmd.none
+            , jumpToBottom "status"
             )
 
         ChangeActiveTab tab ->
@@ -173,15 +225,25 @@ update msg model =
             ( { model
                 | csvContent = Just content
                 , csvLoaded = False
+                , notifications = simpleNot model "Loaded register table from disk"
               }
-            , Cmd.none
+            , jumpToBottom "status"
             )
 
         ModDataRequest ->
             ( model, requestModData model )
 
         ReceivedModData (Err err) ->
-            ( { model | status = Bad <| showHttpError err }, Cmd.none )
+            ( { model
+                | status = Bad <| showHttpError err
+                , notifications =
+                    detailedNot
+                        model
+                        "Error parsing register table"
+                        (showHttpError err)
+              }
+            , jumpToBottom "status"
+            )
 
         ReceivedModData (Ok md) ->
             ( { model
@@ -189,8 +251,9 @@ update msg model =
                 , csvLoaded = True
                 , selectAllCheckbox = False
                 , selectSome = False
+                , notifications = simpleNot model "Register table updated"
               }
-            , Cmd.none
+            , jumpToBottom "status"
             )
 
         -- Set the flag select All in the ModData table
@@ -396,34 +459,26 @@ getPosixTime =
     Task.perform NewTime Time.now
 
 
-pushConnectionNotification : Model -> ConnectionInfo -> List Notification
-pushConnectionNotification model conn =
-    let
-        new =
-            Notification
-                model.timePosix
-                "Connected"
-            <|
-                Just <|
-                    showConnInfo conn
-    in
-    new :: model.notifications
-
-
-pushDisconnectedNot : Model -> List Notification
-pushDisconnectedNot model =
-    let
-        new =
-            Notification
-                model.timePosix
-                "Disconnected"
-                Nothing
-    in
-    new :: model.notifications
-
-
 jumpToBottom : String -> Cmd Msg
 jumpToBottom id =
     Dom.getViewportOf id
         |> Task.andThen (\info -> Dom.setViewportOf id 0 info.scene.height)
         |> Task.attempt (\_ -> NoOp)
+
+
+simpleNot : Model -> String -> List Notification
+simpleNot model header =
+    Notification
+        model.timePosix
+        header
+        Nothing
+        :: model.notifications
+
+
+detailedNot : Model -> String -> String -> List Notification
+detailedNot model header detailed =
+    Notification
+        model.timePosix
+        header
+        (Just detailed)
+        :: model.notifications

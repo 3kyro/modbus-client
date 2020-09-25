@@ -6122,6 +6122,10 @@ var $author$project$Types$CsvSelected = function (a) {
 var $author$project$Types$Disconnecting = {$: 'Disconnecting'};
 var $author$project$Types$Expanded = {$: 'Expanded'};
 var $author$project$Types$Loading = {$: 'Loading'};
+var $author$project$Types$Notification = F3(
+	function (time, header, detailed) {
+		return {detailed: detailed, header: header, time: time};
+	});
 var $elm$core$List$any = F2(
 	function (isOkay, list) {
 		any:
@@ -7094,6 +7098,17 @@ var $author$project$Update$connectionInfoRequest = $elm$http$Http$get(
 			$elm$json$Json$Decode$maybe($author$project$Types$decodeConnInfo)),
 		url: 'http://localhost:4000/connectInfo'
 	});
+var $author$project$Update$detailedNot = F3(
+	function (model, header, detailed) {
+		return A2(
+			$elm$core$List$cons,
+			A3(
+				$author$project$Types$Notification,
+				model.timePosix,
+				header,
+				$elm$core$Maybe$Just(detailed)),
+			model.notifications);
+	});
 var $author$project$Types$DisconnectedResponse = function (a) {
 	return {$: 'DisconnectedResponse', a: a};
 };
@@ -7179,37 +7194,6 @@ var $author$project$Update$jumpToBottom = function (id) {
 var $elm$file$File$name = _File_name;
 var $elm$core$Platform$Cmd$batch = _Platform_batch;
 var $elm$core$Platform$Cmd$none = $elm$core$Platform$Cmd$batch(_List_Nil);
-var $author$project$Types$Notification = F3(
-	function (time, header, detailed) {
-		return {detailed: detailed, header: header, time: time};
-	});
-var $author$project$Types$IpAddress$unsafeShowFromInt = F4(
-	function (b0, b1, b2, b3) {
-		return $elm$core$String$fromInt(b0) + ('.' + ($elm$core$String$fromInt(b1) + ('.' + ($elm$core$String$fromInt(b2) + ('.' + $elm$core$String$fromInt(b3))))));
-	});
-var $author$project$Types$IpAddress$showIp = function (ip) {
-	return A5($elm$core$Maybe$map4, $author$project$Types$IpAddress$unsafeShowFromInt, ip.b0, ip.b1, ip.b2, ip.b3);
-};
-var $author$project$Types$showConnInfo = function (conn) {
-	return ('IP Address: ' + (A2(
-		$elm$core$Maybe$withDefault,
-		'N/A',
-		$author$project$Types$IpAddress$showIp(conn.ipAddress)) + '\n')) + (('Port: ' + ($elm$core$String$fromInt(conn.socketPort) + '\n')) + ('Timeout: ' + $elm$core$String$fromInt(conn.timeout)));
-};
-var $author$project$Update$pushConnectionNotification = F2(
-	function (model, conn) {
-		var _new = A3(
-			$author$project$Types$Notification,
-			model.timePosix,
-			'Connected',
-			$elm$core$Maybe$Just(
-				$author$project$Types$showConnInfo(conn)));
-		return A2($elm$core$List$cons, _new, model.notifications);
-	});
-var $author$project$Update$pushDisconnectedNot = function (model) {
-	var _new = A3($author$project$Types$Notification, model.timePosix, 'Disconnected', $elm$core$Maybe$Nothing);
-	return A2($elm$core$List$cons, _new, model.notifications);
-};
 var $author$project$Types$replaceModDataSelected = F2(
 	function (idx, checked) {
 		return F2(
@@ -7380,6 +7364,19 @@ var $author$project$Types$IpAddress$setIpAddressByte = F3(
 					{b3: mint});
 		}
 	});
+var $author$project$Types$IpAddress$unsafeShowFromInt = F4(
+	function (b0, b1, b2, b3) {
+		return $elm$core$String$fromInt(b0) + ('.' + ($elm$core$String$fromInt(b1) + ('.' + ($elm$core$String$fromInt(b2) + ('.' + $elm$core$String$fromInt(b3))))));
+	});
+var $author$project$Types$IpAddress$showIp = function (ip) {
+	return A5($elm$core$Maybe$map4, $author$project$Types$IpAddress$unsafeShowFromInt, ip.b0, ip.b1, ip.b2, ip.b3);
+};
+var $author$project$Types$showConnInfo = function (conn) {
+	return ('IP Address: ' + (A2(
+		$elm$core$Maybe$withDefault,
+		'N/A',
+		$author$project$Types$IpAddress$showIp(conn.ipAddress)) + '\n')) + (('Port: ' + ($elm$core$String$fromInt(conn.socketPort) + '\n')) + ('Timeout: ' + $elm$core$String$fromInt(conn.timeout)));
+};
 var $author$project$Update$showHttpError = function (err) {
 	switch (err.$) {
 		case 'BadUrl':
@@ -7397,6 +7394,13 @@ var $author$project$Update$showHttpError = function (err) {
 			return s;
 	}
 };
+var $author$project$Update$simpleNot = F2(
+	function (model, header) {
+		return A2(
+			$elm$core$List$cons,
+			A3($author$project$Types$Notification, model.timePosix, header, $elm$core$Maybe$Nothing),
+			model.notifications);
+	});
 var $elm$file$File$toString = _File_toString;
 var $author$project$Types$ReadRegisters = function (a) {
 	return {$: 'ReadRegisters', a: a};
@@ -7557,18 +7561,27 @@ var $author$project$Update$update = F2(
 					return _Utils_Tuple2(
 						_Utils_update(
 							model,
-							{modDataUpdate: regs, status: $author$project$Types$AllGood}),
-						$elm$core$Platform$Cmd$none);
+							{
+								modDataUpdate: regs,
+								notifications: A2($author$project$Update$simpleNot, model, 'Selected registers updated'),
+								status: $author$project$Types$AllGood
+							}),
+						$author$project$Update$jumpToBottom('status'));
 				} else {
 					var err = msg.a.a;
 					return _Utils_Tuple2(
 						_Utils_update(
 							model,
 							{
+								notifications: A3(
+									$author$project$Update$detailedNot,
+									model,
+									'Error reading registers',
+									$author$project$Update$showHttpError(err)),
 								status: $author$project$Types$Bad(
 									$author$project$Update$showHttpError(err))
 							}),
-						$elm$core$Platform$Cmd$none);
+						$author$project$Update$jumpToBottom('status'));
 				}
 			case 'ReceivedConnectionInfo':
 				if (msg.a.$ === 'Ok') {
@@ -7580,14 +7593,24 @@ var $author$project$Update$update = F2(
 								{
 									connectStatus: $author$project$Types$Connected,
 									ipAddress: conn.ipAddress,
-									notifications: A2($author$project$Update$pushConnectionNotification, model, conn),
+									notifications: A3(
+										$author$project$Update$detailedNot,
+										model,
+										'Connected',
+										$author$project$Types$showConnInfo(conn)),
 									socketPort: $elm$core$Maybe$Just(conn.socketPort),
 									timeout: $elm$core$Maybe$Just(conn.timeout)
 								}),
-							$elm$core$Platform$Cmd$none);
+							$author$project$Update$jumpToBottom('status'));
 					} else {
 						var _v1 = msg.a.a;
-						return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
+						return _Utils_Tuple2(
+							_Utils_update(
+								model,
+								{
+									notifications: A2($author$project$Update$simpleNot, model, 'Not Connected')
+								}),
+							$author$project$Update$jumpToBottom('status'));
 					}
 				} else {
 					var err = msg.a.a;
@@ -7595,17 +7618,28 @@ var $author$project$Update$update = F2(
 						_Utils_update(
 							model,
 							{
+								notifications: A3(
+									$author$project$Update$detailedNot,
+									model,
+									'Error receiving connection info',
+									$author$project$Update$showHttpError(err)),
 								status: $author$project$Types$Bad(
 									$author$project$Update$showHttpError(err))
 							}),
-						$elm$core$Platform$Cmd$none);
+						$author$project$Update$jumpToBottom('status'));
 				}
 			case 'RefreshRequest':
 				var regs = msg.a;
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
-						{status: $author$project$Types$Loading}),
+						{
+							notifications: A2(
+								$elm$core$List$cons,
+								A3($author$project$Types$Notification, model.timePosix, 'Updating registers', $elm$core$Maybe$Nothing),
+								model.notifications),
+							status: $author$project$Types$Loading
+						}),
 					$author$project$Update$updateModDataRequest(regs));
 			case 'ConnectRequest':
 				return _Utils_Tuple2(
@@ -7618,8 +7652,11 @@ var $author$project$Update$update = F2(
 					return _Utils_Tuple2(
 						_Utils_update(
 							model,
-							{connectStatus: $author$project$Types$Connected}),
-						$elm$core$Platform$Cmd$none);
+							{
+								connectStatus: $author$project$Types$Connected,
+								notifications: A2($author$project$Update$simpleNot, model, 'Connected')
+							}),
+						$author$project$Update$jumpToBottom('status'));
 				} else {
 					var err = msg.a.a;
 					return _Utils_Tuple2(
@@ -7627,10 +7664,15 @@ var $author$project$Update$update = F2(
 							model,
 							{
 								connectStatus: $author$project$Types$Connect,
+								notifications: A3(
+									$author$project$Update$detailedNot,
+									model,
+									'Error connecting to client',
+									$author$project$Update$showHttpError(err)),
 								status: $author$project$Types$Bad(
 									$author$project$Update$showHttpError(err))
 							}),
-						$elm$core$Platform$Cmd$none);
+						$author$project$Update$jumpToBottom('status'));
 				}
 			case 'ChangeIpAddress':
 				var _byte = msg.a;
@@ -7726,7 +7768,7 @@ var $author$project$Update$update = F2(
 							model,
 							{
 								connectStatus: $author$project$Types$Connect,
-								notifications: $author$project$Update$pushDisconnectedNot(model)
+								notifications: A2($author$project$Update$simpleNot, model, 'Disconnected')
 							}),
 						$author$project$Update$jumpToBottom('status'));
 				} else {
@@ -7736,10 +7778,15 @@ var $author$project$Update$update = F2(
 							model,
 							{
 								connectStatus: $author$project$Types$Connect,
+								notifications: A3(
+									$author$project$Update$detailedNot,
+									model,
+									'Error disconnectiing from client',
+									$author$project$Update$showHttpError(err)),
 								status: $author$project$Types$Bad(
 									$author$project$Update$showHttpError(err))
 							}),
-						$elm$core$Platform$Cmd$none);
+						$author$project$Update$jumpToBottom('status'));
 				}
 			case 'ChangeActiveTab':
 				var tab = msg.a;
@@ -7772,9 +7819,10 @@ var $author$project$Update$update = F2(
 						model,
 						{
 							csvContent: $elm$core$Maybe$Just(content),
-							csvLoaded: false
+							csvLoaded: false,
+							notifications: A2($author$project$Update$simpleNot, model, 'Loaded register table from disk')
 						}),
-					$elm$core$Platform$Cmd$none);
+					$author$project$Update$jumpToBottom('status'));
 			case 'ModDataRequest':
 				return _Utils_Tuple2(
 					model,
@@ -7786,10 +7834,15 @@ var $author$project$Update$update = F2(
 						_Utils_update(
 							model,
 							{
+								notifications: A3(
+									$author$project$Update$detailedNot,
+									model,
+									'Error parsing register table',
+									$author$project$Update$showHttpError(err)),
 								status: $author$project$Types$Bad(
 									$author$project$Update$showHttpError(err))
 							}),
-						$elm$core$Platform$Cmd$none);
+						$author$project$Update$jumpToBottom('status'));
 				} else {
 					var md = msg.a.a;
 					return _Utils_Tuple2(
@@ -7798,10 +7851,11 @@ var $author$project$Update$update = F2(
 							{
 								csvLoaded: true,
 								modDataUpdate: $author$project$Types$newModDataUpdate(md),
+								notifications: A2($author$project$Update$simpleNot, model, 'Register table updated'),
 								selectAllCheckbox: false,
 								selectSome: false
 							}),
-						$elm$core$Platform$Cmd$none);
+						$author$project$Update$jumpToBottom('status'));
 				}
 			case 'SelectAllChecked':
 				var b = msg.a;
