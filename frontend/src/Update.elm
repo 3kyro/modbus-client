@@ -1,4 +1,4 @@
-module Update exposing (getTimeZone, initCmd, update)
+module Update exposing (getTimeZone, initCmd, update, getPosixTime)
 
 import Array
 import File

@@ -28,7 +28,7 @@ main =
         { init = \_ -> ( initModel, initCmd )
         , view = view
         , update = update
-        , subscriptions = \_ -> Sub.none
+        , subscriptions = \_ -> Time.every 1000 NewTime
         }
 
 
