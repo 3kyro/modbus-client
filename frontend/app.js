@@ -4745,6 +4745,52 @@ function _File_toUrl(blob)
 	});
 }
 
+
+
+
+function _Time_now(millisToPosix)
+{
+	return _Scheduler_binding(function(callback)
+	{
+		callback(_Scheduler_succeed(millisToPosix(Date.now())));
+	});
+}
+
+var _Time_setInterval = F2(function(interval, task)
+{
+	return _Scheduler_binding(function(callback)
+	{
+		var id = setInterval(function() { _Scheduler_rawSpawn(task); }, interval);
+		return function() { clearInterval(id); };
+	});
+});
+
+function _Time_here()
+{
+	return _Scheduler_binding(function(callback)
+	{
+		callback(_Scheduler_succeed(
+			A2($elm$time$Time$customZone, -(new Date().getTimezoneOffset()), _List_Nil)
+		));
+	});
+}
+
+
+function _Time_getZoneName()
+{
+	return _Scheduler_binding(function(callback)
+	{
+		try
+		{
+			var name = $elm$time$Time$Name(Intl.DateTimeFormat().resolvedOptions().timeZone);
+		}
+		catch (e)
+		{
+			var name = $elm$time$Time$Offset(new Date().getTimezoneOffset());
+		}
+		callback(_Scheduler_succeed(name));
+	});
+}
 var $elm$core$Basics$EQ = {$: 'EQ'};
 var $elm$core$Basics$LT = {$: 'LT'};
 var $elm$core$List$cons = _List_cons;
@@ -6597,6 +6643,10 @@ var $author$project$App$initModData = _List_fromArray(
 		modValue: $author$project$Types$ModWord($elm$core$Maybe$Nothing)
 	}
 	]);
+var $elm$time$Time$Posix = function (a) {
+	return {$: 'Posix', a: a};
+};
+var $elm$time$Time$millisToPosix = $elm$time$Time$Posix;
 var $author$project$Types$ModDataUpdate = F3(
 	function (mduModData, mduSelected, mduRW) {
 		return {mduModData: mduModData, mduRW: mduRW, mduSelected: mduSelected};
@@ -6609,6 +6659,11 @@ var $author$project$Types$newModDataUpdate = function (mds) {
 		},
 		mds);
 };
+var $elm$time$Time$Zone = F2(
+	function (a, b) {
+		return {$: 'Zone', a: a, b: b};
+	});
+var $elm$time$Time$utc = A2($elm$time$Time$Zone, 0, _List_Nil);
 var $author$project$App$initModel = {
 	activeTab: $author$project$Types$ConnectMenu,
 	connectStatus: $author$project$Types$Connect,
@@ -6623,6 +6678,8 @@ var $author$project$App$initModel = {
 	socketPort: $elm$core$Maybe$Just(502),
 	status: $author$project$Types$AllGood,
 	statusBarState: $author$project$Types$Retracted,
+	timePosix: $elm$time$Time$millisToPosix(0),
+	timeZone: $elm$time$Time$utc,
 	timeout: $elm$core$Maybe$Just(1000)
 };
 var $elm$core$Platform$Sub$batch = _Platform_batch;
@@ -6778,10 +6835,6 @@ var $author$project$Update$disconnectRequest = $elm$http$Http$post(
 		expect: $elm$http$Http$expectWhatever($author$project$Types$DisconnectedResponse),
 		url: 'http://localhost:4000/disconnect'
 	});
-var $elm$time$Time$Posix = function (a) {
-	return {$: 'Posix', a: a};
-};
-var $elm$time$Time$millisToPosix = $elm$time$Time$Posix;
 var $elm$file$File$Select$file = F2(
 	function (mimes, toMsg) {
 		return A2(
@@ -6815,6 +6868,23 @@ var $author$project$Update$fromModType = F2(
 				});
 		}
 	});
+var $author$project$Types$NewTime = function (a) {
+	return {$: 'NewTime', a: a};
+};
+var $elm$time$Time$Name = function (a) {
+	return {$: 'Name', a: a};
+};
+var $elm$time$Time$Offset = function (a) {
+	return {$: 'Offset', a: a};
+};
+var $elm$time$Time$customZone = $elm$time$Time$Zone;
+var $elm$time$Time$now = _Time_now($elm$time$Time$millisToPosix);
+var $author$project$Update$getPosixTime = A2($elm$core$Task$perform, $author$project$Types$NewTime, $elm$time$Time$now);
+var $author$project$Types$TimeZone = function (a) {
+	return {$: 'TimeZone', a: a};
+};
+var $elm$time$Time$here = _Time_here(_Utils_Tuple0);
+var $author$project$Update$getTimeZone = A2($elm$core$Task$perform, $author$project$Types$TimeZone, $elm$time$Time$here);
 var $elm$file$File$name = _File_name;
 var $elm$core$Platform$Cmd$batch = _Platform_batch;
 var $elm$core$Platform$Cmd$none = $elm$core$Platform$Cmd$batch(_List_Nil);
@@ -7194,7 +7264,7 @@ var $author$project$Update$update = F2(
 							$elm$core$Platform$Cmd$none);
 					} else {
 						var _v1 = msg.a.a;
-						return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
+						return _Utils_Tuple2(model, $author$project$Update$getTimeZone);
 					}
 				} else {
 					var err = msg.a.a;
@@ -7516,7 +7586,7 @@ var $author$project$Update$update = F2(
 							}),
 						$elm$core$Platform$Cmd$none);
 				}
-			default:
+			case 'ExpandStatus':
 				var _v9 = model.statusBarState;
 				if (_v9.$ === 'Expanded') {
 					return _Utils_Tuple2(
@@ -7531,6 +7601,20 @@ var $author$project$Update$update = F2(
 							{statusBarState: $author$project$Types$Expanded}),
 						$elm$core$Platform$Cmd$none);
 				}
+			case 'TimeZone':
+				var zone = msg.a;
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{timeZone: zone}),
+					$author$project$Update$getPosixTime);
+			default:
+				var time = msg.a;
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{timePosix: time}),
+					$elm$core$Platform$Cmd$none);
 		}
 	});
 var $mdgriffith$elm_ui$Internal$Style$classes = {above: 'a', active: 'atv', alignBottom: 'ab', alignCenterX: 'cx', alignCenterY: 'cy', alignContainerBottom: 'acb', alignContainerCenterX: 'accx', alignContainerCenterY: 'accy', alignContainerRight: 'acr', alignLeft: 'al', alignRight: 'ar', alignTop: 'at', alignedHorizontally: 'ah', alignedVertically: 'av', any: 's', behind: 'bh', below: 'b', bold: 'w7', borderDashed: 'bd', borderDotted: 'bdt', borderNone: 'bn', borderSolid: 'bs', capturePointerEvents: 'cpe', clip: 'cp', clipX: 'cpx', clipY: 'cpy', column: 'c', container: 'ctr', contentBottom: 'cb', contentCenterX: 'ccx', contentCenterY: 'ccy', contentLeft: 'cl', contentRight: 'cr', contentTop: 'ct', cursorPointer: 'cptr', cursorText: 'ctxt', focus: 'fcs', focusedWithin: 'focus-within', fullSize: 'fs', grid: 'g', hasBehind: 'hbh', heightContent: 'hc', heightExact: 'he', heightFill: 'hf', heightFillPortion: 'hfp', hover: 'hv', imageContainer: 'ic', inFront: 'fr', inputLabel: 'lbl', inputMultiline: 'iml', inputMultilineFiller: 'imlf', inputMultilineParent: 'imlp', inputMultilineWrapper: 'implw', inputText: 'it', italic: 'i', link: 'lnk', nearby: 'nb', noTextSelection: 'notxt', onLeft: 'ol', onRight: 'or', opaque: 'oq', overflowHidden: 'oh', page: 'pg', paragraph: 'p', passPointerEvents: 'ppe', root: 'ui', row: 'r', scrollbars: 'sb', scrollbarsX: 'sbx', scrollbarsY: 'sby', seButton: 'sbt', single: 'e', sizeByCapital: 'cap', spaceEvenly: 'sev', strike: 'sk', text: 't', textCenter: 'tc', textExtraBold: 'w8', textExtraLight: 'w2', textHeavy: 'w9', textJustify: 'tj', textJustifyAll: 'tja', textLeft: 'tl', textLight: 'w3', textMedium: 'w5', textNormalWeight: 'w4', textRight: 'tr', textSemiBold: 'w6', textThin: 'w1', textUnitalicized: 'tun', transition: 'ts', transparent: 'clr', underline: 'u', widthContent: 'wc', widthExact: 'we', widthFill: 'wf', widthFillPortion: 'wfp', wrapped: 'wrp'};
@@ -16096,11 +16180,11 @@ var $author$project$View$expandButtonLabel = function (model) {
 	if (_v0.$ === 'Expanded') {
 		return $mdgriffith$elm_ui$Element$text(
 			$elm$core$String$fromChar(
-				_Utils_chr('\u25BC')));
+				_Utils_chr('▼')));
 	} else {
 		return $mdgriffith$elm_ui$Element$text(
 			$elm$core$String$fromChar(
-				_Utils_chr('\u25B2')));
+				_Utils_chr('▲')));
 	}
 };
 var $author$project$View$expandButton = function (model) {
@@ -16126,6 +16210,88 @@ var $author$project$View$expandButton = function (model) {
 };
 var $mdgriffith$elm_ui$Internal$Model$Bottom = {$: 'Bottom'};
 var $mdgriffith$elm_ui$Element$alignBottom = $mdgriffith$elm_ui$Internal$Model$AlignY($mdgriffith$elm_ui$Internal$Model$Bottom);
+var $elm$time$Time$flooredDiv = F2(
+	function (numerator, denominator) {
+		return $elm$core$Basics$floor(numerator / denominator);
+	});
+var $elm$time$Time$posixToMillis = function (_v0) {
+	var millis = _v0.a;
+	return millis;
+};
+var $elm$time$Time$toAdjustedMinutesHelp = F3(
+	function (defaultOffset, posixMinutes, eras) {
+		toAdjustedMinutesHelp:
+		while (true) {
+			if (!eras.b) {
+				return posixMinutes + defaultOffset;
+			} else {
+				var era = eras.a;
+				var olderEras = eras.b;
+				if (_Utils_cmp(era.start, posixMinutes) < 0) {
+					return posixMinutes + era.offset;
+				} else {
+					var $temp$defaultOffset = defaultOffset,
+						$temp$posixMinutes = posixMinutes,
+						$temp$eras = olderEras;
+					defaultOffset = $temp$defaultOffset;
+					posixMinutes = $temp$posixMinutes;
+					eras = $temp$eras;
+					continue toAdjustedMinutesHelp;
+				}
+			}
+		}
+	});
+var $elm$time$Time$toAdjustedMinutes = F2(
+	function (_v0, time) {
+		var defaultOffset = _v0.a;
+		var eras = _v0.b;
+		return A3(
+			$elm$time$Time$toAdjustedMinutesHelp,
+			defaultOffset,
+			A2(
+				$elm$time$Time$flooredDiv,
+				$elm$time$Time$posixToMillis(time),
+				60000),
+			eras);
+	});
+var $elm$time$Time$toHour = F2(
+	function (zone, time) {
+		return A2(
+			$elm$core$Basics$modBy,
+			24,
+			A2(
+				$elm$time$Time$flooredDiv,
+				A2($elm$time$Time$toAdjustedMinutes, zone, time),
+				60));
+	});
+var $elm$time$Time$toMinute = F2(
+	function (zone, time) {
+		return A2(
+			$elm$core$Basics$modBy,
+			60,
+			A2($elm$time$Time$toAdjustedMinutes, zone, time));
+	});
+var $elm$time$Time$toSecond = F2(
+	function (_v0, time) {
+		return A2(
+			$elm$core$Basics$modBy,
+			60,
+			A2(
+				$elm$time$Time$flooredDiv,
+				$elm$time$Time$posixToMillis(time),
+				1000));
+	});
+var $author$project$View$hhmmss = F2(
+	function (zone, posix) {
+		return _Utils_ap(
+			$elm$core$String$fromInt(
+				A2($elm$time$Time$toHour, zone, posix)),
+			_Utils_ap(
+				$elm$core$String$fromInt(
+					A2($elm$time$Time$toMinute, zone, posix)),
+				$elm$core$String$fromInt(
+					A2($elm$time$Time$toSecond, zone, posix))));
+	});
 var $author$project$View$notificationsHeight = function (model) {
 	var _v0 = model.statusBarState;
 	if (_v0.$ === 'Expanded') {
@@ -16134,17 +16300,6 @@ var $author$project$View$notificationsHeight = function (model) {
 	} else {
 		return $mdgriffith$elm_ui$Element$height(
 			$mdgriffith$elm_ui$Element$px(30));
-	}
-};
-var $author$project$Types$showStatus = function (status) {
-	switch (status.$) {
-		case 'AllGood':
-			return 'all good';
-		case 'Loading':
-			return 'getting stuff from the server';
-		default:
-			var err = status.a;
-			return err;
 	}
 };
 var $author$project$View$notifications = function (model) {
@@ -16160,7 +16315,7 @@ var $author$project$View$notifications = function (model) {
 		_List_fromArray(
 			[
 				$mdgriffith$elm_ui$Element$text(
-				$author$project$Types$showStatus(model.status))
+				A2($author$project$View$hhmmss, model.timeZone, model.timePosix))
 			]));
 };
 var $author$project$View$statusBar = function (model) {

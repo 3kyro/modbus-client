@@ -1,90 +1,132 @@
 module Palette exposing
-    ( darkGrey
+    ( baliHai
+    , black
+    , blueSapphire
+    , cloudBurst
+    , darkBluePurple
+    , darkGrey
+    , fireBrick
+    , gray14
     , grey
     , greyWhite
-    , purpleDark
-    , steelBlue
-    , blueSapphire
-    , white
-    , maximumBluePurple
-    , darkBluePurple
-    , smallFont
-    , maximumBluePurpleLight
     , lightGreen
     , lightGrey
-    , black
-    , gray14
+    , maximumBluePurple
+    , maximumBluePurpleLight
+    , purpleDark
     , scampi
-    , slateGrey
-    , baliHai
     , shuttleGrey
-    , cloudBurst
-    , fireBrick
+    , slateGrey
+    , smallFont
+    , steelBlue
+    , white
     )
 
-import Element exposing (Color, Attribute, rgb255)
+import Element exposing (Attribute, Color, rgb255)
 import Element.Font as Font
 import Types exposing (Msg)
 
+
 darkGrey : Color
-darkGrey = rgb255 50 50 50
+darkGrey =
+    rgb255 50 50 50
+
 
 darkBluePurple : Color
-darkBluePurple = rgb255 114 112 143
+darkBluePurple =
+    rgb255 114 112 143
+
 
 grey : Color
-grey = rgb255 90 90 90
+grey =
+    rgb255 90 90 90
+
 
 lightGrey : Color
-lightGrey = rgb255 122 122 122
+lightGrey =
+    rgb255 122 122 122
+
 
 greyWhite : Color
-greyWhite = rgb255 220 220 220
+greyWhite =
+    rgb255 220 220 220
+
 
 purpleDark : Color
-purpleDark = rgb255 145 145 233
+purpleDark =
+    rgb255 145 145 233
+
 
 steelBlue : Color
-steelBlue = rgb255 69 126 172
+steelBlue =
+    rgb255 69 126 172
+
 
 blueSapphire : Color
-blueSapphire = rgb255 45 93 123
+blueSapphire =
+    rgb255 45 93 123
+
 
 white : Color
-white = rgb255 245 245 245
+white =
+    rgb255 245 245 245
+
 
 maximumBluePurple : Color
-maximumBluePurple = rgb255 145 145 233
+maximumBluePurple =
+    rgb255 145 145 233
+
 
 maximumBluePurpleLight : Color
-maximumBluePurpleLight = rgb255 194 175 240
+maximumBluePurpleLight =
+    rgb255 194 175 240
+
 
 lightGreen : Color
-lightGreen = rgb255 82 172 162
+lightGreen =
+    rgb255 82 172 162
+
 
 smallFont : Attribute Msg
-smallFont = Font.size 14
+smallFont =
+    Font.size 14
+
 
 black : Color
-black = rgb255 0 0 0
+black =
+    rgb255 0 0 0
+
 
 gray14 : Color
-gray14 = rgb255 36 36 36
+gray14 =
+    rgb255 36 36 36
+
 
 scampi : Color
-scampi = rgb255 113 109 142
+scampi =
+    rgb255 113 109 142
+
 
 slateGrey : Color
-slateGrey = rgb255 109 122 142
+slateGrey =
+    rgb255 109 122 142
+
 
 baliHai : Color
-baliHai = rgb255 138 149 165
+baliHai =
+    rgb255 138 149 165
+
 
 shuttleGrey : Color
-shuttleGrey = rgb255 88 95 106
+shuttleGrey =
+    rgb255 88 95 106
+
 
 cloudBurst : Color
-cloudBurst = rgb255 56 62 73
+cloudBurst =
+    rgb255 56 62 73
+
 
 fireBrick : Color
-fireBrick = rgb255 179 45 17
+fireBrick =
+    rgb255 179 45 17
