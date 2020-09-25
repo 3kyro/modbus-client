@@ -29,6 +29,8 @@ import Element
         , spacing
         , text
         , width
+        , scrollbarY
+        , Length
         )
 import Element.Background as Background
 import Element.Border as Border
@@ -68,6 +70,7 @@ import Types
         , showConnectStatus
         , showStatus
         , writeableReg
+        , Notification
         )
 import Types.IpAddress
     exposing
@@ -75,8 +78,7 @@ import Types.IpAddress
         , IpAddressByte(..)
         , showIpAddressByte
         )
-import Types exposing (Notification)
-
+import StatusBar exposing (renderNotifications)
 
 view : Model -> Html Msg
 view model =
@@ -845,10 +847,12 @@ statusBar : Model -> Element Msg
 statusBar model =
     column
         [ width fill
+
         ]
         [ expandButton model
-        , notifications model
+        , renderNotifications model.timeZone model.statusBarState model.notifications
         ]
+
 
 
 expandButton : Model -> Element Msg
@@ -877,60 +881,6 @@ expandButtonLabel model =
             text <| String.fromChar '▲'
 
 
-notifications : Model -> Element Msg
-notifications model =
-    row
-        [ Background.color blueSapphire
-        , width fill
-        , notificationsHeight model
-        , alignBottom
-        ]
-        [ notificationsTable model ]
 
 
-notificationsHeight : Model -> Attribute Msg
-notificationsHeight model =
-    case model.statusBarState of
-        Expanded ->
-            height <| px 300
 
-        Retracted ->
-            height <| px 30
-
-
-hhmmss : Time.Zone -> Time.Posix -> String
-hhmmss zone posix =
-    String.fromInt
-        (Time.toHour zone posix)
-        ++ ":"
-        ++ (String.fromInt <| Time.toMinute zone posix)
-        ++ ":"
-        ++ (String.fromInt <| Time.toSecond zone posix)
-
-notificationsTable : Model -> Element Msg
-notificationsTable model =
-    indexedTable
-        []
-        { data = model.notifications
-        , columns = notificationColumns model
-        }
-
-notificationColumns : Model -> List (IndexedColumn Notification Msg)
-notificationColumns model =
-    [ notTimeCol model
-    , notheaderCol
-    ]
-
-notTimeCol : Model -> IndexedColumn Notification Msg
-notTimeCol model =
-        { header = none
-        , width = px 100
-        , view = \_ not -> text <| hhmmss model.timeZone not.time
-        }
-
-notheaderCol : IndexedColumn Notification Msg
-notheaderCol =
-        { header = none
-        , width = fillPortion 1
-        , view = \_ not -> text not.header
-        }

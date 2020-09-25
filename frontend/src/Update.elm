@@ -35,7 +35,7 @@ import Types
         , ConnectionInfo
         )
 import Types.IpAddress exposing (setIpAddressByte)
-
+import Browser.Dom as Dom
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
@@ -300,6 +300,8 @@ update msg model =
         InitTime time ->
             ( { model | timePosix = time }, connectionInfoRequest )
 
+        NoOp -> (model, Cmd.none)
+
 
 fromModType : ModData -> String -> ModData
 fromModType md str =
@@ -415,3 +417,9 @@ pushDisconnectedNot model =
                 Nothing
     in
         new :: model.notifications
+
+jumpToBottom : String -> Cmd Msg
+jumpToBottom id =
+    Dom.getViewportOf id
+        |> Task.andThen (\info -> Dom.setViewportOf id 0 info.scene.height)
+        |> Task.attempt (\_ -> NoOp)

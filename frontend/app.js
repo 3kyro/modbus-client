@@ -7141,6 +7141,41 @@ var $author$project$Types$InitTime = function (a) {
 	return {$: 'InitTime', a: a};
 };
 var $author$project$Update$initTime = A2($elm$core$Task$perform, $author$project$Types$InitTime, $elm$time$Time$now);
+var $author$project$Types$NoOp = {$: 'NoOp'};
+var $elm$core$Task$onError = _Scheduler_onError;
+var $elm$core$Task$attempt = F2(
+	function (resultToMessage, task) {
+		return $elm$core$Task$command(
+			$elm$core$Task$Perform(
+				A2(
+					$elm$core$Task$onError,
+					A2(
+						$elm$core$Basics$composeL,
+						A2($elm$core$Basics$composeL, $elm$core$Task$succeed, resultToMessage),
+						$elm$core$Result$Err),
+					A2(
+						$elm$core$Task$andThen,
+						A2(
+							$elm$core$Basics$composeL,
+							A2($elm$core$Basics$composeL, $elm$core$Task$succeed, resultToMessage),
+							$elm$core$Result$Ok),
+						task))));
+	});
+var $elm$browser$Browser$Dom$getViewportOf = _Browser_getViewportOf;
+var $elm$browser$Browser$Dom$setViewportOf = _Browser_setViewportOf;
+var $author$project$Update$jumpToBottom = function (id) {
+	return A2(
+		$elm$core$Task$attempt,
+		function (_v0) {
+			return $author$project$Types$NoOp;
+		},
+		A2(
+			$elm$core$Task$andThen,
+			function (info) {
+				return A3($elm$browser$Browser$Dom$setViewportOf, id, 0, info.scene.height);
+			},
+			$elm$browser$Browser$Dom$getViewportOf(id)));
+};
 var $elm$file$File$name = _File_name;
 var $elm$core$Platform$Cmd$batch = _Platform_batch;
 var $elm$core$Platform$Cmd$none = $elm$core$Platform$Cmd$batch(_List_Nil);
@@ -7890,7 +7925,7 @@ var $author$project$Update$update = F2(
 						_Utils_update(
 							model,
 							{statusBarState: $author$project$Types$Expanded}),
-						$elm$core$Platform$Cmd$none);
+						$author$project$Update$jumpToBottom('state'));
 				}
 			case 'TimeZone':
 				var zone = msg.a;
@@ -7906,13 +7941,15 @@ var $author$project$Update$update = F2(
 						model,
 						{timePosix: time}),
 					$elm$core$Platform$Cmd$none);
-			default:
+			case 'InitTime':
 				var time = msg.a;
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
 						{timePosix: time}),
 					$author$project$Update$connectionInfoRequest);
+			default:
+				return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
 		}
 	});
 var $mdgriffith$elm_ui$Internal$Style$classes = {above: 'a', active: 'atv', alignBottom: 'ab', alignCenterX: 'cx', alignCenterY: 'cy', alignContainerBottom: 'acb', alignContainerCenterX: 'accx', alignContainerCenterY: 'accy', alignContainerRight: 'acr', alignLeft: 'al', alignRight: 'ar', alignTop: 'at', alignedHorizontally: 'ah', alignedVertically: 'av', any: 's', behind: 'bh', below: 'b', bold: 'w7', borderDashed: 'bd', borderDotted: 'bdt', borderNone: 'bn', borderSolid: 'bs', capturePointerEvents: 'cpe', clip: 'cp', clipX: 'cpx', clipY: 'cpy', column: 'c', container: 'ctr', contentBottom: 'cb', contentCenterX: 'ccx', contentCenterY: 'ccy', contentLeft: 'cl', contentRight: 'cr', contentTop: 'ct', cursorPointer: 'cptr', cursorText: 'ctxt', focus: 'fcs', focusedWithin: 'focus-within', fullSize: 'fs', grid: 'g', hasBehind: 'hbh', heightContent: 'hc', heightExact: 'he', heightFill: 'hf', heightFillPortion: 'hfp', hover: 'hv', imageContainer: 'ic', inFront: 'fr', inputLabel: 'lbl', inputMultiline: 'iml', inputMultilineFiller: 'imlf', inputMultilineParent: 'imlp', inputMultilineWrapper: 'implw', inputText: 'it', italic: 'i', link: 'lnk', nearby: 'nb', noTextSelection: 'notxt', onLeft: 'ol', onRight: 'or', opaque: 'oq', overflowHidden: 'oh', page: 'pg', paragraph: 'p', passPointerEvents: 'ppe', root: 'ui', row: 'r', scrollbars: 'sb', scrollbarsX: 'sbx', scrollbarsY: 'sby', seButton: 'sbt', single: 'e', sizeByCapital: 'cap', spaceEvenly: 'sev', strike: 'sk', text: 't', textCenter: 'tc', textExtraBold: 'w8', textExtraLight: 'w2', textHeavy: 'w9', textJustify: 'tj', textJustifyAll: 'tja', textLeft: 'tl', textLight: 'w3', textMedium: 'w5', textNormalWeight: 'w4', textRight: 'tr', textSemiBold: 'w6', textThin: 'w1', textUnitalicized: 'tun', transition: 'ts', transparent: 'clr', underline: 'u', widthContent: 'wc', widthExact: 'we', widthFill: 'wf', widthFillPortion: 'wfp', wrapped: 'wrp'};
@@ -16499,18 +16536,10 @@ var $author$project$View$expandButton = function (model) {
 			onPress: $elm$core$Maybe$Just($author$project$Types$ExpandStatus)
 		});
 };
+var $mdgriffith$elm_ui$Element$clipX = A2($mdgriffith$elm_ui$Internal$Model$Class, $mdgriffith$elm_ui$Internal$Flag$overflow, $mdgriffith$elm_ui$Internal$Style$classes.clipX);
+var $elm$html$Html$Attributes$id = $elm$html$Html$Attributes$stringProperty('id');
 var $mdgriffith$elm_ui$Internal$Model$Bottom = {$: 'Bottom'};
 var $mdgriffith$elm_ui$Element$alignBottom = $mdgriffith$elm_ui$Internal$Model$AlignY($mdgriffith$elm_ui$Internal$Model$Bottom);
-var $author$project$View$notificationsHeight = function (model) {
-	var _v0 = model.statusBarState;
-	if (_v0.$ === 'Expanded') {
-		return $mdgriffith$elm_ui$Element$height(
-			$mdgriffith$elm_ui$Element$px(300));
-	} else {
-		return $mdgriffith$elm_ui$Element$height(
-			$mdgriffith$elm_ui$Element$px(30));
-	}
-};
 var $elm$time$Time$flooredDiv = F2(
 	function (numerator, denominator) {
 		return $elm$core$Basics$floor(numerator / denominator);
@@ -16582,63 +16611,84 @@ var $elm$time$Time$toSecond = F2(
 				$elm$time$Time$posixToMillis(time),
 				1000));
 	});
-var $author$project$View$hhmmss = F2(
+var $author$project$StatusBar$hhmmss = F2(
 	function (zone, posix) {
 		return $elm$core$String$fromInt(
 			A2($elm$time$Time$toHour, zone, posix)) + (':' + ($elm$core$String$fromInt(
 			A2($elm$time$Time$toMinute, zone, posix)) + (':' + $elm$core$String$fromInt(
 			A2($elm$time$Time$toSecond, zone, posix)))));
 	});
-var $author$project$View$notTimeCol = function (model) {
-	return {
-		header: $mdgriffith$elm_ui$Element$none,
-		view: F2(
-			function (_v0, not) {
-				return $mdgriffith$elm_ui$Element$text(
-					A2($author$project$View$hhmmss, model.timeZone, not.time));
-			}),
-		width: $mdgriffith$elm_ui$Element$px(100)
-	};
-};
-var $author$project$View$notheaderCol = {
-	header: $mdgriffith$elm_ui$Element$none,
-	view: F2(
-		function (_v0, not) {
-			return $mdgriffith$elm_ui$Element$text(not.header);
-		}),
-	width: $mdgriffith$elm_ui$Element$fillPortion(1)
-};
-var $author$project$View$notificationColumns = function (model) {
+var $author$project$StatusBar$renderTime = F2(
+	function (not, zone) {
+		return A2(
+			$mdgriffith$elm_ui$Element$el,
+			_List_fromArray(
+				[
+					$mdgriffith$elm_ui$Element$centerY,
+					$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill)
+				]),
+			$mdgriffith$elm_ui$Element$text(
+				A2($author$project$StatusBar$hhmmss, zone, not.time)));
+	});
+var $author$project$StatusBar$renderNotification = F2(
+	function (zone, not) {
+		return A2(
+			$mdgriffith$elm_ui$Element$row,
+			_List_fromArray(
+				[
+					$mdgriffith$elm_ui$Element$height(
+					$mdgriffith$elm_ui$Element$px(20)),
+					$mdgriffith$elm_ui$Element$alignBottom
+				]),
+			_List_fromArray(
+				[
+					A2($author$project$StatusBar$renderTime, not, zone)
+				]));
+	});
+var $elm$core$List$singleton = function (value) {
 	return _List_fromArray(
-		[
-			$author$project$View$notTimeCol(model),
-			$author$project$View$notheaderCol
-		]);
+		[value]);
 };
-var $author$project$View$notificationsTable = function (model) {
-	return A2(
-		$mdgriffith$elm_ui$Element$indexedTable,
-		_List_Nil,
-		{
-			columns: $author$project$View$notificationColumns(model),
-			data: model.notifications
-		});
+var $author$project$StatusBar$statusBarHeight = function (state) {
+	if (state.$ === 'Expanded') {
+		return $mdgriffith$elm_ui$Element$px(100);
+	} else {
+		return $mdgriffith$elm_ui$Element$px(20);
+	}
 };
-var $author$project$View$notifications = function (model) {
-	return A2(
-		$mdgriffith$elm_ui$Element$row,
-		_List_fromArray(
-			[
-				$mdgriffith$elm_ui$Element$Background$color($author$project$Palette$blueSapphire),
-				$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill),
-				$author$project$View$notificationsHeight(model),
-				$mdgriffith$elm_ui$Element$alignBottom
-			]),
-		_List_fromArray(
-			[
-				$author$project$View$notificationsTable(model)
-			]));
-};
+var $author$project$StatusBar$renderNotifications = F3(
+	function (zone, state, notifications) {
+		var elements = function () {
+			if (state.$ === 'Expanded') {
+				return $elm$core$List$reverse(
+					A2(
+						$elm$core$List$map,
+						$author$project$StatusBar$renderNotification(zone),
+						notifications));
+			} else {
+				return $elm$core$List$singleton(
+					A2(
+						$elm$core$Maybe$withDefault,
+						$mdgriffith$elm_ui$Element$none,
+						A2(
+							$elm$core$Maybe$map,
+							$author$project$StatusBar$renderNotification(zone),
+							$elm$core$List$head(notifications))));
+			}
+		}();
+		return A2(
+			$mdgriffith$elm_ui$Element$column,
+			_List_fromArray(
+				[
+					$mdgriffith$elm_ui$Element$height(
+					$author$project$StatusBar$statusBarHeight(state)),
+					$mdgriffith$elm_ui$Element$scrollbarY,
+					$mdgriffith$elm_ui$Element$clipX,
+					$mdgriffith$elm_ui$Element$htmlAttribute(
+					$elm$html$Html$Attributes$id('status'))
+				]),
+			elements);
+	});
 var $author$project$View$statusBar = function (model) {
 	return A2(
 		$mdgriffith$elm_ui$Element$column,
@@ -16649,7 +16699,7 @@ var $author$project$View$statusBar = function (model) {
 		_List_fromArray(
 			[
 				$author$project$View$expandButton(model),
-				$author$project$View$notifications(model)
+				A3($author$project$StatusBar$renderNotifications, model.timeZone, model.statusBarState, model.notifications)
 			]));
 };
 var $author$project$View$page = function (model) {

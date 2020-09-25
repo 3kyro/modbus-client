@@ -76,6 +76,7 @@ type Msg
     | TimeZone Time.Zone
     | InitTime Time.Posix
     | NewTime Time.Posix
+    | NoOp
 
 
 type alias Model =
@@ -159,6 +160,7 @@ type alias Notification =
     , header : String
     , detailed : Maybe String
     }
+
 
 -----------------------------------------------------------------------------------------------------------------------------------
 
