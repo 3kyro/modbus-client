@@ -16561,11 +16561,13 @@ var $elm$core$String$fromChar = function (_char) {
 };
 var $author$project$StatusBar$expandButtonLabel = function (state) {
 	if (state.$ === 'Expanded') {
-		return $mdgriffith$elm_ui$Element$text('▼');
+		return $mdgriffith$elm_ui$Element$text(
+			$elm$core$String$fromChar(
+				_Utils_chr('\u25BC')));
 	} else {
 		return $mdgriffith$elm_ui$Element$text(
 			$elm$core$String$fromChar(
-				_Utils_chr('▲')));
+				_Utils_chr('\u25B2')));
 	}
 };
 var $author$project$StatusBar$expandButton = function (state) {

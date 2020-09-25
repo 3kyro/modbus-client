@@ -145,8 +145,8 @@ expandButtonLabel state =
     case state of
         Expanded ->
             -- "▼" \u{25BC}'
-            text "▼"
+            text <| String.fromChar '\u{25BC}'
 
         Retracted ->
             -- "▲" '\u{25B2}'
-            text <| String.fromChar '▲'
+            text <| String.fromChar '\u{25B2}'
