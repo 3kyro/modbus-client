@@ -151,7 +151,7 @@ update msg model =
                 | connectStatus = Connect
                 , notifications = pushDisconnectedNot model
              }
-            , Cmd.none
+            , jumpToBottom "status"
             )
 
         DisconnectedResponse (Err err) ->

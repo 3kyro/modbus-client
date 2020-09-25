@@ -7728,7 +7728,7 @@ var $author$project$Update$update = F2(
 								connectStatus: $author$project$Types$Connect,
 								notifications: $author$project$Update$pushDisconnectedNot(model)
 							}),
-						$elm$core$Platform$Cmd$none);
+						$author$project$Update$jumpToBottom('status'));
 				} else {
 					var err = msg.a.a;
 					return _Utils_Tuple2(
@@ -7925,7 +7925,7 @@ var $author$project$Update$update = F2(
 						_Utils_update(
 							model,
 							{statusBarState: $author$project$Types$Expanded}),
-						$author$project$Update$jumpToBottom('state'));
+						$elm$core$Platform$Cmd$none);
 				}
 			case 'TimeZone':
 				var zone = msg.a;
