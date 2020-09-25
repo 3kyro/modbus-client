@@ -1,4 +1,7 @@
-module StatusBar exposing (renderNotifications)
+module StatusBar exposing
+    ( renderNotifications
+    , expandButton
+    )
 
 import Element exposing
     ( Element
@@ -17,6 +20,7 @@ import Element exposing
     , clipX
     , fill
     , htmlAttribute
+    , focused
     )
 import Html.Attributes exposing (id)
 import Types exposing
@@ -25,7 +29,14 @@ import Types exposing
     , Msg (..)
     )
 import Time
-
+import Element.Input as Input
+import Element.Background as Background
+import Element.Font as Font
+import Element.Border as Border
+import Palette exposing
+    ( darkGrey
+    , black
+    )
 
 renderNotification : Time.Zone -> Notification -> Element msg
 renderNotification zone not =
@@ -81,3 +92,28 @@ statusBarHeight state =
         Expanded -> px 100
         Retracted -> px 20
 
+
+expandButton : StatusBarState -> Element Msg
+expandButton state =
+    Input.button
+        [ Background.color darkGrey
+        , width fill
+        , height <| px 20
+        , Font.center
+        , focused [ Border.glow black 0 ]
+        ]
+        { onPress = Just <| ExpandStatus
+        , label = expandButtonLabel state
+        }
+
+
+expandButtonLabel : StatusBarState -> Element Msg
+expandButtonLabel state =
+    case state of
+        Expanded ->
+            -- "▼" \u{25BC}'
+            text "▼"
+
+        Retracted ->
+            -- "▲" '\u{25B2}'
+            text <| String.fromChar '▲'

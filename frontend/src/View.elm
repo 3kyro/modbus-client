@@ -37,8 +37,7 @@ import Html exposing (Html)
 import Html.Attributes
 import Palette
     exposing
-        ( black
-        , blueSapphire
+        ( blueSapphire
         , darkGrey
         , fireBrick
         , grey
@@ -48,7 +47,10 @@ import Palette
         , smallFont
         , white
         )
-import StatusBar exposing (renderNotifications)
+import StatusBar exposing
+    ( renderNotifications
+    , expandButton
+    )
 import Types
     exposing
         ( ActiveTab(..)
@@ -843,32 +845,9 @@ statusBar model =
     column
         [ width fill
         ]
-        [ expandButton model
+        [ expandButton model.statusBarState
         , renderNotifications model.timeZone model.statusBarState model.notifications
         ]
 
 
-expandButton : Model -> Element Msg
-expandButton model =
-    Input.button
-        [ Background.color darkGrey
-        , width fill
-        , height <| px 20
-        , Font.center
-        , focused [ Border.glow black 0 ]
-        ]
-        { onPress = Just <| ExpandStatus
-        , label = expandButtonLabel model
-        }
 
-
-expandButtonLabel : Model -> Element Msg
-expandButtonLabel model =
-    case model.statusBarState of
-        Expanded ->
-            -- "▼" \u{25BC}'
-            text "▼"
-
-        Retracted ->
-            -- "▲" '\u{25B2}'
-            text <| String.fromChar '▲'

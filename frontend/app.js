@@ -7118,7 +7118,7 @@ var $author$project$Types$toMFloat = function (s) {
 		$author$project$Types$MFloat(s),
 		$elm$core$String$toFloat(s));
 };
-var $author$project$Update$fromModType = F2(
+var $author$project$Types$fromModType = F2(
 	function (md, str) {
 		var _v0 = md.modValue;
 		if (_v0.$ === 'ModWord') {
@@ -7895,7 +7895,7 @@ var $author$project$Update$update = F2(
 						return _Utils_update(
 							mdu,
 							{
-								mduModData: A2($author$project$Update$fromModType, mdu.mduModData, str)
+								mduModData: A2($author$project$Types$fromModType, mdu.mduModData, str)
 							});
 					},
 					maybeMDU);
@@ -16505,9 +16505,8 @@ var $elm$core$String$cons = _String_cons;
 var $elm$core$String$fromChar = function (_char) {
 	return A2($elm$core$String$cons, _char, '');
 };
-var $author$project$View$expandButtonLabel = function (model) {
-	var _v0 = model.statusBarState;
-	if (_v0.$ === 'Expanded') {
+var $author$project$StatusBar$expandButtonLabel = function (state) {
+	if (state.$ === 'Expanded') {
 		return $mdgriffith$elm_ui$Element$text('▼');
 	} else {
 		return $mdgriffith$elm_ui$Element$text(
@@ -16515,7 +16514,7 @@ var $author$project$View$expandButtonLabel = function (model) {
 				_Utils_chr('▲')));
 	}
 };
-var $author$project$View$expandButton = function (model) {
+var $author$project$StatusBar$expandButton = function (state) {
 	return A2(
 		$mdgriffith$elm_ui$Element$Input$button,
 		_List_fromArray(
@@ -16532,7 +16531,7 @@ var $author$project$View$expandButton = function (model) {
 					]))
 			]),
 		{
-			label: $author$project$View$expandButtonLabel(model),
+			label: $author$project$StatusBar$expandButtonLabel(state),
 			onPress: $elm$core$Maybe$Just($author$project$Types$ExpandStatus)
 		});
 };
@@ -16698,7 +16697,7 @@ var $author$project$View$statusBar = function (model) {
 			]),
 		_List_fromArray(
 			[
-				$author$project$View$expandButton(model),
+				$author$project$StatusBar$expandButton(model.statusBarState),
 				A3($author$project$StatusBar$renderNotifications, model.timeZone, model.statusBarState, model.notifications)
 			]));
 };
