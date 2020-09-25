@@ -12,6 +12,7 @@ module Types exposing
     , RegType(..)
     , Status(..)
     , StatusBarState(..)
+    , Notification
     , decodeConnInfo
     , decodeModData
     , decodeModDataUpdate
@@ -30,6 +31,7 @@ module Types exposing
     , showStatus
     , toMFloat
     , writeableReg
+    , showConnInfo
     )
 
 import File exposing (File)
@@ -45,6 +47,7 @@ import Types.IpAddress
         , decodeIpAddress
         , unsafeShowIp
         )
+import Types.IpAddress exposing (showIp)
 
 
 type Msg
@@ -78,6 +81,7 @@ type alias Model =
     { modDataUpdate : List ModDataUpdate
     , status : Status
     , statusBarState : StatusBarState
+    , notifications : List Notification
     , connectStatus : ConnectStatus
     , ipAddress : IpAddress
     , socketPort : Maybe Int
@@ -149,7 +153,11 @@ type StatusBarState
     = Expanded
     | Retracted
 
-
+type alias Notification =
+    { time : Time.Posix
+    , header : String
+    , detailed : Maybe String
+    }
 
 -----------------------------------------------------------------------------------------------------------------------------------
 
@@ -177,6 +185,11 @@ encodeIpPort model =
         , ( "timeout", E.int <| Maybe.withDefault 0 model.timeout )
         ]
 
+showConnInfo : ConnectionInfo -> String
+showConnInfo conn =
+    ("IP Address: " ++ Maybe.withDefault "N/A" ( showIp conn.ipAddress ) ++ "\n")
+    ++ ( "Port: " ++ String.fromInt conn.socketPort ++ "\n" )
+    ++ ( "Timeout: " ++ String.fromInt conn.timeout )
 
 
 -- ModData

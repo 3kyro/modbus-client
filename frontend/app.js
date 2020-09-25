@@ -6672,6 +6672,7 @@ var $author$project$App$initModel = {
 	csvLoaded: false,
 	ipAddress: $author$project$Types$IpAddress$defaultIpAddr,
 	modDataUpdate: $author$project$Types$newModDataUpdate($author$project$App$initModData),
+	notifications: _List_Nil,
 	readWriteAll: $author$project$Types$Read,
 	selectAllCheckbox: false,
 	selectSome: false,
@@ -6888,6 +6889,33 @@ var $author$project$Update$getTimeZone = A2($elm$core$Task$perform, $author$proj
 var $elm$file$File$name = _File_name;
 var $elm$core$Platform$Cmd$batch = _Platform_batch;
 var $elm$core$Platform$Cmd$none = $elm$core$Platform$Cmd$batch(_List_Nil);
+var $author$project$Types$Notification = F3(
+	function (time, header, detailed) {
+		return {detailed: detailed, header: header, time: time};
+	});
+var $author$project$Types$IpAddress$unsafeShowFromInt = F4(
+	function (b0, b1, b2, b3) {
+		return $elm$core$String$fromInt(b0) + ('.' + ($elm$core$String$fromInt(b1) + ('.' + ($elm$core$String$fromInt(b2) + ('.' + $elm$core$String$fromInt(b3))))));
+	});
+var $author$project$Types$IpAddress$showIp = function (ip) {
+	return A5($elm$core$Maybe$map4, $author$project$Types$IpAddress$unsafeShowFromInt, ip.b0, ip.b1, ip.b2, ip.b3);
+};
+var $author$project$Types$showConnInfo = function (conn) {
+	return ('IP Address: ' + (A2(
+		$elm$core$Maybe$withDefault,
+		'N/A',
+		$author$project$Types$IpAddress$showIp(conn.ipAddress)) + '\n')) + (('Port: ' + ($elm$core$String$fromInt(conn.socketPort) + '\n')) + ('Timeout: ' + $elm$core$String$fromInt(conn.timeout)));
+};
+var $author$project$Update$pushConnectionNotification = F2(
+	function (model, conn) {
+		var _new = A3(
+			$author$project$Types$Notification,
+			model.timePosix,
+			'Connected',
+			$elm$core$Maybe$Just(
+				$author$project$Types$showConnInfo(conn)));
+		return A2($elm$core$List$cons, _new, model.notifications);
+	});
 var $author$project$Types$replaceModDataSelected = F2(
 	function (idx, checked) {
 		return F2(
@@ -7258,6 +7286,7 @@ var $author$project$Update$update = F2(
 								{
 									connectStatus: $author$project$Types$Connected,
 									ipAddress: conn.ipAddress,
+									notifications: A2($author$project$Update$pushConnectionNotification, model, conn),
 									socketPort: $elm$core$Maybe$Just(conn.socketPort),
 									timeout: $elm$core$Maybe$Just(conn.timeout)
 								}),
@@ -16283,14 +16312,10 @@ var $elm$time$Time$toSecond = F2(
 	});
 var $author$project$View$hhmmss = F2(
 	function (zone, posix) {
-		return _Utils_ap(
-			$elm$core$String$fromInt(
-				A2($elm$time$Time$toHour, zone, posix)),
-			_Utils_ap(
-				$elm$core$String$fromInt(
-					A2($elm$time$Time$toMinute, zone, posix)),
-				$elm$core$String$fromInt(
-					A2($elm$time$Time$toSecond, zone, posix))));
+		return $elm$core$String$fromInt(
+			A2($elm$time$Time$toHour, zone, posix)) + (':' + ($elm$core$String$fromInt(
+			A2($elm$time$Time$toMinute, zone, posix)) + (':' + $elm$core$String$fromInt(
+			A2($elm$time$Time$toSecond, zone, posix)))));
 	});
 var $author$project$View$notificationsHeight = function (model) {
 	var _v0 = model.statusBarState;

@@ -30,8 +30,11 @@ import Types
         , replaceModDataWrite
         , toMFloat
         , writeableReg
+        , showConnInfo
         )
 import Types.IpAddress exposing (setIpAddressByte)
+import Types exposing (Notification)
+import Types exposing (ConnectionInfo)
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -54,6 +57,11 @@ update msg model =
                 , socketPort = Just conn.socketPort
                 , timeout = Just conn.timeout
                 , connectStatus = Connected
+                , notifications = 
+                    pushConnectionNotification 
+                        model
+                        conn
+
               }
             , Cmd.none
             )
@@ -292,10 +300,12 @@ fromModType md str =
             { md | modValue = ModFloat <| toMFloat str }
 
 
+-- Initializastion sequence:
+-- - get connection info from the server
+-- - get the current time zone
 initCmd : Cmd Msg
 initCmd =
     connectionInfoRequest
-
 
 connectionInfoRequest : Cmd Msg
 connectionInfoRequest =
@@ -368,3 +378,14 @@ getTimeZone =
 getPosixTime : Cmd Msg
 getPosixTime =
     Task.perform NewTime Time.now
+
+pushConnectionNotification : Model -> ConnectionInfo -> List Notification
+pushConnectionNotification model conn =
+    let
+        new = 
+            Notification 
+                model.timePosix
+                "Connected"
+                <| Just <| showConnInfo conn
+    in
+        new :: model.notifications

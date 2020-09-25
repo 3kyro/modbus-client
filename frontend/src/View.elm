@@ -899,6 +899,9 @@ notificationsHeight model =
 
 hhmmss : Time.Zone -> Time.Posix -> String
 hhmmss zone posix =
-    String.fromInt (Time.toHour zone posix)
+    String.fromInt 
+        (Time.toHour zone posix)
+        ++ ":"
         ++ (String.fromInt <| Time.toMinute zone posix)
+        ++ ":"
         ++ (String.fromInt <| Time.toSecond zone posix)

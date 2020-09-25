@@ -36,6 +36,7 @@ initModel : Model
 initModel =
     { modDataUpdate = newModDataUpdate initModData
     , status = AllGood
+    , notifications = []
     , statusBarState = Retracted
     , connectStatus = Connect
     , ipAddress = defaultIpAddr
