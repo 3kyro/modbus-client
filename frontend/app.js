@@ -16539,6 +16539,13 @@ var $mdgriffith$elm_ui$Element$clipX = A2($mdgriffith$elm_ui$Internal$Model$Clas
 var $elm$html$Html$Attributes$id = $elm$html$Html$Attributes$stringProperty('id');
 var $mdgriffith$elm_ui$Internal$Model$Bottom = {$: 'Bottom'};
 var $mdgriffith$elm_ui$Element$alignBottom = $mdgriffith$elm_ui$Internal$Model$AlignY($mdgriffith$elm_ui$Internal$Model$Bottom);
+var $author$project$StatusBar$renderHeader = function (not) {
+	return A2(
+		$mdgriffith$elm_ui$Element$el,
+		_List_fromArray(
+			[$mdgriffith$elm_ui$Element$centerY]),
+		$mdgriffith$elm_ui$Element$text(not.header));
+};
 var $elm$time$Time$flooredDiv = F2(
 	function (numerator, denominator) {
 		return $elm$core$Basics$floor(numerator / denominator);
@@ -16622,10 +16629,7 @@ var $author$project$StatusBar$renderTime = F2(
 		return A2(
 			$mdgriffith$elm_ui$Element$el,
 			_List_fromArray(
-				[
-					$mdgriffith$elm_ui$Element$centerY,
-					$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill)
-				]),
+				[$mdgriffith$elm_ui$Element$centerY]),
 			$mdgriffith$elm_ui$Element$text(
 				A2($author$project$StatusBar$hhmmss, zone, not.time)));
 	});
@@ -16637,11 +16641,14 @@ var $author$project$StatusBar$renderNotification = F2(
 				[
 					$mdgriffith$elm_ui$Element$height(
 					$mdgriffith$elm_ui$Element$px(20)),
-					$mdgriffith$elm_ui$Element$alignBottom
+					$mdgriffith$elm_ui$Element$alignBottom,
+					$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill),
+					$mdgriffith$elm_ui$Element$spacing(20)
 				]),
 			_List_fromArray(
 				[
-					A2($author$project$StatusBar$renderTime, not, zone)
+					A2($author$project$StatusBar$renderTime, not, zone),
+					$author$project$StatusBar$renderHeader(not)
 				]));
 	});
 var $elm$core$List$singleton = function (value) {
@@ -16679,10 +16686,12 @@ var $author$project$StatusBar$renderNotifications = F3(
 			$mdgriffith$elm_ui$Element$column,
 			_List_fromArray(
 				[
+					$mdgriffith$elm_ui$Element$Background$color($author$project$Palette$blueSapphire),
 					$mdgriffith$elm_ui$Element$height(
 					$author$project$StatusBar$statusBarHeight(state)),
 					$mdgriffith$elm_ui$Element$scrollbarY,
 					$mdgriffith$elm_ui$Element$clipX,
+					$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill),
 					$mdgriffith$elm_ui$Element$htmlAttribute(
 					$elm$html$Html$Attributes$id('status'))
 				]),

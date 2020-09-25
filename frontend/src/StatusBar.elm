@@ -20,6 +20,7 @@ import Element
         , px
         , row
         , scrollbarY
+        , spacing
         , text
         , width
         )
@@ -31,6 +32,7 @@ import Html.Attributes exposing (id)
 import Palette
     exposing
         ( black
+        , blueSapphire
         , darkGrey
         )
 import Time
@@ -47,8 +49,11 @@ renderNotification zone not =
     row
         [ height <| px 20
         , alignBottom
+        , width fill
+        , spacing 20
         ]
         [ renderTime not zone
+        , renderHeader not
         ]
 
 
@@ -56,7 +61,6 @@ renderTime : Notification -> Time.Zone -> Element msg
 renderTime not zone =
     el
         [ centerY
-        , width fill
         ]
     <|
         text <|
@@ -71,6 +75,16 @@ hhmmss zone posix =
         ++ (String.fromInt <| Time.toMinute zone posix)
         ++ ":"
         ++ (String.fromInt <| Time.toSecond zone posix)
+
+
+renderHeader : Notification -> Element msg
+renderHeader not =
+    el
+        [ centerY
+        ]
+    <|
+        text <|
+            not.header
 
 
 renderNotifications : Time.Zone -> StatusBarState -> List Notification -> Element msg
@@ -92,9 +106,11 @@ renderNotifications zone state notifications =
                                 List.head notifications
     in
     column
-        [ height <| statusBarHeight state
+        [ Background.color blueSapphire
+        , height <| statusBarHeight state
         , scrollbarY
         , clipX
+        , width fill
         , htmlAttribute <| id "status"
         ]
         elements
