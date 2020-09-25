@@ -16511,15 +16511,6 @@ var $author$project$View$notificationsHeight = function (model) {
 			$mdgriffith$elm_ui$Element$px(30));
 	}
 };
-var $author$project$View$notIndexCol = {
-	header: $mdgriffith$elm_ui$Element$none,
-	view: F2(
-		function (idx, _v0) {
-			return $mdgriffith$elm_ui$Element$text(
-				$elm$core$String$fromInt(idx + 1));
-		}),
-	width: $mdgriffith$elm_ui$Element$px(30)
-};
 var $elm$time$Time$flooredDiv = F2(
 	function (numerator, denominator) {
 		return $elm$core$Basics$floor(numerator / denominator);
@@ -16620,7 +16611,6 @@ var $author$project$View$notheaderCol = {
 var $author$project$View$notificationColumns = function (model) {
 	return _List_fromArray(
 		[
-			$author$project$View$notIndexCol,
 			$author$project$View$notTimeCol(model),
 			$author$project$View$notheaderCol
 		]);
