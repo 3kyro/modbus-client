@@ -28,11 +28,11 @@ import Types exposing
     , ModDataUpdate
     , decodeModDataUpdate
     , newModDataUpdate
+    , toMFloat
     )
 
 import Types.IpAddress exposing (setIpAddressByte)
 import Array
-import Types exposing (toMFloat)
 
 update : Msg -> Model -> ( Model, Cmd Msg)
 update msg model =

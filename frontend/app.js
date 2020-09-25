@@ -16085,8 +16085,57 @@ var $author$project$View$menuBar = function (model) {
 			]));
 };
 var $author$project$Palette$smallFont = $mdgriffith$elm_ui$Element$Font$size(14);
+var $author$project$Types$ExpandStatus = {$: 'ExpandStatus'};
+var $author$project$Palette$black = A3($mdgriffith$elm_ui$Element$rgb255, 0, 0, 0);
+var $elm$core$String$cons = _String_cons;
+var $elm$core$String$fromChar = function (_char) {
+	return A2($elm$core$String$cons, _char, '');
+};
+var $author$project$View$expandButtonLabel = function (model) {
+	var _v0 = model.statusBarState;
+	if (_v0.$ === 'Expanded') {
+		return $mdgriffith$elm_ui$Element$text(
+			$elm$core$String$fromChar(
+				_Utils_chr('\u25BC')));
+	} else {
+		return $mdgriffith$elm_ui$Element$text(
+			$elm$core$String$fromChar(
+				_Utils_chr('\u25B2')));
+	}
+};
+var $author$project$View$expandButton = function (model) {
+	return A2(
+		$mdgriffith$elm_ui$Element$Input$button,
+		_List_fromArray(
+			[
+				$mdgriffith$elm_ui$Element$Background$color($author$project$Palette$darkGrey),
+				$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill),
+				$mdgriffith$elm_ui$Element$height(
+				$mdgriffith$elm_ui$Element$px(20)),
+				$mdgriffith$elm_ui$Element$Font$center,
+				$mdgriffith$elm_ui$Element$focused(
+				_List_fromArray(
+					[
+						A2($mdgriffith$elm_ui$Element$Border$glow, $author$project$Palette$black, 0)
+					]))
+			]),
+		{
+			label: $author$project$View$expandButtonLabel(model),
+			onPress: $elm$core$Maybe$Just($author$project$Types$ExpandStatus)
+		});
+};
 var $mdgriffith$elm_ui$Internal$Model$Bottom = {$: 'Bottom'};
 var $mdgriffith$elm_ui$Element$alignBottom = $mdgriffith$elm_ui$Internal$Model$AlignY($mdgriffith$elm_ui$Internal$Model$Bottom);
+var $author$project$View$notificationsHeight = function (model) {
+	var _v0 = model.statusBarState;
+	if (_v0.$ === 'Expanded') {
+		return $mdgriffith$elm_ui$Element$height(
+			$mdgriffith$elm_ui$Element$px(300));
+	} else {
+		return $mdgriffith$elm_ui$Element$height(
+			$mdgriffith$elm_ui$Element$px(30));
+	}
+};
 var $author$project$Types$showStatus = function (status) {
 	switch (status.$) {
 		case 'AllGood':
@@ -16098,15 +16147,14 @@ var $author$project$Types$showStatus = function (status) {
 			return err;
 	}
 };
-var $author$project$View$statusBar = function (model) {
+var $author$project$View$notifications = function (model) {
 	return A2(
 		$mdgriffith$elm_ui$Element$row,
 		_List_fromArray(
 			[
 				$mdgriffith$elm_ui$Element$Background$color($author$project$Palette$blueSapphire),
 				$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill),
-				$mdgriffith$elm_ui$Element$height(
-				$mdgriffith$elm_ui$Element$px(38)),
+				$author$project$View$notificationsHeight(model),
 				$mdgriffith$elm_ui$Element$alignBottom
 			]),
 		_List_fromArray(
@@ -16115,42 +16163,7 @@ var $author$project$View$statusBar = function (model) {
 				$author$project$Types$showStatus(model.status))
 			]));
 };
-var $author$project$Types$ExpandStatus = {$: 'ExpandStatus'};
-var $author$project$Palette$black = A3($mdgriffith$elm_ui$Element$rgb255, 0, 0, 0);
-var $author$project$View$expandButton = function (model) {
-	return A2(
-		$mdgriffith$elm_ui$Element$Input$button,
-		_List_fromArray(
-			[
-				$mdgriffith$elm_ui$Element$Background$color($author$project$Palette$black),
-				$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill),
-				$mdgriffith$elm_ui$Element$height(
-				$mdgriffith$elm_ui$Element$px(10))
-			]),
-		{
-			label: $mdgriffith$elm_ui$Element$none,
-			onPress: $elm$core$Maybe$Just($author$project$Types$ExpandStatus)
-		});
-};
-var $author$project$View$messageArea = function (model) {
-	var _v0 = model.statusBarState;
-	if (_v0.$ === 'Retracted') {
-		return $mdgriffith$elm_ui$Element$none;
-	} else {
-		return A2(
-			$mdgriffith$elm_ui$Element$row,
-			_List_fromArray(
-				[
-					$mdgriffith$elm_ui$Element$height(
-					$mdgriffith$elm_ui$Element$px(300))
-				]),
-			_List_fromArray(
-				[
-					$mdgriffith$elm_ui$Element$text('yo')
-				]));
-	}
-};
-var $author$project$View$statusExpanded = function (model) {
+var $author$project$View$statusBar = function (model) {
 	return A2(
 		$mdgriffith$elm_ui$Element$column,
 		_List_fromArray(
@@ -16160,7 +16173,7 @@ var $author$project$View$statusExpanded = function (model) {
 		_List_fromArray(
 			[
 				$author$project$View$expandButton(model),
-				$author$project$View$messageArea(model)
+				$author$project$View$notifications(model)
 			]));
 };
 var $author$project$View$page = function (model) {
@@ -16177,7 +16190,6 @@ var $author$project$View$page = function (model) {
 			[
 				$author$project$View$menuBar(model),
 				$author$project$View$mainTab(model),
-				$author$project$View$statusExpanded(model),
 				$author$project$View$statusBar(model)
 			]));
 };

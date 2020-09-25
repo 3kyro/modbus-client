@@ -69,9 +69,8 @@ import Palette exposing
     , smallFont
     , blueSapphire
     , fireBrick
+    , black
     )
-import Palette exposing (black)
-import Element.Input exposing (Label)
 
 
 view : Model -> Html Msg
@@ -87,7 +86,6 @@ page model =
         ]
         [ menuBar model
         , mainTab model
-        , statusExpanded model
         , statusBar model
         ]
 
@@ -685,42 +683,48 @@ updateSelectedButton model =
 ------------------------------------------------------------------------------------------------------------------
 -- Status Bar
 
+-- An expandable status bar at the bottom of the page
 statusBar : Model -> Element Msg
 statusBar model =
-    row
-        [ Background.color blueSapphire
-        , width fill
-        , height <| px 38
-        , alignBottom
-        ]
-        [ text <| showStatus model.status]
-
-expandButton : Model -> Element Msg
-expandButton model =
-    Input.button
-        [ Background.color black
-        , width fill
-        , height <| px 10
-        ]
-        { onPress = Just <| ExpandStatus
-        , label = none
-        }
-
-statusExpanded : Model -> Element Msg
-statusExpanded model =
     column
         [ width fill
         ]
         [ expandButton model
-        , messageArea model
+        , notifications model
         ]
 
-messageArea : Model -> Element Msg
-messageArea model =
+expandButton : Model -> Element Msg
+expandButton model =
+    Input.button
+        [ Background.color darkGrey
+        , width fill
+        , height <| px 20
+        , Font.center
+        , focused [ Border.glow black 0]
+        ]
+        { onPress = Just <| ExpandStatus
+        , label = expandButtonLabel model
+        }
+
+expandButtonLabel : Model -> Element Msg
+expandButtonLabel model =
     case model.statusBarState of
-        Retracted -> none
-        Expanded ->
-            row
-                [ height <| px 300
-                ]
-                [ text "yo" ]
+        Expanded -> text <| String.fromChar '\u{25BC}'  -- "▼"
+        Retracted -> text <| String.fromChar '\u{25B2}' -- ▲"
+
+
+notifications : Model -> Element Msg
+notifications model =
+    row
+        [ Background.color blueSapphire
+        , width fill
+        , notificationsHeight model
+        , alignBottom
+        ]
+        [ text <| showStatus model.status]
+
+notificationsHeight : Model -> Attribute Msg
+notificationsHeight model =
+    case model.statusBarState of
+        Expanded -> height <| px 300
+        Retracted -> height <| px 30
