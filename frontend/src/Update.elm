@@ -90,14 +90,7 @@ update msg model =
             )
 
         RefreshRequest regs ->
-            ( { model
-                | notifications =
-                    Notification
-                        model.timePosix
-                        "Updating registers"
-                        Nothing
-                        :: model.notifications
-              }
+            ( { model | notifications = simpleNot model "Updating registers" }
             , updateModDataRequest regs
             )
 
@@ -463,6 +456,7 @@ simpleNot model header =
         model.timePosix
         header
         Nothing
+        False
         :: model.notifications
 
 
@@ -472,4 +466,5 @@ detailedNot model header detailed =
         model.timePosix
         header
         (Just detailed)
+        False
         :: model.notifications

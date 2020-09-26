@@ -44,11 +44,11 @@ type StatusBarState
     = Expanded
     | Retracted
 
-
 type alias Notification =
     { time : Time.Posix
     , header : String
     , detailed : Maybe String
+    , expanded : Bool
     }
 
 
