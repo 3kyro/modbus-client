@@ -7,7 +7,12 @@ import File.Select as Select
 import Http
 import Json.Decode as D
 import Json.Encode as E
-import Notifications exposing (Notification, StatusBarState(..))
+import Notifications exposing
+    (Notification
+    , StatusBarState(..)
+    , NotificationState(..)
+    , changeNotificationState
+    )
 import Task
 import Time
 import Types
@@ -345,6 +350,14 @@ update msg model =
         InitTime time ->
             ( { model | timePosix = time }, connectionInfoRequest )
 
+        ExpandNotification not ->
+            ( { model
+                | notifications = changeNotificationState not model.notifications
+                }
+            , Cmd.none
+            )
+
+
         NoOp ->
             ( model, Cmd.none )
 
@@ -456,7 +469,7 @@ simpleNot model header =
         model.timePosix
         header
         Nothing
-        False
+        NotifRetracted
         :: model.notifications
 
 
@@ -466,5 +479,5 @@ detailedNot model header detailed =
         model.timePosix
         header
         (Just detailed)
-        False
+        NotifRetracted
         :: model.notifications

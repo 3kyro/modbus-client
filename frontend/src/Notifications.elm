@@ -3,7 +3,8 @@ module Notifications exposing
     , StatusBarState (..)
     , expandButton
     , renderNotifications
-
+    , NotificationState (..)
+    , changeNotificationState
     )
 
 import Element
@@ -44,23 +45,45 @@ type StatusBarState
     = Expanded
     | Retracted
 
+type NotificationState
+    = NotifExpanded
+    | NotifRetracted
+
 type alias Notification =
     { time : Time.Posix
     , header : String
     , detailed : Maybe String
-    , expanded : Bool
+    , state : NotificationState
     }
 
+changeNotificationState : Notification -> List Notification -> List Notification
+changeNotificationState not nots =
+    let
+        fun =
+            \notification ->
+                if notification.time == not.time
+                then flipExpandState notification
+                else notification
+    in
+        List.map fun nots
 
-renderNotification : Time.Zone -> Notification -> Element msg
-renderNotification zone not =
+flipExpandState : Notification -> Notification
+flipExpandState not =
+    case not.state of
+       NotifExpanded -> { not | state =  NotifRetracted }
+       NotifRetracted -> { not | state =  NotifExpanded }
+
+
+renderNotification : Time.Zone -> (Notification -> msg) -> Notification -> Element msg
+renderNotification zone notExpandMsg not =
     row
         [ height <| px 20
         , alignBottom
         , width fill
-        , spacing 20
+        , spacing 5
         ]
         [ renderTime not zone
+        , renderExpandButton not (notExpandMsg not)
         , renderHeader not
         ]
 
@@ -92,6 +115,28 @@ formatTime unit =
     String.padLeft 2 '0' <|
         String.fromInt unit
 
+renderExpandButton : Notification -> msg -> Element msg
+renderExpandButton not msg =
+    Input.button
+        [ centerY
+        , width <| px 10
+        ]
+        { onPress = Just msg
+        , label = text <| getExpandedText not
+
+        }
+
+
+getExpandedText :  Notification -> String
+getExpandedText not =
+    case not.detailed of
+        Nothing -> ""
+        Just _ ->
+            case not.state of
+                NotifExpanded -> "-"
+                NotifRetracted -> "+"
+
+
 
 renderHeader : Notification -> Element msg
 renderHeader not =
@@ -103,13 +148,13 @@ renderHeader not =
             not.header
 
 
-renderNotifications : Time.Zone -> StatusBarState -> List Notification -> Element msg
-renderNotifications zone state notifications =
+renderNotifications : Time.Zone -> (Notification -> msg) -> StatusBarState -> List Notification -> Element msg
+renderNotifications zone notExpandMsg state notifications =
     let
         elements =
             case state of
                 Expanded ->
-                    List.reverse <| List.map (renderNotification zone) notifications
+                    List.reverse <| List.map (renderNotification zone notExpandMsg) notifications
 
                 Retracted ->
                     List.singleton <|
@@ -117,7 +162,7 @@ renderNotifications zone state notifications =
                             none
                         <|
                             Maybe.map
-                                (renderNotification zone)
+                                (renderNotification zone notExpandMsg)
                             <|
                                 List.head notifications
     in

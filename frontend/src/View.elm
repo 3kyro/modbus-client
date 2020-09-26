@@ -845,5 +845,9 @@ notifications model =
         [ width fill
         ]
         [ expandButton model.statusBarState ExpandStatus
-        , renderNotifications model.timeZone model.statusBarState model.notifications
+        , renderNotifications
+            model.timeZone
+            ExpandNotification
+            model.statusBarState
+            model.notifications
         ]

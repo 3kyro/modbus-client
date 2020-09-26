@@ -78,6 +78,7 @@ type Msg
     | TimeZone Time.Zone
     | InitTime Time.Posix
     | NewTime Time.Posix
+    | ExpandNotification Notification
     | NoOp
 
 
