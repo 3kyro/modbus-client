@@ -6,4 +6,5 @@ mbserver/target
 .stack-work/
 .history
 frontend/elm-stuff/*
+frontend/app.js
 *~
