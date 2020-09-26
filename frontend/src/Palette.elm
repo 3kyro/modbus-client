@@ -24,7 +24,6 @@ module Palette exposing
 
 import Element exposing (Attribute, Color, rgb255)
 import Element.Font as Font
-import Types exposing (Msg)
 
 
 darkGrey : Color
@@ -87,7 +86,7 @@ lightGreen =
     rgb255 82 172 162
 
 
-smallFont : Attribute Msg
+smallFont : Attribute msg
 smallFont =
     Font.size 14
 

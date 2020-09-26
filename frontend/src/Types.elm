@@ -8,10 +8,8 @@ module Types exposing
     , ModValue(..)
     , Model
     , Msg(..)
-    , Notification
     , ReadWrite(..)
     , RegType(..)
-    , StatusBarState(..)
     , decodeConnInfo
     , decodeModData
     , decodeModDataUpdate
@@ -37,6 +35,11 @@ import File exposing (File)
 import Http
 import Json.Decode as D
 import Json.Encode as E
+import Notifications
+    exposing
+        ( Notification
+        , StatusBarState(..)
+        )
 import String exposing (fromFloat)
 import Time
 import Types.IpAddress
@@ -128,21 +131,6 @@ showConnectStatus st =
 
 
 ----------------------------------------------------------------------------------------------------------------------------------
-
-
-type StatusBarState
-    = Expanded
-    | Retracted
-
-
-type alias Notification =
-    { time : Time.Posix
-    , header : String
-    , detailed : Maybe String
-    }
-
-
-
 -----------------------------------------------------------------------------------------------------------------------------------
 
 

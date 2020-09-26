@@ -1,6 +1,9 @@
-module StatusBar exposing
-    ( expandButton
+module Notifications exposing
+    ( Notification
+    , StatusBarState (..)
+    , expandButton
     , renderNotifications
+
     )
 
 import Element
@@ -36,12 +39,17 @@ import Palette
         , darkGrey
         )
 import Time
-import Types
-    exposing
-        ( Msg(..)
-        , Notification
-        , StatusBarState(..)
-        )
+
+type StatusBarState
+    = Expanded
+    | Retracted
+
+
+type alias Notification =
+    { time : Time.Posix
+    , header : String
+    , detailed : Maybe String
+    }
 
 
 renderNotification : Time.Zone -> Notification -> Element msg
@@ -134,8 +142,8 @@ statusBarHeight state =
             px 20
 
 
-expandButton : StatusBarState -> Element Msg
-expandButton state =
+expandButton : StatusBarState -> msg -> Element msg
+expandButton state cmd =
     Input.button
         [ Background.color darkGrey
         , width fill
@@ -143,12 +151,12 @@ expandButton state =
         , Font.center
         , focused [ Border.glow black 0 ]
         ]
-        { onPress = Just <| ExpandStatus
+        { onPress = Just <| cmd
         , label = expandButtonLabel state
         }
 
 
-expandButtonLabel : StatusBarState -> Element Msg
+expandButtonLabel : StatusBarState -> Element msg
 expandButtonLabel state =
     case state of
         Expanded ->

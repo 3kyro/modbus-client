@@ -1,6 +1,7 @@
 module App exposing (main)
 
 import Browser
+import Notifications exposing (StatusBarState(..))
 import Time
 import Types
     exposing
@@ -12,7 +13,6 @@ import Types
         , Msg(..)
         , ReadWrite(..)
         , RegType(..)
-        , StatusBarState(..)
         , fromFloat
         , newModDataUpdate
         )

@@ -6007,7 +6007,7 @@ var $author$project$Update$initCmd = $author$project$Update$getTimeZone;
 var $author$project$Types$Connect = {$: 'Connect'};
 var $author$project$Types$ConnectMenu = {$: 'ConnectMenu'};
 var $author$project$Types$Read = {$: 'Read'};
-var $author$project$Types$Retracted = {$: 'Retracted'};
+var $author$project$Notifications$Retracted = {$: 'Retracted'};
 var $author$project$Types$IpAddress$IpAddress = F4(
 	function (b0, b1, b2, b3) {
 		return {b0: b0, b1: b1, b2: b2, b3: b3};
@@ -6101,7 +6101,7 @@ var $author$project$App$initModel = {
 	selectAllCheckbox: false,
 	selectSome: false,
 	socketPort: $elm$core$Maybe$Just(502),
-	statusBarState: $author$project$Types$Retracted,
+	statusBarState: $author$project$Notifications$Retracted,
 	timePosix: $elm$time$Time$millisToPosix(0),
 	timeZone: $elm$time$Time$utc,
 	timeout: $elm$core$Maybe$Just(1000)
@@ -6115,8 +6115,8 @@ var $author$project$Types$CsvSelected = function (a) {
 	return {$: 'CsvSelected', a: a};
 };
 var $author$project$Types$Disconnecting = {$: 'Disconnecting'};
-var $author$project$Types$Expanded = {$: 'Expanded'};
-var $author$project$Types$Notification = F3(
+var $author$project$Notifications$Expanded = {$: 'Expanded'};
+var $author$project$Notifications$Notification = F3(
 	function (time, header, detailed) {
 		return {detailed: detailed, header: header, time: time};
 	});
@@ -7097,7 +7097,7 @@ var $author$project$Update$detailedNot = F3(
 		return A2(
 			$elm$core$List$cons,
 			A3(
-				$author$project$Types$Notification,
+				$author$project$Notifications$Notification,
 				model.timePosix,
 				header,
 				$elm$core$Maybe$Just(detailed)),
@@ -7392,7 +7392,7 @@ var $author$project$Update$simpleNot = F2(
 	function (model, header) {
 		return A2(
 			$elm$core$List$cons,
-			A3($author$project$Types$Notification, model.timePosix, header, $elm$core$Maybe$Nothing),
+			A3($author$project$Notifications$Notification, model.timePosix, header, $elm$core$Maybe$Nothing),
 			model.notifications);
 	});
 var $elm$file$File$toString = _File_toString;
@@ -7625,7 +7625,7 @@ var $author$project$Update$update = F2(
 						{
 							notifications: A2(
 								$elm$core$List$cons,
-								A3($author$project$Types$Notification, model.timePosix, 'Updating registers', $elm$core$Maybe$Nothing),
+								A3($author$project$Notifications$Notification, model.timePosix, 'Updating registers', $elm$core$Maybe$Nothing),
 								model.notifications)
 						}),
 					$author$project$Update$updateModDataRequest(regs));
@@ -7954,13 +7954,13 @@ var $author$project$Update$update = F2(
 					return _Utils_Tuple2(
 						_Utils_update(
 							model,
-							{statusBarState: $author$project$Types$Retracted}),
+							{statusBarState: $author$project$Notifications$Retracted}),
 						$elm$core$Platform$Cmd$none);
 				} else {
 					return _Utils_Tuple2(
 						_Utils_update(
 							model,
-							{statusBarState: $author$project$Types$Expanded}),
+							{statusBarState: $author$project$Notifications$Expanded}),
 						$elm$core$Platform$Cmd$none);
 				}
 			case 'TimeZone':
@@ -16533,14 +16533,13 @@ var $author$project$View$menuBar = function (model) {
 				$author$project$View$heartbeatButton(model)
 			]));
 };
-var $author$project$Palette$smallFont = $mdgriffith$elm_ui$Element$Font$size(14);
 var $author$project$Types$ExpandStatus = {$: 'ExpandStatus'};
 var $author$project$Palette$black = A3($mdgriffith$elm_ui$Element$rgb255, 0, 0, 0);
 var $elm$core$String$cons = _String_cons;
 var $elm$core$String$fromChar = function (_char) {
 	return A2($elm$core$String$cons, _char, '');
 };
-var $author$project$StatusBar$expandButtonLabel = function (state) {
+var $author$project$Notifications$expandButtonLabel = function (state) {
 	if (state.$ === 'Expanded') {
 		return $mdgriffith$elm_ui$Element$text(
 			$elm$core$String$fromChar(
@@ -16551,32 +16550,33 @@ var $author$project$StatusBar$expandButtonLabel = function (state) {
 				_Utils_chr('\u25B2')));
 	}
 };
-var $author$project$StatusBar$expandButton = function (state) {
-	return A2(
-		$mdgriffith$elm_ui$Element$Input$button,
-		_List_fromArray(
-			[
-				$mdgriffith$elm_ui$Element$Background$color($author$project$Palette$darkGrey),
-				$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill),
-				$mdgriffith$elm_ui$Element$height(
-				$mdgriffith$elm_ui$Element$px(20)),
-				$mdgriffith$elm_ui$Element$Font$center,
-				$mdgriffith$elm_ui$Element$focused(
-				_List_fromArray(
-					[
-						A2($mdgriffith$elm_ui$Element$Border$glow, $author$project$Palette$black, 0)
-					]))
-			]),
-		{
-			label: $author$project$StatusBar$expandButtonLabel(state),
-			onPress: $elm$core$Maybe$Just($author$project$Types$ExpandStatus)
-		});
-};
+var $author$project$Notifications$expandButton = F2(
+	function (state, cmd) {
+		return A2(
+			$mdgriffith$elm_ui$Element$Input$button,
+			_List_fromArray(
+				[
+					$mdgriffith$elm_ui$Element$Background$color($author$project$Palette$darkGrey),
+					$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill),
+					$mdgriffith$elm_ui$Element$height(
+					$mdgriffith$elm_ui$Element$px(20)),
+					$mdgriffith$elm_ui$Element$Font$center,
+					$mdgriffith$elm_ui$Element$focused(
+					_List_fromArray(
+						[
+							A2($mdgriffith$elm_ui$Element$Border$glow, $author$project$Palette$black, 0)
+						]))
+				]),
+			{
+				label: $author$project$Notifications$expandButtonLabel(state),
+				onPress: $elm$core$Maybe$Just(cmd)
+			});
+	});
 var $mdgriffith$elm_ui$Element$clipX = A2($mdgriffith$elm_ui$Internal$Model$Class, $mdgriffith$elm_ui$Internal$Flag$overflow, $mdgriffith$elm_ui$Internal$Style$classes.clipX);
 var $elm$html$Html$Attributes$id = $elm$html$Html$Attributes$stringProperty('id');
 var $mdgriffith$elm_ui$Internal$Model$Bottom = {$: 'Bottom'};
 var $mdgriffith$elm_ui$Element$alignBottom = $mdgriffith$elm_ui$Internal$Model$AlignY($mdgriffith$elm_ui$Internal$Model$Bottom);
-var $author$project$StatusBar$renderHeader = function (not) {
+var $author$project$Notifications$renderHeader = function (not) {
 	return A2(
 		$mdgriffith$elm_ui$Element$el,
 		_List_fromArray(
@@ -16605,7 +16605,7 @@ var $elm$core$String$padLeft = F3(
 				$elm$core$String$fromChar(_char)),
 			string);
 	});
-var $author$project$StatusBar$formatTime = function (unit) {
+var $author$project$Notifications$formatTime = function (unit) {
 	return A3(
 		$elm$core$String$padLeft,
 		2,
@@ -16683,23 +16683,23 @@ var $elm$time$Time$toSecond = F2(
 				$elm$time$Time$posixToMillis(time),
 				1000));
 	});
-var $author$project$StatusBar$hhmmss = F2(
+var $author$project$Notifications$hhmmss = F2(
 	function (zone, posix) {
-		return $author$project$StatusBar$formatTime(
-			A2($elm$time$Time$toHour, zone, posix)) + (':' + ($author$project$StatusBar$formatTime(
-			A2($elm$time$Time$toMinute, zone, posix)) + (':' + $author$project$StatusBar$formatTime(
+		return $author$project$Notifications$formatTime(
+			A2($elm$time$Time$toHour, zone, posix)) + (':' + ($author$project$Notifications$formatTime(
+			A2($elm$time$Time$toMinute, zone, posix)) + (':' + $author$project$Notifications$formatTime(
 			A2($elm$time$Time$toSecond, zone, posix)))));
 	});
-var $author$project$StatusBar$renderTime = F2(
+var $author$project$Notifications$renderTime = F2(
 	function (not, zone) {
 		return A2(
 			$mdgriffith$elm_ui$Element$el,
 			_List_fromArray(
 				[$mdgriffith$elm_ui$Element$centerY]),
 			$mdgriffith$elm_ui$Element$text(
-				A2($author$project$StatusBar$hhmmss, zone, not.time)));
+				A2($author$project$Notifications$hhmmss, zone, not.time)));
 	});
-var $author$project$StatusBar$renderNotification = F2(
+var $author$project$Notifications$renderNotification = F2(
 	function (zone, not) {
 		return A2(
 			$mdgriffith$elm_ui$Element$row,
@@ -16713,29 +16713,29 @@ var $author$project$StatusBar$renderNotification = F2(
 				]),
 			_List_fromArray(
 				[
-					A2($author$project$StatusBar$renderTime, not, zone),
-					$author$project$StatusBar$renderHeader(not)
+					A2($author$project$Notifications$renderTime, not, zone),
+					$author$project$Notifications$renderHeader(not)
 				]));
 	});
 var $elm$core$List$singleton = function (value) {
 	return _List_fromArray(
 		[value]);
 };
-var $author$project$StatusBar$statusBarHeight = function (state) {
+var $author$project$Notifications$statusBarHeight = function (state) {
 	if (state.$ === 'Expanded') {
 		return $mdgriffith$elm_ui$Element$px(100);
 	} else {
 		return $mdgriffith$elm_ui$Element$px(20);
 	}
 };
-var $author$project$StatusBar$renderNotifications = F3(
+var $author$project$Notifications$renderNotifications = F3(
 	function (zone, state, notifications) {
 		var elements = function () {
 			if (state.$ === 'Expanded') {
 				return $elm$core$List$reverse(
 					A2(
 						$elm$core$List$map,
-						$author$project$StatusBar$renderNotification(zone),
+						$author$project$Notifications$renderNotification(zone),
 						notifications));
 			} else {
 				return $elm$core$List$singleton(
@@ -16744,7 +16744,7 @@ var $author$project$StatusBar$renderNotifications = F3(
 						$mdgriffith$elm_ui$Element$none,
 						A2(
 							$elm$core$Maybe$map,
-							$author$project$StatusBar$renderNotification(zone),
+							$author$project$Notifications$renderNotification(zone),
 							$elm$core$List$head(notifications))));
 			}
 		}();
@@ -16754,7 +16754,7 @@ var $author$project$StatusBar$renderNotifications = F3(
 				[
 					$mdgriffith$elm_ui$Element$Background$color($author$project$Palette$blueSapphire),
 					$mdgriffith$elm_ui$Element$height(
-					$author$project$StatusBar$statusBarHeight(state)),
+					$author$project$Notifications$statusBarHeight(state)),
 					$mdgriffith$elm_ui$Element$scrollbarY,
 					$mdgriffith$elm_ui$Element$clipX,
 					$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill),
@@ -16763,7 +16763,7 @@ var $author$project$StatusBar$renderNotifications = F3(
 				]),
 			elements);
 	});
-var $author$project$View$statusBar = function (model) {
+var $author$project$View$notifications = function (model) {
 	return A2(
 		$mdgriffith$elm_ui$Element$column,
 		_List_fromArray(
@@ -16772,10 +16772,11 @@ var $author$project$View$statusBar = function (model) {
 			]),
 		_List_fromArray(
 			[
-				$author$project$StatusBar$expandButton(model.statusBarState),
-				A3($author$project$StatusBar$renderNotifications, model.timeZone, model.statusBarState, model.notifications)
+				A2($author$project$Notifications$expandButton, model.statusBarState, $author$project$Types$ExpandStatus),
+				A3($author$project$Notifications$renderNotifications, model.timeZone, model.statusBarState, model.notifications)
 			]));
 };
+var $author$project$Palette$smallFont = $mdgriffith$elm_ui$Element$Font$size(14);
 var $author$project$View$page = function (model) {
 	return A2(
 		$mdgriffith$elm_ui$Element$column,
@@ -16790,7 +16791,7 @@ var $author$project$View$page = function (model) {
 			[
 				$author$project$View$menuBar(model),
 				$author$project$View$mainTab(model),
-				$author$project$View$statusBar(model)
+				$author$project$View$notifications(model)
 			]));
 };
 var $author$project$View$view = function (model) {

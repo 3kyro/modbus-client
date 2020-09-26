@@ -35,6 +35,12 @@ import Element.Font as Font
 import Element.Input as Input
 import Html exposing (Html)
 import Html.Attributes
+import Notifications
+    exposing
+        ( StatusBarState(..)
+        , expandButton
+        , renderNotifications
+        )
 import Palette
     exposing
         ( blueSapphire
@@ -47,11 +53,6 @@ import Palette
         , smallFont
         , white
         )
-import StatusBar
-    exposing
-        ( expandButton
-        , renderNotifications
-        )
 import Types
     exposing
         ( ActiveTab(..)
@@ -61,7 +62,6 @@ import Types
         , Model
         , Msg(..)
         , ReadWrite(..)
-        , StatusBarState(..)
         , flipRW
         , getModValue
         , getModValueType
@@ -92,7 +92,7 @@ page model =
         ]
         [ menuBar model
         , mainTab model
-        , statusBar model
+        , notifications model
         ]
 
 
@@ -839,11 +839,11 @@ updateSelectedButton model =
 -- An expandable status bar at the bottom of the page
 
 
-statusBar : Model -> Element Msg
-statusBar model =
+notifications : Model -> Element Msg
+notifications model =
     column
         [ width fill
         ]
-        [ expandButton model.statusBarState
+        [ expandButton model.statusBarState ExpandStatus
         , renderNotifications model.timeZone model.statusBarState model.notifications
         ]

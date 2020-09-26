@@ -7,6 +7,7 @@ import File.Select as Select
 import Http
 import Json.Decode as D
 import Json.Encode as E
+import Notifications exposing (Notification, StatusBarState(..))
 import Task
 import Time
 import Types
@@ -17,9 +18,7 @@ import Types
         , ModValue(..)
         , Model
         , Msg(..)
-        , Notification
         , RegType(..)
-        , StatusBarState(..)
         , decodeConnInfo
         , decodeModData
         , decodeModDataUpdate
