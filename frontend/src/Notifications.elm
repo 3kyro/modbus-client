@@ -27,6 +27,7 @@ import Element
         , spacing
         , text
         , width
+        , paddingXY
         )
 import Element.Background as Background
 import Element.Border as Border
@@ -76,6 +77,14 @@ flipExpandState not =
 
 renderNotification : Time.Zone -> (Notification -> msg) -> Notification -> Element msg
 renderNotification zone notExpandMsg not =
+    column
+        [ width fill ]
+        [ retractedNotification zone notExpandMsg not
+        , detailedNotification not
+        ]
+
+retractedNotification : Time.Zone -> (Notification -> msg) -> Notification -> Element msg
+retractedNotification zone notExpandMsg not =
     row
         [ height <| px 20
         , alignBottom
@@ -86,6 +95,19 @@ renderNotification zone notExpandMsg not =
         , renderExpandButton not (notExpandMsg not)
         , renderHeader not
         ]
+
+detailedNotification : Notification -> Element msg
+detailedNotification not =
+    case not.state of
+       NotifRetracted -> none
+       NotifExpanded ->
+            row
+                [ height fill
+                , width fill
+                , paddingXY 100 0
+                ]
+                [ text <| Maybe.withDefault "" not.detailed
+                ]
 
 
 renderTime : Notification -> Time.Zone -> Element msg
@@ -123,7 +145,6 @@ renderExpandButton not msg =
         ]
         { onPress = Just msg
         , label = text <| getExpandedText not
-
         }
 
 
