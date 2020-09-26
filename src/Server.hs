@@ -29,7 +29,7 @@ import Types
     )
 
 import Modbus (modUpdateSession, modbusConnection, maybeConnect, getAddr)
-import Control.Monad.Except (runExceptT)
+import Control.Monad.Except (runExceptT, catchError)
 import CsvParser (runpCSV)
 
 type ServerAPI
@@ -56,7 +56,11 @@ runServer ip portNum order tm = do
     st <- atomically $ newTVar state
     case OS.os of
         Nothing -> putStrLn "Operating system not detected"
-        Just os -> spawnBrowser $ OS.unOS os
+        Just os -> catchError
+            (spawnBrowser $ OS.unOS os)
+            (const $ putStrLn $ "Error while starting default browser\n"
+            ++ "To run the application, open http://localhost:4000/index.html in a browser"
+            )
 
     run 4000 $ server st
 

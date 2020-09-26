@@ -1,78 +1,86 @@
 module View exposing (view)
 
-import Element exposing
-    ( Element
-    , el
-    , text
-    , row
-    , column
-    , layout
-    , fill
-    , width
-    , height
-    , px
-    , paddingXY
-    , spacing
-    , focused
-    , mouseOver
-    , none
-    , alignBottom
-    , alignTop
-    , alignLeft
-    , centerX
-    , centerY
-    , indexedTable
-    , htmlAttribute
-    , Color
-    , IndexedColumn
-    , Attribute
-    , fillPortion
-    , padding
-    )
+import Element
+    exposing
+        ( Attribute
+        , Color
+        , Element
+        , IndexedColumn
+        , alignLeft
+        , alignTop
+        , centerX
+        , centerY
+        , column
+        , el
+        , fill
+        , fillPortion
+        , focused
+        , height
+        , htmlAttribute
+        , indexedTable
+        , layout
+        , mouseOver
+        , none
+        , padding
+        , paddingXY
+        , px
+        , row
+        , spacing
+        , text
+        , width
+        )
 import Element.Background as Background
 import Element.Border as Border
 import Element.Font as Font
 import Element.Input as Input
 import Html exposing (Html)
 import Html.Attributes
-
-import Types exposing
-    ( Msg(..)
-    , ActiveTab (..)
-    , Model
-    , showStatus
-    , Status (..)
-    , ConnectStatus(..)
-    , showConnectStatus
-    , ModData
-    , getRegType
-    , getModValueType
-    , getModValue
-    , ReadWrite(..)
-    , flipRW
-    , writeableReg
-    , ModDataUpdate
-    )
-import Types.IpAddress exposing
-    ( IpAddress
-    , IpAddressByte (..)
-    , showIpAddressByte
-    )
-import Palette exposing
-    ( darkGrey
-    , grey
-    , lightGrey
-    , greyWhite
-    , white
-    , lightGreen
-    , smallFont
-    , blueSapphire
-    , fireBrick
-    )
+import Notifications
+    exposing
+        ( StatusBarState(..)
+        , expandButton
+        , renderNotifications
+        )
+import Palette
+    exposing
+        ( blueSapphire
+        , darkGrey
+        , fireBrick
+        , grey
+        , greyWhite
+        , lightGreen
+        , lightGrey
+        , smallFont
+        , white
+        )
+import Types
+    exposing
+        ( ActiveTab(..)
+        , ConnectStatus(..)
+        , ModData
+        , ModDataUpdate
+        , Model
+        , Msg(..)
+        , ReadWrite(..)
+        , flipRW
+        , getModValue
+        , getModValueType
+        , getRegType
+        , showConnectStatus
+        , writeableReg
+        )
+import Types.IpAddress
+    exposing
+        ( IpAddress
+        , IpAddressByte(..)
+        , showIpAddressByte
+        )
 
 
 view : Model -> Html Msg
-view model = layout [] <| page model
+view model =
+    layout [] <| page model
+
 
 page : Model -> Element Msg
 page model =
@@ -84,13 +92,14 @@ page model =
         ]
         [ menuBar model
         , mainTab model
-        , statusExpanded
-        , statusBar model
+        , notifications model
         ]
+
 
 
 ------------------------------------------------------------------------------------------------------------------
 -- Menu Bar
+
 
 menuBar : Model -> Element Msg
 menuBar model =
@@ -99,7 +108,6 @@ menuBar model =
         , alignTop
         , width fill
         , height <| px 38
-        , paddingXY 10 0
         , spacing 0
         ]
         [ connectTabButton model
@@ -109,6 +117,7 @@ menuBar model =
         , registerTableButton model
         , heartbeatButton model
         ]
+
 
 newSelectButton : Model -> String -> ActiveTab -> Element Msg
 newSelectButton model str table =
@@ -125,35 +134,45 @@ newSelectButton model str table =
         , label = text str
         }
 
+
 selectButtonBgdColor : Model -> ActiveTab -> Color
 selectButtonBgdColor model table =
-    if model.activeTab == table
-    then grey
-    else darkGrey
+    if model.activeTab == table then
+        grey
+
+    else
+        darkGrey
+
 
 connectTabButton : Model -> Element Msg
 connectTabButton model =
     newSelectButton model "Connect" ConnectMenu
 
+
 importRegisterTableButton : Model -> Element Msg
 importRegisterTableButton model =
     newSelectButton model "Import" ImportMenu
+
 
 inputRegistersButton : Model -> Element Msg
 inputRegistersButton model =
     newSelectButton model "Input Registers" InputRegistersTable
 
+
 holdingRegistersButton : Model -> Element Msg
 holdingRegistersButton model =
     newSelectButton model "Holding Registers" HoldingRegistersTable
+
 
 registerTableButton : Model -> Element Msg
 registerTableButton model =
     newSelectButton model "Register Table" ModDataTable
 
+
 heartbeatButton : Model -> Element Msg
 heartbeatButton model =
     newSelectButton model "Heartbeat Signals" HeartbeatTable
+
 
 mainTab : Model -> Element Msg
 mainTab model =
@@ -164,20 +183,34 @@ mainTab model =
         [ infoArea model
         , commandArea model
         ]
-    
+
 
 infoArea : Model -> Element Msg
 infoArea model =
     case model.activeTab of
-        ConnectMenu -> connectTab model
-        ImportMenu -> importTab model
-        InputRegistersTable -> inputRegistersTable
-        HoldingRegistersTable -> holdingRegistersTable
-        ModDataTable -> modDataTable model
-        HeartbeatTable -> heartbeatTable
+        ConnectMenu ->
+            connectTab model
+
+        ImportMenu ->
+            importTab model
+
+        InputRegistersTable ->
+            inputRegistersTable
+
+        HoldingRegistersTable ->
+            holdingRegistersTable
+
+        ModDataTable ->
+            modDataTable model
+
+        HeartbeatTable ->
+            heartbeatTable
+
+
 
 ------------------------------------------------------------------------------------------------------------------
 -- Connect Menu
+
 
 connectTab : Model -> Element Msg
 connectTab model =
@@ -186,7 +219,9 @@ connectTab model =
         , width fill
         , height fill
         ]
-        <| connectIsland model
+    <|
+        connectIsland model
+
 
 connectIsland : Model -> Element Msg
 connectIsland model =
@@ -206,6 +241,7 @@ connectIsland model =
         , disconnectButton model
         ]
 
+
 ipaddress : Model -> Element Msg
 ipaddress model =
     row
@@ -217,9 +253,10 @@ ipaddress model =
         , ipAddressInput Byte1 model.ipAddress
         , ipAddressInput Byte2 model.ipAddress
         , ipAddressInput Byte3 model.ipAddress
-         ]
+        ]
 
-ipAddressInput :  IpAddressByte -> IpAddress -> Element Msg
+
+ipAddressInput : IpAddressByte -> IpAddress -> Element Msg
 ipAddressInput byte ip =
     Input.text
         [ width <| px 70
@@ -233,6 +270,7 @@ ipAddressInput byte ip =
         , placeholder = Nothing
         , label = Input.labelHidden "Byte"
         }
+
 
 portNum : Model -> Element Msg
 portNum model =
@@ -265,6 +303,7 @@ timeout model =
         , label = Input.labelLeft [ Font.color white ] <| el [ width <| px 100 ] (text "Timeout (ms)")
         }
 
+
 connectButton : Model -> Element Msg
 connectButton model =
     Input.button
@@ -281,13 +320,22 @@ connectButton model =
         , label = text <| showConnectStatus model.connectStatus
         }
 
+
 connectButtonBgd : Model -> Color
 connectButtonBgd model =
     case model.connectStatus of
-        Connect -> lightGrey
-        Connecting -> lightGrey
-        Connected -> lightGreen
-        Disconnecting -> lightGrey
+        Connect ->
+            lightGrey
+
+        Connecting ->
+            lightGrey
+
+        Connected ->
+            lightGreen
+
+        Disconnecting ->
+            lightGrey
+
 
 disconnectButton : Model -> Element Msg
 disconnectButton model =
@@ -305,16 +353,27 @@ disconnectButton model =
         , label = text "Disconnect"
         }
 
+
 disconnectButtonBgd : Model -> Color
 disconnectButtonBgd model =
     case model.connectStatus of
-        Connect -> grey
-        Connecting -> grey
-        Connected -> lightGrey
-        Disconnecting -> grey
+        Connect ->
+            grey
+
+        Connecting ->
+            grey
+
+        Connected ->
+            lightGrey
+
+        Disconnecting ->
+            grey
+
+
 
 ------------------------------------------------------------------------------------------------------------------
 -- Import Menu
+
 
 importTab : Model -> Element Msg
 importTab model =
@@ -323,7 +382,9 @@ importTab model =
         , width fill
         , height fill
         ]
-        <| importActiveTab model
+    <|
+        importActiveTab model
+
 
 importActiveTab : Model -> Element Msg
 importActiveTab model =
@@ -339,6 +400,7 @@ importActiveTab model =
         [ loadCSVButton
         , loadRegisterTableButton model
         ]
+
 
 loadCSVButton : Element Msg
 loadCSVButton =
@@ -356,23 +418,29 @@ loadCSVButton =
         , label = text "Load CSV File"
         }
 
+
 showCSVFile : Model -> Element Msg
 showCSVFile model =
     case model.csvFileName of
-        Nothing -> none
+        Nothing ->
+            none
+
         Just filename ->
             el
                 [ Font.color white, centerX ]
-                ( text <| csvLoadButtonText model.csvLoaded filename  )
+                (text <| csvLoadButtonText model.csvLoaded filename)
+
 
 csvLoadButtonText : Bool -> String -> String
 csvLoadButtonText flag str =
-    if flag
-    then str ++ " registers imported!"
-    else "Import registers from " ++ str
+    if flag then
+        str ++ " registers imported!"
+
+    else
+        "Import registers from " ++ str
 
 
-loadRegisterTableButton : Model ->  Element Msg
+loadRegisterTableButton : Model -> Element Msg
 loadRegisterTableButton model =
     Input.button
         [ Background.color <| loadRegsButtonClr model
@@ -388,18 +456,25 @@ loadRegisterTableButton model =
         , label = showCSVFile model
         }
 
+
 loadRegsButtonClr : Model -> Color
 loadRegsButtonClr model =
     case model.csvContent of
-       Just _ ->
-        if model.csvLoaded
-        then lightGreen
-        else lightGrey
-       Nothing -> grey
+        Just _ ->
+            if model.csvLoaded then
+                lightGreen
+
+            else
+                lightGrey
+
+        Nothing ->
+            grey
+
 
 
 ------------------------------------------------------------------------------------------------------------------
 -- Registers Menu
+
 
 newRegisterTable : List records -> List (IndexedColumn records Msg) -> Element Msg
 newRegisterTable dt cl =
@@ -413,7 +488,8 @@ newRegisterTable dt cl =
         , columns = cl
         }
 
-modDataColumns : Model -> List ( IndexedColumn ModDataUpdate Msg )
+
+modDataColumns : Model -> List (IndexedColumn ModDataUpdate Msg)
 modDataColumns model =
     [ modNameColumn
     , modRegTypeColumn
@@ -426,12 +502,14 @@ modDataColumns model =
     , selectColumn model
     ]
 
+
 modNameColumn : IndexedColumn ModDataUpdate Msg
 modNameColumn =
     { header = el [ height <| px 38 ] <| el headerTextAttr <| text "Name"
     , width = fillPortion 1
     , view = \i md -> viewCell i md.mduModData.modName
     }
+
 
 modRegTypeColumn : IndexedColumn ModDataUpdate Msg
 modRegTypeColumn =
@@ -440,12 +518,14 @@ modRegTypeColumn =
     , view = \i md -> viewCell i <| getRegType md.mduModData.modRegType
     }
 
+
 modAddressColumn : IndexedColumn ModDataUpdate Msg
 modAddressColumn =
     { header = el [ height <| px 38 ] <| el headerTextAttr <| text "Register Address"
     , width = fillPortion 1
     , view = \i md -> viewCell i <| String.fromInt md.mduModData.modAddress
     }
+
 
 modValueTypeColumn : IndexedColumn ModDataUpdate Msg
 modValueTypeColumn =
@@ -454,6 +534,7 @@ modValueTypeColumn =
     , view = \i md -> viewCell i <| getModValueType md.mduModData.modValue
     }
 
+
 modValueColumn : IndexedColumn ModDataUpdate Msg
 modValueColumn =
     { header = el [ height <| px 38 ] <| el headerTextAttr <| text "Value"
@@ -461,38 +542,47 @@ modValueColumn =
     , view = \idx md -> viewModValueColumn idx md
     }
 
+
 viewModValueColumn : Int -> ModDataUpdate -> Element Msg
 viewModValueColumn idx md =
     case md.mduRW of
-        Read -> viewReadModValue idx md
-        Write -> viewWriteModValue idx md.mduModData
+        Read ->
+            viewReadModValue idx md
+
+        Write ->
+            viewWriteModValue idx md.mduModData
+
 
 viewReadModValue : Int -> ModDataUpdate -> Element Msg
 viewReadModValue idx md =
-    viewCell idx
-    <| Maybe.withDefault "Nothing"
-    <| getModValue md.mduModData.modValue
+    viewCell idx <|
+        Maybe.withDefault "Nothing" <|
+            getModValue md.mduModData.modValue
+
 
 viewWriteModValue : Int -> ModData -> Element Msg
-
 viewWriteModValue idx md =
     el
         [ Background.color <| tableCellColor idx
         , Font.center
         ]
-        <| Input.text
+    <|
+        Input.text
             [ Background.color <| tableCellColor idx
             , Font.color greyWhite
             , Border.width 1
             , height <| px 38
+
             -- 11 is a magic number here :(
             , paddingXY 0 11
-            , focused [] ]
+            , focused []
+            ]
             { onChange = ChangeModDataValue idx
             , text = Maybe.withDefault "" <| getModValue md.modValue
             , placeholder = Nothing
             , label = Input.labelHidden "Value Input"
             }
+
 
 modUidColumn : IndexedColumn ModDataUpdate Msg
 modUidColumn =
@@ -501,12 +591,14 @@ modUidColumn =
     , view = \i md -> viewCell i <| String.fromInt md.mduModData.modUid
     }
 
+
 modDescriptionColumn : IndexedColumn ModDataUpdate Msg
 modDescriptionColumn =
-    { header = el [ height <| px 38 ] <| el [alignLeft , centerY ] <| text "Description"
+    { header = el [ height <| px 38 ] <| el [ alignLeft, centerY ] <| text "Description"
     , width = fillPortion 4
     , view = \i md -> viewDescCell i md.mduModData.modDescription
     }
+
 
 readWriteColumn : Model -> IndexedColumn ModDataUpdate Msg
 readWriteColumn model =
@@ -515,11 +607,15 @@ readWriteColumn model =
             [ height <| px 38
             , Font.color greyWhite
             ]
-            <| readWriteButton model.readWriteAll
-                <| Just <| ToggleWriteAll <| flipRW model.readWriteAll
+        <|
+            readWriteButton model.readWriteAll <|
+                Just <|
+                    ToggleWriteAll <|
+                        flipRW model.readWriteAll
     , width = px 50
     , view = \i md -> viewReadWriteCell model i md
     }
+
 
 readWriteButton : ReadWrite -> Maybe Msg -> Element Msg
 readWriteButton rw msg =
@@ -529,37 +625,48 @@ readWriteButton rw msg =
         , padding 3
         , focused []
         ]
-
         { onPress = msg
         , label = readWriteButtonText rw
         }
 
+
 rwButtonBGClr : ReadWrite -> Color
 rwButtonBGClr rw =
     case rw of
-        Read -> blueSapphire
-        Write -> fireBrick
+        Read ->
+            blueSapphire
+
+        Write ->
+            fireBrick
+
 
 readWriteButtonText : ReadWrite -> Element Msg
 readWriteButtonText rw =
     case rw of
-        Read -> text "Read"
-        Write -> text "Write"
+        Read ->
+            text "Read"
+
+        Write ->
+            text "Write"
+
 
 selectColumn : Model -> IndexedColumn ModDataUpdate Msg
 selectColumn model =
     { header =
         el
             [ height <| px 38 ]
-            <| selectCheckbox SelectAllChecked model.selectAllCheckbox
+        <|
+            selectCheckbox SelectAllChecked model.selectAllCheckbox
     , width = px 30
     , view = \i md -> viewCheckedCell i md.mduSelected
     }
 
-selectCheckbox : (Bool -> Msg) -> Bool ->  Element Msg
+
+selectCheckbox : (Bool -> Msg) -> Bool -> Element Msg
 selectCheckbox msg flag =
     Input.checkbox
-        [ alignLeft , centerY
+        [ alignLeft
+        , centerY
         ]
         { onChange = msg
         , icon = Input.defaultCheckbox
@@ -567,9 +674,11 @@ selectCheckbox msg flag =
         , label = Input.labelHidden "Select Checkbox"
         }
 
+
 headerTextAttr : List (Attribute Msg)
 headerTextAttr =
-    [ centerX , centerY ]
+    [ centerX, centerY ]
+
 
 viewCell : Int -> String -> Element Msg
 viewCell idx str =
@@ -579,7 +688,8 @@ viewCell idx str =
         , height <| px 38
         , Font.center
         ]
-        ( el [centerX , centerY ] <| text str )
+        (el [ centerX, centerY ] <| text str)
+
 
 viewDescCell : Int -> String -> Element Msg
 viewDescCell idx str =
@@ -589,7 +699,8 @@ viewDescCell idx str =
         , height <| px 38
         , Font.center
         ]
-        ( el [alignLeft, centerY ] <| text str )
+        (el [ alignLeft, centerY ] <| text str)
+
 
 viewCheckedCell : Int -> Bool -> Element Msg
 viewCheckedCell idx selected =
@@ -599,62 +710,101 @@ viewCheckedCell idx selected =
         , height <| px 38
         , Font.center
         ]
-        <| selectCheckbox (ModDataChecked idx) selected
+    <|
+        selectCheckbox (ModDataChecked idx) selected
 
-viewReadWriteCell : Model -> Int -> ModDataUpdate ->  Element Msg
+
+viewReadWriteCell : Model -> Int -> ModDataUpdate -> Element Msg
 viewReadWriteCell model idx md =
     case model.activeTab of
-        ModDataTable -> viewReadWriteModDataCell idx md
-        HoldingRegistersTable -> none
-        _ -> none
+        ModDataTable ->
+            viewReadWriteModDataCell idx md
+
+        HoldingRegistersTable ->
+            none
+
+        _ ->
+            none
+
 
 viewReadWriteModDataCell : Int -> ModDataUpdate -> Element Msg
 viewReadWriteModDataCell idx md =
     el
         [ Background.color <| tableCellColor idx
-        ,  Font.color greyWhite
+        , Font.color greyWhite
         , height <| px 38
         , Font.center
         ]
-        <| if writeableReg md.mduModData
-           then readWriteButton md.mduRW
-                <| Just <| ModDataWrite idx <| flipRW md.mduRW
-           else none
+    <|
+        if writeableReg md.mduModData then
+            readWriteButton md.mduRW <|
+                Just <|
+                    ModDataWrite idx <|
+                        flipRW md.mduRW
+
+        else
+            none
+
+
 tableCellColor : Int -> Color
 tableCellColor idx =
-    if modBy 2 idx == 0
-    then lightGrey
-    else grey
+    if modBy 2 idx == 0 then
+        lightGrey
+
+    else
+        grey
+
 
 inputRegistersTable : Element Msg
-inputRegistersTable = newRegisterTable [] []
+inputRegistersTable =
+    newRegisterTable [] []
+
 
 holdingRegistersTable : Element Msg
-holdingRegistersTable = newRegisterTable [] []
+holdingRegistersTable =
+    newRegisterTable [] []
+
 
 modDataTable : Model -> Element Msg
-modDataTable model = newRegisterTable model.modDataUpdate <| modDataColumns model
+modDataTable model =
+    newRegisterTable model.modDataUpdate <| modDataColumns model
+
 
 heartbeatTable : Element Msg
-heartbeatTable = newRegisterTable [] []
+heartbeatTable =
+    newRegisterTable [] []
+
+
 
 ------------------------------------------------------------------------------------------------------------------
 -- Command Area
 
+
 commandArea : Model -> Element Msg
 commandArea model =
     case model.activeTab of
-        ConnectMenu -> none
-        ImportMenu -> none
-        InputRegistersTable -> none
-        HoldingRegistersTable -> none
-        ModDataTable -> modDataCommand model
-        HeartbeatTable -> none
+        ConnectMenu ->
+            none
+
+        ImportMenu ->
+            none
+
+        InputRegistersTable ->
+            none
+
+        HoldingRegistersTable ->
+            none
+
+        ModDataTable ->
+            modDataCommand model
+
+        HeartbeatTable ->
+            none
+
 
 modDataCommand : Model -> Element Msg
 modDataCommand model =
-    if model.selectSome
-    then
+    if model.selectSome then
         column
             [ Background.color grey
             , width <| px 300
@@ -664,10 +814,12 @@ modDataCommand model =
             , padding 10
             ]
             [ updateSelectedButton model ]
-    else none
+
+    else
+        none
+
 
 updateSelectedButton : Model -> Element Msg
-
 updateSelectedButton model =
     Input.button
         [ Background.color lightGrey
@@ -679,19 +831,23 @@ updateSelectedButton model =
         { onPress = Just <| RefreshRequest model.modDataUpdate
         , label = text "Update Selected"
         }
+
+
+
 ------------------------------------------------------------------------------------------------------------------
 -- Status Bar
+-- An expandable status bar at the bottom of the page
 
-statusBar : Model -> Element Msg
-statusBar model =
-    row
-        [ Background.color blueSapphire
-        , width fill
-        , height <| px 38
-        , alignBottom
+
+notifications : Model -> Element Msg
+notifications model =
+    column
+        [ width fill
         ]
-        [ text <| showStatus model.status ]
-
-
-statusExpanded : Element Msg
-statusExpanded = none
+        [ expandButton model.statusBarState ExpandStatus
+        , renderNotifications
+            model.timeZone
+            ExpandNotification
+            model.statusBarState
+            model.notifications
+        ]

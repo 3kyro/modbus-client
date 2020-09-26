@@ -1,36 +1,41 @@
 module App exposing (main)
 
 import Browser
-
-import View exposing (view)
-import Update exposing (update, initCmd)
-import Types exposing
-    ( Msg (..)
-    , Model
-    , ModData
-    , ModValue (..)
-    , Status (..)
-    , RegType (..)
-    , ConnectStatus(..)
-    , ActiveTab(..)
-    , ReadWrite(..)
-    , newModDataUpdate
-    , fromFloat
-    )
+import Notifications exposing (StatusBarState(..))
+import Time
+import Types
+    exposing
+        ( ActiveTab(..)
+        , ConnectStatus(..)
+        , ModData
+        , ModValue(..)
+        , Model
+        , Msg(..)
+        , ReadWrite(..)
+        , RegType(..)
+        , fromFloat
+        , newModDataUpdate
+        )
 import Types.IpAddress exposing (defaultIpAddr)
+import Update exposing (initCmd, update)
+import View exposing (view)
+
 
 main : Program () Model Msg
-main = Browser.element
-    { init = \_ -> (initModel, initCmd)
-    , view = view
-    , update = update
-    , subscriptions = \_ -> Sub.none
-    }
+main =
+    Browser.element
+        { init = \_ -> ( initModel, initCmd )
+        , view = view
+        , update = update
+        , subscriptions = \_ -> Time.every 1000 NewTime
+        }
+
 
 initModel : Model
 initModel =
     { modDataUpdate = newModDataUpdate initModData
-    , status = AllGood
+    , notifications = []
+    , statusBarState = Retracted
     , connectStatus = Connect
     , ipAddress = defaultIpAddr
     , socketPort = Just 502
@@ -42,7 +47,10 @@ initModel =
     , selectAllCheckbox = False
     , selectSome = False
     , readWriteAll = Read
+    , timePosix = Time.millisToPosix 0
+    , timeZone = Time.utc
     }
+
 
 initModData : List ModData
 initModData =
