@@ -16539,7 +16539,6 @@ var $author$project$View$menuBar = function (model) {
 				$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill),
 				$mdgriffith$elm_ui$Element$height(
 				$mdgriffith$elm_ui$Element$px(38)),
-				A2($mdgriffith$elm_ui$Element$paddingXY, 10, 0),
 				$mdgriffith$elm_ui$Element$spacing(0)
 			]),
 		_List_fromArray(

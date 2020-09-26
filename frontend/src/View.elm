@@ -109,7 +109,6 @@ menuBar model =
         , alignTop
         , width fill
         , height <| px 38
-        , paddingXY 10 0
         , spacing 0
         ]
         [ connectTabButton model
