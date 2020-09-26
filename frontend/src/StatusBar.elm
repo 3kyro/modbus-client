@@ -69,12 +69,22 @@ renderTime not zone =
 
 hhmmss : Time.Zone -> Time.Posix -> String
 hhmmss zone posix =
-    String.fromInt
-        (Time.toHour zone posix)
+    (formatTime <| Time.toHour zone posix)
         ++ ":"
-        ++ (String.fromInt <| Time.toMinute zone posix)
+        ++ (formatTime <| Time.toMinute zone posix)
         ++ ":"
-        ++ (String.fromInt <| Time.toSecond zone posix)
+        ++ (formatTime <| Time.toSecond zone posix)
+
+
+
+-- Format a time unit, making sure it
+-- is always displayed with two digits
+
+
+formatTime : Int -> String
+formatTime unit =
+    String.padLeft 2 '0' <|
+        String.fromInt unit
 
 
 renderHeader : Notification -> Element msg
@@ -144,7 +154,7 @@ expandButtonLabel : StatusBarState -> Element Msg
 expandButtonLabel state =
     case state of
         Expanded ->
-            -- "▼" \u{25BC}'
+            -- "▼" '\u{25BC}'
             text <| String.fromChar '\u{25BC}'
 
         Retracted ->

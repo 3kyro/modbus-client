@@ -16602,6 +16602,35 @@ var $author$project$StatusBar$renderHeader = function (not) {
 			[$mdgriffith$elm_ui$Element$centerY]),
 		$mdgriffith$elm_ui$Element$text(not.header));
 };
+var $elm$core$Bitwise$shiftRightBy = _Bitwise_shiftRightBy;
+var $elm$core$String$repeatHelp = F3(
+	function (n, chunk, result) {
+		return (n <= 0) ? result : A3(
+			$elm$core$String$repeatHelp,
+			n >> 1,
+			_Utils_ap(chunk, chunk),
+			(!(n & 1)) ? result : _Utils_ap(result, chunk));
+	});
+var $elm$core$String$repeat = F2(
+	function (n, chunk) {
+		return A3($elm$core$String$repeatHelp, n, chunk, '');
+	});
+var $elm$core$String$padLeft = F3(
+	function (n, _char, string) {
+		return _Utils_ap(
+			A2(
+				$elm$core$String$repeat,
+				n - $elm$core$String$length(string),
+				$elm$core$String$fromChar(_char)),
+			string);
+	});
+var $author$project$StatusBar$formatTime = function (unit) {
+	return A3(
+		$elm$core$String$padLeft,
+		2,
+		_Utils_chr('0'),
+		$elm$core$String$fromInt(unit));
+};
 var $elm$time$Time$flooredDiv = F2(
 	function (numerator, denominator) {
 		return $elm$core$Basics$floor(numerator / denominator);
@@ -16675,9 +16704,9 @@ var $elm$time$Time$toSecond = F2(
 	});
 var $author$project$StatusBar$hhmmss = F2(
 	function (zone, posix) {
-		return $elm$core$String$fromInt(
-			A2($elm$time$Time$toHour, zone, posix)) + (':' + ($elm$core$String$fromInt(
-			A2($elm$time$Time$toMinute, zone, posix)) + (':' + $elm$core$String$fromInt(
+		return $author$project$StatusBar$formatTime(
+			A2($elm$time$Time$toHour, zone, posix)) + (':' + ($author$project$StatusBar$formatTime(
+			A2($elm$time$Time$toMinute, zone, posix)) + (':' + $author$project$StatusBar$formatTime(
 			A2($elm$time$Time$toSecond, zone, posix)))));
 	});
 var $author$project$StatusBar$renderTime = F2(
