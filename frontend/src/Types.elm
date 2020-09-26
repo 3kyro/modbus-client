@@ -8,11 +8,10 @@ module Types exposing
     , ModValue(..)
     , Model
     , Msg(..)
+    , Notification
     , ReadWrite(..)
     , RegType(..)
-    , Status(..)
     , StatusBarState(..)
-    , Notification
     , decodeConnInfo
     , decodeModData
     , decodeModDataUpdate
@@ -21,18 +20,17 @@ module Types exposing
     , encodeModDataUpdate
     , flipRW
     , fromFloat
+    , fromModType
     , getModValue
     , getModValueType
     , getRegType
     , newModDataUpdate
     , replaceModDataSelected
     , replaceModDataWrite
+    , showConnInfo
     , showConnectStatus
-    , showStatus
     , toMFloat
     , writeableReg
-    , showConnInfo
-    , fromModType
     )
 
 import File exposing (File)
@@ -46,8 +44,8 @@ import Types.IpAddress
         ( IpAddress
         , IpAddressByte
         , decodeIpAddress
-        , unsafeShowIp
         , showIp
+        , unsafeShowIp
         )
 
 
@@ -82,7 +80,6 @@ type Msg
 
 type alias Model =
     { modDataUpdate : List ModDataUpdate
-    , status : Status
     , statusBarState : StatusBarState
     , notifications : List Notification
     , connectStatus : ConnectStatus
@@ -133,34 +130,17 @@ showConnectStatus st =
 ----------------------------------------------------------------------------------------------------------------------------------
 
 
-type Status
-    = AllGood
-    | Loading
-    | Bad String
-
-
-showStatus : Status -> String
-showStatus status =
-    case status of
-        AllGood ->
-            "all good"
-
-        Loading ->
-            "getting stuff from the server"
-
-        Bad err ->
-            err
-
-
 type StatusBarState
     = Expanded
     | Retracted
+
 
 type alias Notification =
     { time : Time.Posix
     , header : String
     , detailed : Maybe String
     }
+
 
 
 -----------------------------------------------------------------------------------------------------------------------------------
@@ -189,11 +169,13 @@ encodeIpPort model =
         , ( "timeout", E.int <| Maybe.withDefault 0 model.timeout )
         ]
 
+
 showConnInfo : ConnectionInfo -> String
 showConnInfo conn =
-    ("IP Address: " ++ Maybe.withDefault "N/A" ( showIp conn.ipAddress ) ++ "\n")
-    ++ ( "Port: " ++ String.fromInt conn.socketPort ++ "\n" )
-    ++ ( "Timeout: " ++ String.fromInt conn.timeout )
+    ("IP Address: " ++ Maybe.withDefault "N/A" (showIp conn.ipAddress) ++ "\n")
+        ++ ("Port: " ++ String.fromInt conn.socketPort ++ "\n")
+        ++ ("Timeout: " ++ String.fromInt conn.timeout)
+
 
 
 -- ModData
@@ -265,6 +247,7 @@ getModValue mv =
 
         ModFloat v ->
             Maybe.map showMFloat v
+
 
 encodeModData : ModData -> E.Value
 encodeModData md =
@@ -441,6 +424,8 @@ fromModType md str =
 
         ModFloat _ ->
             { md | modValue = ModFloat <| toMFloat str }
+
+
 
 -- ActiveTab
 --------------------------------------------------------------------------------------------------

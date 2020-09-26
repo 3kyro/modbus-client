@@ -79,8 +79,6 @@ hhmmss zone posix =
 
 -- Format a time unit, making sure it
 -- is always displayed with two digits
-
-
 formatTime : Int -> String
 formatTime unit =
     String.padLeft 2 '0' <|

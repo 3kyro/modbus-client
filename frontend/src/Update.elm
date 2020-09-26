@@ -19,7 +19,6 @@ import Types
         , Msg(..)
         , Notification
         , RegType(..)
-        , Status(..)
         , StatusBarState(..)
         , decodeConnInfo
         , decodeModData
@@ -42,7 +41,6 @@ update msg model =
         ReadRegisters (Ok regs) ->
             ( { model
                 | modDataUpdate = regs
-                , status = AllGood
                 , notifications = simpleNot model "Selected registers updated"
               }
             , jumpToBottom "status"
@@ -50,8 +48,7 @@ update msg model =
 
         ReadRegisters (Err err) ->
             ( { model
-                | status = Bad <| showHttpError err
-                , notifications =
+                | notifications =
                     detailedNot
                         model
                         "Error reading registers"
@@ -84,8 +81,7 @@ update msg model =
 
         ReceivedConnectionInfo (Err err) ->
             ( { model
-                | status = Bad <| showHttpError err
-                , notifications =
+                | notifications =
                     detailedNot
                         model
                         "Error receiving connection info"
@@ -96,8 +92,7 @@ update msg model =
 
         RefreshRequest regs ->
             ( { model
-                | status = Loading
-                , notifications =
+                | notifications =
                     Notification
                         model.timePosix
                         "Updating registers"
@@ -124,8 +119,7 @@ update msg model =
 
         ConnectedResponse (Err err) ->
             ( { model
-                | status = Bad <| showHttpError err
-                , connectStatus = Connect
+                | connectStatus = Connect
                 , notifications =
                     detailedNot
                         model
@@ -201,8 +195,7 @@ update msg model =
 
         DisconnectedResponse (Err err) ->
             ( { model
-                | status = Bad <| showHttpError err
-                , connectStatus = Connect
+                | connectStatus = Connect
                 , notifications =
                     detailedNot
                         model
@@ -235,8 +228,7 @@ update msg model =
 
         ReceivedModData (Err err) ->
             ( { model
-                | status = Bad <| showHttpError err
-                , notifications =
+                | notifications =
                     detailedNot
                         model
                         "Error parsing register table"

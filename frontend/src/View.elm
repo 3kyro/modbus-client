@@ -61,7 +61,6 @@ import Types
         , Model
         , Msg(..)
         , ReadWrite(..)
-        , Status(..)
         , StatusBarState(..)
         , flipRW
         , getModValue

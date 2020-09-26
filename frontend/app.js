@@ -6004,7 +6004,6 @@ var $author$project$Types$TimeZone = function (a) {
 var $elm$time$Time$here = _Time_here(_Utils_Tuple0);
 var $author$project$Update$getTimeZone = A2($elm$core$Task$perform, $author$project$Types$TimeZone, $elm$time$Time$here);
 var $author$project$Update$initCmd = $author$project$Update$getTimeZone;
-var $author$project$Types$AllGood = {$: 'AllGood'};
 var $author$project$Types$Connect = {$: 'Connect'};
 var $author$project$Types$ConnectMenu = {$: 'ConnectMenu'};
 var $author$project$Types$Read = {$: 'Read'};
@@ -6102,14 +6101,10 @@ var $author$project$App$initModel = {
 	selectAllCheckbox: false,
 	selectSome: false,
 	socketPort: $elm$core$Maybe$Just(502),
-	status: $author$project$Types$AllGood,
 	statusBarState: $author$project$Types$Retracted,
 	timePosix: $elm$time$Time$millisToPosix(0),
 	timeZone: $elm$time$Time$utc,
 	timeout: $elm$core$Maybe$Just(1000)
-};
-var $author$project$Types$Bad = function (a) {
-	return {$: 'Bad', a: a};
 };
 var $author$project$Types$Connected = {$: 'Connected'};
 var $author$project$Types$Connecting = {$: 'Connecting'};
@@ -6121,7 +6116,6 @@ var $author$project$Types$CsvSelected = function (a) {
 };
 var $author$project$Types$Disconnecting = {$: 'Disconnecting'};
 var $author$project$Types$Expanded = {$: 'Expanded'};
-var $author$project$Types$Loading = {$: 'Loading'};
 var $author$project$Types$Notification = F3(
 	function (time, header, detailed) {
 		return {detailed: detailed, header: header, time: time};
@@ -7563,8 +7557,7 @@ var $author$project$Update$update = F2(
 							model,
 							{
 								modDataUpdate: regs,
-								notifications: A2($author$project$Update$simpleNot, model, 'Selected registers updated'),
-								status: $author$project$Types$AllGood
+								notifications: A2($author$project$Update$simpleNot, model, 'Selected registers updated')
 							}),
 						$author$project$Update$jumpToBottom('status'));
 				} else {
@@ -7577,8 +7570,6 @@ var $author$project$Update$update = F2(
 									$author$project$Update$detailedNot,
 									model,
 									'Error reading registers',
-									$author$project$Update$showHttpError(err)),
-								status: $author$project$Types$Bad(
 									$author$project$Update$showHttpError(err))
 							}),
 						$author$project$Update$jumpToBottom('status'));
@@ -7622,8 +7613,6 @@ var $author$project$Update$update = F2(
 									$author$project$Update$detailedNot,
 									model,
 									'Error receiving connection info',
-									$author$project$Update$showHttpError(err)),
-								status: $author$project$Types$Bad(
 									$author$project$Update$showHttpError(err))
 							}),
 						$author$project$Update$jumpToBottom('status'));
@@ -7637,8 +7626,7 @@ var $author$project$Update$update = F2(
 							notifications: A2(
 								$elm$core$List$cons,
 								A3($author$project$Types$Notification, model.timePosix, 'Updating registers', $elm$core$Maybe$Nothing),
-								model.notifications),
-							status: $author$project$Types$Loading
+								model.notifications)
 						}),
 					$author$project$Update$updateModDataRequest(regs));
 			case 'ConnectRequest':
@@ -7668,8 +7656,6 @@ var $author$project$Update$update = F2(
 									$author$project$Update$detailedNot,
 									model,
 									'Error connecting to client',
-									$author$project$Update$showHttpError(err)),
-								status: $author$project$Types$Bad(
 									$author$project$Update$showHttpError(err))
 							}),
 						$author$project$Update$jumpToBottom('status'));
@@ -7782,8 +7768,6 @@ var $author$project$Update$update = F2(
 									$author$project$Update$detailedNot,
 									model,
 									'Error disconnectiing from client',
-									$author$project$Update$showHttpError(err)),
-								status: $author$project$Types$Bad(
 									$author$project$Update$showHttpError(err))
 							}),
 						$author$project$Update$jumpToBottom('status'));
@@ -7838,8 +7822,6 @@ var $author$project$Update$update = F2(
 									$author$project$Update$detailedNot,
 									model,
 									'Error parsing register table',
-									$author$project$Update$showHttpError(err)),
-								status: $author$project$Types$Bad(
 									$author$project$Update$showHttpError(err))
 							}),
 						$author$project$Update$jumpToBottom('status'));

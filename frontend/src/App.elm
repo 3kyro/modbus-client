@@ -12,7 +12,6 @@ import Types
         , Msg(..)
         , ReadWrite(..)
         , RegType(..)
-        , Status(..)
         , StatusBarState(..)
         , fromFloat
         , newModDataUpdate
@@ -35,7 +34,6 @@ main =
 initModel : Model
 initModel =
     { modDataUpdate = newModDataUpdate initModData
-    , status = AllGood
     , notifications = []
     , statusBarState = Retracted
     , connectStatus = Connect
