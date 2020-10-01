@@ -24,26 +24,11 @@ import Test.QuickCheck
     , elements
     , frequency
     )
+import Types.Modbus (RegType (..))
 
 import qualified Data.Text as T
 
--- Modbus Register type:
--- Discrete Input, single bit, read only
--- Coil Single bit, read / write
--- Input Register, 16-bit word, read only
--- Holding Register, 16-bit word, read / write
-data RegType
-    = DiscreteInput
-    | Coil
-    | InputRegister
-    | HoldingRegister
-    deriving (Eq)
 
-instance Show RegType where
-    show DiscreteInput   = "Discrete Input"
-    show Coil            = "Coil"
-    show InputRegister   = "Input Register"
-    show HoldingRegister = "Holding Register"
 
 data ModData = ModData
     { modName           :: !String      -- Variable name
@@ -99,8 +84,7 @@ instance Arbitrary ModData where
         rest = (10, T.cons <$> descValidChar <*> arbText)
         descValidChar = elements $ ['a'..'z'] ++ ['A'..'Z'] ++ " &éèçà$=:"
 
-instance Arbitrary RegType where
-  arbitrary = elements [DiscreteInput, Coil, InputRegister, HoldingRegister]
+
 
 -- Helper type to better produce arbitrary name values
 newtype NameArb = NA  {

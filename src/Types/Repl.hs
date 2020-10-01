@@ -1,3 +1,4 @@
+{-# LANGUAGE MultiParamTypeClasses #-}
 module Types.Repl 
     ( Repl
     , ReplState (..)
@@ -45,11 +46,21 @@ data ReplState = ReplState
     }
 
 data ReplConfig = Config
-    { replConn       :: !MB.Connection
+    { replConn       :: Bool
     , replSockAddr   :: !S.SockAddr
     , replOrd        :: !ByteOrder
     , replTimeout    :: !Int
     }
+
+-- Abstraction
+-- A Modbus client
+--
+-- A modbus client has the floowing characteristics
+-- 1) It connects to a modbus server through a protocol
+-- 2)
+
+class Client where
+    connection :: Bool
 
 -- Defines the type of an argument in certain repl commands
 data ReplArg

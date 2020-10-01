@@ -47,6 +47,7 @@ dependencies:
 - warp
 - stm
 - system-info
+- tagged
 
 library:
   source-dirs: src

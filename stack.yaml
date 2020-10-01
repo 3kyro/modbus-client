@@ -36,7 +36,7 @@ packages:
 #
 extra-deps:
   - git: https://github.com/3kyro/modbus-tcp.git
-    commit: b3ba4bdbd9e7b3ea622820c6b00cf3be176aba1b
+    commit: 4c4490810df6a1d97022825066120d970859a73a
   - either-5.0.1.1
   - monad-batcher-0.0.0.0
 # - acme-missiles-0.3

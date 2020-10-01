@@ -1,22 +1,12 @@
-{-# LANGUAGE ScopedTypeVariables #-}
-module Modbus 
-    (
-      modSession
-    , modUpdateSession
-    , getFloats
-    , fromFloats
-    , word2Float
-    , modbusConnection
-    , withSocket
-    , connect
-    , maybeConnect
-    , getAddr
+module Modbus
+    ( Config
+
     ) where
 
 import Control.Monad.Except (throwError)
 import Data.Maybe (listToMaybe)
 import Data.Word (Word16)
-import Data.Binary.Put 
+import Data.Binary.Put
     (
        runPut
      , putWord16le
@@ -33,12 +23,65 @@ import Data.Binary.Get
 import Network.Socket.ByteString (recv, send)
 
 import qualified Network.Socket as S
-import qualified Network.Modbus.TCP as MB
+import qualified Network.Modbus.TCP as TCP
+import qualified Network.Modbus.RTU as RTU
+
 
 import Types
 import Control.Exception.Safe (SomeException, try, bracket)
 import Data.IP (toHostAddress, IPv4)
 import qualified System.Timeout as TM
+
+import Types.Modbus
+
+
+
+data MockData = MockData
+    { regType :: RegType
+    , value :: Word16
+    }
+
+instance MBRegister MockData where
+    registerType = regType
+    registerToWord16 a = Just [value a]
+    registerFromWord16 reg word = do
+        word' <- listToMaybe word
+        return $ reg {value = word'}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+heartBeatSignal' :: (MonadIO m, Application m, Client a, MonadThrow m) => Int -> Worker m -> MVar a -> TransactionInfo -> Address -> m ThreadId
+heartBeatSignal' timer worker configMVar tpu address =
+    liftIO $ forkIO $ exec $ thread address 0
+    where
+    thread address acc = do
+        liftIO $ threadDelay timer
+        let session = writeSingleRegister tpu address acc
+        runClient worker configMVar session
+        thread address (acc + 1)
+        return ()
+
+-----------------------------------------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------------------------------------
+
 
 modbusConnection :: S.Socket -> Int -> MB.Connection
 modbusConnection s tm =

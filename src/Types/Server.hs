@@ -6,7 +6,6 @@ module Types.Server
     ) where
 
 import qualified Network.Socket as S
-import qualified Network.Modbus.TCP as MB
 
 import Types.Repl (ThreadState (..))
 import Data.IP (IPv4)
@@ -23,9 +22,10 @@ import Data.Aeson.Types (Value (..))
 import Servant
 
 import Types.ModData
+import Types.Modbus (Config)
 
 data ServState = ServState
-    { servConn      :: !(Maybe (S.Socket , MB.Connection))
+    { servConn      :: !(Maybe (S.Socket , Config))
     , servOrd       :: !ByteOrder
     , servPool      :: ![ThreadState]
     , servConnInfo  :: !(Maybe ConnectionData)

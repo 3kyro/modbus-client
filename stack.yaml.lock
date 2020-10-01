@@ -9,12 +9,12 @@ packages:
     version: '0.6'
     git: https://github.com/3kyro/modbus-tcp.git
     pantry-tree:
-      size: 1198
-      sha256: ef4b8e7c743cdac7cee8d9381526d12d590cbd069d6bd174be20ce09b4ca2851
-    commit: b3ba4bdbd9e7b3ea622820c6b00cf3be176aba1b
+      size: 1191
+      sha256: a697b7ec6e4af354ae88f853854cb71d1fc1c8936fd2c755da0a5093d997c553
+    commit: 4c4490810df6a1d97022825066120d970859a73a
   original:
     git: https://github.com/3kyro/modbus-tcp.git
-    commit: b3ba4bdbd9e7b3ea622820c6b00cf3be176aba1b
+    commit: 4c4490810df6a1d97022825066120d970859a73a
 - completed:
     hackage: either-5.0.1.1@sha256:41167573bf575b7e0e24283a52fba8ce7bed5a7cc2984bba0dce305a0ab66f0d,1973
     pantry-tree:
