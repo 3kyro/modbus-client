@@ -10,7 +10,8 @@ module Types.Modbus
     , readMBRegister
     , writeMBRegister
 
-    , MB.Config
+    , Config
+    , Address
 
     , Application
     , execApp
@@ -24,12 +25,14 @@ module Types.Modbus
 
     , Session (..)
 
+    , TransactionInfo
     , UID
     , setUID
     , getUID
     , TPU
     , setTPU
     , getTPU
+    , incrTID
 
     , RegType (..)
 
@@ -217,6 +220,10 @@ getTPU (TransactionInfo uid tid) = TCP.TPU
     (TCP.TransactionId tid)
     TCP.ModbusTcp
     (TCP.UnitId uid)
+
+-- Increments the transaction Id of the TPU by one
+incrTID :: TPU -> TPU
+incrTID tpu = tpu { transactionId = transactionId tpu + 1}
 
 ---------------------------------------------------------------------------------------------------------------
 -- RegType
