@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: c77091387f19a3466dcf49dbbbbcab18eea8601ca185f3a90517e8ebfeb952e0
+-- hash: 2c5aaa78ee354782030368bdfe016473d8ae7cf0ab22ba2c0659409741b7de24
 
 name:           modbus-serve
 version:        0.1.0.0
@@ -71,6 +71,7 @@ library
     , repline
     , safe-exceptions
     , scotty
+    , serialport
     , servant-server
     , stm
     , system-info
@@ -112,6 +113,7 @@ executable modbus-serve-exe
     , repline
     , safe-exceptions
     , scotty
+    , serialport
     , servant-server
     , stm
     , system-info
@@ -159,6 +161,7 @@ test-suite modbus-serve-test
     , repline
     , safe-exceptions
     , scotty
+    , serialport
     , servant-server
     , stm
     , system-info

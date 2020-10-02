@@ -29,6 +29,13 @@ packages:
       sha256: 370540911d5377b2e12bba81cab2f4b7d4af60a6c35a3246cd5b3827722e93fe
   original:
     hackage: monad-batcher-0.0.0.0
+- completed:
+    hackage: serialport-0.4.7@sha256:faff483f73c8e8e9661dae3788795bb0f4a38413a49fccb77bcdc6827af50182,1430
+    pantry-tree:
+      size: 762
+      sha256: 50b9cd8cc7937d91834a499171f8d0904f63381dda4d90b546fa6f16f1bec2c3
+  original:
+    hackage: serialport-0.4.7
 snapshots:
 - completed:
     size: 532382

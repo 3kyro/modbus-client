@@ -17,16 +17,32 @@ import OptParser (Opt(..), AppMode (..), Protocol (..), runOpts)
 import PrettyPrint (ppError)
 import Repl (runRepl)
 import Server (runServer)
+
 import Types
     ( serializeModData
     , ByteOrder
     , ModData
     , ReplConfig(Config)
     , ReplState(ReplState)
+    , Client (..)
+    , Config
+    , getTCPConfig
+    , getRTUConfig
     )
 
 main :: IO ()
 main = runApp =<< runOpts
+
+-- getConfig :: Protocol -> Int -> IO Config
+-- getConfig protocol timeout =
+--     case protocol of
+--         TCP -> tcpInit
+--         RTU -> rtuInit
+
+-- tcpInit :: Int -> IO Config
+-- tcpInit timeout = do
+
+
 
 runApp :: Opt -> IO ()
 runApp (Opt mode protocol input output ip portNum order uid tm) =
@@ -36,23 +52,28 @@ runApp (Opt mode protocol input output ip portNum order uid tm) =
             case parseResult of
                 Left err -> ppError err
                 Right md' -> do
-                    resp <- runTemplateApp (getAddr ip portNum) tm order md'
+                    resp <- runTCPTemplateApp (getAddr ip portNum) tm order md'
                     T.writeFile output (serializeModData resp)
         AppRepl -> runReplApp (getAddr ip portNum) tm order [] uid
         AppWeb -> runServer ip portNum order tm
 
-runTemplateApp :: S.SockAddr -> Int -> ByteOrder -> [ModData] -> IO [ModData]
-runTemplateApp addr tm order md =
+runTCPTemplateApp :: S.SockAddr -> Int -> ByteOrder -> [ModData] -> IO [ModData]
+runTCPTemplateApp addr tm order md =
     withSocket addr $ \s -> do
+            config <- getTCPConfig s tm
+
             resp <- runExceptT $ MB.runSession (modbusConnection s tm) (modSession md order)
             case resp of
                 Left err -> fail $ "Modbus error: " ++ show err
                 Right resp' -> return resp'
 
 -- Run the application's REPL
-runReplApp :: S.SockAddr -> Int -> ByteOrder -> [ModData] -> Word8 -> IO ()
-runReplApp addr tm order mdata uid =
+runTCPReplApp :: S.SockAddr -> Int -> ByteOrder -> [ModData] -> Word8 -> IO ()
+runTCPReplApp addr tm order mdata uid =
     withSocket addr $ \s ->
         runRepl (Config (modbusConnection s tm) addr order tm) (ReplState mdata uid [] 0)
 
+withSocket :: S.SockAddr -> (S.Socket -> IO a) -> IO a
+withSocket addr = bracket (connect addr) close
+  where close s = S.gracefulClose s 1000
 

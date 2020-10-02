@@ -1,3 +1,4 @@
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE DeriveFunctor #-}
@@ -50,10 +51,16 @@ module Types.Modbus
     , heartBeatSignal
 
     , keepAliveThread
+
+    , getTCPConfig
+    , getRTUConfig
+    , getAddr
+    , maybeTCPConnect
+
     ) where
 
 import Control.Concurrent (threadDelay, forkIO, ThreadId, putMVar, takeMVar, MVar)
-import Control.Exception.Safe (throw, MonadThrow)
+import Control.Exception.Safe (try, SomeException, throw, MonadThrow)
 import Control.Monad.Trans (liftIO, MonadIO)
 import Data.Aeson (Value (..), FromJSON (..), ToJSON (..))
 import Data.Binary.Get
@@ -67,8 +74,9 @@ import Data.Binary.Put
     , putFloatbe
     , putFloatle
     , putWord16host
-
     )
+import Data.IP.Internal (IPv4)
+import Data.IP (toHostAddress)
 import Data.Tagged (Tagged, untag, Tagged(..))
 import Data.Word (Word16, Word8)
 import Data.Range (Range)
@@ -79,6 +87,10 @@ import qualified Data.ByteString.Char8 as B
 import qualified Network.Modbus.TCP as TCP
 import qualified Network.Modbus.RTU as RTU
 import qualified Network.Modbus.Protocol as MB
+import qualified Network.Socket as S
+import qualified Network.Socket.ByteString as S
+import qualified System.Hardware.Serialport as SP
+import qualified System.Timeout as TM
 
 ---------------------------------------------------------------------------------------------------------------
 -- Client
@@ -412,3 +424,37 @@ keepAliveThread threadConfigMVar clientMVar = do
         putMVar clientMVar $ TCPClient config
         -- recurse
         keepAliveThread threadConfigMvar configMvar
+
+---------------------------------------------------------------------------------------------------------------
+-- Config
+---------------------------------------------------------------------------------------------------------------
+
+getTCPConfig :: S.Socket -> Int -> Config
+getTCPConfig s timeout = MB.Config
+    { MB.cfgWrite = S.send s
+    , MB.cfgRead = S.recv s 4096
+    , MB.cfgCommandTimeout = timeout
+    , MB.cfgRetryWhen = const . const False
+    , MB.cfgEnableBroadcasts = False
+    }
+
+getRTUConfig :: SP.SerialPort -> Int -> Config
+getRTUConfig s timeout = MB.Config
+    { MB.cfgWrite = SP.send s
+    , MB.cfgRead = SP.recv s 4096
+    , MB.cfgCommandTimeout = timeout
+    , MB.cfgRetryWhen = const . const False
+    , MB.cfgEnableBroadcasts = True
+    }
+
+getAddr :: IPv4 -> Int -> S.SockAddr
+getAddr ip portNum = S.SockAddrInet (fromIntegral portNum) (toHostAddress ip)
+
+-- Connect to the server using a new socket and checking for a timeout
+maybeTCPConnect :: S.SockAddr -> Int -> IO (Maybe S.Socket)
+maybeTCPConnect addr tm = do
+    s <- S.socket S.AF_INET S.Stream S.defaultProtocol
+    ( rlt :: Either SomeException (Maybe ()) ) <- try $ TM.timeout tm (S.connect s addr)
+    case rlt of
+        Left _ -> return Nothing
+        Right m -> return $ s <$ m

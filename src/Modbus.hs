@@ -223,9 +223,7 @@ import Types
 -- swappWord :: Word16 -> Word16
 -- swappWord w = runGet getWord16be $ runPut $ putWord16le w
 
--- withSocket :: S.SockAddr -> (S.Socket -> IO a) -> IO a
--- withSocket addr = bracket (connect addr) close
---   where close s = S.gracefulClose s 1000
+
 
 -- connect :: S.SockAddr -> IO S.Socket
 -- connect addr = do

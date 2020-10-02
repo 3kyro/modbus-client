@@ -39,6 +39,7 @@ extra-deps:
     commit: 4c4490810df6a1d97022825066120d970859a73a
   - either-5.0.1.1
   - monad-batcher-0.0.0.0
+  - serialport-0.4.7
 # - acme-missiles-0.3
 # - git: https://github.com/commercialhaskell/stack.git
 #   commit: e7b331f14bcffb8367cd58fbfc8b40ec7642100a

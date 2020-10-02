@@ -26,11 +26,17 @@ import Types
     , ServState (..)
     , ModData (..)
     , ModDataUpdate (..)
+    , Config (..)
+    , getAddr
+    , maybeTCPConnect
     )
 
 -- import Modbus (modUpdateSession, modbusConnection, maybeConnect, getAddr)
+-- import Modbus (maybeConnect, getAddr)
 import Control.Monad.Except (runExceptT, catchError)
 import CsvParser (runpCSV)
+import Types.Modbus (getTCPConfig)
+
 
 type ServerAPI
     = "modData" :> ReqBody '[JSON] [ModDataUpdate] :> Post '[JSON] [ModDataUpdate]
@@ -100,7 +106,7 @@ updateModData state md = do
 connect :: TVar ServState -> ConnectionData -> Handler ()
 connect state dt@(ConnectionData ip portNum tm) = do
     ServState _ order _ _ <- liftIO $ readTVarIO state
-    mConn <- liftIO $ getMaybeConnection ip portNum tm
+    mConn <- liftIO $ getMaybeTCPConnection ip portNum tm
     case mConn of
         Nothing -> throwError err300
         Just c -> do
@@ -131,22 +137,22 @@ disconnect state s = case s of
 
 getServState :: IPv4 -> Int -> ByteOrder -> Int -> IO ServState
 getServState ip portNum order tm = do
-    conn <- getMaybeConnection ip portNum tm
+    conn <- getMaybeTCPConnection ip portNum tm
     case conn of
         Nothing -> return $ ServState Nothing order [] Nothing
         Just _ -> return $ ServState conn order [] $ Just $ ConnectionData ip portNum tm
 
-getMaybeConnection :: IPv4 -> Int -> Int -> IO (Maybe (S.Socket , MB.Connection))
-getMaybeConnection ip portNum tm = do
+getMaybeTCPConnection :: IPv4 -> Int -> Int -> IO (Maybe (S.Socket , Config))
+getMaybeTCPConnection ip portNum tm = do
     let sockAddr = getAddr ip portNum
-    maybeSocket <- maybeConnect sockAddr tm
+    maybeSocket <- maybeTCPConnect sockAddr tm
     return $ (,) <$> maybeSocket <*> maybeCon maybeSocket
   where
-    maybeCon :: Maybe S.Socket -> Maybe MB.Connection
-    maybeCon maybeSocket = (`modbusConnection` tm) <$> maybeSocket
+    maybeCon :: Maybe S.Socket -> Maybe Config
+    maybeCon maybeSocket = (`getTCPConfig` tm) <$> maybeSocket
 
 parseAndSend :: String -> Handler [ModData]
-parseAndSend content = 
+parseAndSend content =
     let
         md = runpCSV $ T.pack content
     in
