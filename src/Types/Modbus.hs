@@ -329,6 +329,8 @@ data ByteOrder
     | BE    -- Big Endian
     deriving (Show, Read, Eq)
 
+instance Arbitrary ByteOrder where
+    arbitrary = elements [LE, BE]
 
 -- Converts a Float to a list of Word16s
 float2Word16 :: ByteOrder -> Float -> [Word16]
