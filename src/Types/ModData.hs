@@ -5,7 +5,6 @@ module Types.ModData
     ( ModData (..)
     , RegType (..)
     , ModValue (..)
-    , ByteOrder (..)
     , NameArb (..)
     , getModValueMult
     , serializeModData
@@ -15,6 +14,7 @@ module Types.ModData
     where
 
 import Data.Aeson
+import Data.Maybe (listToMaybe)
 import Data.Word (Word8, Word16)
 import Data.List (foldl')
 import Test.QuickCheck
@@ -24,7 +24,14 @@ import Test.QuickCheck
     , elements
     , frequency
     )
-import Types.Modbus (RegType (..), serializeRegType)
+import Types.Modbus
+    ( RegType (..)
+    , serializeRegType
+    , MBRegister (..)
+    , ByteOrder (..)
+    , float2Word16
+    , word16ToFloat
+    )
 
 import qualified Data.Text as T
 
@@ -33,6 +40,7 @@ import qualified Data.Text as T
 ---------------------------------------------------------------------------------------------------------------
 
 -- The principal modbus register data struture
+-- TODO #6 :: use opaque type for modName
 data ModData = ModData
     { modName           :: !String      -- Variable name
     , modRegType        :: !RegType     -- Register Type
@@ -79,10 +87,24 @@ instance ToJSON ModData where
         , "description" .= modDescription md
         ]
 
+instance MBRegister ModData where
+    registerType = modRegType
+    registerToWord16 bo md =
+        case modValue md of
+            ModWord Nothing -> []
+            ModWord (Just v) -> [v]
+            ModFloat Nothing -> []
+            ModFloat (Just v) -> float2Word16 bo v
+    registerFromWord16 _ _ [] = Nothing
+    registerFromWord16 bo md vs@(x:_) =
+        case modValue md of
+            ModWord _ -> Just $ md { modValue = ModWord (Just x) }
+            ModFloat _ -> Just $ md { modValue = ModFloat (word16ToFloat bo vs)}
+
+
 ---------------------------------------------------------------------------------------------------------------
 -- ModValue
 ---------------------------------------------------------------------------------------------------------------
-
 
 -- Modbus uses a 'big-Endian' encoding for addresses and data items.
 -- This means that when a numerical quantity larger than a single byte is
@@ -193,23 +215,6 @@ setMDUModValue mdu mv =
     mdu { mduModData = (mduModData mdu) { modValue = mv}}
 
 
----------------------------------------------------------------------------------------------------------------
--- ByteOrder
----------------------------------------------------------------------------------------------------------------
-
--- Byte order of data types
--- Eg: when receiving two two-byte words AB and CD
--- LE   - AB CD
--- BE   - CD AB
--- LESW - BA DC
--- BESW - DC BA
-data ByteOrder
-    = LE    -- Little Endian
-    | BE    -- Big Endian
-    | LESW  -- Little Endiann, byte swap for each word
-    | BESW  -- Big Endian, byte swap for each word
-
-    deriving (Show, Read, Eq)
 
 ---------------------------------------------------------------------------------------------------------------
 -- Utils

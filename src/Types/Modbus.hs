@@ -43,12 +43,28 @@ module Types.Modbus
     , TCPClient
     , RTUClient
 
+    , ByteOrder (..)
+    , float2Word16
+    , word16ToFloat
     ) where
 
 import Control.Concurrent (ThreadId, putMVar, takeMVar, MVar)
 import Control.Exception.Safe (throw, MonadThrow)
 import Control.Monad.Trans (liftIO, MonadIO)
 import Data.Aeson (Value (..), FromJSON (..), ToJSON (..))
+import Data.Binary.Get
+    ( runGet
+    , getFloatbe
+    , getFloatle
+    , getWord16host
+    )
+import Data.Binary.Put
+    ( runPut
+    , putFloatbe
+    , putFloatle
+    , putWord16host
+
+    )
 import Data.Tagged (Tagged, untag, Tagged(..))
 import Data.Word (Word16, Word8)
 import Data.Range (Range)
@@ -308,3 +324,31 @@ data ByteOrder
     = LE    -- Little Endian
     | BE    -- Big Endian
     deriving (Show, Read, Eq)
+
+
+-- Converts a Float to a list of Word16s
+float2Word16 :: ByteOrder -> Float -> [Word16]
+float2Word16 LE float =
+    runGet (combine <$> getWord16host <*> getWord16host) floatle
+  where
+    floatle = runPut $ putFloatle float
+    combine a b = a : [b]
+float2Word16 BE float =
+    runGet (combine <$> getWord16host <*> getWord16host) floatbe
+  where
+    floatbe = runPut $ putFloatbe float
+    combine a b = a : [b]
+
+-- Converts a list of Word16s to a Maybe Float
+word16ToFloat :: ByteOrder -> [Word16] -> Maybe Float
+word16ToFloat _ [] = Nothing
+word16ToFloat LE [a,b] =
+    Just $ runGet getFloatle float
+  where
+    float = runPut $ putWord16host a  >> putWord16host b
+word16ToFloat BE [a,b] =
+    Just $ runGet getFloatbe float
+  where
+    float = runPut $ putWord16host a  >> putWord16host b
+word16ToFloat _ _ = Nothing
+

@@ -211,7 +211,7 @@ heartBeatSignal timer worker clientMVar tpu address =
 --   let
 --       (msw,lsw) = float2Word x
 --   in
---       [msw,lsw] ++ fromFloats xs  
+--       [msw,lsw] ++ fromFloats xs
 
 -- word2Float :: ByteOrder -> (Word16, Word16) -> Float
 -- word2Float order ws@(f,s) =
