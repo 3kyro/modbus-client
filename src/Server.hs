@@ -28,7 +28,7 @@ import Types
     , ModDataUpdate (..)
     )
 
-import Modbus (modUpdateSession, modbusConnection, maybeConnect, getAddr)
+-- import Modbus (modUpdateSession, modbusConnection, maybeConnect, getAddr)
 import Control.Monad.Except (runExceptT, catchError)
 import CsvParser (runpCSV)
 

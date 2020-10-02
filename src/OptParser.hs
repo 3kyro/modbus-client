@@ -37,11 +37,12 @@ import Data.Word (Word8)
 
 data Opt = Opt
     { appMode       :: !AppMode
+    , protocol      :: !Protocol
     , inputTemplate :: !FilePath
     , outputFile    :: !FilePath
     , ipAddr        :: !IPv4
     , port          :: !Int
-    , floatRepr     :: !ByteOrder
+    , byteOrder     :: !ByteOrder
     , uId           :: !Word8
     , timeout       :: !Int
 }
@@ -50,6 +51,10 @@ data AppMode
     = AppTemplate
     | AppRepl
     | AppWeb
+
+data Protocol
+    = TCP
+    | RTU
 
 -- | Executes the options parser
 runOpts :: IO Opt
@@ -63,6 +68,7 @@ runOpts = execParser opts
 opt :: Parser Opt
 opt = Opt
     <$> parseAppMode
+    <*> parseProtocol
     <*> parseInput
     <*> parseOutput
     <*> parseIPAddr
@@ -86,6 +92,21 @@ parseServer = flag AppTemplate AppWeb
     ( long      "server"
     <> short    's'
     <> help     "Starts the local web server"
+    )
+
+parseProtocol :: Parser Protocol
+parseProtocol = parseTCP <|> parseRTU
+
+parseTCP :: Parser Protocol
+parseTCP = flag TCP TCP
+    ( long      "TCP"
+    <> help     "Starts an TCP Modbus client"
+    )
+
+parseRTU :: Parser Protocol
+parseRTU = flag TCP RTU
+    ( long      "RTU"
+    <> help     "Starts an RTU Modbus client"
     )
 
 parseInput :: Parser String
