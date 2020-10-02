@@ -48,6 +48,8 @@ module Types.Modbus
     , word16ToFloat
 
     , heartBeatSignal
+
+    , keepAliveThread
     ) where
 
 import Control.Concurrent (threadDelay, forkIO, ThreadId, putMVar, takeMVar, MVar)
@@ -73,10 +75,10 @@ import Data.Range (Range)
 import Network.Modbus.Protocol (Address, Config)
 import Test.QuickCheck (Arbitrary(..), elements, arbitrary)
 
+import qualified Data.ByteString.Char8 as B
 import qualified Network.Modbus.TCP as TCP
 import qualified Network.Modbus.RTU as RTU
 import qualified Network.Modbus.Protocol as MB
-
 
 ---------------------------------------------------------------------------------------------------------------
 -- Client
@@ -375,3 +377,36 @@ heartBeatSignal timer worker clientMVar tpu address =
         runClient worker clientMVar session
         thread address' (acc + 1)
         return ()
+
+---------------------------------------------------------------------------------------------------------------
+-- Keep Alive
+---------------------------------------------------------------------------------------------------------------
+
+-- A thread implementing the TCP keep alive function
+-- The global ThreadConfig contains information on wheter keep alive is active
+-- and the interval between calls. In order be cross platform, we ignore OS specific
+-- implementation of the keep alive function and simply send a minimum package at every interval
+keepAliveThread :: MVar AppConfig -> MVar TCPClient -> IO ()
+keepAliveThread threadConfigMVar clientMVar = do
+    -- Check if keep alive is active
+    threadConfig <- takeMVar threadConfigMVar
+    if keepAliveFlag threadConfig
+    then do
+        -- release threadConfig
+        putMVar threadConfigMVar threadConfig
+        go threadConfigMVar clientMVar (keepAliveTime threadConfig)
+    else do
+        -- release threadConfig
+        putMVar threadConfigMVar threadConfig
+        return ()
+  where
+      go threadConfigMvar configMvar timer = do
+        threadDelay timer
+        -- take the global TCP client
+        TCPClient config <- takeMVar configMvar
+        let write = MB.cfgWrite config
+        write $ B.pack ""
+        -- release the global TCP client
+        putMVar clientMVar $ TCPClient config
+        -- recurse
+        keepAliveThread threadConfigMvar configMvar

@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 46a932dbabf72e1d05660c8df20e8ebd957f4d299e512987772de8768a833a8a
+-- hash: c77091387f19a3466dcf49dbbbbcab18eea8601ca185f3a90517e8ebfeb952e0
 
 name:           modbus-serve
 version:        0.1.0.0
@@ -55,6 +55,7 @@ library
     , ansi-terminal
     , base >=4.7 && <5
     , binary
+    , bytestring
     , directory
     , either
     , hspec
@@ -94,6 +95,7 @@ executable modbus-serve-exe
     , ansi-terminal
     , base >=4.7 && <5
     , binary
+    , bytestring
     , directory
     , either
     , hspec
@@ -140,6 +142,7 @@ test-suite modbus-serve-test
     , ansi-terminal
     , base >=4.7 && <5
     , binary
+    , bytestring
     , directory
     , either
     , hspec
