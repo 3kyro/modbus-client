@@ -38,7 +38,7 @@ data ModData = ModData
     , modRegType        :: !RegType     -- Register Type
     , modAddress        :: !Word16      -- Address
     , modValue          :: !ModValue    -- Value
-    , modUid            :: !Word8       -- Unit Id 
+    , modUid            :: !Word8       -- Unit Id
     , modDescription    :: !T.Text      -- Description
     } deriving (Show, Eq)
 

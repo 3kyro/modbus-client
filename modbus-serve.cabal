@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: a7e9565ae41f8d56630a55752374ec81c66748a117ce2f4b3078d322f403f486
+-- hash: 9472232f08a99b98f75295ad3f1097df437d4d6f5d5ad5bee5b7c30bc6ead07a
 
 name:           modbus-serve
 version:        0.1.0.0
@@ -124,6 +124,7 @@ test-suite modbus-serve-test
   other-modules:
       CsvParserSpec
       ModbusSpec
+      ModDataSpec
       ReplSpec
       TestHelper
       Paths_modbus_serve
