@@ -14,7 +14,6 @@ module Types.ModData
     where
 
 import Data.Aeson
-import Data.Maybe (listToMaybe)
 import Data.Word (Word8, Word16)
 import Data.List (foldl')
 import Test.QuickCheck
@@ -28,7 +27,6 @@ import Types.Modbus
     ( RegType (..)
     , serializeRegType
     , MBRegister (..)
-    , ByteOrder (..)
     , float2Word16
     , word16ToFloat
     )

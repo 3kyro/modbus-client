@@ -1,7 +1,6 @@
 module ModDataSpec (modDataSpec) where
 
 import Test.Hspec
-import Test.QuickCheck
 
 import Test.Aeson.GenericSpecs
 

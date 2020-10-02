@@ -19,9 +19,9 @@ import Data.Word (Word8, Word16)
 import System.Console.Repline (HaskelineT)
 
 import qualified Network.Socket as S
-import qualified Network.Modbus.TCP as MB
 
-import Types.ModData (ModData (..), ByteOrder (..))
+import Types.ModData (ModData (..))
+import Types.Modbus (ByteOrder (..))
 
 type Repl a = HaskelineT (StateT ReplState (ReaderT ReplConfig IO)) a
 
@@ -51,16 +51,6 @@ data ReplConfig = Config
     , replOrd        :: !ByteOrder
     , replTimeout    :: !Int
     }
-
--- Abstraction
--- A Modbus client
---
--- A modbus client has the floowing characteristics
--- 1) It connects to a modbus server through a protocol
--- 2)
-
-class Client where
-    connection :: Bool
 
 -- Defines the type of an argument in certain repl commands
 data ReplArg

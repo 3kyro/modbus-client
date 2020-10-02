@@ -21,8 +21,7 @@ import Data.Aeson
 import Data.Aeson.Types (Value (..))
 import Servant
 
-import Types.ModData
-import Types.Modbus (Config)
+import Types.Modbus (Config, ByteOrder)
 
 data ServState = ServState
     { servConn      :: !(Maybe (S.Socket , Config))
