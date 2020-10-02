@@ -74,8 +74,8 @@ class Client a where
     readHoldingRegisters :: (MonadIO m, MonadThrow m) => TransactionInfo -> Range Address -> Tagged a (Session m [Word16])
     writeSingleRegister :: (MonadIO m, MonadThrow m) => TransactionInfo -> Address -> Word16 -> Tagged a (Session m ())
     writeMultipleRegisters :: (MonadIO m, MonadThrow m) => TransactionInfo -> Address -> [Word16] -> Tagged a (Session m ())
-    readMBRegister :: (MonadIO m, MonadThrow m, MBRegister b) => b -> TransactionInfo -> Range Address -> Tagged a (Session m (Maybe b))
-    writeMBRegister :: (MonadIO m, MonadThrow m, MBRegister b, MonadThrow (Tagged TCPClient), MonadThrow (Tagged RTUClient)) => b -> TransactionInfo -> Address -> Tagged a (Session m ())
+    readMBRegister :: (MonadIO m, MonadThrow m, MBRegister b) => b -> TransactionInfo -> Range Address -> ByteOrder -> Tagged a (Session m (Maybe b))
+    writeMBRegister :: (MonadIO m, MonadThrow m, MBRegister b, MonadThrow (Tagged TCPClient), MonadThrow (Tagged RTUClient)) => b -> TransactionInfo -> Address -> ByteOrder -> Tagged a (Session m ())
 
 ---------------------------------------------------------------------------------------------------------------
 -- TCP Client
@@ -102,20 +102,20 @@ instance Client TCPClient where
 
     writeMultipleRegisters tpu address values = Tagged $ TCPSession (TCP.writeMultipleRegisters (getTPU tpu) address values)
 
-    readMBRegister reg tpu range =
+    readMBRegister reg tpu range bo =
         case registerType reg of
             InputRegister -> do
                 rlt <- readInputRegisters tpu range
-                Tagged $ registerFromWord16 reg <$> rlt
+                Tagged $ registerFromWord16 bo reg <$> rlt
             HoldingRegister -> do
                 rlt <- readHoldingRegisters tpu range
-                Tagged $ registerFromWord16 reg <$> rlt
+                Tagged $ registerFromWord16 bo reg <$> rlt
 
-    writeMBRegister reg tpu address =
+    writeMBRegister reg tpu address bo =
         case registerType reg of
             InputRegister -> throw $ MB.OtherException "Non writable Register Type"
             HoldingRegister -> do
-                rlt <- writeMultipleRegisters tpu address $ registerToWord16 reg
+                rlt <- writeMultipleRegisters tpu address $ registerToWord16 bo reg
                 Tagged rlt
 
 ---------------------------------------------------------------------------------------------------------------
@@ -142,20 +142,20 @@ instance Client RTUClient where
 
     writeMultipleRegisters tpu address values = Tagged $ RTUSession (RTU.writeMultipleRegisters (RTU.UnitId $ getUID tpu) address values)
 
-    readMBRegister reg tpu range =
+    readMBRegister reg tpu range bo =
         case registerType reg of
             InputRegister -> do
                 rlt <- readInputRegisters tpu range
-                Tagged $ registerFromWord16 reg <$> rlt
+                Tagged $ registerFromWord16 bo reg <$> rlt
             HoldingRegister -> do
                 rlt <- readHoldingRegisters tpu range
-                Tagged $ registerFromWord16 reg <$> rlt
+                Tagged $ registerFromWord16 bo reg <$> rlt
 
-    writeMBRegister reg tpu address =
+    writeMBRegister reg tpu address bo =
         case registerType reg of
             InputRegister -> throw $ MB.OtherException "Non writable Register Type"
             HoldingRegister -> do
-                rlt <- writeMultipleRegisters tpu address $ registerToWord16 reg
+                rlt <- writeMultipleRegisters tpu address $ registerToWord16 bo reg
                 Tagged rlt
 
 ---------------------------------------------------------------------------------------------------------------
@@ -188,8 +188,8 @@ data AppConfig = AppConfig
 -- A type that can be converted to a modbus register
 class MBRegister a where
     registerType :: a -> RegType
-    registerToWord16 :: a -> [Word16]
-    registerFromWord16 :: a -> [Word16] -> Maybe a
+    registerToWord16 :: ByteOrder -> a -> [Word16]
+    registerFromWord16 :: ByteOrder -> a -> [Word16] -> Maybe a
 
 ---------------------------------------------------------------------------------------------------------------
 -- Worker
@@ -293,3 +293,18 @@ serializeRegType rt =
         Coil            -> "coil"
         InputRegister   -> "input register"
         HoldingRegister -> "holding register"
+
+---------------------------------------------------------------------------------------------------------------
+-- ByteOrder
+---------------------------------------------------------------------------------------------------------------
+-- Modbus uses a 'big-endian' encoding for all transmitted values by default.
+-- In order to encode data values bigger than a 16-bit word, multiple 16 bit registers have to
+-- be used.
+-- Byte order defines the encoding used by the client for these multiple word data types
+-- Eg: when receiving two two-byte words AB and CD
+-- LE   - AB CD
+-- BE   - CD AB
+data ByteOrder
+    = LE    -- Little Endian
+    | BE    -- Big Endian
+    deriving (Show, Read, Eq)
