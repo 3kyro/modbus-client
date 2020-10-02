@@ -46,9 +46,11 @@ module Types.Modbus
     , ByteOrder (..)
     , float2Word16
     , word16ToFloat
+
+    , heartBeatSignal
     ) where
 
-import Control.Concurrent (ThreadId, putMVar, takeMVar, MVar)
+import Control.Concurrent (threadDelay, forkIO, ThreadId, putMVar, takeMVar, MVar)
 import Control.Exception.Safe (throw, MonadThrow)
 import Control.Monad.Trans (liftIO, MonadIO)
 import Data.Aeson (Value (..), FromJSON (..), ToJSON (..))
@@ -352,3 +354,24 @@ word16ToFloat BE [a,b] =
     float = runPut $ putWord16host a  >> putWord16host b
 word16ToFloat _ _ = Nothing
 
+---------------------------------------------------------------------------------------------------------------
+-- HeartBeat Signal
+---------------------------------------------------------------------------------------------------------------
+
+-- Spawns a heartbeat signal thread
+heartBeatSignal :: (MonadIO m, Application m, Client a, MonadThrow m)
+    => Int              -- Heartbeat signal period in ms
+    -> Worker m         -- Worker to execute the session
+    -> MVar a           -- Client configuration
+    -> TransactionInfo  -- Session's transaction info
+    -> Address          -- Heartbeat signal register address
+    -> m ThreadId
+heartBeatSignal timer worker clientMVar tpu address =
+    liftIO $ forkIO $ execApp $ thread address 0
+    where
+    thread address' acc = do
+        liftIO $ threadDelay timer
+        let session = writeSingleRegister tpu address' acc
+        runClient worker clientMVar session
+        thread address' (acc + 1)
+        return ()

@@ -13,23 +13,6 @@ import Types
 -- Heartbeat Signal
 ---------------------------------------------------------------------------------------------------------------
 
--- Spawns a heartbeat signal thread
-heartBeatSignal :: (MonadIO m, Application m, Client a, MonadThrow m)
-    => Int              -- Heartbeat signal period in ms
-    -> Worker m         -- Worker to execute the session
-    -> MVar a           -- Client configuration
-    -> TransactionInfo  -- Session's transaction info
-    -> Address          -- Heartbeat signal register address
-    -> m ThreadId
-heartBeatSignal timer worker clientMVar tpu address =
-    liftIO $ forkIO $ execApp $ thread address 0
-    where
-    thread address' acc = do
-        liftIO $ threadDelay timer
-        let session = writeSingleRegister tpu address' acc
-        runClient worker clientMVar session
-        thread address' (acc + 1)
-        return ()
 
 -----------------------------------------------------------------------------------------------------------------------
 -----------------------------------------------------------------------------------------------------------------------
