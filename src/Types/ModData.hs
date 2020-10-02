@@ -78,11 +78,9 @@ instance Arbitrary ModData where
         ModData <$> (unNA <$> arbitrary) <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary <*> arbText
       where
         arbText = frequency [end,rest]
-        end = (1, return (T.pack ""))
+        end = (1, return "")
         rest = (10, T.cons <$> descValidChar <*> arbText)
         descValidChar = elements $ ['a'..'z'] ++ ['A'..'Z'] ++ " &éèçà$=:"
-
-
 
 -- Helper type to better produce arbitrary name values
 newtype NameArb = NA  {
@@ -112,11 +110,11 @@ getModValueMult (ModFloat _) = 2
 -- Serialize ModData, including the necessary header for
 -- modbus table parsing
 serializeModData :: [ModData] -> T.Text
-serializeModData md = T.append header packed
+serializeModData md = header `T.append` packed
   where
-    header = T.pack "Name;Register Type;Register Address;Data type;Value;Description\n"
+    header = "Name;Register Type;Register Address;Data type;Value;Description\n"
     packed = foldl' append "" md
-    append acc md' = T.append acc (serializeModDatum md') `T.append` T.pack "\n"
+    append acc md' = acc `T.append` serializeModDatum md' `T.append` "\n"
 
 -- Serialize a single ModData
 serializeModDatum :: ModData -> T.Text
