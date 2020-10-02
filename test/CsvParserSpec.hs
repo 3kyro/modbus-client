@@ -7,7 +7,7 @@ import Data.Char
 import Data.Either (isLeft,)
 import Data.List (intercalate)
 import Data.Word (Word8, Word16)
-import Test.Hspec ( describe, it, shouldBe, shouldSatisfy, Spec )
+import Test.Hspec (hspec,  describe, it, shouldBe, shouldSatisfy, Spec )
 import Test.QuickCheck ( (==>), Property, Testable(property) ) 
 import Text.Parsec (ParseError)
 
@@ -32,17 +32,17 @@ import Types
 import TestHelper ( TestShow(tShow) )
 import Text.Parsec.Text (Parser)
 
-csvParserSpec :: Spec
-csvParserSpec = do
-  pNameSpec
-  pRegTypeSpec
-  pRegAddrSpec
-  pFloatSpec
-  pWordSpec
-  pValueSpec
-  pCommentSpec
-  pModDataSpec
-  pCSVSpec
+csvParserSpec :: IO ()
+csvParserSpec = hspec $ do
+    pNameSpec
+    pRegTypeSpec
+    pRegAddrSpec
+    pFloatSpec
+    pWordSpec
+    pValueSpec
+    pCommentSpec
+    pModDataSpec
+    pCSVSpec
 
 pNameSpec :: Spec
 pNameSpec = describe "Parse a name field" $ do
