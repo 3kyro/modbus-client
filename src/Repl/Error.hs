@@ -7,7 +7,7 @@ module Repl.Error
     where
 
 import Control.Monad.Trans (liftIO)
-import Control.Monad.Trans.Except 
+import Control.Monad.Trans.Except
     (
       runExceptT
     , ExceptT

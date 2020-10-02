@@ -7,7 +7,6 @@ module Types.Server
 
 import qualified Network.Socket as S
 
-import Types.Repl (ThreadState (..))
 import Data.IP (IPv4)
 import Data.Aeson
     (ToJSON
@@ -21,12 +20,12 @@ import Data.Aeson
 import Data.Aeson.Types (Value (..))
 import Servant
 
-import Types.Modbus (Config, ByteOrder)
+import Types.Modbus (Config, ByteOrder, HeartBeat)
 
 data ServState = ServState
     { servConn      :: !(Maybe (S.Socket , Config))
     , servOrd       :: !ByteOrder
-    , servPool      :: ![ThreadState]
+    , servPool      :: ![HeartBeat]
     , servConnInfo  :: !(Maybe ConnectionData)
     }
 

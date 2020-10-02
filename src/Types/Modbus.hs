@@ -4,7 +4,7 @@
 {-# LANGUAGE DeriveFunctor #-}
 
 module Types.Modbus
-    ( Client
+    ( ModBusClient
     , runClient
     , readInputRegisters
     , readHoldingRegisters
@@ -60,7 +60,7 @@ module Types.Modbus
 
     ) where
 
-import Control.Concurrent (forkFinally, newEmptyMVar, threadDelay, forkIO, ThreadId, putMVar, takeMVar, MVar)
+import Control.Concurrent (forkFinally, newEmptyMVar, threadDelay, ThreadId, putMVar, takeMVar, MVar)
 import Control.Exception.Safe (try, SomeException, throw, MonadThrow)
 import Control.Monad.Trans (liftIO, MonadIO)
 import Data.Aeson (Value (..), FromJSON (..), ToJSON (..))
@@ -97,7 +97,7 @@ import qualified System.Timeout as TM
 -- Client
 ---------------------------------------------------------------------------------------------------------------
 
-class Client a where
+class ModBusClient a where
     runClient :: (MonadIO m, MonadThrow m, Application m)
         => Worker m -- Worker for the session
         -> MVar a -- The Client used by all threads
@@ -116,7 +116,7 @@ class Client a where
 
 newtype TCPClient = TCPClient Config
 
-instance Client TCPClient where
+instance ModBusClient TCPClient where
 
     runClient (TCPWorker worker) configMVar session = do
         -- get the global client
@@ -157,7 +157,7 @@ instance Client TCPClient where
 
 newtype RTUClient = RTUClient Config
 
-instance Client RTUClient where
+instance ModBusClient RTUClient where
     runClient (RTUWorker worker) configMVar session = do
         -- get the global client
         (RTUClient config) <- liftIO $ takeMVar configMVar
@@ -384,7 +384,7 @@ data HeartBeat = HeartBeat
     }
 
 -- Spawns a heartbeat signal thread
-heartBeatSignal :: (MonadIO m, Application m, Client a, MonadThrow m)
+heartBeatSignal :: (MonadIO m, Application m, ModBusClient a, MonadThrow m)
     => Int              -- HeartBeat signal period in ms
     -> Worker m         -- Worker to execute the session
     -> MVar a           -- Client configuration

@@ -2,54 +2,34 @@
 module Types.Repl 
     ( Repl
     , ReplState (..)
-    , ReplConfig (..)
     , ReplArg (..)
-    , ThreadState (..)
-    , replAsk
     , Command (..)
     ) where
 
-import Control.Concurrent (MVar, ThreadId)
-import Control.Exception (SomeException)
+import Control.Concurrent (MVar)
 import Control.Monad.IO.Class ()
 import Control.Monad.Trans.State.Strict (StateT)
-import Control.Monad.Trans.Reader (ReaderT, ask)
-import Control.Monad.Writer (MonadTrans(lift))
 import Data.Word (Word8, Word16)
 import System.Console.Repline (HaskelineT)
 
-import qualified Network.Socket as S
 
 import Types.ModData (ModData (..))
-import Types.Modbus (ByteOrder (..), HeartBeat (..))
 
-type Repl a = HaskelineT (StateT ReplState (ReaderT ReplConfig IO)) a
+import Types.Modbus (HeartBeat (..), TCPClient, RTUClient, Config)
 
--- The state of active heartbeat threads.
--- threadAddr = The register address of a current active heartbeat
--- threadId = Thread id for the active heartbeat
--- threadMVar = MVar showing the status of the thread:
---      Empty -> thread is still running
---      SomeException -> thread has encoutered some exception
-data ThreadState = ThreadState
-    { threadAddr :: Word16
-    , threadInterv :: Int
-    , threadId :: ThreadId
-    , threadMVar :: MVar SomeException
-    } deriving (Eq)
+type Repl a = HaskelineT (StateT ReplState IO) a
+
+data ReplClient
+    = ReplTCPClient { unTcpClient :: TCPClient }
+    | ReplRTUClient { unRTUClient :: RTUClient }
 
 data ReplState = ReplState
-    { replModData       :: ![ModData]
+    { replClient        :: !ReplClient
+    , replConfig        :: !Config
+    , replModData       :: ![ModData]
     , replUId           :: !Word8
     , replPool          :: ![MVar HeartBeat]
     , replTransactionId :: !Word16
-    }
-
-data ReplConfig = Config
-    { replConn       :: Bool
-    , replSockAddr   :: !S.SockAddr
-    , replOrd        :: !ByteOrder
-    , replTimeout    :: !Int
     }
 
 -- Defines the type of an argument in certain repl commands
@@ -57,9 +37,6 @@ data ReplArg
     = ReplName String   -- Argument is a name
     | ReplAddr Word16   -- Argument is an address
     deriving Show
-
-replAsk :: Repl ReplConfig
-replAsk = lift $ lift ask
 
 data Command
     = ReadInputRegistersWord
