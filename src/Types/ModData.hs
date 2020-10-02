@@ -17,7 +17,7 @@ module Types.ModData
 import Data.Aeson
 import Data.Word (Word8, Word16)
 import Data.List (foldl')
-import Test.QuickCheck 
+import Test.QuickCheck
     ( Arbitrary
     , arbitrary
     , oneof
@@ -163,6 +163,9 @@ instance ToJSON ModDataUpdate where
         , "rw" .= mduRW mdu
         ]
 
+instance Arbitrary ModDataUpdate where
+    arbitrary = MDU <$> arbitrary <*> arbitrary <*> arbitrary
+
 data ReadWrite
     = MDURead
     | MDUWrite
@@ -182,9 +185,13 @@ instance ToJSON ReadWrite where
             MDURead -> String "read"
             MDUWrite -> String "write"
 
+instance Arbitrary ReadWrite where
+    arbitrary = elements [MDURead , MDUWrite]
+
 setMDUModValue :: ModDataUpdate -> ModValue -> ModDataUpdate
 setMDUModValue mdu mv =
     mdu { mduModData = (mduModData mdu) { modValue = mv}}
+
 
 ---------------------------------------------------------------------------------------------------------------
 -- ByteOrder

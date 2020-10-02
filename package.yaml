@@ -48,6 +48,7 @@ dependencies:
 - stm
 - system-info
 - tagged
+- hspec-golden-aeson  >= 0.7.0.0 && < 0.8
 
 library:
   source-dirs: src
@@ -78,4 +79,5 @@ tests:
     dependencies:
     - modbus-serve
     - hspec
+    - hspec-golden-aeson  >= 0.7.0.0 && < 0.8
 

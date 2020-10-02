@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 9472232f08a99b98f75295ad3f1097df437d4d6f5d5ad5bee5b7c30bc6ead07a
+-- hash: 46a932dbabf72e1d05660c8df20e8ebd957f4d299e512987772de8768a833a8a
 
 name:           modbus-serve
 version:        0.1.0.0
@@ -58,6 +58,7 @@ library
     , directory
     , either
     , hspec
+    , hspec-golden-aeson >=0.7.0.0 && <0.8
     , http-types
     , iproute
     , modbus-tcp
@@ -96,6 +97,7 @@ executable modbus-serve-exe
     , directory
     , either
     , hspec
+    , hspec-golden-aeson >=0.7.0.0 && <0.8
     , http-types
     , iproute
     , modbus-serve
@@ -141,6 +143,7 @@ test-suite modbus-serve-test
     , directory
     , either
     , hspec
+    , hspec-golden-aeson >=0.7.0.0 && <0.8
     , http-types
     , iproute
     , modbus-serve
