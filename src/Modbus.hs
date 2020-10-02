@@ -14,7 +14,6 @@ import Types
 ---------------------------------------------------------------------------------------------------------------
 
 -- Spawns a heartbeat signal thread
--- TODO: add a global tid counter
 heartBeatSignal :: (MonadIO m, Application m, Client a, MonadThrow m)
     => Int              -- Heartbeat signal period in ms
     -> Worker m         -- Worker to execute the session
@@ -23,13 +22,13 @@ heartBeatSignal :: (MonadIO m, Application m, Client a, MonadThrow m)
     -> Address          -- Heartbeat signal register address
     -> m ThreadId
 heartBeatSignal timer worker clientMVar tpu address =
-    liftIO $ forkIO $ execApp $ thread address 0 tpu
+    liftIO $ forkIO $ execApp $ thread address 0
     where
-    thread address' acc tpu' = do
+    thread address' acc = do
         liftIO $ threadDelay timer
-        let session = writeSingleRegister tpu' address' acc
+        let session = writeSingleRegister tpu address' acc
         runClient worker clientMVar session
-        thread address' (acc + 1) (incrTID tpu')
+        thread address' (acc + 1)
         return ()
 
 -----------------------------------------------------------------------------------------------------------------------
