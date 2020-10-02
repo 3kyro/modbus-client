@@ -38,6 +38,7 @@ module Types.Modbus
     , incrTID
 
     , RegType (..)
+    , serializeRegType
 
     , TCPClient
     , RTUClient
@@ -284,3 +285,11 @@ instance FromJSON RegType where
             "holding register" -> return HoldingRegister
             _ -> fail "Not a RegType"
     parseJSON _ = fail "Not a RegType"
+
+serializeRegType :: RegType -> String
+serializeRegType rt =
+    case rt of
+        DiscreteInput   -> "discrete input"
+        Coil            -> "coil"
+        InputRegister   -> "input register"
+        HoldingRegister -> "holding register"
