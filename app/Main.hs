@@ -47,27 +47,33 @@ main = runApp =<< runOpts
 runApp :: Opt -> IO ()
 runApp (Opt mode protocol input output ip portNum order uid tm) =
     case mode of
-        AppTemplate -> do
-            parseResult <- parseCSVFile input
-            case parseResult of
-                Left err -> ppError err
-                Right md' -> do
-                    resp <- runTCPTemplateApp (getAddr ip portNum) tm order md'
-                    T.writeFile output (serializeModData resp)
-        AppRepl -> runReplApp (getAddr ip portNum) tm order [] uid
-        AppWeb -> runServer ip portNum order tm
+        AppTemplate -> runAppTemplate input
+        AppRepl -> runTCPReplApp (getAddr ip portNum) tm order [] uid
+        -- AppWeb -> runServer ip portNum order tm
+        AppWeb -> undefined
+
+runAppTemplate :: FilePath -> IO ()
+runAppTemplate protocol path = do
+    parseResult <- parseCSVFile input
+    case parseResult of
+        Left err -> ppError err
+        Right md' -> do
+            rsp <- case protocol of
+                TCP -> runTCPTemplateApp (getAddr ip portNum) tm order md'
+                RTU -> undefined
+            T.writeFile output (serializeModData resp)
 
 runTCPTemplateApp :: S.SockAddr -> Int -> ByteOrder -> [ModData] -> IO [ModData]
 runTCPTemplateApp addr tm order md =
     withSocket addr $ \s -> do
             config <- getTCPConfig s tm
-
             resp <- runExceptT $ MB.runSession (modbusConnection s tm) (modSession md order)
             case resp of
                 Left err -> fail $ "Modbus error: " ++ show err
                 Right resp' -> return resp'
 
--- Run the application's REPL
+
+Run the application's REPL
 runTCPReplApp :: S.SockAddr -> Int -> ByteOrder -> [ModData] -> Word8 -> IO ()
 runTCPReplApp addr tm order mdata uid =
     withSocket addr $ \s ->

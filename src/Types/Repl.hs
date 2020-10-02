@@ -21,7 +21,7 @@ import System.Console.Repline (HaskelineT)
 import qualified Network.Socket as S
 
 import Types.ModData (ModData (..))
-import Types.Modbus (ByteOrder (..))
+import Types.Modbus (ByteOrder (..), HeartBeat (..))
 
 type Repl a = HaskelineT (StateT ReplState (ReaderT ReplConfig IO)) a
 
@@ -41,7 +41,7 @@ data ThreadState = ThreadState
 data ReplState = ReplState
     { replModData       :: ![ModData]
     , replUId           :: !Word8
-    , replPool          :: ![ThreadState]
+    , replPool          :: ![MVar HeartBeat]
     , replTransactionId :: !Word16
     }
 

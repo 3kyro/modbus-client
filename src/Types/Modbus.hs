@@ -48,6 +48,7 @@ module Types.Modbus
     , float2Word16
     , word16ToFloat
 
+    , HeartBeat (..)
     , heartBeatSignal
 
     , keepAliveThread
@@ -59,7 +60,7 @@ module Types.Modbus
 
     ) where
 
-import Control.Concurrent (threadDelay, forkIO, ThreadId, putMVar, takeMVar, MVar)
+import Control.Concurrent (forkFinally, newEmptyMVar, threadDelay, forkIO, ThreadId, putMVar, takeMVar, MVar)
 import Control.Exception.Safe (try, SomeException, throw, MonadThrow)
 import Control.Monad.Trans (liftIO, MonadIO)
 import Data.Aeson (Value (..), FromJSON (..), ToJSON (..))
@@ -374,23 +375,37 @@ word16ToFloat _ _ = Nothing
 -- HeartBeat Signal
 ---------------------------------------------------------------------------------------------------------------
 
+-- A HeartBeat signal
+data HeartBeat = HeartBeat
+    { hbAddress     :: !MB.Address          -- Address
+    , hbInterval    :: !Int                 -- Interval
+    , hbThreadId    :: !ThreadId            -- ThreadId
+    , hbStatus      :: MVar SomeException   -- Status : Empty = Ok , SomeException = thread has panicked
+    }
+
 -- Spawns a heartbeat signal thread
 heartBeatSignal :: (MonadIO m, Application m, Client a, MonadThrow m)
-    => Int              -- Heartbeat signal period in ms
+    => Int              -- HeartBeat signal period in ms
     -> Worker m         -- Worker to execute the session
     -> MVar a           -- Client configuration
     -> TransactionInfo  -- Session's transaction info
-    -> Address          -- Heartbeat signal register address
-    -> m ThreadId
-heartBeatSignal timer worker clientMVar tpu address =
-    liftIO $ forkIO $ execApp $ thread address 0
-    where
+    -> Address          -- HeartBeat signal register address
+    -> m HeartBeat
+heartBeatSignal interval worker clientMVar tpu address = do
+    status <- liftIO newEmptyMVar
+    threadid <- liftIO $ forkFinally (execApp $ thread address 0) (finally status)
+    return $ HeartBeat address interval threadid status
+  where
     thread address' acc = do
-        liftIO $ threadDelay timer
+        liftIO $ threadDelay interval
         let session = writeSingleRegister tpu address' acc
         runClient worker clientMVar session
         thread address' (acc + 1)
         return ()
+    finally status terminationStatus =
+        case terminationStatus of
+            Left someExcept -> putMVar status someExcept
+            Right () -> return ()
 
 ---------------------------------------------------------------------------------------------------------------
 -- Keep Alive

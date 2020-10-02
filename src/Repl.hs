@@ -14,7 +14,7 @@ import System.Console.Repline
      , CompleterStyle( Word )
     )
 
-import Types 
+import Types
 import Repl.Commands (cmd, commandsCompl, list)
 import Repl.Help (help, helpCompl)
 
