@@ -1,5 +1,7 @@
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE DeriveFunctor #-}
+
 module Types.Modbus
     ( Client
     , runClient
@@ -45,14 +47,17 @@ module Types.Modbus
 import Control.Concurrent (ThreadId, putMVar, takeMVar, MVar)
 import Control.Exception.Safe (throw, MonadThrow)
 import Control.Monad.Trans (liftIO, MonadIO)
+import Data.Aeson (Value (..), FromJSON (..), ToJSON (..))
 import Data.Tagged (Tagged, untag, Tagged(..))
 import Data.Word (Word16, Word8)
 import Data.Range (Range)
+import Network.Modbus.Protocol (Address, Config)
+import Test.QuickCheck (Arbitrary(..), elements, arbitrary)
+
 import qualified Network.Modbus.TCP as TCP
 import qualified Network.Modbus.RTU as RTU
 import qualified Network.Modbus.Protocol as MB
-import Network.Modbus.Protocol (Address, Config)
-import Test.QuickCheck (Arbitrary(..), elements, arbitrary)
+
 
 ---------------------------------------------------------------------------------------------------------------
 -- Client
@@ -261,3 +266,21 @@ instance Show RegType where
 
 instance Arbitrary RegType where
   arbitrary = elements [DiscreteInput, Coil, InputRegister, HoldingRegister]
+
+instance ToJSON RegType where
+    toJSON rt =
+        case rt of
+            DiscreteInput -> String "discrete input"
+            Coil -> String "coil"
+            InputRegister -> String "input register"
+            HoldingRegister -> String "holding register"
+
+instance FromJSON RegType where
+    parseJSON (String s) =
+        case s of
+            "dicrete input" -> return DiscreteInput
+            "coil" -> return Coil
+            "input register" -> return InputRegister
+            "holding register" -> return HoldingRegister
+            _ -> fail "Not a RegType"
+    parseJSON _ = fail "Not a RegType"

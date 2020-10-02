@@ -28,8 +28,6 @@ import Types.Modbus (RegType (..))
 
 import qualified Data.Text as T
 
-
-
 data ModData = ModData
     { modName           :: !String      -- Variable name
     , modRegType        :: !RegType     -- Type (Holdin Register - Input Register)
@@ -202,23 +200,6 @@ instance FromJSON ModValue where
                 return $ ModFloat v
     parseJSON _ = fail "Not a ModValue"
 
-instance ToJSON RegType where
-    toJSON rt =
-        case rt of
-            DiscreteInput -> String "discrete input"
-            Coil -> String "coil"
-            InputRegister -> String "input register"
-            HoldingRegister -> String "holding register"
-
-instance FromJSON RegType where
-    parseJSON (String s) =
-        case s of
-            "dicrete input" -> return DiscreteInput
-            "coil" -> return Coil
-            "input register" -> return InputRegister
-            "holding register" -> return HoldingRegister
-            _ -> fail "Not a RegType"
-    parseJSON _ = fail "Not a RegType"
 
 data ReadWrite
     = MDURead
