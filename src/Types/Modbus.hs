@@ -15,6 +15,7 @@ module Types.Modbus
 
     , Application
     , execApp
+    , AppConfig (..)
 
     , MBRegister
     , registerType
@@ -41,7 +42,7 @@ module Types.Modbus
 
     ) where
 
-import Control.Concurrent (putMVar, takeMVar, MVar)
+import Control.Concurrent (ThreadId, putMVar, takeMVar, MVar)
 import Control.Exception.Safe (throw, MonadThrow)
 import Control.Monad.Trans (liftIO, MonadIO)
 import Data.Tagged (Tagged, untag, Tagged(..))
@@ -162,6 +163,17 @@ class Application m where
 
 instance Application IO where
     execApp action = action
+
+---------------------------------------------------------------------------------------------------------------
+-- Application Configuration
+---------------------------------------------------------------------------------------------------------------
+
+-- Configuration for a modbus application
+data AppConfig = AppConfig
+    { keepAliveFlag :: !Bool        -- Keep alive enabled/disabled flag
+    , keepAliveTime :: !Int         -- Keep alive intrval
+    , hearbeatPool  :: ![ThreadId]  -- Pool of heartbeat signal threads
+    }
 
 ---------------------------------------------------------------------------------------------------------------
 -- MBRegister
