@@ -18,10 +18,9 @@ import Types
 import Repl.Commands (cmd, commandsCompl, list)
 import Repl.Help (help, helpCompl)
 
-runRepl :: ReplConfig -> ReplState -> IO ()
-runRepl conf state = runReaderT (stateStack state) conf
-  where 
-    stateStack = evalStateT haskelineStack
+runRepl :: Client a => ReplState a -> IO ()
+runRepl = evalStateT haskelineStack
+  where
     haskelineStack = evalRepl (pure "> ") cmd options (Just ':') (Word completer) ini
 
 ini :: Repl ()

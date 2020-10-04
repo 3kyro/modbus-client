@@ -7,7 +7,8 @@ module Types
     , AppError (..)
     ) where
 
-import Control.Exception (Exception, IOException)
+import           Control.Exception (Exception, IOException, SomeException)
+
 import Control.Monad.IO.Class ()
 import Data.Word (Word16)
 import Text.Parsec (ParseError)
@@ -23,7 +24,7 @@ type ReadRegsFun =  MB.TransactionId -> MB.ProtocolId -> MB.UnitId -> MB.Address
 
 data AppError = 
       AppParseError ParseError
-    | AppModbusError MB.ModbusException
+    | AppModbusError SomeException
     | AppCommandError String
     | AppIOError IOException
 

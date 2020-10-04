@@ -4,10 +4,12 @@ module Types.Repl
     , ReplState (..)
     , ReplArg (..)
     , Command (..)
+    , ReadRegFun
     ) where
 
 import           Control.Concurrent               (MVar)
-import           Control.Monad.IO.Class           ()
+
+
 import           Control.Monad.Trans.State.Strict (StateT)
 import           Data.Word                        (Word16, Word8)
 import           System.Console.Repline           (HaskelineT)
@@ -15,25 +17,24 @@ import           System.Console.Repline           (HaskelineT)
 
 import           Types.ModData                    (ModData (..))
 
-import           Types.Modbus                     (Config, HeartBeat (..),
-                                                   RTUClient, TCPClient)
+import           Control.Exception.Safe           (MonadThrow)
+import           Data.Range                       (Range)
+import           Data.Tagged                      (Tagged)
+import           Types.Modbus                     (Address, ByteOrder, Config,
+                                                   HeartBeat (..), RTUClient,
+                                                   Session, TCPClient,
+                                                   TransactionInfo)
 
-type Repl a = HaskelineT (StateT ReplState IO) a
 
-data ReplClient = ReplTCPClient
-    { unTcpClient :: TCPClient
-    }
-    | ReplRTUClient
-    { unRTUClient :: RTUClient
-    }
+type Repl a b = HaskelineT (StateT (ReplState a) IO) b
 
-data ReplState = ReplState
-    { replClient        :: !ReplClient
-    , replConfig        :: !Config
+data ReplState a = ReplState
+    { replClient        :: MVar a
     , replModData       :: ![ModData]
     , replUId           :: !Word8
     , replPool          :: ![MVar HeartBeat]
     , replTransactionId :: !Word16
+    , replByteOrder     :: !ByteOrder
     }
 
 -- Defines the type of an argument in certain repl commands
@@ -57,3 +58,5 @@ data Command = ReadInputRegistersWord
     | Id
     | CommandNotFound
     deriving (Eq, Show)
+
+type ReadRegFun a = TransactionInfo -> Range Address -> Tagged a (Session IO [Word16])
