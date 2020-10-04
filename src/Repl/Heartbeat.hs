@@ -4,25 +4,32 @@ module Repl.Heartbeat
     , listHeartbeat
     ) where
 
-import Control.Concurrent (killThread, forkFinally, newEmptyMVar, tryReadMVar, threadDelay, putMVar, MVar)
-import Control.Exception (SomeException(..))
-import Control.Monad.Except (runExceptT)
-import Control.Monad.Trans (liftIO, lift)
-import Control.Monad.Trans.Except (except)
-import Control.Monad.Trans.State.Strict (put, get)
-import Data.List (find, delete)
-import Data.Word (Word8, Word16)
-import Network.Socket.ByteString (recv, send)
+import           Control.Concurrent               (MVar, forkFinally,
+                                                   killThread, newEmptyMVar,
+                                                   putMVar, threadDelay,
+                                                   tryReadMVar)
+import           Control.Exception                (SomeException (..))
+import           Control.Monad.Except             (runExceptT)
+import           Control.Monad.Trans              (lift, liftIO)
+import           Control.Monad.Trans.Except       (except)
+import           Control.Monad.Trans.State.Strict (get, put)
+import           Data.List                        (delete, find)
+import           Data.Word                        (Word16, Word8)
+import           Network.Socket.ByteString        (recv, send)
 
-import qualified Network.Socket as S
-import qualified Network.Modbus.TCP as MB
+import qualified Network.Modbus.TCP               as MB
+import qualified Network.Socket                   as S
 
-import Modbus (maybeConnect)
-import Repl.Error (replRunExceptT, runReplSession)
-import Repl.Parser (pReplInt, pReplArg)
-import PrettyPrint (ppStrError, ppThreadError, ppMultThreadState, ppStrWarning)
-import Repl.HelpFun (invalidCmd, getPairs, findModByName)
-import Types
+import           Modbus                           (maybeConnect)
+import           PrettyPrint                      (ppMultThreadState,
+                                                   ppStrError, ppStrWarning,
+                                                   ppThreadError)
+import           Repl.Error                       (replRunExceptT,
+                                                   runReplSession)
+import           Repl.HelpFun                     (findModByName, getPairs,
+                                                   invalidCmd)
+import           Repl.Parser                      (pReplArg, pReplInt)
+import           Types
 
 -- Parse the input and call startHeartbeat with the
 -- address and timer pairs
@@ -91,7 +98,7 @@ spawn reg uid timer sock tm var = do
         wrapped <- runExceptT $ runReplSession mbConn $ MB.writeSingleRegister 0 0 (MB.UnitId uid) (MB.RegAddress reg) acc'
         case wrapped of
             Left err -> putMVar var (SomeException err)
-            Right _ -> go acc' mbConn
+            Right _  -> go acc' mbConn
 
 -- Parse the argument list and call stopHeartbeatThread on
 -- each valid identifier

@@ -1,22 +1,23 @@
 module CsvParser where
 
-import Data.Char (toLower)
-import Data.Functor (($>))
-import Control.Monad (void)
-import Data.Word (Word16)
-import System.Directory (doesDirectoryExist, doesFileExist)
-import Text.Parsec 
-import Text.Parsec.Text (Parser)
+import           Control.Monad                     (void)
+import           Data.Char                         (toLower)
+import           Data.Functor                      (($>))
+import           Data.Word                         (Word16)
+import           System.Directory                  (doesDirectoryExist,
+                                                    doesFileExist)
+import           Text.Parsec
+import           Text.Parsec.Text                  (Parser)
 
-import qualified Control.Exception as E
-import qualified Data.Text.IO as T
-import qualified Data.Text as T
+import qualified Control.Exception                 as E
+import qualified Data.Text                         as T
+import qualified Data.Text.IO                      as T
 
-import PrettyPrint (ppStrError, ppStrWarning)
-import Types
-import Data.Either.Combinators (mapLeft)
-import System.IO (hFlush)
-import System.Directory.Internal.Prelude (stdout)
+import           Data.Either.Combinators           (mapLeft)
+import           PrettyPrint                       (ppStrError, ppStrWarning)
+import           System.Directory.Internal.Prelude (stdout)
+import           System.IO                         (hFlush)
+import           Types
 
 -- Read and parse a CSV file from the disk
 parseCSVFile :: FilePath -> IO (Either AppError [ModData])
@@ -56,7 +57,7 @@ serializeCSVFile filename mdata = do
 
 -- Writes a modbus table to the disk, overwritting the given file
 -- if it already exists
-overwriteCSVFile :: FilePath -> [ModData] -> IO (Either AppError ())    
+overwriteCSVFile :: FilePath -> [ModData] -> IO (Either AppError ())
 overwriteCSVFile filename mdata = do
     putStrLn "Serializing Modbus register table"
     let text = serializeModData mdata
@@ -69,7 +70,7 @@ testCSVParser p s = parse p "" $ T.pack s
 
 -- run a pCSV parser
 runpCSV :: T.Text -> Either AppError [ModData]
-runpCSV t = mapLeft AppParseError (parse pCSV "" t) 
+runpCSV t = mapLeft AppParseError (parse pCSV "" t)
 
 -- Parses a CSV text, ignoring the first line that will be used for describing
 -- the fields
@@ -104,11 +105,11 @@ pRegType :: Parser RegType
 pRegType = do
   rt <- T.map toLower <$> field pText
   case T.unpack rt of
-    "discrete input" -> return DiscreteInput
-    "coil" -> return Coil
-    "input register" -> return InputRegister
+    "discrete input"   -> return DiscreteInput
+    "coil"             -> return Coil
+    "input register"   -> return InputRegister
     "holding register" -> return HoldingRegister
-    _ -> fail ""
+    _                  -> fail ""
 
 -- Parses a register address
 pWord :: Read a => Parser a
@@ -120,9 +121,9 @@ pValue :: Parser ModValue
 pValue = do
   dataType <- T.map toLower <$> field pText
   case T.unpack dataType of
-    "float" -> ModFloat <$> pMaybeFloat 
-    "word" -> ModWord <$> pMaybeWord
-    _ -> fail ""
+    "float" -> ModFloat <$> pMaybeFloat
+    "word"  -> ModWord <$> pMaybeWord
+    _       -> fail ""
 
 -- Parses a float field, returns Nothing if field is empty
 pMaybeFloat :: Parser (Maybe Float)
@@ -143,11 +144,11 @@ pMaybeFloat = Just <$> combinations <|> nothing
 -- usual representation: eg 10.24
 -- scientific representation: eg 3.24e-12
 pFloat :: Parser Float
-pFloat = 
+pFloat =
         pFloatLeadingDot
-    <|> try (only $ fromIntegral <$> pInt) 
-    <|> try (only pFloatNoFractional) 
-    <|> try (only pFloatDotted) 
+    <|> try (only $ fromIntegral <$> pInt)
+    <|> try (only pFloatNoFractional)
+    <|> try (only pFloatDotted)
     <|> pFloatScientific
 
 -- Parses a word16, returns Nothing if field is empty
@@ -163,7 +164,7 @@ pInt = read <$> ((:) <$> option ' ' (char '-') <*> many1 digit)
 -- Parses a float in leading dot format (eg .2)
 pFloatLeadingDot :: Parser Float
 pFloatLeadingDot = read <$> (char '.' *> addLeadingZero)
-  where 
+  where
     addLeadingZero = (++) <$> return "0." <*> many1 digit
 
 -- Parses a float when no fractional is given
@@ -176,7 +177,7 @@ pFloatDotted = read <$> pFloatDottedRaw
 
 pFloatDottedRaw :: Parser String
 pFloatDottedRaw = (:) <$> option ' ' (char '-') <*> float
-  where 
+  where
       float = (++) <$> integer <*> fractional
       integer = many1 digit
       fractional = (:) <$> char '.' <*> many1 digit
@@ -188,7 +189,7 @@ pFloatScientific = read <$> ((++) <$> dotted <*> expo)
       dotted = pFloatDottedRaw
       expo = (:) <$> char 'e' <*> integer
       integer = (:) <$> option ' ' (char '-') <*> many1 digit
-      
+
 -- comment is the last field, so we keep newlines unparsed
 -- for consistency we don't allow semicolons in comment fields
 pDesc :: Parser T.Text

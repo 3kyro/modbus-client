@@ -1,6 +1,6 @@
-{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE FlexibleInstances   #-}
+{-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE OverloadedStrings #-}
 module Types.ModData
     ( ModData (..)
     , RegType (..)
@@ -13,25 +13,15 @@ module Types.ModData
     ,setMDUModValue)
     where
 
-import Data.Aeson
-import Data.Word (Word8, Word16)
-import Data.List (foldl')
-import Test.QuickCheck
-    ( Arbitrary
-    , arbitrary
-    , oneof
-    , elements
-    , frequency
-    )
-import Types.Modbus
-    ( RegType (..)
-    , serializeRegType
-    , MBRegister (..)
-    , float2Word16
-    , word16ToFloat
-    )
+import           Data.Aeson
+import           Data.List       (foldl')
+import           Data.Word       (Word16, Word8)
+import           Test.QuickCheck (Arbitrary, arbitrary, elements, frequency,
+                                  oneof)
+import           Types.Modbus    (MBRegister (..), RegType (..), float2Word16,
+                                  serializeRegType, word16ToFloat)
 
-import qualified Data.Text as T
+import qualified Data.Text       as T
 
 ---------------------------------------------------------------------------------------------------------------
 -- ModData
@@ -40,13 +30,19 @@ import qualified Data.Text as T
 -- The principal modbus register data struture
 -- TODO #6 :: use opaque type for modName
 data ModData = ModData
-    { modName           :: !String      -- Variable name
-    , modRegType        :: !RegType     -- Register Type
-    , modAddress        :: !Word16      -- Address
-    , modValue          :: !ModValue    -- Value
-    , modUid            :: !Word8       -- Unit Id
-    , modDescription    :: !T.Text      -- Description
-    } deriving (Show, Eq)
+    { modName        :: !String -- Variable name
+    -- Register Type
+    , modRegType     :: !RegType -- Register Type
+    -- Address
+    , modAddress     :: !Word16 -- Address
+    -- Value
+    , modValue       :: !ModValue -- Value
+    -- Unit Id
+    , modUid         :: !Word8 -- Unit Id
+    -- Description
+    , modDescription :: !T.Text -- Description
+    }
+    deriving (Show, Eq)
 
 instance Arbitrary ModData where
     arbitrary
@@ -89,9 +85,9 @@ instance MBRegister ModData where
     registerType = modRegType
     registerToWord16 bo md =
         case modValue md of
-            ModWord Nothing -> []
-            ModWord (Just v) -> [v]
-            ModFloat Nothing -> []
+            ModWord Nothing   -> []
+            ModWord (Just v)  -> [v]
+            ModFloat Nothing  -> []
             ModFloat (Just v) -> float2Word16 bo v
     registerFromWord16 _ _ [] = Nothing
     registerFromWord16 bo md vs@(x:_) =
@@ -109,19 +105,18 @@ instance MBRegister ModData where
 -- transmitted, th most significant byte is sent first.
 -- In order to transmit a 32 bit float value, two consecutive registers
 -- will be used.
-data ModValue
-    = ModWord   (Maybe Word16)
-    | ModFloat  (Maybe Float)
+data ModValue = ModWord (Maybe Word16)
+    | ModFloat (Maybe Float)
     deriving (Eq)
 
 instance Show ModValue where
     show mv =
         case mv of
-            ModWord value -> showM value ++ " (Word)"
+            ModWord value  -> showM value ++ " (Word)"
             ModFloat value -> showM value ++ " (Float)"
       where
           showM (Just x) = show x
-          showM Nothing = "No current value"
+          showM Nothing  = "No current value"
 
 instance Arbitrary ModValue where
     arbitrary = oneof [ModWord <$> arbitrary, ModFloat <$> arbitrary]
@@ -163,9 +158,9 @@ instance FromJSON ModValue where
 ---------------------------------------------------------------------------------------------------------------
 
 data ModDataUpdate = MDU
-    { mduModData :: ModData
+    { mduModData  :: ModData
     , mduSelected :: Bool
-    , mduRW :: ReadWrite
+    , mduRW       :: ReadWrite
     }
     deriving (Show)
 
@@ -186,23 +181,22 @@ instance ToJSON ModDataUpdate where
 instance Arbitrary ModDataUpdate where
     arbitrary = MDU <$> arbitrary <*> arbitrary <*> arbitrary
 
-data ReadWrite
-    = MDURead
+data ReadWrite = MDURead
     | MDUWrite
     deriving (Show)
 
 instance FromJSON ReadWrite where
     parseJSON (String s) =
         case s of
-            "read" -> return MDURead
+            "read"  -> return MDURead
             "write" -> return MDUWrite
-            _ -> fail "Not a ReadWrite"
+            _       -> fail "Not a ReadWrite"
     parseJSON _ = fail "Not a ReadWrite"
 
 instance ToJSON ReadWrite where
     toJSON rw =
         case rw of
-            MDURead -> String "read"
+            MDURead  -> String "read"
             MDUWrite -> String "write"
 
 instance Arbitrary ReadWrite where
@@ -240,7 +234,7 @@ instance Arbitrary NameArb where
 
 
 getModValueMult :: ModValue -> Word16
-getModValueMult (ModWord _) = 1
+getModValueMult (ModWord _)  = 1
 getModValueMult (ModFloat _) = 2
 
 -- Serialize ModData, including the necessary header for
@@ -271,7 +265,7 @@ serializeModValue mt =
         ModFloat fl -> "float;" ++ serMaybe fl ++ ";"
   where
     serMaybe (Just x) = show x
-    serMaybe Nothing = ""
+    serMaybe Nothing  = ""
 
 
 

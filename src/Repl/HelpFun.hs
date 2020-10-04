@@ -7,17 +7,13 @@ module Repl.HelpFun
     , invalidCmd
     ) where
 
-import Control.Monad.State.Strict (liftIO)
-import Data.List (find)
+import           Control.Monad.State.Strict (liftIO)
+import           Data.List                  (find)
 
-import PrettyPrint (ppStrWarning)
-import Repl.Parser (pReplDesc, pReplFloat, pReplWord)
-import Types
-    ( ModData (..)
-    , ModValue(..)
-    , Repl
-    , AppError(..)
-    )
+import           PrettyPrint                (ppStrWarning)
+import           Repl.Parser                (pReplDesc, pReplFloat, pReplWord)
+import           Types                      (AppError (..), ModData (..),
+                                             ModValue (..), Repl)
 
 -- Parse a ModData name and lookup in a list of ModData if it exists
 getModByName :: [ModData] -> String -> Either AppError ModData
@@ -55,8 +51,8 @@ insertModValue md val =
 -- Returns a pair of successive values
 -- Returns Nothing if the list size is odd
 getPairs :: [a] -> Maybe [(a,a)]
-getPairs [] = Just []
-getPairs [_] = Nothing
+getPairs []       = Just []
+getPairs [_]      = Nothing
 getPairs (x:y:zs) = (:) <$> Just (x,y) <*> getPairs zs
 
 invalidCmd :: Repl ()

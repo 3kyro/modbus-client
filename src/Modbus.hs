@@ -3,11 +3,11 @@ module Modbus
 
     ) where
 
-import Control.Concurrent (threadDelay, forkIO, ThreadId, MVar)
-import Control.Exception.Safe (MonadThrow)
-import Control.Monad.Except (liftIO, MonadIO)
+import           Control.Concurrent     (MVar, ThreadId, forkIO, threadDelay)
+import           Control.Exception.Safe (MonadThrow)
+import           Control.Monad.Except   (MonadIO, liftIO)
 
-import Types
+import           Types
 
 ---------------------------------------------------------------------------------------------------------------
 -- Heartbeat Signal
@@ -95,7 +95,7 @@ import Types
 --             xs <- MB.readInputRegisters (MB.TransactionId idx) 0 uid addr 2
 --             case xs of
 --                 [msw,lsw] -> return md {modValue = ModFloat $ Just $ word2Float order (msw,lsw)}
---                 _ -> throwError $ MB.OtherException $ 
+--                 _ -> throwError $ MB.OtherException $
 --                             "Error reading Float from input register addr: "
 --                             ++ show addr
 --                             ++ ", "
@@ -115,7 +115,7 @@ import Types
 --             xs <- MB.readInputRegisters (MB.TransactionId idx) 0 uid addr 2
 --             case xs of
 --                 [msw,lsw] -> return $ setMDUModValue mdu $ ModFloat $ Just $ word2Float order (msw,lsw)
---                 _ -> throwError $ MB.OtherException $ 
+--                 _ -> throwError $ MB.OtherException $
 --                             "Error reading Float from input register addr: "
 --                             ++ show addr
 --                             ++ ", "
@@ -123,8 +123,8 @@ import Types
 --   where
 --     addr = MB.RegAddress $ modAddress $ mduModData mdu
 --     uid = MB.UnitId $ modUid $ mduModData mdu
-            
-            
+
+
 -- readHoldingModData :: ModData -> Word16 -> ByteOrder -> MB.Session ModData
 -- readHoldingModData md idx order =
 --     case modValue md of

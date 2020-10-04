@@ -4,36 +4,21 @@
 --
 -- Parses command line options
 module OptParser
-       ( 
+       (
         Opt (..)
        , AppMode (..)
        , runOpts
        )
        where
 
-import Data.IP (IPv4)
-import Options.Applicative 
-       (flag, (<|>), 
-         Parser
-       , execParser
-       , info
-       , (<**>)
-       , helper
-       , fullDesc
-       , progDesc
-       , strOption
-       , long
-       , short
-       , metavar
-       , value
-       , help
-       , option
-       , auto 
-        
-       )   
+import           Data.IP             (IPv4)
+import           Options.Applicative (Parser, auto, execParser, flag, fullDesc,
+                                      help, helper, info, long, metavar, option,
+                                      progDesc, short, strOption, value, (<**>),
+                                      (<|>))
 
-import Types 
-import Data.Word (Word8)
+import           Data.Word           (Word8)
+import           Types
 
 data Opt = Opt
     { appMode       :: !AppMode
@@ -45,15 +30,13 @@ data Opt = Opt
     , byteOrder     :: !ByteOrder
     , uId           :: !Word8
     , timeout       :: !Int
-}
+    }
 
-data AppMode
-    = AppTemplate
+data AppMode = AppTemplate
     | AppRepl
     | AppWeb
 
-data Protocol
-    = TCP
+data Protocol = TCP
     | RTU
 
 -- | Executes the options parser
@@ -121,7 +104,7 @@ parseInput = strOption
 parseOutput :: Parser String
 parseOutput = strOption
     ( long      "output"
-    <> short    'o' 
+    <> short    'o'
     <> metavar  "OUTPUT"
     <> value    "output.csv"
     <> help     "Output register table"
@@ -138,8 +121,8 @@ parseIPAddr = option auto
 parsePort :: Parser Int
 parsePort = option auto
     ( long      "port"
-    <> short    'p' 
-    <> metavar  "PORT" 
+    <> short    'p'
+    <> metavar  "PORT"
     <> value    5502
     <> help     "Port number of the modbus master"
     )

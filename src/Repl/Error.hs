@@ -1,25 +1,23 @@
-module Repl.Error 
+module Repl.Error
     (
       AppError (..)
     , runReplSession
-    , replRunExceptT    
-    ) 
+    , replRunExceptT
+    )
     where
 
-import Control.Monad.Trans (liftIO)
-import Control.Monad.Trans.Except
-    (
-      runExceptT
-    , ExceptT
-    , mapExceptT
-    )
-import Control.Monad.IO.Class ()
-import Data.Either.Combinators (mapLeft)
+import           Control.Monad.IO.Class     ()
+import           Control.Monad.Trans        (liftIO)
+import           Control.Monad.Trans.Except (ExceptT, mapExceptT, runExceptT)
+import           Data.Either.Combinators    (mapLeft)
 
-import qualified Network.Modbus.TCP as MB
 
-import PrettyPrint (ppError)
-import Types (Repl, AppError (..))
+import qualified Network.Modbus.TCP         as MB
+
+
+import           PrettyPrint                (ppError)
+import           Types                      (AppError (..), Repl)
+
 
 -- Run a modbus session, converting the left part to AppError
 runReplSession :: MB.Connection -> MB.Session a -> ExceptT AppError IO a
@@ -35,4 +33,4 @@ replRunExceptT ex rt = do
     unwrapped <- liftIO $ runExceptT ex
     case unwrapped of
         Left err -> liftIO $ ppError err >> return rt
-        Right x -> return x
+        Right x  -> return x

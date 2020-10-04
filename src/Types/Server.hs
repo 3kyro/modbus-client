@@ -5,28 +5,21 @@ module Types.Server
     , ConnectionData (..)
     ) where
 
-import qualified Network.Socket as S
+import qualified Network.Socket   as S
 
-import Data.IP (IPv4)
-import Data.Aeson
-    (ToJSON
-    , toJSON
-    , object
-    , (.=)
-    , FromJSON
-    , parseJSON
-    , (.:)
-    )
-import Data.Aeson.Types (Value (..))
-import Servant
+import           Data.Aeson       (FromJSON, ToJSON, object, parseJSON, toJSON,
+                                   (.:), (.=))
+import           Data.Aeson.Types (Value (..))
+import           Data.IP          (IPv4)
+import           Servant
 
-import Types.Modbus (Config, ByteOrder, HeartBeat)
+import           Types.Modbus     (ByteOrder, Config, HeartBeat)
 
 data ServState = ServState
-    { servConn      :: !(Maybe (S.Socket , Config))
-    , servOrd       :: !ByteOrder
-    , servPool      :: ![HeartBeat]
-    , servConnInfo  :: !(Maybe ConnectionData)
+    { servConn     :: !(Maybe (S.Socket, Config))
+    , servOrd      :: !ByteOrder
+    , servPool     :: ![HeartBeat]
+    , servConnInfo :: !(Maybe ConnectionData)
     }
 
 data ConnectionData = ConnectionData

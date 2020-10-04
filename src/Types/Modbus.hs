@@ -1,7 +1,9 @@
+{-# LANGUAGE DeriveFunctor       #-}
+{-# LANGUAGE FlexibleContexts    #-}
+{-# LANGUAGE OverloadedStrings   #-}
+
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE DeriveFunctor #-}
+
 
 module Types.Modbus
     ( ModBusClient
@@ -60,38 +62,38 @@ module Types.Modbus
 
     ) where
 
-import Control.Concurrent (forkFinally, newEmptyMVar, threadDelay, ThreadId, putMVar, takeMVar, MVar)
-import Control.Exception.Safe (try, SomeException, throw, MonadThrow)
-import Control.Monad.Trans (liftIO, MonadIO)
-import Data.Aeson (Value (..), FromJSON (..), ToJSON (..))
-import Data.Binary.Get
-    ( runGet
-    , getFloatbe
-    , getFloatle
-    , getWord16host
-    )
-import Data.Binary.Put
-    ( runPut
-    , putFloatbe
-    , putFloatle
-    , putWord16host
-    )
-import Data.IP.Internal (IPv4)
-import Data.IP (toHostAddress)
-import Data.Tagged (Tagged, untag, Tagged(..))
-import Data.Word (Word16, Word8)
-import Data.Range (Range)
-import Network.Modbus.Protocol (Address, Config)
-import Test.QuickCheck (Arbitrary(..), elements, arbitrary)
+import           Control.Concurrent         (MVar, ThreadId, forkFinally,
+                                             newEmptyMVar, putMVar, takeMVar,
+                                             threadDelay)
+import           Control.Exception.Safe     (MonadThrow, SomeException, throw,
+                                             try)
+import           Control.Monad.Trans        (MonadIO, liftIO)
+import           Data.Aeson                 (FromJSON (..), ToJSON (..),
+                                             Value (..))
+import           Data.Binary.Get            (getFloatbe, getFloatle,
+                                             getWord16host, runGet)
+import           Data.Binary.Put            (putFloatbe, putFloatle,
+                                             putWord16host, runPut)
+import           Data.IP                    (toHostAddress)
+import           Data.IP.Internal           (IPv4)
+import           Data.Range                 (Range)
+import           Data.Tagged                (Tagged (..), untag)
+import           Data.Word                  (Word16, Word8)
+import           Network.Modbus.Protocol    (Address, Config)
+import           Test.QuickCheck            (Arbitrary (..), arbitrary,
+                                             elements)
 
-import qualified Data.ByteString.Char8 as B
-import qualified Network.Modbus.TCP as TCP
-import qualified Network.Modbus.RTU as RTU
-import qualified Network.Modbus.Protocol as MB
-import qualified Network.Socket as S
-import qualified Network.Socket.ByteString as S
+
+import qualified Data.ByteString.Char8      as B
+import qualified Network.Modbus.Protocol    as MB
+import qualified Network.Modbus.RTU         as RTU
+import qualified Network.Modbus.TCP         as TCP
+import qualified Network.Socket             as S
+import qualified Network.Socket.ByteString  as S
+
 import qualified System.Hardware.Serialport as SP
-import qualified System.Timeout as TM
+import qualified System.Timeout             as TM
+
 
 ---------------------------------------------------------------------------------------------------------------
 -- Client
@@ -209,9 +211,11 @@ instance Application IO where
 
 -- Configuration for a modbus application
 data AppConfig = AppConfig
-    { keepAliveFlag :: !Bool        -- Keep alive enabled/disabled flag
-    , keepAliveTime :: !Int         -- Keep alive intrval
-    , hearbeatPool  :: ![ThreadId]  -- Pool of heartbeat signal threads
+    { keepAliveFlag :: !Bool -- Keep alive enabled/disabled flag
+    -- Keep alive intrval
+    , keepAliveTime :: !Int -- Keep alive intrval
+    -- Pool of heartbeat signal threads
+    , hearbeatPool  :: ![ThreadId] -- Pool of heartbeat signal threads
     }
 
 ---------------------------------------------------------------------------------------------------------------
@@ -229,7 +233,9 @@ class MBRegister a where
 ---------------------------------------------------------------------------------------------------------------
 
 -- Workers execute Sessions
-data Worker m = RTUWorker (RTU.Worker m) | TCPWorker (TCP.Worker m)
+data Worker m = RTUWorker (RTU.Worker m)
+    | TCPWorker (TCP.Worker m)
+
 
 ---------------------------------------------------------------------------------------------------------------
 -- Session
@@ -237,8 +243,8 @@ data Worker m = RTUWorker (RTU.Worker m) | TCPWorker (TCP.Worker m)
 
 -- AN RTU/TCP Session
 -- Sessions are executed by workers and can be batched
-data Session m a
-    = RTUSession (RTU.Session m a) | TCPSession (TCP.Session m a)
+data Session m a = RTUSession (RTU.Session m a)
+    | TCPSession (TCP.Session m a)
     deriving (Functor)
 
 ---------------------------------------------------------------------------------------------------------------
@@ -249,7 +255,7 @@ data Session m a
 -- In case the Modbus TCP protocol is used, every transaction
 -- must have its unique id. This is not necessary for Modbus RTU
 data TransactionInfo = TransactionInfo
-    { unitId :: Word8
+    { unitId        :: Word8
     , transactionId :: Word16
     }
 
@@ -285,8 +291,7 @@ incrTID tpu = tpu { transactionId = transactionId tpu + 1}
 -- Coil Single bit, read / write
 -- Input Register, 16-bit word, read only
 -- Holding Register, 16-bit word, read / write
-data RegType
-    = DiscreteInput
+data RegType = DiscreteInput
     | Coil
     | InputRegister
     | HoldingRegister
@@ -304,19 +309,19 @@ instance Arbitrary RegType where
 instance ToJSON RegType where
     toJSON rt =
         case rt of
-            DiscreteInput -> String "discrete input"
-            Coil -> String "coil"
-            InputRegister -> String "input register"
+            DiscreteInput   -> String "discrete input"
+            Coil            -> String "coil"
+            InputRegister   -> String "input register"
             HoldingRegister -> String "holding register"
 
 instance FromJSON RegType where
     parseJSON (String s) =
         case s of
-            "dicrete input" -> return DiscreteInput
-            "coil" -> return Coil
-            "input register" -> return InputRegister
+            "dicrete input"    -> return DiscreteInput
+            "coil"             -> return Coil
+            "input register"   -> return InputRegister
             "holding register" -> return HoldingRegister
-            _ -> fail "Not a RegType"
+            _                  -> fail "Not a RegType"
     parseJSON _ = fail "Not a RegType"
 
 serializeRegType :: RegType -> String
@@ -337,9 +342,8 @@ serializeRegType rt =
 -- Eg: when receiving two two-byte words AB and CD
 -- LE   - AB CD
 -- BE   - CD AB
-data ByteOrder
-    = LE    -- Little Endian
-    | BE    -- Big Endian
+data ByteOrder = LE
+    | BE
     deriving (Show, Read, Eq)
 
 instance Arbitrary ByteOrder where
@@ -377,10 +381,13 @@ word16ToFloat _ _ = Nothing
 
 -- A HeartBeat signal
 data HeartBeat = HeartBeat
-    { hbAddress     :: !MB.Address          -- Address
-    , hbInterval    :: !Int                 -- Interval
-    , hbThreadId    :: !ThreadId            -- ThreadId
-    , hbStatus      :: MVar SomeException   -- Status : Empty = Ok , SomeException = thread has panicked
+    { hbAddress  :: !MB.Address -- Address
+    -- Interval
+    , hbInterval :: !Int -- Interval
+    -- ThreadId
+    , hbThreadId :: !ThreadId -- ThreadId
+    -- Status : Empty = Ok , SomeException = thread has panicked
+    , hbStatus   :: MVar SomeException -- Status : Empty = Ok , SomeException = thread has panicked
     }
 
 -- Spawns a heartbeat signal thread
@@ -405,7 +412,7 @@ heartBeatSignal interval worker clientMVar tpu address = do
     finally status terminationStatus =
         case terminationStatus of
             Left someExcept -> putMVar status someExcept
-            Right () -> return ()
+            Right ()        -> return ()
 
 ---------------------------------------------------------------------------------------------------------------
 -- Keep Alive
@@ -471,5 +478,5 @@ maybeTCPConnect addr tm = do
     s <- S.socket S.AF_INET S.Stream S.defaultProtocol
     ( rlt :: Either SomeException (Maybe ()) ) <- try $ TM.timeout tm (S.connect s addr)
     case rlt of
-        Left _ -> return Nothing
+        Left _  -> return Nothing
         Right m -> return $ s <$ m

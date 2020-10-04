@@ -1,27 +1,31 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
-module Types.Repl 
+module Types.Repl
     ( Repl
     , ReplState (..)
     , ReplArg (..)
     , Command (..)
     ) where
 
-import Control.Concurrent (MVar)
-import Control.Monad.IO.Class ()
-import Control.Monad.Trans.State.Strict (StateT)
-import Data.Word (Word8, Word16)
-import System.Console.Repline (HaskelineT)
+import           Control.Concurrent               (MVar)
+import           Control.Monad.IO.Class           ()
+import           Control.Monad.Trans.State.Strict (StateT)
+import           Data.Word                        (Word16, Word8)
+import           System.Console.Repline           (HaskelineT)
 
 
-import Types.ModData (ModData (..))
+import           Types.ModData                    (ModData (..))
 
-import Types.Modbus (HeartBeat (..), TCPClient, RTUClient, Config)
+import           Types.Modbus                     (Config, HeartBeat (..),
+                                                   RTUClient, TCPClient)
 
 type Repl a = HaskelineT (StateT ReplState IO) a
 
-data ReplClient
-    = ReplTCPClient { unTcpClient :: TCPClient }
-    | ReplRTUClient { unRTUClient :: RTUClient }
+data ReplClient = ReplTCPClient
+    { unTcpClient :: TCPClient
+    }
+    | ReplRTUClient
+    { unRTUClient :: RTUClient
+    }
 
 data ReplState = ReplState
     { replClient        :: !ReplClient
@@ -33,13 +37,11 @@ data ReplState = ReplState
     }
 
 -- Defines the type of an argument in certain repl commands
-data ReplArg
-    = ReplName String   -- Argument is a name
-    | ReplAddr Word16   -- Argument is an address
+data ReplArg = ReplName String
+    | ReplAddr Word16
     deriving Show
 
-data Command
-    = ReadInputRegistersWord
+data Command = ReadInputRegistersWord
     | ReadInputRegistersFloat
     | ReadHoldingRegistersWord
     | ReadHoldingRegistersFloat

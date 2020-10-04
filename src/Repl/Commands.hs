@@ -5,54 +5,51 @@ module Repl.Commands
     , list
     ) where
 
-import Control.Monad.Trans (liftIO, lift)
-import Control.Monad.Trans.Except (except)
-import Control.Monad.Trans.State.Strict (get, put)
-import Control.Monad.Except (runExceptT)
-import Data.List (uncons)
-import Data.Maybe (fromJust, listToMaybe)
-import Data.Word (Word16)
+import           Control.Monad.Except             (runExceptT)
+import           Control.Monad.Trans              (lift, liftIO)
+import           Control.Monad.Trans.Except       (except)
+import           Control.Monad.Trans.State.Strict (get, put)
+import           Data.List                        (uncons)
+import           Data.Maybe                       (fromJust, listToMaybe)
+import           Data.Word                        (Word16)
 
-import qualified Network.Modbus.TCP as MB
+import qualified Network.Modbus.TCP               as MB
 
-import CsvParser (serializeCSVFile, parseCSVFile)
-import Modbus
-    (
-      getFloats
-    , fromFloats
-    , word2Float
-    , modSession
-    )
-import PrettyPrint (ppError, ppUid, ppMultModData, ppStrWarning, ppRegisters)
-import Repl.Error ( runReplSession, replRunExceptT)
-import Repl.Parser
-    (
-      pReplAddrNum
-    , pReplFloat
-    , pReplWord
-    )
-import Repl.Heartbeat (heartbeat, stopHeartbeat, listHeartbeat)
-import Repl.HelpFun (invalidCmd, getModByPair, getPairs, getModByName)
-import Types
+import           CsvParser                        (parseCSVFile,
+                                                   serializeCSVFile)
+import           Modbus                           (fromFloats, getFloats,
+                                                   modSession, word2Float)
+import           PrettyPrint                      (ppError, ppMultModData,
+                                                   ppRegisters, ppStrWarning,
+                                                   ppUid)
+import           Repl.Error                       (replRunExceptT,
+                                                   runReplSession)
+import           Repl.Heartbeat                   (heartbeat, listHeartbeat,
+                                                   stopHeartbeat)
+import           Repl.HelpFun                     (getModByName, getModByPair,
+                                                   getPairs, invalidCmd)
+import           Repl.Parser                      (pReplAddrNum, pReplFloat,
+                                                   pReplWord)
+import           Types
 
 getCommand :: String -> Command
 getCommand s =
     case s of
-        "readInputRegistersWord" -> ReadInputRegistersWord
-        "readInputRegistersFloat" -> ReadInputRegistersFloat
+        "readInputRegistersWord"    -> ReadInputRegistersWord
+        "readInputRegistersFloat"   -> ReadInputRegistersFloat
         "readHoldingRegistersFloat" -> ReadHoldingRegistersFloat
-        "readHoldingRegistersWord" -> ReadHoldingRegistersWord
-        "writeRegistersWord" -> WriteRegistersWord
-        "writeRegistersFloat" -> WriteRegistersFloat
-        "read" -> Read
-        "write" -> Write
-        "heartbeat" -> Heartbeat
-        "stopHeartbeat" -> StopHeartbeat
-        "listHeartbeat" -> ListHeartbeat
-        "import" -> Import
-        "export" -> Export
-        "id" -> Id
-        _ -> CommandNotFound
+        "readHoldingRegistersWord"  -> ReadHoldingRegistersWord
+        "writeRegistersWord"        -> WriteRegistersWord
+        "writeRegistersFloat"       -> WriteRegistersFloat
+        "read"                      -> Read
+        "write"                     -> Write
+        "heartbeat"                 -> Heartbeat
+        "stopHeartbeat"             -> StopHeartbeat
+        "listHeartbeat"             -> ListHeartbeat
+        "import"                    -> Import
+        "export"                    -> Export
+        "id"                        -> Id
+        _                           -> CommandNotFound
 
 -- Top level command function
 cmd :: String -> Repl ()
@@ -147,7 +144,7 @@ writeMultipleRegistersFloat _ = invalidCmd
 
 readModData :: [String] -> Repl ()
 readModData [] = invalidCmd
-readModData args = do 
+readModData args = do
     mdata <- replModData <$> lift get
     let wrapped = except $ mapM (getModByName mdata) args
     mds <- replRunExceptT wrapped []
@@ -256,7 +253,7 @@ readMod md = do
     let modbusResp = runReplSession connection $ function tid 0 (MB.UnitId uid) address mult
     resp <- replRunExceptT modbusResp []
     case modValue md of
-        ModWord _ -> return md {modValue = ModWord $ listToMaybe resp}
+        ModWord _  -> return md {modValue = ModWord $ listToMaybe resp}
         ModFloat _ -> return md {modValue = ModFloat $ floats resp order}
   where
     address = MB.RegAddress $ modAddress md
@@ -268,9 +265,9 @@ readMod md = do
 -- get the proper modbus read function
 getReadFunction :: RegType -> ReadRegsFun
 getReadFunction rt = case rt of
-    InputRegister -> MB.readInputRegisters
+    InputRegister   -> MB.readInputRegisters
     HoldingRegister -> MB.readHoldingRegisters
-    _ -> undefined
+    _               -> undefined
 
 -- Parses the address and number of registers strings and applies the given
 -- read modbus register function
@@ -304,7 +301,7 @@ replWriteRegisters address values mValue = do
     let wrapped = do
             addr <- except $ pReplWord address
             val <- case mValue of
-                ModWord _ -> except $ mapM pReplWord values
+                ModWord _  -> except $ mapM pReplWord values
                 ModFloat _ -> except $ fromFloats <$> mapM pReplFloat values
             liftIO $ putStrLn $ "Writing " ++ regsWritten val ++ " register(s) at address " ++ show addr
             runReplSession connection $ MB.writeMultipleRegisters tid 0 (MB.UnitId uid) (MB.RegAddress addr) val

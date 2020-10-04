@@ -5,10 +5,10 @@ module Repl.Help
     , helpOutputs
     ) where
 
-import Control.Monad.Trans (liftIO)
+import           Control.Monad.Trans (liftIO)
 
-import Types (Repl, Command (..))
-import Repl.Commands (commandsCompl, getCommand)
+import           Repl.Commands       (commandsCompl, getCommand)
+import           Types               (Command (..), Repl)
 
 -- Top level help command
 help :: [String] -> Repl ()
@@ -17,24 +17,24 @@ help args = liftIO $ putStrLn "" >> mapM_ helpCmd args
 getHelpCmd :: String -> String
 getHelpCmd str =
     case getCommand str of
-        ReadInputRegistersWord -> hReadInputRegistersWord
-        ReadInputRegistersFloat -> hReadInputRegistersFloat
-        ReadHoldingRegistersWord -> hReadHoldingRegistersWord
+        ReadInputRegistersWord    -> hReadInputRegistersWord
+        ReadInputRegistersFloat   -> hReadInputRegistersFloat
+        ReadHoldingRegistersWord  -> hReadHoldingRegistersWord
         ReadHoldingRegistersFloat -> hReadHoldingRegistersFloat
-        WriteRegistersWord -> hWriteRegistersWord
-        WriteRegistersFloat -> hWriteRegistersFloat
-        Read -> hRead
-        Write -> hWrite
-        Heartbeat -> hHeartbeat
-        StopHeartbeat -> hStopHeartbeat
-        ListHeartbeat -> hListHeartbeat
-        Import -> hImport
-        Export -> hExport
-        Id -> hId
-        CommandNotFound -> "Command \"" ++ str ++"\" not found"
+        WriteRegistersWord        -> hWriteRegistersWord
+        WriteRegistersFloat       -> hWriteRegistersFloat
+        Read                      -> hRead
+        Write                     -> hWrite
+        Heartbeat                 -> hHeartbeat
+        StopHeartbeat             -> hStopHeartbeat
+        ListHeartbeat             -> hListHeartbeat
+        Import                    -> hImport
+        Export                    -> hExport
+        Id                        -> hId
+        CommandNotFound           -> "Command \"" ++ str ++"\" not found"
 
 helpCmd :: String -> IO ()
-helpCmd [] = putStrLn helpMessage
+helpCmd []  = putStrLn helpMessage
 helpCmd arg = putStrLn $ getHelpCmd arg
 
 -- A list of all possible help outputs

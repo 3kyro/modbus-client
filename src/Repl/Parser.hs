@@ -1,26 +1,26 @@
-module Repl.Parser 
+module Repl.Parser
     (
       pReplAddrNum
     , pReplFloat
-    , pReplWord    
+    , pReplWord
     , pReplDesc
     , pReplArg
     , pReplInt
-    ) 
+    )
     where
 
-import Control.Monad.IO.Class ()
-import Data.Word (Word16)
-import Data.Either.Combinators (mapLeft)
-import Text.Parsec ((<|>),parse)
-import Text.Parsec.Text (Parser)
+import           Control.Monad.IO.Class  ()
+import           Data.Either.Combinators (mapLeft)
+import           Data.Word               (Word16)
+import           Text.Parsec             (parse, (<|>))
+import           Text.Parsec.Text        (Parser)
 
-import qualified Data.Text as T
+import qualified Data.Text               as T
 
-import CsvParser (pInt, pFloat, only, pName, pWord)
-import Repl.Error (AppError (..))
+import           CsvParser               (only, pFloat, pInt, pName, pWord)
+import           Repl.Error              (AppError (..))
 
-import Types (ReplArg (..))
+import           Types                   (ReplArg (..))
 
 
 -- Parse address and number of register strings
