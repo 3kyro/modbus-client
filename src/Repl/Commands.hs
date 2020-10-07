@@ -21,21 +21,26 @@ import           CsvParser                        (parseCSVFile,
 -- import           Modbus                           (fromFloats, getFloats,
 --                                                    modSession, word2Float)
 
-import           PrettyPrint                      (ppMultThreadState, ppThreadError, ppError, ppMultModData,
+import           PrettyPrint                      (ppError, ppMultModData,
+                                                   ppMultThreadState,
                                                    ppRegisters, ppStrWarning,
-                                                   ppUid)
-import           Repl.Error                       (replRunExceptT, handleReplException)
+                                                   ppThreadError, ppUid)
+import           Repl.Error                       (handleReplException,
+                                                   replRunExceptT)
 
 -- import           Repl.Heartbeat                   (heartbeat, listHeartbeat,
 --                                                    stopHeartbeat)
 
-import           Repl.HelpFun                     (findModByName, getModByName, getModByPair,
-                                                   getPairs, invalidCmd)
-import           Repl.Parser                      (pReplInt, pReplArg, pReplAddrNum, pReplFloat,
+import           Control.Concurrent               (forkIO, putMVar, takeMVar,
+                                                   tryReadMVar)
+import           Control.Exception.Safe           (bracket, catchAny)
+import           Repl.HelpFun                     (findModByName, getModByName,
+                                                   getModByPair, getPairs,
+                                                   invalidCmd)
+import           Repl.Parser                      (pReplAddrNum, pReplArg,
+                                                   pReplFloat, pReplInt,
                                                    pReplWord)
 import           Types
-import Control.Exception.Safe (bracket, catchAny)
-import Control.Concurrent (forkIO, putMVar, takeMVar, tryReadMVar)
 
 getCommand :: String -> Command
 getCommand s =
@@ -123,6 +128,7 @@ stopHeartbeat = undefined
 readModData = undefined
 
 replExport = undefined
+replImport = undefined
 
 writeModData = undefined
 
@@ -140,21 +146,6 @@ replPut  = lift . put
 -- HeartBeat
 ------------------------------------------------------------------------------------------
 
-withClient :: ReplState -> (Client -> Repl ()) -> Repl ()
-withClient state = bracket getConfig releaseConfig
-  where
-    getConfig = liftIO $ takeMVar $ replClient state
-    releaseConfig client = do
-        state' <- replGet
-        let clientVar = replClient state'
-        liftIO $ putMVar clientVar client
-
-
-replImport :: [String] -> Repl ()
-replImport _ = do
-    client <- replClient <$> replGet
-    liftIO $ forkIO $ keepAliveThread client 2000
-    return ()
 -- Parse the input and call startHeartbeat with the
 -- address and timer pairs
 heartbeat :: [String] -> Repl ()
@@ -166,9 +157,9 @@ heartbeat args = do
     case mPairs of
         Nothing -> invalidCmd
         Just pairs -> do
-            addrTimer <- mapM replGetAddrTimer pairs
-            mapM_ startHeartbeat addrTimer
-  where replGetAddrTimer (s,t) = (,) <$> replGetAddr s <*> replGetTimer t
+            addrInterval <- mapM replGetAddrInterval pairs
+            mapM_ startHeartbeat addrInterval
+  where replGetAddrInterval (s,t) = (,) <$> replGetAddr s <*> replGetInterval t
 
 -- Setup the connection info for the server and call the spawn function
 -- for every heartbeat
@@ -186,23 +177,16 @@ startHeartbeat (addr, timer)
             let protocol = replProtocol state
             heart <- liftIO $ heartBeatSignal protocol timer worker client tpu address
             putHeartBeat heart
-        -- afterActiveThreadCheck addr $ do
-        --     uid <- replUId <$> lift get
-        --     newV <- liftIO newEmptyMVar
-        --     sock <- replSockAddr <$> replAsk
-        --     tm <- replTimeout <$> replAsk
-        --     thread <- liftIO $ forkFinally (spawn addr uid timer sock tm newV) (setThreadMVar newV)
-        --     let threadS = ThreadState addr timer thread newV
-        --     putThreadState threadS
-        --     liftIO $ putStrLn $ "Watchdog launched at address: " ++ show addr ++ ", with an interval of " ++ show timer ++ "ms"
 
--- Put the provided thread in the pool
+-- Put the provided heartbeat in the pool
 putHeartBeat :: HeartBeat -> Repl ()
 putHeartBeat st = do
     state <- replGet
     let pool = replPool state
     replPut $ state { replPool = st:pool }
 
+-- Checks if the provided address is a ModData name
+-- or a Word16 address
 replGetAddr :: String -> Repl Word16
 replGetAddr s = do
     mdata <- replModData <$> lift get
@@ -215,8 +199,8 @@ replGetAddr s = do
                 ReplAddr addr -> return addr
     replRunExceptT (except wrapped) 0
 
-replGetTimer :: String -> Repl Int
-replGetTimer s =
+replGetInterval :: String -> Repl Int
+replGetInterval s =
     replRunExceptT timer 0
   where
     timer = except $ pReplInt s
@@ -231,7 +215,7 @@ afterActiveThreadCheck addr action = do
     let active = find (\x -> hbAddress x == Address addr) threads
     case active of
         Just _ -> liftIO $ ppStrWarning $
-                    "A watchdog is already running at address " ++ show addr
+                    "A heartbeat signal is already running at address " ++ show addr
         Nothing -> action
 
 -- Check all current running signals if they are
@@ -243,9 +227,9 @@ checkActiveHeartbeat = do
     active <- liftIO $ checkThreads pool
     lift $ put $ state { replPool = active }
 
--- Checks if the provided thread and return true is still running.
--- If some exception is raised, it prints an error message and
--- removes the thread from the tread pool
+-- Checks if the heartbeat threads are still running.
+-- If some exception is raised in a hearbeat, it prints an error message and
+-- removes the hearbeat from the pool
 checkThreads :: [HeartBeat] -> IO [HeartBeat]
 checkThreads [] = return []
 checkThreads (x:xs) = do
@@ -253,8 +237,7 @@ checkThreads (x:xs) = do
     case checked of
         Nothing -> (:) <$> return x <*> checkThreads xs
         Just err -> do
-            -- ppThreadError x err
-            print err
+            ppThreadError x err
             checkThreads xs
 
 -- List all active heartbeat signals
@@ -263,8 +246,7 @@ listHeartbeat [] = do
     checkActiveHeartbeat
     pool <- replPool <$> lift get
     if null pool
-
-    then liftIO $ ppStrWarning "No active watchdog timers"
+    then liftIO $ ppStrWarning "No active heartbeat signals"
     else liftIO $ ppMultThreadState pool
 listHeartbeat _ = undefined
 
@@ -485,3 +467,11 @@ replId _ = invalidCmd
 --     lift $ put state {replTransactionId = tid'}
 --     return $ MB.TransactionId tid'
 
+withClient :: ReplState -> (Client -> Repl ()) -> Repl ()
+withClient state = bracket getConfig releaseConfig
+  where
+    getConfig = liftIO $ takeMVar $ replClient state
+    releaseConfig client = do
+        state' <- replGet
+        let clientVar = replClient state'
+        liftIO $ putMVar clientVar client
