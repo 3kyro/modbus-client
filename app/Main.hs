@@ -12,7 +12,7 @@ import           Repl                      (runRepl)
 
 import           Control.Concurrent        (newMVar)
 import qualified Network.Socket.ByteString as S
-import           Types                     (getAddr, ByteOrder, Client (..), ModbusProtocol (..),
+import           Types                     (initTID, getAddr, ByteOrder, Client (..), ModbusProtocol (..),
                                             ModData, ReplState (ReplState), Worker(..))
 import Control.Exception.Safe (bracket)
 
@@ -66,6 +66,7 @@ runTCPReplApp :: S.SockAddr -> Int -> ByteOrder -> [ModData] -> Word8 -> IO ()
 runTCPReplApp addr tm order mdata uid =
     withSocket addr $ \s -> do
         client <- newMVar $ Client (config s)
+        tid <- initTID
         runRepl ( ReplState
             client
             ModBusTCP
@@ -75,7 +76,7 @@ runTCPReplApp addr tm order mdata uid =
             mdata
             uid
             []
-            0
+            tid
             )
   where
       config s = MB.Config

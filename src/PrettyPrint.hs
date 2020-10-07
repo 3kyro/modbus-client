@@ -90,6 +90,7 @@ ppMultModData mds = do
     mapM_ (ppModData width) mds
 
 ppRegisters :: RegType -> [(Word16, ModValue)] -> IO ()
+
 ppRegisters rt mvs = do
     width <- ppGetTerminalWidth
     let dashes = replicate width '-'

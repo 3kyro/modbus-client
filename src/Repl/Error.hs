@@ -3,7 +3,7 @@ module Repl.Error
     (
       AppError (..)
     ,  handleReplException
-    ,replRunExceptT)
+    ,replRunExceptT,runReplClient)
     where
 
 import           Control.Monad.IO.Class     ()
@@ -16,7 +16,7 @@ import qualified Network.Modbus.TCP         as MB
 
 
 import           Control.Concurrent     (MVar)
-import           Control.Exception.Safe (SomeException, catch, catchAny)
+import           Control.Exception.Safe (try, SomeException, catch, catchAny)
 import           Data.Tagged            (Tagged)
 
 import           PrettyPrint                (ppError)
@@ -63,3 +63,5 @@ replRunExceptT ex rt = do
         Right x  -> return x
 
 
+runReplClient :: IO a -> Repl (Either AppError a)
+runReplClient action = liftIO $ mapLeft AppModbusError <$> try action

@@ -23,23 +23,21 @@ module Types.Modbus
     , Application
     , execApp
 
-    , MBRegister
-    , registerType
-    , registerToWord16
-    , registerFromWord16
+    , MBRegister (..)
 
     , Worker (..)
 
     , Session (..)
 
-    , TransactionInfo
+    , TransactionInfo (..)
     , UID
-    , setUID
     , getUID
     , TPU
     , setTPU
-    , getTPU
-    , incrTID
+    , TID
+    , initTID
+    , getNewTID
+
 
     , RegType (..)
     , serializeRegType
@@ -77,7 +75,7 @@ import           Data.Binary.Put            (putFloatbe, putFloatle,
                                              putWord16host, runPut)
 import           Data.IP                    (toHostAddress)
 import           Data.IP.Internal           (IPv4)
-import           Data.Range                 (Range)
+import           Data.Range                 (begin, Range)
 import           Data.Word                  (Word16, Word8)
 import           Network.Modbus.Protocol    (Address, Config)
 import           Test.QuickCheck            (Arbitrary (..), arbitrary,
@@ -91,8 +89,11 @@ import qualified Network.Modbus.TCP         as TCP
 import qualified Network.Socket             as S
 import qualified Network.Socket.ByteString  as S
 
+import           Control.Concurrent.STM     (TVar, atomically, modifyTVar',
+                                             newTVarIO, readTVarIO)
 import qualified System.Hardware.Serialport as SP
 import qualified System.Timeout             as TM
+import Data.Data (Proxy)
 
 
 
@@ -106,12 +107,41 @@ class ModbusClient a where
         -> MVar a       -- The Client used by all threads
         -> Session m b  -- Session to be run
         -> m b
-    readInputRegisters :: (MonadIO m, MonadThrow m) => ModbusProtocol -> TransactionInfo -> Range Address -> Session m [Word16]
-    readHoldingRegisters :: (MonadIO m, MonadThrow m) => ModbusProtocol -> TransactionInfo -> Range Address -> Session m [Word16]
-    writeSingleRegister :: (MonadIO m, MonadThrow m) => ModbusProtocol -> TransactionInfo -> Address -> Word16 -> Session m ()
-    writeMultipleRegisters :: (MonadIO m, MonadThrow m) => ModbusProtocol -> TransactionInfo -> Address -> [Word16] -> Session m ()
-    readMBRegister :: (MonadIO m, MonadThrow m, MBRegister b) => ModbusProtocol -> b -> TransactionInfo -> Range Address -> ByteOrder -> Session m (Maybe b)
-    writeMBRegister :: (MonadIO m, MonadThrow m, MBRegister b, MonadThrow (Session m)) => ModbusProtocol -> b -> TransactionInfo -> Address -> ByteOrder -> Session m ()
+    readInputRegisters :: (MonadIO m, MonadThrow m)
+        => ModbusProtocol
+        -> TransactionInfo
+        -> Range Address
+        -> Session m [Word16]
+    readHoldingRegisters :: (MonadIO m, MonadThrow m)
+        => ModbusProtocol
+        -> TransactionInfo
+        -> Range Address
+        -> Session m [Word16]
+    writeSingleRegister :: (MonadIO m, MonadThrow m)
+        => ModbusProtocol
+        -> TransactionInfo
+        -> Address
+        -> Word16
+        -> Session m ()
+    writeMultipleRegisters :: (MonadIO m, MonadThrow m)
+        => ModbusProtocol
+        -> TransactionInfo
+        -> Address
+        -> [Word16]
+        -> Session m ()
+    readMBRegister :: (MonadIO m, MonadThrow m, MBRegister b)
+        => Proxy a
+        -> ModbusProtocol
+        -> TransactionInfo
+        -> ByteOrder
+        -> b
+        -> Session m (Maybe b)
+    writeMBRegister :: (MonadIO m, MonadThrow m, MBRegister b, MonadThrow (Session m))
+        => ModbusProtocol
+        -> TransactionInfo
+        -> ByteOrder
+        -> b
+        -> Session m ()
 
 ---------------------------------------------------------------------------------------------------------------
 -- ModbusProtocol
@@ -154,7 +184,7 @@ instance ModbusClient Client where
     writeMultipleRegisters ModBusTCP tpu address values = TCPSession (TCP.writeMultipleRegisters (getTPU tpu) address values)
     writeMultipleRegisters ModBusRTU tpu address values = RTUSession (RTU.writeMultipleRegisters (RTU.UnitId $ getUID tpu) address values)
 
-    readMBRegister protocol reg tpu range bo =
+    readMBRegister _ protocol tpu bo reg =
         case registerType reg of
             InputRegister -> do
                 let rlt = readInput
@@ -169,8 +199,9 @@ instance ModbusClient Client where
         readHolding = case protocol of
             ModBusTCP -> TCPSession (TCP.readHoldingRegisters (getTPU tpu) range)
             ModBusRTU -> RTUSession (RTU.readHoldingRegisters (RTU.UnitId $ getUID tpu) range)
+        range = registerAddress reg
 
-    writeMBRegister protocol reg tpu address bo =
+    writeMBRegister protocol tpu bo reg =
         case registerType reg of
             InputRegister -> throw $ MB.OtherException "Non writable Register Type"
             HoldingRegister -> write
@@ -179,6 +210,7 @@ instance ModbusClient Client where
             ModBusTCP -> TCPSession (TCP.writeMultipleRegisters (getTPU tpu) address values)
             ModBusRTU -> RTUSession (RTU.writeMultipleRegisters (RTU.UnitId $ getUID tpu) address values)
         values = registerToWord16 bo reg
+        address = begin $ registerAddress reg
 
 ---------------------------------------------------------------------------------------------------------------
 -- Application
@@ -198,6 +230,7 @@ instance Application IO where
 -- A type that can be converted to a modbus register
 class MBRegister a where
     registerType :: a -> RegType
+    registerAddress :: a -> Range Address
     registerToWord16 :: ByteOrder -> a -> [Word16]
     registerFromWord16 :: ByteOrder -> a -> [Word16] -> Maybe a
 
@@ -219,7 +252,6 @@ data Worker m = RTUWorker (RTU.Worker m)
 data Session m a = RTUSession (RTU.Session m a)
     | TCPSession (TCP.Session m a)
     deriving (Functor)
-
 ---------------------------------------------------------------------------------------------------------------
 -- TransactionInfo
 ---------------------------------------------------------------------------------------------------------------
@@ -229,17 +261,25 @@ data Session m a = RTUSession (RTU.Session m a)
 -- must have its unique id. This is not necessary for Modbus RTU
 data TransactionInfo = TransactionInfo
     { unitId        :: Word8
-    , transactionId :: Word16
+    , transactionId :: TID
     }
+
+newtype TID = TID {unTID :: Word16}
+
+initTID :: IO (TVar TID)
+initTID = newTVarIO $ TID 0
+
+-- Increments the transaction Id of the TPU by one
+getNewTID :: TVar TID -> IO TID
+getNewTID tid = atomically (modifyTVar' tid incr) >> readTVarIO tid
+  where
+    incr = TID . (+ 1) . unTID
 
 -- Exportable types
 type UID = TransactionInfo
 type TPU = TransactionInfo
 
-setUID :: Word8 -> UID
-setUID uid = TransactionInfo uid 0
-
-setTPU :: Word8 -> Word16 -> TPU
+setTPU :: Word8 -> TID -> TPU
 setTPU = TransactionInfo
 
 getUID :: UID -> Word8
@@ -247,13 +287,9 @@ getUID = unitId
 
 getTPU :: TPU -> TCP.TPU
 getTPU (TransactionInfo uid tid) = TCP.TPU
-    (TCP.TransactionId tid)
+    (TCP.TransactionId $ unTID tid)
     TCP.ModbusTcp
     (TCP.UnitId uid)
-
--- Increments the transaction Id of the TPU by one
-incrTID :: TPU -> TPU
-incrTID tpu = tpu { transactionId = transactionId tpu + 1}
 
 ---------------------------------------------------------------------------------------------------------------
 -- RegType

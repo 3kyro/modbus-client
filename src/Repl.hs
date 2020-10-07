@@ -15,8 +15,6 @@ import System.Console.Repline
 import Types
 import Repl.Commands (cmd, commandsCompl, list)
 import Repl.Help (help, helpCompl)
-import Control.Exception.Safe (catchAny, catch)
-import Repl.Error (handleReplException)
 
 runRepl :: ReplState -> IO ()
 runRepl = evalStateT haskelineStack

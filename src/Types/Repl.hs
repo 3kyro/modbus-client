@@ -1,6 +1,4 @@
-{-# LANGUAGE DeriveFunctor              #-}
 {-# LANGUAGE FlexibleInstances          #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE RankNTypes                 #-}
 module Types.Repl
@@ -27,10 +25,11 @@ import           Control.Monad.Catch
 import           Control.Monad.State.Strict       (lift)
 import           Data.Range                       (Range)
 import           Data.Tagged                      (Tagged)
-import           Types.Modbus                     (Address, ByteOrder, Client,
+import           Types.Modbus                     (TID, Address, ByteOrder, Client,
                                                    HeartBeat (..),
                                                    ModbusProtocol, Session,
                                                    TransactionInfo, Worker)
+import Control.Concurrent.STM (TVar)
 
 type Repl = HaskelineT (StateT ReplState IO)
 
@@ -52,7 +51,7 @@ data ReplState = ReplState
     , replModData       :: ![ModData]
     , replUId           :: !Word8
     , replPool          :: ![HeartBeat]
-    , replTransactionId :: !Word16
+    , replTransactionId :: !(TVar TID)
     }
 
 -- Defines the type of an argument in certain repl commands

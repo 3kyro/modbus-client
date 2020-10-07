@@ -18,9 +18,10 @@ import           Data.List       (foldl')
 import           Data.Word       (Word16, Word8)
 import           Test.QuickCheck (Arbitrary, arbitrary, elements, frequency,
                                   oneof)
-import           Types.Modbus    (MBRegister (..), RegType (..), float2Word16,
-                                  serializeRegType, word16ToFloat)
+import           Types.Modbus    (Address (..), MBRegister (..), RegType (..),
+                                  float2Word16, serializeRegType, word16ToFloat)
 
+import           Data.Range      (fromSize, fromBounds)
 import qualified Data.Text       as T
 
 ---------------------------------------------------------------------------------------------------------------
@@ -83,6 +84,7 @@ instance ToJSON ModData where
 
 instance MBRegister ModData where
     registerType = modRegType
+    registerAddress md = fromSize (Address (modAddress md))  (Address $ getModValueMult $ modValue md)
     registerToWord16 bo md =
         case modValue md of
             ModWord Nothing   -> []
@@ -242,7 +244,7 @@ getModValueMult (ModFloat _) = 2
 serializeModData :: [ModData] -> T.Text
 serializeModData md = header `T.append` packed
   where
-    header = "Name;Register Type;Register Address;Data type;Value;Description\n"
+    header = "Name;Register Type;Register Address;Data type;Value;id;Description\n"
     packed = foldl' append "" md
     append acc md' = acc `T.append` serializeModDatum md' `T.append` "\n"
 
@@ -254,6 +256,7 @@ serializeModDatum md =
         ++ serializeRegType (modRegType md) ++ ";"
         ++ show (modAddress md) ++ ";"
         ++ serializeModValue (modValue md)
+        ++ show (modUid md) ++ ";"
         )
     `T.append` modDescription md
 
