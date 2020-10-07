@@ -1,4 +1,8 @@
-{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE DeriveFunctor              #-}
+{-# LANGUAGE FlexibleInstances          #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE RankNTypes                 #-}
 module Types.Repl
     ( Repl
     , ReplState (..)
@@ -17,24 +21,38 @@ import           System.Console.Repline           (HaskelineT)
 
 import           Types.ModData                    (ModData (..))
 
-import           Control.Exception.Safe           (MonadThrow)
+
+import           Control.Exception.Safe           (throwIO)
+import           Control.Monad.Catch
+import           Control.Monad.State.Strict       (lift)
 import           Data.Range                       (Range)
 import           Data.Tagged                      (Tagged)
-import           Types.Modbus                     (Address, ByteOrder, Config,
-                                                   HeartBeat (..), RTUClient,
-                                                   Session, TCPClient,
-                                                   TransactionInfo)
+import           Types.Modbus                     (Address, ByteOrder, Client,
+                                                   HeartBeat (..),
+                                                   ModbusProtocol, Session,
+                                                   TransactionInfo, Worker)
 
+type Repl = HaskelineT (StateT ReplState IO)
 
-type Repl a b = HaskelineT (StateT (ReplState a) IO) b
+instance MonadMask Repl where
+    mask = mask
+    uninterruptibleMask = uninterruptibleMask
+    generalBracket = generalBracket
+instance MonadThrow Repl where
+    throwM = lift . throwIO
+instance MonadCatch Repl where
+    catch = catch
 
-data ReplState a = ReplState
-    { replClient        :: MVar a
+data ReplState = ReplState
+    { replClient        :: !(MVar Client)
+    , replProtocol      :: !ModbusProtocol
+    , replDirectWorker  :: !(Worker IO)
+    , replBatchWorker   :: !(Worker IO)
+    , replByteOrder     :: !ByteOrder
     , replModData       :: ![ModData]
     , replUId           :: !Word8
-    , replPool          :: ![MVar HeartBeat]
+    , replPool          :: ![HeartBeat]
     , replTransactionId :: !Word16
-    , replByteOrder     :: !ByteOrder
     }
 
 -- Defines the type of an argument in certain repl commands

@@ -1,3 +1,4 @@
+{-# LANGUAGE RankNTypes #-}
 module Repl.Commands
     ( commandsCompl
     , getCommand
@@ -9,7 +10,7 @@ import           Control.Monad.Except             (runExceptT)
 import           Control.Monad.Trans              (lift, liftIO)
 import           Control.Monad.Trans.Except       (except)
 import           Control.Monad.Trans.State.Strict (get, put)
-import           Data.List                        (uncons)
+import           Data.List                        (find, uncons)
 import           Data.Maybe                       (fromJust, listToMaybe)
 import           Data.Word                        (Word16)
 
@@ -20,20 +21,21 @@ import           CsvParser                        (parseCSVFile,
 -- import           Modbus                           (fromFloats, getFloats,
 --                                                    modSession, word2Float)
 
-import           PrettyPrint                      (ppError, ppMultModData,
+import           PrettyPrint                      (ppMultThreadState, ppThreadError, ppError, ppMultModData,
                                                    ppRegisters, ppStrWarning,
                                                    ppUid)
-import           Repl.Error                       (handleReplException)
+import           Repl.Error                       (replRunExceptT, handleReplException)
 
 -- import           Repl.Heartbeat                   (heartbeat, listHeartbeat,
 --                                                    stopHeartbeat)
 
-import           Repl.HelpFun                     (getModByName, getModByPair,
+import           Repl.HelpFun                     (findModByName, getModByName, getModByPair,
                                                    getPairs, invalidCmd)
-import           Repl.Parser                      (pReplAddrNum, pReplFloat,
+import           Repl.Parser                      (pReplInt, pReplArg, pReplAddrNum, pReplFloat,
                                                    pReplWord)
 import           Types
-import Control.Exception.Safe (catchAny)
+import Control.Exception.Safe (bracket, catchAny)
+import Control.Concurrent (forkIO, putMVar, takeMVar, tryReadMVar)
 
 getCommand :: String -> Command
 getCommand s =
@@ -56,11 +58,12 @@ getCommand s =
 
 
 -- Top level command function
-cmd :: String -> Repl a ()
-cmd input = catchAny (runReplCommand input) handleReplException
+cmd :: String -> Repl ()
+-- cmd input = catchAny (runReplCommand input) handleReplException
+cmd input = runReplCommand input
 
 -- Top level command function
-runReplCommand :: String -> Repl a ()
+runReplCommand :: String -> Repl ()
 runReplCommand input =
   let
     (str, args) = (fromJust . uncons . words) input
@@ -99,7 +102,7 @@ commandsCompl = [
     , "id"
     ]
 
-list :: a -> Repl b ()
+list :: a -> Repl ()
 list _ = liftIO $ do
         putStrLn "List of commands:"
         putStrLn ""
@@ -115,9 +118,7 @@ readRegistersWord = undefined
 readRegistersFloat = undefined
 writeMultipleRegistersWord = undefined
 writeMultipleRegistersFloat = undefined
-heartbeat = undefined
 stopHeartbeat = undefined
-listHeartbeat = undefined
 
 readModData = undefined
 
@@ -125,12 +126,153 @@ replExport = undefined
 
 writeModData = undefined
 
-replImport = undefined
+-- replImport = undefined
 ------------------------------------------------------------------------------------------
 -- User commands
 ------------------------------------------------------------------------------------------
 
--- readRegistersWord :: RegType -> [String] -> Repl a ()
+replGet :: Repl ReplState
+replGet = lift get
+
+replPut :: ReplState -> Repl ()
+replPut  = lift . put
+------------------------------------------------------------------------------------------
+-- HeartBeat
+------------------------------------------------------------------------------------------
+
+withClient :: ReplState -> (Client -> Repl ()) -> Repl ()
+withClient state = bracket getConfig releaseConfig
+  where
+    getConfig = liftIO $ takeMVar $ replClient state
+    releaseConfig client = do
+        state' <- replGet
+        let clientVar = replClient state'
+        liftIO $ putMVar clientVar client
+
+
+replImport :: [String] -> Repl ()
+replImport _ = do
+    client <- replClient <$> replGet
+    liftIO $ forkIO $ keepAliveThread client 2000
+    return ()
+-- Parse the input and call startHeartbeat with the
+-- address and timer pairs
+heartbeat :: [String] -> Repl ()
+heartbeat [] = liftIO $ putStrLn $
+    "Usage: heartbeat [identifier] [timer(ms)]\n"
+    ++ "e.g. heartbeat 10 1000000 watch_reg 500000"
+heartbeat args = do
+    let mPairs = getPairs args
+    case mPairs of
+        Nothing -> invalidCmd
+        Just pairs -> do
+            addrTimer <- mapM replGetAddrTimer pairs
+            mapM_ startHeartbeat addrTimer
+  where replGetAddrTimer (s,t) = (,) <$> replGetAddr s <*> replGetTimer t
+
+-- Setup the connection info for the server and call the spawn function
+-- for every heartbeat
+startHeartbeat :: (Word16, Int) -> Repl ()
+startHeartbeat (addr, timer)
+    | timer <= 0 = return ()
+    | otherwise =
+        afterActiveThreadCheck addr $ do
+            state <- replGet
+            let worker = replDirectWorker state
+            let client = replClient state
+            let uid = replUId state
+            let tpu = setTPU uid 0
+            let address = Address addr
+            let protocol = replProtocol state
+            heart <- liftIO $ heartBeatSignal protocol timer worker client tpu address
+            putHeartBeat heart
+        -- afterActiveThreadCheck addr $ do
+        --     uid <- replUId <$> lift get
+        --     newV <- liftIO newEmptyMVar
+        --     sock <- replSockAddr <$> replAsk
+        --     tm <- replTimeout <$> replAsk
+        --     thread <- liftIO $ forkFinally (spawn addr uid timer sock tm newV) (setThreadMVar newV)
+        --     let threadS = ThreadState addr timer thread newV
+        --     putThreadState threadS
+        --     liftIO $ putStrLn $ "Watchdog launched at address: " ++ show addr ++ ", with an interval of " ++ show timer ++ "ms"
+
+-- Put the provided thread in the pool
+putHeartBeat :: HeartBeat -> Repl ()
+putHeartBeat st = do
+    state <- replGet
+    let pool = replPool state
+    replPut $ state { replPool = st:pool }
+
+replGetAddr :: String -> Repl Word16
+replGetAddr s = do
+    mdata <- replModData <$> lift get
+    let wrapped = do
+            replArg <- pReplArg s
+            case replArg of
+                ReplName name -> do
+                    md <- findModByName mdata name
+                    return (modAddress md)
+                ReplAddr addr -> return addr
+    replRunExceptT (except wrapped) 0
+
+replGetTimer :: String -> Repl Int
+replGetTimer s =
+    replRunExceptT timer 0
+  where
+    timer = except $ pReplInt s
+
+-- Check if there is an active heartbeat signal running in the address
+-- and perform the provided action if not
+afterActiveThreadCheck :: Word16 -> Repl () -> Repl ()
+afterActiveThreadCheck addr action = do
+    checkActiveHeartbeat
+    state <- lift get
+    let threads = replPool state
+    let active = find (\x -> hbAddress x == Address addr) threads
+    case active of
+        Just _ -> liftIO $ ppStrWarning $
+                    "A watchdog is already running at address " ++ show addr
+        Nothing -> action
+
+-- Check all current running signals if they are
+-- still active
+checkActiveHeartbeat :: Repl ()
+checkActiveHeartbeat = do
+    state <- lift get
+    let pool = replPool state
+    active <- liftIO $ checkThreads pool
+    lift $ put $ state { replPool = active }
+
+-- Checks if the provided thread and return true is still running.
+-- If some exception is raised, it prints an error message and
+-- removes the thread from the tread pool
+checkThreads :: [HeartBeat] -> IO [HeartBeat]
+checkThreads [] = return []
+checkThreads (x:xs) = do
+    checked <- tryReadMVar (hbStatus x)
+    case checked of
+        Nothing -> (:) <$> return x <*> checkThreads xs
+        Just err -> do
+            -- ppThreadError x err
+            print err
+            checkThreads xs
+
+-- List all active heartbeat signals
+listHeartbeat :: [String] -> Repl ()
+listHeartbeat [] = do
+    checkActiveHeartbeat
+    pool <- replPool <$> lift get
+    if null pool
+
+    then liftIO $ ppStrWarning "No active watchdog timers"
+    else liftIO $ ppMultThreadState pool
+listHeartbeat _ = undefined
+
+------------------------------------------------------------------------------------------
+-- TODO
+------------------------------------------------------------------------------------------
+
+-- readRegistersWord :: RegType -> [String] -> Repl ()
 -- readRegistersWord rt [address, number] = do
 --     let f = getReadFunction rt
 --     response <- replReadRegisters address number (ModWord Nothing) f
@@ -142,7 +284,7 @@ replImport = undefined
 --         liftIO $ ppRegisters rt zips
 -- readRegistersWord _ _ = invalidCmd
 
--- readRegistersFloat :: RegType -> [String] -> Repl a ()
+-- readRegistersFloat :: RegType -> [String] -> Repl ()
 -- readRegistersFloat rt [address, number] = do
 --     order <- replOrd <$> replAsk
 --     let f = getReadFunction rt
@@ -158,17 +300,17 @@ replImport = undefined
 --     toModFloat xs = ModFloat . Just <$> xs
 -- readRegistersFloat _ _ = invalidCmd
 
--- writeMultipleRegistersWord :: [String] -> Repl a ()
+-- writeMultipleRegistersWord :: [String] -> Repl ()
 -- writeMultipleRegistersWord (address:values) =
 --     replWriteRegisters address values (ModWord Nothing)
 -- writeMultipleRegistersWord _ = invalidCmd
 
--- writeMultipleRegistersFloat :: [String] -> Repl a ()
+-- writeMultipleRegistersFloat :: [String] -> Repl ()
 -- writeMultipleRegistersFloat (address:values) =
 --     replWriteRegisters address values (ModFloat Nothing)
 -- writeMultipleRegistersFloat _ = invalidCmd
 
--- readModData :: [String] -> Repl a ()
+-- readModData :: [String] -> Repl ()
 -- readModData [] = invalidCmd
 -- readModData args = do
 --     mdata <- replModData <$> lift get
@@ -177,7 +319,7 @@ replImport = undefined
 --     response <- mapM readMod mds
 --     liftIO $ ppMultModData response
 
--- writeModData :: [String] -> Repl a ()
+-- writeModData :: [String] -> Repl ()
 -- writeModData [] = invalidCmd
 -- writeModData args = do
 --     mdata <- replModData <$> lift get
@@ -192,7 +334,7 @@ replImport = undefined
 --             readback <- mapM readMod mds
 --             liftIO $ ppMultModData readback
 
--- replImport :: [String] -> Repl a ()
+-- replImport :: [String] -> Repl ()
 -- replImport [] = liftIO $ do
 --     putStrLn "Usage: import path-to-csv-file"
 --     putStrLn "e.g. import ~/path/to/file.csv"
@@ -205,7 +347,7 @@ replImport = undefined
 --     liftIO $ putStrLn $ show (length mdata) ++ " registers updated"
 -- replImport _ = invalidCmd
 
--- replExport :: [String] -> Repl a ()
+-- replExport :: [String] -> Repl ()
 -- replExport [] = liftIO $ do
 --     putStrLn "Usage: export path-to-csv-file"
 --     putStrLn "e.g. export ~/path/to/file.csv"
@@ -219,7 +361,7 @@ replImport = undefined
 --     return ()
 -- replExport _ = invalidCmd
 
-replId :: [String] -> Repl a ()
+replId :: [String] -> Repl ()
 replId [] = do
     uid <- replUId <$> lift get
     liftIO $ ppUid uid
@@ -235,7 +377,7 @@ replId _ = invalidCmd
 
 -- -- Write a ModData to the server
 -- -- Return the number of ModData written
--- writeMod :: ModData -> Repl a Word16
+-- writeMod :: ModData -> Repl Word16
 -- writeMod md = do
 --     let address = modAddress md
 --     let modVal = modValue md
@@ -247,10 +389,9 @@ replId _ = invalidCmd
 --                     "Invalid register type for value: "
 --                     ++ modName md
 --             return 0
-
--- -- Write a ModValue to the modbus server.
+  -- Write a ModValue to the modbus server.
 -- -- Return the number of items written
--- writeModType :: ModValue -> Word16 -> Repl a Word16
+-- writeModType :: ModValue -> Word16 -> Repl Word16
 -- writeModType value address = do
 --     connection <- replConn <$> replAsk
 --     uid <- replUId <$> lift get
@@ -262,8 +403,7 @@ replId _ = invalidCmd
 --             replRunExceptT writeSession 0
 --         ModFloat (Just float) -> do
 --             tid <- incrementTransactionid
---             let ordWords = fromFloats [float]
---             let writeSession = runReplSession connection $ MB.writeMultipleRegisters tid 0 (MB.UnitId uid) addr ordWords
+--             let ordWords = fromFloats [floa --             let writeSession = runReplSession connection $ MB.writeMultipleRegisters tid 0 (MB.UnitId uid) addr ordWords
 --             wordsWritten <- replRunExceptT writeSession 0
 --             return $ wordsWritten `div` 2
 --         _ -> return 0
@@ -317,7 +457,7 @@ replId _ = invalidCmd
 -- replWriteRegisters :: String  -- address
 --                    -> [String] -- values
 --                    -> ModValue
---                    -> Repl a ()
+--                    -> Repl ()
 -- replWriteRegisters address values mValue = do
 --     connection <- replConn <$> replAsk
 --     uid <- replUId <$> lift get

@@ -51,6 +51,7 @@ dependencies:
 - hspec-golden-aeson  >= 0.7.0.0 && < 0.8
 - bytestring
 - serialport
+- exceptions
 library:
   source-dirs: src
 

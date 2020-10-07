@@ -55,5 +55,7 @@ getPairs []       = Just []
 getPairs [_]      = Nothing
 getPairs (x:y:zs) = (:) <$> Just (x,y) <*> getPairs zs
 
-invalidCmd :: Repl a ()
+invalidCmd :: Repl ()
 invalidCmd = liftIO $ ppStrWarning "Invalid Command argument"
+
+

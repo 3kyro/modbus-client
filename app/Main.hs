@@ -1,24 +1,20 @@
 module Main where
 
-import           Control.Monad.Except (runExceptT)
-import           Data.Word            (Word8)
+import           Data.Word                 (Word8)
 
-import qualified Data.Text.IO         as T
-import qualified Network.Socket       as S
+import qualified Network.Modbus.Protocol   as MB
+import qualified Network.Modbus.TCP        as TCP
+import qualified Network.Socket            as S
 
-import           CsvParser            (parseCSVFile)
-import           Modbus               (getAddr, modSession, modbusConnection,
-                                       withSocket)
-import           OptParser            (AppMode (..), Opt (..), Protocol (..),
-                                       runOpts)
-import           PrettyPrint          (ppError)
-import           Repl                 (runRepl)
-import           Server               (runServer)
+import           OptParser                 (AppMode (..), Opt (..), runOpts)
+import           Repl                      (runRepl)
+-- import           Server               (runServer)
 
-import           Types                (ByteOrder, Client (..), Config, ModData,
-                                       ReplConfig (Config),
-                                       ReplState (ReplState), getRTUConfig,
-                                       getTCPConfig, serializeModData)
+import           Control.Concurrent        (newMVar)
+import qualified Network.Socket.ByteString as S
+import           Types                     (getAddr, ByteOrder, Client (..), ModbusProtocol (..),
+                                            ModData, ReplState (ReplState), Worker(..))
+import Control.Exception.Safe (bracket)
 
 
 main :: IO ()
@@ -67,20 +63,37 @@ runApp (Opt mode protocol input output ip portNum order uid tm) =
 
 -- Run the application's REPL
 runTCPReplApp :: S.SockAddr -> Int -> ByteOrder -> [ModData] -> Word8 -> IO ()
-runTCPReplApp addr tm order mdata uid = do
-    client <- newMVar $ TCPClient config
-    withSocket addr $ \s ->
-        runRepl (ReplState client mdata uid [] 0 order)
+runTCPReplApp addr tm order mdata uid =
+    withSocket addr $ \s -> do
+        client <- newMVar $ Client (config s)
+        runRepl ( ReplState
+            client
+            ModBusTCP
+            (TCPWorker TCP.directWorker)
+            (TCPWorker $ TCP.batchWorker TCP.defaultBatchConfig)
+            order
+            mdata
+            uid
+            []
+            0
+            )
   where
-      config = Config
-        { MB.cfgWrite = S.send s
-        , MB.cfgRead = S.recv s 4096
-        , MB.cfgCommandTimeout = tm * 1000
-        , MB.cfgRetryWhen = const . const False
-        , MB.cfgEnableBroadcasts = False
+      config s = MB.Config
+        { TCP.cfgWrite = S.send s
+        , TCP.cfgRead = S.recv s 4096
+        , TCP.cfgCommandTimeout = tm * 1000
+        , TCP.cfgRetryWhen = const . const False
+        , TCP.cfgEnableBroadcasts = False
         }
 
 withSocket :: S.SockAddr -> (S.Socket -> IO a) -> IO a
 withSocket addr = bracket (connect addr) close
   where close s = S.gracefulClose s 1000
 
+connect :: S.SockAddr -> IO S.Socket
+connect addr = do
+    putStrLn ("Connecting to " ++ show addr ++ "...")
+    s <- S.socket S.AF_INET S.Stream S.defaultProtocol
+    S.connect s addr
+    putStrLn "connected"
+    return s

@@ -1,11 +1,9 @@
 module Repl
     ( runRepl
-    , ReplConfig(..)
     , ReplState(..)
     ) where
 
 import Control.Monad.Trans (liftIO)
-import Control.Monad.Reader (runReaderT)
 import Control.Monad.Trans.State.Strict (evalStateT)
 import Data.List (isPrefixOf)
 import System.Console.Repline 
@@ -17,8 +15,10 @@ import System.Console.Repline
 import Types
 import Repl.Commands (cmd, commandsCompl, list)
 import Repl.Help (help, helpCompl)
+import Control.Exception.Safe (catchAny, catch)
+import Repl.Error (handleReplException)
 
-runRepl :: Client a => ReplState a -> IO ()
+runRepl :: ReplState -> IO ()
 runRepl = evalStateT haskelineStack
   where
     haskelineStack = evalRepl (pure "> ") cmd options (Just ':') (Word completer) ini

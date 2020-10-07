@@ -1,12 +1,14 @@
-{-# LANGUAGE DeriveFunctor       #-}
-{-# LANGUAGE FlexibleContexts    #-}
-{-# LANGUAGE OverloadedStrings   #-}
+{-# LANGUAGE AllowAmbiguousTypes     #-}
+{-# LANGUAGE ConstrainedClassMethods #-}
+{-# LANGUAGE DeriveFunctor           #-}
+{-# LANGUAGE FlexibleContexts        #-}
+{-# LANGUAGE OverloadedStrings       #-}
 
-{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE ScopedTypeVariables     #-}
 
 
 module Types.Modbus
-    ( ModBusClient
+    ( ModbusClient
     , runClient
     , readInputRegisters
     , readHoldingRegisters
@@ -16,11 +18,10 @@ module Types.Modbus
     , writeMBRegister
 
     , Config
-    , Address
+    , Address (..)
 
     , Application
     , execApp
-    , AppConfig (..)
 
     , MBRegister
     , registerType
@@ -43,8 +44,8 @@ module Types.Modbus
     , RegType (..)
     , serializeRegType
 
-    , TCPClient
-    , RTUClient
+    , Client (..)
+    , ModbusProtocol (..)
 
     , ByteOrder (..)
     , float2Word16
@@ -65,8 +66,8 @@ module Types.Modbus
 import           Control.Concurrent         (MVar, ThreadId, forkFinally,
                                              newEmptyMVar, putMVar, takeMVar,
                                              threadDelay)
-import           Control.Exception.Safe     (MonadThrow, SomeException, throw,
-                                             try)
+import           Control.Exception.Safe     (MonadMask, MonadThrow,
+                                             SomeException, bracket, throw, try)
 import           Control.Monad.Trans        (MonadIO, liftIO)
 import           Data.Aeson                 (FromJSON (..), ToJSON (..),
                                              Value (..))
@@ -77,7 +78,6 @@ import           Data.Binary.Put            (putFloatbe, putFloatle,
 import           Data.IP                    (toHostAddress)
 import           Data.IP.Internal           (IPv4)
 import           Data.Range                 (Range)
-import           Data.Tagged                (Tagged (..), untag)
 import           Data.Word                  (Word16, Word8)
 import           Network.Modbus.Protocol    (Address, Config)
 import           Test.QuickCheck            (Arbitrary (..), arbitrary,
@@ -95,103 +95,90 @@ import qualified System.Hardware.Serialport as SP
 import qualified System.Timeout             as TM
 
 
+
+---------------------------------------------------------------------------------------------------------------
+-- ModbusClient
+---------------------------------------------------------------------------------------------------------------
+
+class ModbusClient a where
+    runClient :: (MonadIO m, MonadThrow m, Application m, MonadMask m)
+        => Worker m     -- Aworker that will execute the session
+        -> MVar a       -- The Client used by all threads
+        -> Session m b  -- Session to be run
+        -> m b
+    readInputRegisters :: (MonadIO m, MonadThrow m) => ModbusProtocol -> TransactionInfo -> Range Address -> Session m [Word16]
+    readHoldingRegisters :: (MonadIO m, MonadThrow m) => ModbusProtocol -> TransactionInfo -> Range Address -> Session m [Word16]
+    writeSingleRegister :: (MonadIO m, MonadThrow m) => ModbusProtocol -> TransactionInfo -> Address -> Word16 -> Session m ()
+    writeMultipleRegisters :: (MonadIO m, MonadThrow m) => ModbusProtocol -> TransactionInfo -> Address -> [Word16] -> Session m ()
+    readMBRegister :: (MonadIO m, MonadThrow m, MBRegister b) => ModbusProtocol -> b -> TransactionInfo -> Range Address -> ByteOrder -> Session m (Maybe b)
+    writeMBRegister :: (MonadIO m, MonadThrow m, MBRegister b, MonadThrow (Session m)) => ModbusProtocol -> b -> TransactionInfo -> Address -> ByteOrder -> Session m ()
+
+---------------------------------------------------------------------------------------------------------------
+-- ModbusProtocol
+---------------------------------------------------------------------------------------------------------------
+
+data ModbusProtocol = ModBusTCP
+    | ModBusRTU
+
 ---------------------------------------------------------------------------------------------------------------
 -- Client
 ---------------------------------------------------------------------------------------------------------------
 
-class ModBusClient a where
-    runClient :: (MonadIO m, MonadThrow m, Application m)
-        => Worker m -- Worker for the session
-        -> MVar a -- The Client used by all threads
-        -> Tagged a (Session m b) -- Session to be run
-        -> m b
-    readInputRegisters :: (MonadIO m, MonadThrow m) => TransactionInfo -> Range Address -> Tagged a (Session m [Word16])
-    readHoldingRegisters :: (MonadIO m, MonadThrow m) => TransactionInfo -> Range Address -> Tagged a (Session m [Word16])
-    writeSingleRegister :: (MonadIO m, MonadThrow m) => TransactionInfo -> Address -> Word16 -> Tagged a (Session m ())
-    writeMultipleRegisters :: (MonadIO m, MonadThrow m) => TransactionInfo -> Address -> [Word16] -> Tagged a (Session m ())
-    readMBRegister :: (MonadIO m, MonadThrow m, MBRegister b) => b -> TransactionInfo -> Range Address -> ByteOrder -> Tagged a (Session m (Maybe b))
-    writeMBRegister :: (MonadIO m, MonadThrow m, MBRegister b, MonadThrow (Tagged TCPClient), MonadThrow (Tagged RTUClient)) => b -> TransactionInfo -> Address -> ByteOrder -> Tagged a (Session m ())
+newtype Client = Client Config
 
----------------------------------------------------------------------------------------------------------------
--- TCP Client
----------------------------------------------------------------------------------------------------------------
+instance ModbusClient Client where
 
-newtype TCPClient = TCPClient Config
+    runClient worker configMVar session =
+        bracket getClient releaseClient
+            $ \(Client config) ->
+                    case worker of
+                            TCPWorker tcpworker -> do
+                                let TCPSession session' = session
+                                TCP.runSession tcpworker config session'
+                            RTUWorker rtuworker -> do
+                                let RTUSession session' = session
+                                RTU.runSession rtuworker config session'
+      where
+        getClient = liftIO $ takeMVar configMVar
+        releaseClient = liftIO . putMVar configMVar
 
-instance ModBusClient TCPClient where
+    readInputRegisters ModBusTCP tpu range = TCPSession (TCP.readInputRegisters (getTPU tpu) range)
+    readInputRegisters ModBusRTU tpu range = RTUSession (RTU.readInputRegisters (RTU.UnitId $ getUID tpu) range)
 
-    runClient (TCPWorker worker) configMVar session = do
-        -- get the global client
-        (TCPClient config) <- liftIO $ takeMVar configMVar
-        rlt <- TCP.runSession worker config session'
-        -- release the global client
-        liftIO $ putMVar configMVar (TCPClient config)
-        return rlt
-        where TCPSession session'= untag session
+    readHoldingRegisters ModBusTCP tpu range = TCPSession (TCP.readHoldingRegisters (getTPU tpu) range)
+    readHoldingRegisters ModBusRTU tpu range = RTUSession (RTU.readHoldingRegisters (RTU.UnitId $ getUID tpu) range)
 
-    readInputRegisters tpu range = Tagged $ TCPSession (TCP.readInputRegisters (getTPU tpu) range)
+    writeSingleRegister ModBusTCP tpu address value = TCPSession (TCP.writeSingleRegister (getTPU tpu) address value)
+    writeSingleRegister ModBusRTU tpu address value = RTUSession (RTU.writeSingleRegister (RTU.UnitId $ getUID tpu) address value)
 
-    readHoldingRegisters tpu range = Tagged $ TCPSession (TCP.readHoldingRegisters (getTPU tpu) range)
+    writeMultipleRegisters ModBusTCP tpu address values = TCPSession (TCP.writeMultipleRegisters (getTPU tpu) address values)
+    writeMultipleRegisters ModBusRTU tpu address values = RTUSession (RTU.writeMultipleRegisters (RTU.UnitId $ getUID tpu) address values)
 
-    writeSingleRegister tpu address value = Tagged $ TCPSession (TCP.writeSingleRegister (getTPU tpu) address value)
-
-    writeMultipleRegisters tpu address values = Tagged $ TCPSession (TCP.writeMultipleRegisters (getTPU tpu) address values)
-
-    readMBRegister reg tpu range bo =
+    readMBRegister protocol reg tpu range bo =
         case registerType reg of
             InputRegister -> do
-                rlt <- readInputRegisters tpu range
-                Tagged $ registerFromWord16 bo reg <$> rlt
+                let rlt = readInput
+                registerFromWord16 bo reg <$> rlt
             HoldingRegister -> do
-                rlt <- readHoldingRegisters tpu range
-                Tagged $ registerFromWord16 bo reg <$> rlt
+                let rlt = readHolding
+                registerFromWord16 bo reg <$> rlt
+      where
+        readInput = case protocol of
+            ModBusTCP -> TCPSession (TCP.readInputRegisters (getTPU tpu) range)
+            ModBusRTU -> RTUSession (RTU.readInputRegisters (RTU.UnitId $ getUID tpu) range)
+        readHolding = case protocol of
+            ModBusTCP -> TCPSession (TCP.readHoldingRegisters (getTPU tpu) range)
+            ModBusRTU -> RTUSession (RTU.readHoldingRegisters (RTU.UnitId $ getUID tpu) range)
 
-    writeMBRegister reg tpu address bo =
+    writeMBRegister protocol reg tpu address bo =
         case registerType reg of
             InputRegister -> throw $ MB.OtherException "Non writable Register Type"
-            HoldingRegister -> do
-                rlt <- writeMultipleRegisters tpu address $ registerToWord16 bo reg
-                Tagged rlt
-
----------------------------------------------------------------------------------------------------------------
--- RTU Client
----------------------------------------------------------------------------------------------------------------
-
-newtype RTUClient = RTUClient Config
-
-instance ModBusClient RTUClient where
-    runClient (RTUWorker worker) configMVar session = do
-        -- get the global client
-        (RTUClient config) <- liftIO $ takeMVar configMVar
-        rlt <- RTU.runSession worker config session'
-        -- release the global client
-        liftIO $ putMVar configMVar (RTUClient config)
-        return rlt
-        where RTUSession session'= untag session
-
-    readInputRegisters tpu range = Tagged $ RTUSession (RTU.readInputRegisters (RTU.UnitId $ getUID tpu) range)
-
-    readHoldingRegisters tpu range = Tagged $ RTUSession (RTU.readHoldingRegisters (RTU.UnitId $ getUID tpu) range)
-
-    writeSingleRegister tpu address value = Tagged $ RTUSession (RTU.writeSingleRegister (RTU.UnitId $ getUID tpu) address value)
-
-    writeMultipleRegisters tpu address values = Tagged $ RTUSession (RTU.writeMultipleRegisters (RTU.UnitId $ getUID tpu) address values)
-
-    readMBRegister reg tpu range bo =
-        case registerType reg of
-            InputRegister -> do
-                rlt <- readInputRegisters tpu range
-                Tagged $ registerFromWord16 bo reg <$> rlt
-            HoldingRegister -> do
-                rlt <- readHoldingRegisters tpu range
-                Tagged $ registerFromWord16 bo reg <$> rlt
-
-    writeMBRegister reg tpu address bo =
-        case registerType reg of
-            InputRegister -> throw $ MB.OtherException "Non writable Register Type"
-            HoldingRegister -> do
-                rlt <- writeMultipleRegisters tpu address $ registerToWord16 bo reg
-                Tagged rlt
+            HoldingRegister -> write
+      where
+        write = case protocol of
+            ModBusTCP -> TCPSession (TCP.writeMultipleRegisters (getTPU tpu) address values)
+            ModBusRTU -> RTUSession (RTU.writeMultipleRegisters (RTU.UnitId $ getUID tpu) address values)
+        values = registerToWord16 bo reg
 
 ---------------------------------------------------------------------------------------------------------------
 -- Application
@@ -201,22 +188,8 @@ instance ModBusClient RTUClient where
 class Application m where
     execApp :: m a -> IO a
 
-
 instance Application IO where
     execApp action = action
-
----------------------------------------------------------------------------------------------------------------
--- Application Configuration
----------------------------------------------------------------------------------------------------------------
-
--- Configuration for a modbus application
-data AppConfig = AppConfig
-    { keepAliveFlag :: !Bool -- Keep alive enabled/disabled flag
-    -- Keep alive intrval
-    , keepAliveTime :: !Int -- Keep alive intrval
-    -- Pool of heartbeat signal threads
-    , hearbeatPool  :: ![ThreadId] -- Pool of heartbeat signal threads
-    }
 
 ---------------------------------------------------------------------------------------------------------------
 -- MBRegister
@@ -391,28 +364,32 @@ data HeartBeat = HeartBeat
     }
 
 -- Spawns a heartbeat signal thread
-heartBeatSignal :: (MonadIO m, Application m, ModBusClient a, MonadThrow m)
-    => Int              -- HeartBeat signal period in ms
+heartBeatSignal :: (MonadIO m, Application m, ModbusClient a, MonadThrow m, MonadMask m)
+    => ModbusProtocol
+    -> Int              -- HeartBeat signal period in ms
     -> Worker m         -- Worker to execute the session
     -> MVar a           -- Client configuration
     -> TransactionInfo  -- Session's transaction info
     -> Address          -- HeartBeat signal register address
     -> m HeartBeat
-heartBeatSignal interval worker clientMVar tpu address = do
+heartBeatSignal protocol interval worker clientMVar tpu address = do
     status <- liftIO newEmptyMVar
     threadid <- liftIO $ forkFinally (execApp $ thread address 0) (finally status)
     return $ HeartBeat address interval threadid status
   where
     thread address' acc = do
         liftIO $ threadDelay interval
-        let session = writeSingleRegister tpu address' acc
+        let session = case protocol of
+                ModBusTCP -> TCPSession (TCP.writeSingleRegister (getTPU tpu) address acc)
+                ModBusRTU -> RTUSession (RTU.writeSingleRegister (RTU.UnitId $ getUID tpu) address acc)
         runClient worker clientMVar session
         thread address' (acc + 1)
-        return ()
     finally status terminationStatus =
         case terminationStatus of
-            Left someExcept -> putMVar status someExcept
-            Right ()        -> return ()
+            Left someExcept ->
+                putMVar status someExcept
+            Right ()        ->
+                return ()
 
 ---------------------------------------------------------------------------------------------------------------
 -- Keep Alive
@@ -422,30 +399,15 @@ heartBeatSignal interval worker clientMVar tpu address = do
 -- The global ThreadConfig contains information on wheter keep alive is active
 -- and the interval between calls. In order be cross platform, we ignore OS specific
 -- implementation of the keep alive function and simply send a minimum package at every interval
-keepAliveThread :: MVar AppConfig -> MVar TCPClient -> IO ()
-keepAliveThread threadConfigMVar clientMVar = do
-    -- Check if keep alive is active
-    threadConfig <- takeMVar threadConfigMVar
-    if keepAliveFlag threadConfig
-    then do
-        -- release threadConfig
-        putMVar threadConfigMVar threadConfig
-        go threadConfigMVar clientMVar (keepAliveTime threadConfig)
-    else do
-        -- release threadConfig
-        putMVar threadConfigMVar threadConfig
-        return ()
-  where
-      go threadConfigMvar configMvar timer = do
-        threadDelay timer
-        -- take the global TCP client
-        TCPClient config <- takeMVar configMvar
-        let write = MB.cfgWrite config
-        write $ B.pack ""
-        -- release the global TCP client
-        putMVar clientMVar $ TCPClient config
-        -- recurse
-        keepAliveThread threadConfigMvar configMvar
+keepAliveThread :: MVar Client -> Int -> IO ()
+keepAliveThread clientMVar interval = do
+    threadDelay interval
+    -- take the global TCP client
+    bracket (liftIO $ takeMVar clientMVar) (liftIO . putMVar clientMVar)
+        $ \(Client config) ->
+            MB.cfgWrite config $ B.pack ""
+    -- recurse
+    keepAliveThread clientMVar interval
 
 ---------------------------------------------------------------------------------------------------------------
 -- Config

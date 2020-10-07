@@ -1,8 +1,9 @@
+{-# LANGUAGE RankNTypes #-}
 module Repl.Error
     (
       AppError (..)
     ,  handleReplException
-    )
+    ,replRunExceptT)
     where
 
 import           Control.Monad.IO.Class     ()
@@ -31,8 +32,9 @@ import           Types.Modbus (Session, Worker, runClient)
 
 
 
-handleReplException :: SomeException -> Repl a ()
-handleReplException exception = liftIO $ ppError (AppModbusError exception)
+handleReplException :: SomeException -> IO ()
+-- handleReplException exception = liftIO $ ppError (AppModbusError exception)
+handleReplException exception = ppError (AppModbusError exception)
 
 
 
@@ -52,12 +54,12 @@ handleReplException exception = liftIO $ ppError (AppModbusError exception)
 
 
 
--- -- Rus an ExceptT, returning a default value in case of AppError
--- replRunExceptT :: ExceptT AppError IO a -> a -> Repl a
--- replRunExceptT ex rt = do
---     unwrapped <- liftIO $ runExceptT ex
---     case unwrapped of
---         Left err -> liftIO $ ppError err >> return rt
---         Right x  -> return x
+-- Rus an ExceptT, returning a default value in case of AppError
+replRunExceptT :: ExceptT AppError IO a -> a -> Repl a
+replRunExceptT ex rt = do
+    unwrapped <- liftIO $ runExceptT ex
+    case unwrapped of
+        Left err -> liftIO $ ppError err >> return rt
+        Right x  -> return x
 
 
