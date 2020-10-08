@@ -18,9 +18,8 @@ import           Text.Parsec.Text        (Parser)
 import qualified Data.Text               as T
 
 import           CsvParser               (only, pFloat, pInt, pName, pWord)
-import           Repl.Error              (AppError (..))
 
-import           Types                   (ReplArg (..))
+import           Types                   (AppError(..), ReplArg (..))
 
 
 -- Parse address and number of register strings

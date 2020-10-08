@@ -401,7 +401,7 @@ data HeartBeat = HeartBeat
     , hbThreadId :: !ThreadId -- ThreadId
     -- Status : Empty = Ok , SomeException = thread has panicked
     , hbStatus   :: MVar SomeException -- Status : Empty = Ok , SomeException = thread has panicked
-    }
+    } deriving (Eq)
 
 -- Spawns a heartbeat signal thread
 heartBeatSignal :: (MonadIO m, Application m, ModbusClient a, MonadThrow m, MonadMask m)
