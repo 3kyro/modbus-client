@@ -22,11 +22,12 @@ import           Types
 
 data Opt = Opt
     { appMode       :: !AppMode
-    , protocol      :: !Protocol
+    , protocol      :: !ModbusProtocol
     , inputTemplate :: !FilePath
     , outputFile    :: !FilePath
     , ipAddr        :: !IPv4
     , port          :: !Int
+    , serialPort    :: !String
     , byteOrder     :: !ByteOrder
     , uId           :: !Word8
     , timeout       :: !Int
@@ -35,9 +36,6 @@ data Opt = Opt
 data AppMode = AppTemplate
     | AppRepl
     | AppWeb
-
-data Protocol = TCP
-    | RTU
 
 -- | Executes the options parser
 runOpts :: IO Opt
@@ -56,6 +54,7 @@ opt = Opt
     <*> parseOutput
     <*> parseIPAddr
     <*> parsePort
+    <*> parseSerialPort
     <*> parseFloatRepr
     <*> parseUid
     <*> parseTimeout
@@ -77,17 +76,17 @@ parseServer = flag AppTemplate AppWeb
     <> help     "Starts the local web server"
     )
 
-parseProtocol :: Parser Protocol
+parseProtocol :: Parser ModbusProtocol
 parseProtocol = parseTCP <|> parseRTU
 
-parseTCP :: Parser Protocol
-parseTCP = flag TCP TCP
+parseTCP :: Parser ModbusProtocol
+parseTCP = flag ModBusTCP ModBusTCP
     ( long      "TCP"
     <> help     "Starts an TCP Modbus client"
     )
 
-parseRTU :: Parser Protocol
-parseRTU = flag TCP RTU
+parseRTU :: Parser ModbusProtocol
+parseRTU = flag ModBusTCP ModBusRTU
     ( long      "RTU"
     <> help     "Starts an RTU Modbus client"
     )
@@ -125,6 +124,14 @@ parsePort = option auto
     <> metavar  "PORT"
     <> value    5502
     <> help     "Port number of the modbus master"
+    )
+
+parseSerialPort :: Parser String
+parseSerialPort = option auto
+    ( long      "serial"
+    <> metavar  "SERIALPORT"
+    <> value    ""
+    <> help     "Serial Port of MODBUS RTU"
     )
 
 parseFloatRepr :: Parser ByteOrder
