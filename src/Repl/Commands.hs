@@ -11,8 +11,9 @@ import           Control.Monad.Trans              (lift, liftIO)
 import           Control.Monad.Trans.Except       (except)
 import           Control.Monad.Trans.State.Strict (get, put)
 import           Data.List                        (find, uncons)
-import           Data.Maybe                       (catMaybes, fromJust, listToMaybe)
-import           Data.Word                        (Word8, Word16)
+import           Data.Maybe                       (catMaybes, fromJust,
+                                                   listToMaybe)
+import           Data.Word                        (Word16, Word8)
 
 import qualified Network.Modbus.TCP               as MB
 
@@ -21,19 +22,23 @@ import           CsvParser                        (parseCSVFile,
 -- import           Modbus                           (fromFloats, getFloats,
 --                                                    modSession, word2Float)
 
-import           PrettyPrint                      (ppPlaceholderModData, ppError, ppMultModData,
+import           PrettyPrint                      (ppError, ppMultModData,
                                                    ppMultThreadState,
+                                                   ppPlaceholderModData,
                                                    ppRegisters, ppStrWarning,
                                                    ppThreadError, ppUid)
-import           Repl.Error                       (runReplClient, handleReplException,
-                                                   replRunExceptT)
+import           Repl.Error                       (handleReplException,
+                                                   replRunExceptT,
+                                                   runReplClient)
 
 -- import           Repl.Heartbeat                   (heartbeat, listHeartbeat,
 --                                                    stopHeartbeat)
 
 import           Control.Concurrent               (forkIO, putMVar, takeMVar,
                                                    tryReadMVar)
-import           Control.Exception.Safe           (catch, bracket, catchAny)
+import           Control.Exception.Safe           (bracket, catch, catchAny)
+import           Data.Data                        (Proxy (..))
+import           Data.Range                       (fromBounds)
 import           Repl.HelpFun                     (findModByName, getModByName,
                                                    getModByPair, getPairs,
                                                    invalidCmd)
@@ -41,8 +46,6 @@ import           Repl.Parser                      (pReplAddrNum, pReplArg,
                                                    pReplFloat, pReplInt,
                                                    pReplWord)
 import           Types
-import Data.Range (fromBounds)
-import Data.Data (Proxy(..), Proxy)
 
 getCommand :: String -> Command
 getCommand s =
@@ -79,8 +82,8 @@ runReplCommand input =
         ReadInputRegistersFloat -> readRegisters args InputRegister (ModFloat Nothing)
         ReadHoldingRegistersWord -> readRegisters args HoldingRegister (ModWord Nothing)
         ReadHoldingRegistersFloat -> readRegisters args HoldingRegister (ModFloat Nothing)
-        WriteRegistersWord -> writeMultipleRegistersWord args
-        WriteRegistersFloat -> writeMultipleRegistersFloat args
+        WriteRegistersWord -> writeRegisters args HoldingRegister (ModWord Nothing)
+        WriteRegistersFloat -> writeRegisters args HoldingRegister (ModFloat Nothing)
         Read -> readModData args
         Write -> writeModData args
         Heartbeat -> heartbeat args
@@ -142,7 +145,7 @@ replGet = lift get
 replPut :: ReplState -> Repl ()
 replPut  = lift . put
 ------------------------------------------------------------------------------------------
--- Registers
+-- Read Registers
 ------------------------------------------------------------------------------------------
 
 readRegisters :: [String] -> RegType -> ModValue-> Repl ()
@@ -171,10 +174,68 @@ replReadRegisters addrStr numStr regType mv uid = do
     md <- replRunExceptT (except moddata) []
     replReadModData md
 
+
 getAddresses :: (Word16, Word16) -> Word16 -> [Word16]
-getAddresses (start , 0) _ = [start]
+getAddresses (_ , 0) _ = []
 getAddresses (start, num) mult =
     start : getAddresses (start + mult, num  - 1) mult
+
+-- Reads a ModData from the server
+replReadModData :: [ModData] -> Repl [ModData]
+replReadModData mds = do
+    state <- replGet
+    let protocol = replProtocol state
+    tpu <- replGetTPU
+    let order = replByteOrder state
+    let proxy = Proxy :: Proxy Client
+    let sessions = map (readMBRegister proxy protocol tpu order) mds
+    let worker = replBatchWorker state
+    let client = replClient state
+    maybemdata <- runReplClient $ mapM (runClient worker client) sessions
+    mdata' <- replRunExceptT (except maybemdata) []
+    return $ catMaybes mdata'
+
+------------------------------------------------------------------------------------------
+-- Write Registers
+------------------------------------------------------------------------------------------
+
+writeRegisters :: [String] -> RegType -> ModValue-> Repl ()
+writeRegisters args rt mv = do
+    let mPairs = getPairs args
+    case mPairs of
+        Nothing -> invalidCmd
+        Just pairs -> do
+            state <- replGet
+            let uid = replUId state
+            let addrValuePairs = map (getAddressModValue mv) pairs
+            addrValuePairs' <- replRunExceptT (mapM except addrValuePairs) []
+            let mds = map (\(addr, value) -> createModData rt addr value uid) addrValuePairs'
+            replWriteModData mds
+writeRegisters _ _ _ = invalidCmd
+
+getAddressModValue :: ModValue -> (String, String) -> Either AppError (Word16, ModValue)
+getAddressModValue  mv (addr, value) = do
+    address <- pReplWord addr
+    modvalue <- case mv of
+            ModWord _ -> ModWord . Just <$> pReplWord value
+            ModFloat _ -> ModFloat . Just <$> pReplFloat value
+    return (address, modvalue)
+
+-- Write a ModData to the server
+-- Return the number of ModData written
+replWriteModData :: [ModData] -> Repl ()
+replWriteModData mds = do
+    state <- replGet
+    let protocol = replProtocol state
+    tpu <- replGetTPU
+    let order = replByteOrder state
+    let proxy = Proxy :: Proxy Client
+    let sessions = map (writeMBRegister proxy protocol tpu order) mds
+    let worker = replBatchWorker state
+    let client = replClient state
+    maybemdata <- runReplClient $ mapM (runClient worker client) sessions
+    replRunExceptT (except maybemdata) []
+    return ()
 
 ------------------------------------------------------------------------------------------
 -- HeartBeat
@@ -316,20 +377,7 @@ replExport [filename] = do
     return ()
 replExport _ = invalidCmd
 
--- Reads a ModData from the server
-replReadModData :: [ModData] -> Repl [ModData]
-replReadModData mds = do
-    state <- replGet
-    let protocol = replProtocol state
-    tpu <- replGetTPU
-    let order = replByteOrder state
-    let proxy = Proxy :: Proxy Client
-    let exportSessions = map (readMBRegister proxy protocol tpu order) mds
-    let worker = replBatchWorker state
-    let client = replClient state
-    maybemdata <- runReplClient $ mapM (runClient worker client) exportSessions
-    mdata' <- replRunExceptT (except maybemdata) []
-    return $ catMaybes mdata'
+
 
 ------------------------------------------------------------------------------------------
 -- TODO
@@ -365,20 +413,7 @@ replGetTPU = do
 --     response <- mapM readMod mds
 --     liftIO $ ppMultModData response
 
--- writeModData :: [String] -> Repl ()
--- writeModData [] = invalidCmd
--- writeModData args = do
---     mdata <- replModData <$> lift get
---     let mPairs = getPairs args
---     case mPairs of
---         Nothing -> invalidCmd
---         Just pairs -> do
---             let wrapped = except $ getModByPair pairs mdata
---             mds <- replRunExceptT wrapped []
---             written <- mapM writeMod mds
---             liftIO $ putStrLn $ show (sum written) ++ " value(s) written"
---             readback <- mapM readMod mds
---             liftIO $ ppMultModData readback
+
 
 
 replId :: [String] -> Repl ()
@@ -394,40 +429,6 @@ replId [uid] = do
                 lift $ put (state {replUId = newid})
                 liftIO $ ppUid newid
 replId _ = invalidCmd
-
--- -- Write a ModData to the server
--- -- Return the number of ModData written
--- writeMod :: ModData -> Repl Word16
--- writeMod md = do
---     let address = modAddress md
---     let modVal = modValue md
---     let regType = modRegType md
---     case regType of
---         HoldingRegister -> writeModType modVal address
---         _ -> do
---             liftIO $ ppStrWarning $
---                     "Invalid register type for value: "
---                     ++ modName md
---             return 0
-  -- Write a ModValue to the modbus server.
--- -- Return the number of items written
--- writeModType :: ModValue -> Word16 -> Repl Word16
--- writeModType value address = do
---     connection <- replConn <$> replAsk
---     uid <- replUId <$> lift get
---     let addr = Address address
---     case value of
---         ModWord (Just word) -> do
---             tid <- incrementTransactionid
---             let writeSession = runReplSession connection $ MB.writeMultipleRegisters tid 0 (MB.UnitId uid) addr [word]
---             replRunExceptT writeSession 0
---         ModFloat (Just float) -> do
---             tid <- incrementTransactionid
---             let ordWords = fromFloats [floa --             let writeSession = runReplSession connection $ MB.writeMultipleRegisters tid 0 (MB.UnitId uid) addr ordWords
---             wordsWritten <- replRunExceptT writeSession 0
---             return $ wordsWritten `div` 2
---         _ -> return 0
-
 
 
 

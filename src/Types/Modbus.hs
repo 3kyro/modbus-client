@@ -64,7 +64,7 @@ module Types.Modbus
 import           Control.Concurrent         (MVar, ThreadId, forkFinally,
                                              newEmptyMVar, putMVar, takeMVar,
                                              threadDelay)
-import           Control.Exception.Safe     (MonadMask, MonadThrow,
+import           Control.Exception.Safe     (MonadMask, MonadThrow, throwM,
                                              SomeException, bracket, throw, try)
 import           Control.Monad.Trans        (MonadIO, liftIO)
 import           Data.Aeson                 (FromJSON (..), ToJSON (..),
@@ -94,7 +94,7 @@ import           Control.Concurrent.STM     (TVar, atomically, modifyTVar',
 import qualified System.Hardware.Serialport as SP
 import qualified System.Timeout             as TM
 import Data.Data (Proxy)
-
+import Control.Monad.Catch (throwM)
 
 
 ---------------------------------------------------------------------------------------------------------------
@@ -136,8 +136,9 @@ class ModbusClient a where
         -> ByteOrder
         -> b
         -> Session m (Maybe b)
-    writeMBRegister :: (MonadIO m, MonadThrow m, MBRegister b, MonadThrow (Session m))
-        => ModbusProtocol
+    writeMBRegister :: (MonadIO m, MonadThrow m, MBRegister b)
+        => Proxy a
+        -> ModbusProtocol
         -> TransactionInfo
         -> ByteOrder
         -> b
@@ -201,7 +202,7 @@ instance ModbusClient Client where
             ModBusRTU -> RTUSession (RTU.readHoldingRegisters (RTU.UnitId $ getUID tpu) range)
         range = registerAddress reg
 
-    writeMBRegister protocol tpu bo reg =
+    writeMBRegister _ protocol tpu bo reg =
         case registerType reg of
             InputRegister -> throw $ MB.OtherException "Non writable Register Type"
             HoldingRegister -> write
@@ -252,6 +253,17 @@ data Worker m = RTUWorker (RTU.Worker m)
 data Session m a = RTUSession (RTU.Session m a)
     | TCPSession (TCP.Session m a)
     deriving (Functor)
+
+instance Applicative (Session m) where
+    pure = pure
+    (<*>) = (<*>)
+
+instance Monad (Session m) where
+    return = pure
+    (>>=) = (>>=)
+
+instance MonadThrow (Session m) where
+    throwM = throw
 ---------------------------------------------------------------------------------------------------------------
 -- TransactionInfo
 ---------------------------------------------------------------------------------------------------------------
