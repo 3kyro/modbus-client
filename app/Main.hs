@@ -14,63 +14,96 @@ import qualified System.Hardware.Serialport as SP
 import           OptParser                  (AppMode (..), Opt (..), runOpts)
 import           Repl                       (runRepl)
 -- import           Server               (runServer)
-import           Types                      (ByteOrder, Client (..), ModData,
-                                             ModbusProtocol (..),
+import           CsvParser                  (parseCSVFile)
+import           Data.Data                  (Proxy (..))
+import           Data.IP                    (IPv4)
+import           Data.Maybe                 (catMaybes)
+import qualified Data.Text.IO               as T
+import           PrettyPrint                (ppError)
+import           Types                      (ByteOrder, Client (..), Config,
+                                             ModData, ModbusProtocol (..),
                                              ReplState (ReplState), Worker (..),
-                                             getAddr, initTID)
+                                             getAddr, getNewTID, initTID,
+                                             readMBRegister, runClient,
+                                             serializeModData)
 
 
 main :: IO ()
 main = runApp =<< runOpts
 
--- getConfig :: Protocol -> Int -> IO Config
--- getConfig protocol timeout =
---     case protocol of
---         TCP -> tcpInit
---         RTU -> rtuInit
-
--- tcpInit :: Int -> IO Config
--- tcpInit timeout = do
-
-
-
 runApp :: Opt -> IO ()
-runApp (Opt mode prot input output ip portNum serial order uid tm) =
+runApp (Opt mode prot input output ip portNum serial order uid tm)
+ =
     case mode of
-        -- AppTemplate -> runAppTemplate input
-        AppTemplate -> undefined
+        AppTemplate -> runAppTemplate prot input output ip portNum serial order tm
         AppRepl     -> case prot of
             ModBusTCP -> runTCPReplApp (getAddr ip portNum) tm order [] uid
             ModBusRTU -> runRTUReplApp serial tm order [] uid
         -- AppWeb -> runServer ip portNum order tm
         AppWeb      -> undefined
 
--- runAppTemplate :: FilePath -> IO ()
--- runAppTemplate protocol path = do
---     parseResult <- parseCSVFile input
---     case parseResult of
---         Left err -> ppError err
---         Right md' -> do
---             rsp <- case protocol of
---                 TCP -> runTCPTemplateApp (getAddr ip portNum) tm order md'
---                 RTU -> undefined
---             T.writeFile output (serializeModData resp)
+runAppTemplate :: ModbusProtocol        -- Protocol
+               -> FilePath              -- Input File
+               -> FilePath              -- Output File
+               -> IPv4                  -- IP
+               -> Int                   -- Port Number
+               -> String                -- Serial Port
+               -> ByteOrder             -- Byte Order
+               -> Int                   -- Timeout
+               -> IO ()
+runAppTemplate prot input output ip portNum serial order tm = do
+    parseResult <- parseCSVFile input
+    case parseResult of
+        Left err -> ppError err
+        Right md' -> do
+            rsp <- case prot of
+                ModBusTCP -> runTCPTemplateApp (getAddr ip portNum) prot order tm md'
+                ModBusRTU -> runRTUTemplateApp serial prot order tm md'
+            T.writeFile output (serializeModData rsp)
 
--- runTCPTemplateApp :: S.SockAddr -> Int -> ByteOrder -> [ModData] -> IO [ModData]
--- runTCPTemplateApp addr tm order md =
---     withSocket addr $ \s -> do
---             config <- getTCPConfig s tm
---             resp <- runExceptT $ MB.runSession (modbusConnection s tm) (modSession md order)
---             case resp of
---                 Left err    -> fail $ "Modbus error: " ++ show err
---                 Right resp' -> return resp'
+runTCPTemplateApp :: S.SockAddr         -- Socket Address
+                  -> ModbusProtocol     -- Protocol
+                  -> ByteOrder          -- Byte Order
+                  -> Int                -- Timeout
+                  -> [ModData]
+                  -> IO [ModData]
+runTCPTemplateApp addr prot order tm mds =
+    withSocket addr $ \s -> do
+            client <- newMVar $ Client (configTCP tm s)
+            inittid <- initTID
+            tid <- getNewTID inittid
+            let proxy = Proxy :: Proxy Client
+            let sessions = map (readMBRegister proxy prot tid order) mds
+            resp <- mapM (runClient (TCPWorker $ TCP.batchWorker TCP.defaultBatchConfig) client) sessions
+            let validmds = catMaybes  resp
+            if length validmds == length mds
+            then return validmds
+            else fail "Error while reading MODBUS registers"
 
+runRTUTemplateApp :: String      -- Socket Address
+                  -> ModbusProtocol     -- Protocol
+                  -> ByteOrder          -- Byte Order
+                  -> Int                -- Timeout
+                  -> [ModData]
+                  -> IO [ModData]
+runRTUTemplateApp serial prot order tm mds =
+    withSerialPort serial $ \s -> do
+            client <- newMVar $ Client (configRTU tm s)
+            inittid <- initTID
+            tid <- getNewTID inittid
+            let proxy = Proxy :: Proxy Client
+            let sessions = map (readMBRegister proxy prot tid order) mds
+            resp <- mapM (runClient (RTUWorker $ RTU.batchWorker RTU.defaultBatchConfig) client) sessions
+            let validmds = catMaybes  resp
+            if length validmds == length mds
+            then return validmds
+            else fail "Error while reading MODBUS registers"
 
 -- Run the application's REPL
 runTCPReplApp :: S.SockAddr -> Int -> ByteOrder -> [ModData] -> Word8 -> IO ()
 runTCPReplApp addr tm order mdata uid =
     withSocket addr $ \s -> do
-        client <- newMVar $ Client (config s)
+        client <- newMVar $ Client (configTCP tm s)
         tid <- initTID
         runRepl ( ReplState
             client
@@ -83,8 +116,10 @@ runTCPReplApp addr tm order mdata uid =
             []
             tid
             )
-  where
-      config s = MB.Config
+
+configTCP :: Int -> S.Socket -> Config
+configTCP tm s  =
+    MB.Config
         { TCP.cfgWrite = S.send s
         , TCP.cfgRead = S.recv s 4096
         , TCP.cfgCommandTimeout = tm * 1000
@@ -104,11 +139,10 @@ connectTCP addr = do
     putStrLn "connected"
     return s
 
-
 runRTUReplApp :: String -> Int -> ByteOrder -> [ModData] -> Word8 -> IO ()
 runRTUReplApp serial tm order mdata uid =
     withSerialPort serial $ \s -> do
-        client <- newMVar $ Client (config s)
+        client <- newMVar $ Client (configRTU tm s)
         tid <- initTID
         runRepl ( ReplState
             client
@@ -121,16 +155,18 @@ runRTUReplApp serial tm order mdata uid =
             []
             tid
             )
-  where
-      config s = MB.Config
-        { RTU.cfgWrite = SP.send s
-        , RTU.cfgRead = SP.recv s 4096
-        , RTU.cfgCommandTimeout = tm * 1000
-        , RTU.cfgRetryWhen = const . const False
-        , RTU.cfgEnableBroadcasts = False
+
+configRTU :: Int -> SP.SerialPort -> Config
+configRTU tm s  =
+    MB.Config
+        { TCP.cfgWrite = SP.send s
+        , TCP.cfgRead = SP.recv s 4096
+        , TCP.cfgCommandTimeout = tm * 1000
+        , TCP.cfgRetryWhen = const . const False
+        , TCP.cfgEnableBroadcasts = False
         }
 
-withSerialPort :: String -> (SP.SerialPort -> IO ()) -> IO ()
+withSerialPort :: String -> (SP.SerialPort -> IO a )-> IO a
 withSerialPort s = bracket (connectRTU s) SP.closeSerial
 
 connectRTU :: String -> IO SP.SerialPort
