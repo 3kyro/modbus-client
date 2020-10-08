@@ -6,9 +6,13 @@ module Repl.Commands
     , list
     ) where
 
+import           Control.Concurrent               (killThread, tryReadMVar)
+import           Control.Exception.Safe           (try)
 import           Control.Monad.Trans              (lift, liftIO)
-import           Control.Monad.Trans.Except       (runExceptT, ExceptT, except)
+import           Control.Monad.Trans.Except       (ExceptT, except, runExceptT)
 import           Control.Monad.Trans.State.Strict (get, put)
+import           Data.Data                        (Proxy (..))
+import           Data.Either.Combinators          (mapLeft)
 import           Data.List                        (delete, find, uncons)
 import           Data.Maybe                       (catMaybes, fromJust)
 import           Data.Word                        (Word16, Word8)
@@ -16,20 +20,11 @@ import           Data.Word                        (Word16, Word8)
 
 import           CsvParser                        (parseCSVFile,
                                                    serializeCSVFile)
--- import           Modbus                           (fromFloats, getFloats,
---                                                    modSession, word2Float)
-
 import           PrettyPrint                      (ppError, ppMultModData,
                                                    ppMultThreadState,
-                                                   ppPlaceholderModData, ppStrWarning,
-                                                   ppThreadError, ppUid)
-
--- import           Repl.Heartbeat                   (heartbeat, listHeartbeat,
---                                                    stopHeartbeat)
-
-import           Control.Concurrent               (killThread,
-                                                   tryReadMVar)
-import           Data.Data                        (Proxy (..))
+                                                   ppPlaceholderModData,
+                                                   ppStrWarning, ppThreadError,
+                                                   ppUid)
 import           Repl.HelpFun                     (findModByName, getModByName,
                                                    getModByPair, getPairs,
                                                    invalidCmd)
@@ -37,8 +32,6 @@ import           Repl.Parser                      (pReplAddrNum, pReplArg,
                                                    pReplFloat, pReplInt,
                                                    pReplWord)
 import           Types
-import Control.Exception.Safe (try)
-import Data.Either.Combinators (mapLeft)
 
 getCommand :: String -> Command
 getCommand s =
@@ -61,7 +54,6 @@ getCommand s =
 
 -- Top level command function
 cmd :: String -> Repl ()
--- cmd input = catchAny (runReplCommand input) handleReplException
 cmd = runReplCommand
 
 -- Top level command function
@@ -104,6 +96,7 @@ commandsCompl = [
     , "id"
     ]
 
+-- list availiable commands
 list :: a -> Repl ()
 list _ = liftIO $ do
         putStrLn "List of commands:"
@@ -193,7 +186,7 @@ getAddressModValue :: ModValue -> (String, String) -> Either AppError (Word16, M
 getAddressModValue  mv (addr, value) = do
     address <- pReplWord addr
     modvalue <- case mv of
-            ModWord _ -> ModWord . Just <$> pReplWord value
+            ModWord _  -> ModWord . Just <$> pReplWord value
             ModFloat _ -> ModFloat . Just <$> pReplFloat value
     return (address, modvalue)
 
@@ -406,7 +399,6 @@ replExport _ = invalidCmd
 -- Runs an ExceptT, returning a default value in case of AppError
 replRunExceptT :: ExceptT AppError IO a -> a -> Repl a
 replRunExceptT ex rt = do
-
     unwrapped <- liftIO $ runExceptT ex
     case unwrapped of
         Left err -> liftIO $ ppError err >> return rt
@@ -414,7 +406,6 @@ replRunExceptT ex rt = do
 
 runReplClient :: IO a -> Repl (Either AppError a)
 runReplClient action = liftIO $ mapLeft AppModbusError <$> try action
-
 
 replGet :: Repl ReplState
 replGet = lift get
