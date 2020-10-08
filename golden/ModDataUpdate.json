@@ -1,0 +1,80 @@
+{
+    "seed": 5964207273362833124,
+    "samples": [
+        {
+            "modData": {
+                "register value": {
+                    "value": null,
+                    "type": "float"
+                },
+                "uid": 0,
+                "address": 23591,
+                "register type": "holding register",
+                "name": "pFY",
+                "description": "Gf"
+            },
+            "selected": true,
+            "rw": "read"
+        },
+        {
+            "modData": {
+                "register value": {
+                    "value": null,
+                    "type": "word"
+                },
+                "uid": 122,
+                "address": 13639,
+                "register type": "coil",
+                "name": "rgUvK9RlzrIImVKnwXj",
+                "description": "kuSUhaMQD:vYw"
+            },
+            "selected": true,
+            "rw": "write"
+        },
+        {
+            "modData": {
+                "register value": {
+                    "value": 23.568962,
+                    "type": "float"
+                },
+                "uid": 86,
+                "address": 12758,
+                "register type": "coil",
+                "name": "f6jAotVjMICdzfw3DNLSFtMjlUdqtLm0FgjACXQTGRh9gguWXAg",
+                "description": "&KKCçMfpçèeke"
+            },
+            "selected": true,
+            "rw": "write"
+        },
+        {
+            "modData": {
+                "register value": {
+                    "value": null,
+                    "type": "word"
+                },
+                "uid": 207,
+                "address": 23355,
+                "register type": "coil",
+                "name": "T2HuZfBeMqE7KcG",
+                "description": "DcNoJ&dZ"
+            },
+            "selected": true,
+            "rw": "write"
+        },
+        {
+            "modData": {
+                "register value": {
+                    "value": -4.5442905,
+                    "type": "float"
+                },
+                "uid": 244,
+                "address": 13611,
+                "register type": "input register",
+                "name": "YtvSo6fvnsD",
+                "description": "$aBHS:à&wQEClZkeKWc:ZyVWR"
+            },
+            "selected": false,
+            "rw": "write"
+        }
+    ]
+}

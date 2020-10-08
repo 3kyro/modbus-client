@@ -8,6 +8,7 @@ module Types.ModData
     , NameArb (..)
     , getModValueMult
     , serializeModData
+    , serializeModDatum
     , ModDataUpdate (..)
     , ReadWrite (..)
     ,setMDUModValue)

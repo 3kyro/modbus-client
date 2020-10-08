@@ -125,6 +125,7 @@ writeMultipleRegistersWord = undefined
 writeMultipleRegistersFloat = undefined
 stopHeartbeat = undefined
 
+readModData = undefined
 
 readRegistersWord = undefined
 readRegistersFloat = undefined
