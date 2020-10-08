@@ -94,7 +94,6 @@ import           Control.Concurrent.STM     (TVar, atomically, modifyTVar',
 import qualified System.Hardware.Serialport as SP
 import qualified System.Timeout             as TM
 import Data.Data (Proxy)
-import Control.Monad.Catch (throwM)
 
 
 ---------------------------------------------------------------------------------------------------------------
@@ -203,13 +202,16 @@ instance ModbusClient Client where
         range = registerAddress reg
 
     writeMBRegister _ protocol tpu bo reg =
-        case registerType reg of
-            InputRegister -> throw $ MB.OtherException "Non writable Register Type"
-            HoldingRegister -> write
+        case protocol of
+            ModBusTCP ->
+                TCPSession $ case registerType reg of
+                    InputRegister -> throw $ MB.OtherException "Non writable Register Type"
+                    HoldingRegister -> TCP.writeMultipleRegisters (getTPU tpu) address values
+            ModBusRTU ->
+                RTUSession $ case registerType reg of
+                    InputRegister -> throw $ MB.OtherException "Non writable Register Type"
+                    HoldingRegister -> RTU.writeMultipleRegisters (RTU.UnitId $ getUID tpu) address values
       where
-        write = case protocol of
-            ModBusTCP -> TCPSession (TCP.writeMultipleRegisters (getTPU tpu) address values)
-            ModBusRTU -> RTUSession (RTU.writeMultipleRegisters (RTU.UnitId $ getUID tpu) address values)
         values = registerToWord16 bo reg
         address = begin $ registerAddress reg
 
@@ -254,16 +256,6 @@ data Session m a = RTUSession (RTU.Session m a)
     | TCPSession (TCP.Session m a)
     deriving (Functor)
 
-instance Applicative (Session m) where
-    pure = pure
-    (<*>) = (<*>)
-
-instance Monad (Session m) where
-    return = pure
-    (>>=) = (>>=)
-
-instance MonadThrow (Session m) where
-    throwM = throw
 ---------------------------------------------------------------------------------------------------------------
 -- TransactionInfo
 ---------------------------------------------------------------------------------------------------------------
@@ -417,19 +409,22 @@ heartBeatSignal :: (MonadIO m, Application m, ModbusClient a, MonadThrow m, Mona
     -> Int              -- HeartBeat signal period in ms
     -> Worker m         -- Worker to execute the session
     -> MVar a           -- Client configuration
-    -> TransactionInfo  -- Session's transaction info
+    -> Word8
+    -> TVar TID
     -> Address          -- HeartBeat signal register address
     -> m HeartBeat
-heartBeatSignal protocol interval worker clientMVar tpu address = do
+heartBeatSignal protocol interval worker clientMVar uid tid address = do
     status <- liftIO newEmptyMVar
     threadid <- liftIO $ forkFinally (execApp $ thread address 0) (finally status)
     return $ HeartBeat address interval threadid status
   where
     thread address' acc = do
         liftIO $ threadDelay interval
+        tid' <- liftIO $ getNewTID tid
+        let tpu' = setTPU uid tid'
         let session = case protocol of
-                ModBusTCP -> TCPSession (TCP.writeSingleRegister (getTPU tpu) address acc)
-                ModBusRTU -> RTUSession (RTU.writeSingleRegister (RTU.UnitId $ getUID tpu) address acc)
+                ModBusTCP -> TCPSession (TCP.writeSingleRegister (getTPU tpu') address acc)
+                ModBusRTU -> RTUSession (RTU.writeSingleRegister (RTU.UnitId uid) address acc)
         runClient worker clientMVar session
         thread address' (acc + 1)
     finally status terminationStatus =

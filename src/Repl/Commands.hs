@@ -266,10 +266,11 @@ startHeartbeat (addr, timer)
             state <- replGet
             let worker = replDirectWorker state
             let client = replClient state
-            tpu <- replGetTPU
+            let uid = replUId state
+            let tid = replTransactionId state
             let address = Address addr
             let protocol = replProtocol state
-            heart <- liftIO $ heartBeatSignal protocol timer worker client tpu address
+            heart <- liftIO $ heartBeatSignal protocol timer worker client uid tid address
             putHeartBeat heart
 
 -- Put the provided heartbeat in the pool
