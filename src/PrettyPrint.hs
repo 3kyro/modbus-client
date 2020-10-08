@@ -12,7 +12,7 @@ module PrettyPrint
     , ppUid
     , ppMultThreadState
     , ppThreadError
-    )
+    ,ppPlaceholderModData)
     where
 
 import           Control.Exception   (SomeException)
@@ -90,7 +90,6 @@ ppMultModData mds = do
     mapM_ (ppModData width) mds
 
 ppRegisters :: RegType -> [(Word16, ModValue)] -> IO ()
-
 ppRegisters rt mvs = do
     width <- ppGetTerminalWidth
     let dashes = replicate width '-'
@@ -107,6 +106,21 @@ ppRegister (address, mv) = do
     putStr $ show address ++ "\t"
     ppAndReset "Value: " Blue
     print mv
+
+ppPlaceholderModData :: [ModData] -> IO ()
+ppPlaceholderModData mds = do
+    width <- ppGetTerminalWidth
+    let dashes = replicate width '-'
+    ppAndResetLn dashes Magenta
+    mapM_ ppPlaceholderModDatum mds
+    ppAndResetLn dashes Magenta
+
+ppPlaceholderModDatum :: ModData -> IO ()
+ppPlaceholderModDatum md = do
+    ppAndReset "@address: " Blue
+    putStr $ show (modAddress md) ++ "\t"
+    ppAndReset "Value: " Blue
+    print $ modValue md
 
 ppUid :: Word8 -> IO ()
 ppUid w = do

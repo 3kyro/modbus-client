@@ -12,7 +12,7 @@ import           Control.Monad.Trans.Except       (except)
 import           Control.Monad.Trans.State.Strict (get, put)
 import           Data.List                        (find, uncons)
 import           Data.Maybe                       (catMaybes, fromJust, listToMaybe)
-import           Data.Word                        (Word16)
+import           Data.Word                        (Word8, Word16)
 
 import qualified Network.Modbus.TCP               as MB
 
@@ -21,7 +21,7 @@ import           CsvParser                        (parseCSVFile,
 -- import           Modbus                           (fromFloats, getFloats,
 --                                                    modSession, word2Float)
 
-import           PrettyPrint                      (ppError, ppMultModData,
+import           PrettyPrint                      (ppPlaceholderModData, ppError, ppMultModData,
                                                    ppMultThreadState,
                                                    ppRegisters, ppStrWarning,
                                                    ppThreadError, ppUid)
@@ -75,10 +75,10 @@ runReplCommand input =
   let
     (str, args) = (fromJust . uncons . words) input
   in case getCommand str of
-        ReadInputRegistersWord -> readRegistersWord InputRegister args
-        ReadInputRegistersFloat -> readRegistersFloat InputRegister args
-        ReadHoldingRegistersWord -> readRegistersWord HoldingRegister args
-        ReadHoldingRegistersFloat -> readRegistersFloat HoldingRegister args
+        ReadInputRegistersWord -> readRegisters args InputRegister (ModWord Nothing)
+        ReadInputRegistersFloat -> readRegisters args InputRegister (ModFloat Nothing)
+        ReadHoldingRegistersWord -> readRegisters args HoldingRegister (ModWord Nothing)
+        ReadHoldingRegistersFloat -> readRegisters args HoldingRegister (ModFloat Nothing)
         WriteRegistersWord -> writeMultipleRegistersWord args
         WriteRegistersFloat -> writeMultipleRegistersFloat args
         Read -> readModData args
@@ -127,8 +127,7 @@ stopHeartbeat = undefined
 
 readModData = undefined
 
-readRegistersWord = undefined
-readRegistersFloat = undefined
+-- readRegistersWord = undefined
 
 writeModData = undefined
 
@@ -146,62 +145,37 @@ replPut  = lift . put
 -- Registers
 ------------------------------------------------------------------------------------------
 
--- readRegistersWord :: RegType -> [String] -> Repl ()
--- readRegistersWord rt [address, number] = do
---     let f = getReadFunction rt
---     response <- replReadRegisters address number (ModWord Nothing) f
---     if null response
---     then return ()
---     else do
---         let zipFun = (,) <$> fst <*> (ModWord . Just . snd)
---         let zips = zipFun <$> response
---         liftIO $ ppRegisters rt zips
--- readRegistersWord _ _ = invalidCmd
+readRegisters :: [String] -> RegType -> ModValue-> Repl ()
+readRegisters [address, number] rt mv = do
+    state <- replGet
+    let uid = replUId state
+    response <- replReadRegisters address number rt mv uid
+    liftIO $ ppPlaceholderModData response
+readRegisters _ _ _ = invalidCmd
 
--- readRegistersFloat :: RegType -> [String] -> Repl ()
--- readRegistersFloat rt [address, number] = do
---     order <- replOrd <$> replAsk
---     let f = getReadFunction rt
---     response <- replReadRegisters address number (ModFloat Nothing) f
---     if null response
---     then return ()
---     else do
---         let floats = getFloats order (map snd response)
---         let zips = zip (incrBy2 (fst (head response))) (toModFloat floats)
---         liftIO $ ppRegisters rt zips
---   where
---     incrBy2 = iterate (+2)
---     toModFloat xs = ModFloat . Just <$> xs
--- readRegistersFloat _ _ = invalidCmd
+-- Parses the address and number of registers strings and
+-- invokes the correct modbus read function
+replReadRegisters :: String     -- Address
+                  -> String     -- Number of registers
+                  -> RegType    -- Register Type
+                  -> ModValue   -- Word16 per value multiplier
+                  -> Word8      -- Unit Id
+                  -> Repl [ModData]
+replReadRegisters addrStr numStr regType mv uid = do
+    let moddata = do
+            (addr, num) <- pReplAddrNum addrStr numStr
+            return $
+                    map
+                    (\address -> createModData regType address mv uid)
+                    $ getAddresses (addr,num) (getModValueMult mv)
+    md <- replRunExceptT (except moddata) []
+    replReadModData md
 
--- -- Parses the address and number of registers strings and
--- -- invokes the correct modbus read function
--- replReadRegisters :: String     -- Address
---                   -> String     -- Number of registers
---                   -> RegType    -- Register Type
---                   -> Int        -- Word16 per value multiplier
---                   -> Repl [(Word16, Word16)]
--- replReadRegisters addrStr numStr regType mult = do
---     let wrapped = do
---         (addr, num) <- pReplAddrNum addrStr numStr
---         let range = fromBounds addr (num * mult)
---         let session = case regType of
---                 InputRegister -> readInputRegisters protocol tpu range
---                 HoldingRegister -> readHoldingRegisters protocol tpu range
---         runReplClient $ runClient worker client session
+getAddresses :: (Word16, Word16) -> Word16 -> [Word16]
+getAddresses (start , 0) _ = [start]
+getAddresses (start, num) mult =
+    start : getAddresses (start + mult, num  - 1) mult
 
---     liftIO $ putStrLn $ "Reading " ++ show num ++ " register(s) from address " ++ show addr
---     mvs <- runReplSession connection $ f tid 0 (MB.UnitId uid) (Address addr) (mult * num)
---     return $ zip [addr..] mvs
-
-
-
--- -- get the proper modbus read function
--- getReadFunction :: RegType -> ReadRegsFun
--- getReadFunction rt = case rt of
---     InputRegister   -> MB.readInputRegisters
---     HoldingRegister -> MB.readHoldingRegisters
---     _               -> undefined
 ------------------------------------------------------------------------------------------
 -- HeartBeat
 ------------------------------------------------------------------------------------------
@@ -337,14 +311,14 @@ replExport [] = liftIO $ do
 replExport [filename] = do
     state <- replGet
     let mdata = replModData state
-    mdata' <- replReeadModData mdata
+    mdata' <- replReadModData mdata
     liftIO $ serializeCSVFile filename mdata'
     return ()
 replExport _ = invalidCmd
 
 -- Reads a ModData from the server
-replReeadModData :: [ModData] -> Repl [ModData]
-replReeadModData mds = do
+replReadModData :: [ModData] -> Repl [ModData]
+replReadModData mds = do
     state <- replGet
     let protocol = replProtocol state
     tpu <- replGetTPU

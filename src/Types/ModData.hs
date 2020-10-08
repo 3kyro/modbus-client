@@ -11,7 +11,7 @@ module Types.ModData
     , serializeModDatum
     , ModDataUpdate (..)
     , ReadWrite (..)
-    ,setMDUModValue)
+    ,setMDUModValue,createModData)
     where
 
 import           Data.Aeson
@@ -22,7 +22,7 @@ import           Test.QuickCheck (Arbitrary, arbitrary, elements, frequency,
 import           Types.Modbus    (Address (..), MBRegister (..), RegType (..),
                                   float2Word16, serializeRegType, word16ToFloat)
 
-import           Data.Range      (fromSize, fromBounds)
+import           Data.Range      (fromSize)
 import qualified Data.Text       as T
 
 ---------------------------------------------------------------------------------------------------------------
@@ -235,6 +235,15 @@ instance Arbitrary NameArb where
         rest = (7, (:) <$> nameValidChars <*> (unNA <$> go))
         nameValidChars = elements $ ['a'..'z'] ++ ['A'..'Z'] ++ ['0'..'9'] ++ "_"
 
+createModData :: RegType -> Word16 -> ModValue -> Word8 -> ModData
+createModData regtype address mv uid =
+    ModData
+        "placeholder"
+        regtype
+        address
+        mv
+        uid
+        (T.pack "placeholder description")
 
 getModValueMult :: ModValue -> Word16
 getModValueMult (ModWord _)  = 1
