@@ -155,10 +155,10 @@ replReadModData :: [ModData] -> Repl [ModData]
 replReadModData mds = do
     state <- replGet
     let protocol = replProtocol state
-    tpu <- replGetTPU
+    tid <- replGetTID
     let order = replByteOrder state
     let proxy = Proxy :: Proxy Client
-    let sessions = map (readMBRegister proxy protocol tpu order) mds
+    let sessions = map (readMBRegister proxy protocol tid order) mds
     let worker = replBatchWorker state
     let client = replClient state
     maybemdata <- runReplClient $ mapM (runClient worker client) sessions
@@ -208,10 +208,10 @@ replWriteModData :: [ModData] -> Repl ()
 replWriteModData mds = do
     state <- replGet
     let protocol = replProtocol state
-    tpu <- replGetTPU
+    tid <- replGetTID
     let order = replByteOrder state
     let proxy = Proxy :: Proxy Client
-    let sessions = map (writeMBRegister proxy protocol tpu order) mds
+    let sessions = map (writeMBRegister proxy protocol tid order) mds
     let worker = replBatchWorker state
     let client = replClient state
     maybemdata <- runReplClient $ mapM (runClient worker client) sessions
@@ -413,12 +413,10 @@ replGet = lift get
 replPut :: ReplState -> Repl ()
 replPut  = lift . put
 
-replGetTPU :: Repl TPU
-replGetTPU = do
+replGetTID :: Repl TID
+replGetTID = do
     state <- replGet
-    let uid = replUId state
-    tid <- liftIO $ getNewTID $ replTransactionId state
-    return $ setTPU uid tid
+    liftIO $ getNewTID $ replTransactionId state
 
 replId :: [String] -> Repl ()
 replId [] = do

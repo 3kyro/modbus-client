@@ -131,14 +131,14 @@ class ModbusClient a where
     readMBRegister :: (MonadIO m, MonadThrow m, MBRegister b)
         => Proxy a
         -> ModbusProtocol
-        -> TransactionInfo
+        -> TID
         -> ByteOrder
         -> b
         -> Session m (Maybe b)
     writeMBRegister :: (MonadIO m, MonadThrow m, MBRegister b)
         => Proxy a
         -> ModbusProtocol
-        -> TransactionInfo
+        -> TID
         -> ByteOrder
         -> b
         -> Session m ()
@@ -184,7 +184,7 @@ instance ModbusClient Client where
     writeMultipleRegisters ModBusTCP tpu address values = TCPSession (TCP.writeMultipleRegisters (getTPU tpu) address values)
     writeMultipleRegisters ModBusRTU tpu address values = RTUSession (RTU.writeMultipleRegisters (RTU.UnitId $ getUID tpu) address values)
 
-    readMBRegister _ protocol tpu bo reg =
+    readMBRegister _ protocol tid bo reg =
         case registerType reg of
             InputRegister -> do
                 let rlt = readInput
@@ -194,25 +194,28 @@ instance ModbusClient Client where
                 registerFromWord16 bo reg <$> rlt
       where
         readInput = case protocol of
-            ModBusTCP -> TCPSession (TCP.readInputRegisters (getTPU tpu) range)
-            ModBusRTU -> RTUSession (RTU.readInputRegisters (RTU.UnitId $ getUID tpu) range)
+            ModBusTCP -> TCPSession (TCP.readInputRegisters tpu range)
+            ModBusRTU -> RTUSession (RTU.readInputRegisters (RTU.UnitId $ registerUID reg) range)
         readHolding = case protocol of
-            ModBusTCP -> TCPSession (TCP.readHoldingRegisters (getTPU tpu) range)
-            ModBusRTU -> RTUSession (RTU.readHoldingRegisters (RTU.UnitId $ getUID tpu) range)
+            ModBusTCP -> TCPSession (TCP.readHoldingRegisters tpu range)
+            ModBusRTU -> RTUSession (RTU.readHoldingRegisters (RTU.UnitId $ registerUID reg) range)
+        tpu = getRegisterTPU (registerUID reg) tid
         range = registerAddress reg
 
-    writeMBRegister _ protocol tpu bo reg =
+
+    writeMBRegister _ protocol tid bo reg =
         case protocol of
             ModBusTCP ->
                 TCPSession $ case registerType reg of
                     InputRegister -> throw $ MB.OtherException "Non writable Register Type"
-                    HoldingRegister -> TCP.writeMultipleRegisters (getTPU tpu) address values
+                    HoldingRegister -> TCP.writeMultipleRegisters tpu address values
             ModBusRTU ->
                 RTUSession $ case registerType reg of
                     InputRegister -> throw $ MB.OtherException "Non writable Register Type"
-                    HoldingRegister -> RTU.writeMultipleRegisters (RTU.UnitId $ getUID tpu) address values
+                    HoldingRegister -> RTU.writeMultipleRegisters (RTU.UnitId $ registerUID reg) address values
       where
         values = registerToWord16 bo reg
+        tpu = getRegisterTPU (registerUID reg) tid
         address = begin $ registerAddress reg
 
 ---------------------------------------------------------------------------------------------------------------
@@ -233,6 +236,7 @@ instance Application IO where
 -- A type that can be converted to a modbus register
 class MBRegister a where
     registerType :: a -> RegType
+    registerUID :: a -> Word8
     registerAddress :: a -> Range Address
     registerToWord16 :: ByteOrder -> a -> [Word16]
     registerFromWord16 :: ByteOrder -> a -> [Word16] -> Maybe a
@@ -291,6 +295,12 @@ getUID = unitId
 
 getTPU :: TPU -> TCP.TPU
 getTPU (TransactionInfo uid tid) = TCP.TPU
+    (TCP.TransactionId $ unTID tid)
+    TCP.ModbusTcp
+    (TCP.UnitId uid)
+
+getRegisterTPU :: Word8 -> TID -> TCP.TPU
+getRegisterTPU uid tid = TCP.TPU
     (TCP.TransactionId $ unTID tid)
     TCP.ModbusTcp
     (TCP.UnitId uid)

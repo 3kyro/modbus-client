@@ -86,6 +86,7 @@ instance ToJSON ModData where
 instance MBRegister ModData where
     registerType = modRegType
     registerAddress md = fromSize (Address (modAddress md))  (Address $ getModValueMult $ modValue md)
+    registerUID = modUid
     registerToWord16 bo md =
         case modValue md of
             ModWord Nothing   -> []
