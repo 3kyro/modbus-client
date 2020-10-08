@@ -134,7 +134,7 @@ class ModbusClient a where
         -> TID
         -> ByteOrder
         -> b
-        -> Session m (Maybe b)
+        -> Session m b
     writeMBRegister :: (MonadIO m, MonadThrow m, MBRegister b)
         => Proxy a
         -> ModbusProtocol
@@ -239,7 +239,7 @@ class MBRegister a where
     registerUID :: a -> Word8
     registerAddress :: a -> Range Address
     registerToWord16 :: ByteOrder -> a -> [Word16]
-    registerFromWord16 :: ByteOrder -> a -> [Word16] -> Maybe a
+    registerFromWord16 :: ByteOrder -> a -> [Word16] -> a
 
 ---------------------------------------------------------------------------------------------------------------
 -- Worker

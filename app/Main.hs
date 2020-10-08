@@ -74,11 +74,9 @@ runTCPTemplateApp addr prot order tm mds =
             tid <- getNewTID inittid
             let proxy = Proxy :: Proxy Client
             let sessions = map (readMBRegister proxy prot tid order) mds
-            resp <- mapM (runClient (TCPWorker $ TCP.batchWorker TCP.defaultBatchConfig) client) sessions
-            let validmds = catMaybes  resp
-            if length validmds == length mds
-            then return validmds
-            else fail "Error while reading MODBUS registers"
+            mapM (runClient (TCPWorker $ TCP.batchWorker TCP.defaultBatchConfig) client) sessions
+
+
 
 runRTUTemplateApp :: String      -- Socket Address
                   -> ModbusProtocol     -- Protocol
@@ -93,11 +91,8 @@ runRTUTemplateApp serial prot order tm mds =
             tid <- getNewTID inittid
             let proxy = Proxy :: Proxy Client
             let sessions = map (readMBRegister proxy prot tid order) mds
-            resp <- mapM (runClient (RTUWorker $ RTU.batchWorker RTU.defaultBatchConfig) client) sessions
-            let validmds = catMaybes  resp
-            if length validmds == length mds
-            then return validmds
-            else fail "Error while reading MODBUS registers"
+            mapM (runClient (RTUWorker $ RTU.batchWorker RTU.defaultBatchConfig) client) sessions
+
 
 -- Run the application's REPL
 runTCPReplApp :: S.SockAddr -> Int -> ByteOrder -> [ModData] -> Word8 -> IO ()

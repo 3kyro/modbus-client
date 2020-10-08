@@ -93,11 +93,10 @@ instance MBRegister ModData where
             ModWord (Just v)  -> [v]
             ModFloat Nothing  -> []
             ModFloat (Just v) -> float2Word16 bo v
-    registerFromWord16 _ _ [] = Nothing
     registerFromWord16 bo md vs@(x:_) =
         case modValue md of
-            ModWord _ -> Just $ md { modValue = ModWord (Just x) }
-            ModFloat _ -> Just $ md { modValue = ModFloat (word16ToFloat bo vs)}
+            ModWord _ -> md { modValue = ModWord (Just x) }
+            ModFloat _ -> md { modValue = ModFloat (word16ToFloat bo vs)}
 
 
 ---------------------------------------------------------------------------------------------------------------

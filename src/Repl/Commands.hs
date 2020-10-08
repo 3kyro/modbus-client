@@ -162,8 +162,8 @@ replReadModData mds = do
     let worker = replBatchWorker state
     let client = replClient state
     maybemdata <- runReplClient $ mapM (runClient worker client) sessions
-    mdata' <- replRunExceptT (except maybemdata) []
-    return $ catMaybes mdata'
+    replRunExceptT (except maybemdata) []
+
 
 ------------------------------------------------------------------------------------------
 -- Write Registers
