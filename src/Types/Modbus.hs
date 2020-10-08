@@ -64,7 +64,7 @@ module Types.Modbus
 import           Control.Concurrent         (MVar, ThreadId, forkFinally,
                                              newEmptyMVar, putMVar, takeMVar,
                                              threadDelay)
-import           Control.Exception.Safe     (MonadMask, MonadThrow, throwM,
+import           Control.Exception.Safe     (MonadMask, MonadThrow,
                                              SomeException, bracket, throw, try)
 import           Control.Monad.Trans        (MonadIO, liftIO)
 import           Data.Aeson                 (FromJSON (..), ToJSON (..),
