@@ -16,6 +16,7 @@ module Types.Modbus
     , writeMultipleRegisters
     , readMBRegister
     , writeMBRegister
+    , updateMBRegister
 
     , Config
     , Address (..)
@@ -75,9 +76,9 @@ import           Data.Binary.Put            (putFloatbe, putFloatle,
                                              putWord16host, runPut)
 import           Data.IP                    (toHostAddress)
 import           Data.IP.Internal           (IPv4)
-import           Data.Range                 (begin, Range)
+import           Data.Range                 (fromSize, begin, Range (..))
 import           Data.Word                  (Word16, Word8)
-import           Network.Modbus.Protocol    (Address, Config)
+import           Network.Modbus.Protocol    (Address, Address, Config)
 import           Test.QuickCheck            (Arbitrary (..), arbitrary,
                                              elements)
 
@@ -142,6 +143,13 @@ class ModbusClient a where
         -> ByteOrder
         -> b
         -> Session m ()
+    updateMBRegister :: (MonadIO m, MonadThrow m, MBRegister b)
+        => Proxy a
+        -> ModbusProtocol
+        -> TID
+        -> ByteOrder
+        -> b
+        -> Session m b
 
 ---------------------------------------------------------------------------------------------------------------
 -- ModbusProtocol
@@ -217,6 +225,31 @@ instance ModbusClient Client where
         values = registerToWord16 bo reg
         tpu = getRegisterTPU (registerUID reg) tid
         address = begin $ registerAddress reg
+
+    updateMBRegister _ protocol tid bo reg =
+        case protocol of
+            ModBusTCP ->
+                TCPSession $ case registerType reg of
+                    InputRegister -> throw $ MB.OtherException "Non writable Register Type"
+                    HoldingRegister -> do
+                        TCP.writeMultipleRegisters tpu address values
+                        registerFromWord16 bo reg <$> readTCP
+
+            ModBusRTU ->
+                RTUSession $ case registerType reg of
+                    InputRegister -> throw $ MB.OtherException "Non writable Register Type"
+                    HoldingRegister -> do
+                        RTU.writeMultipleRegisters uid address values
+                        registerFromWord16 bo reg <$> readRTU
+
+      where
+        values = registerToWord16 bo reg
+        tpu = getRegisterTPU (registerUID reg) tid
+        uid = RTU.UnitId $ registerUID reg
+        address = begin $ registerAddress reg
+        readTCP = TCP.readHoldingRegisters tpu $ fromSize address range
+        readRTU = RTU.readHoldingRegisters uid $ fromSize address range
+        range = MB.Address $ fromIntegral $ length values
 
 ---------------------------------------------------------------------------------------------------------------
 -- Application
