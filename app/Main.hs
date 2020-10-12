@@ -2,24 +2,24 @@ module Main where
 
 import           Control.Concurrent         (newMVar)
 import           Control.Exception.Safe     (bracket)
+import           Data.Data                  (Proxy (..))
+import           Data.IP                    (IPv4)
 import           Data.Word                  (Word8)
 
+import qualified Data.Text.IO               as T
 import qualified Network.Modbus.RTU         as RTU
 import qualified Network.Modbus.TCP         as TCP
 import qualified Network.Socket             as S
 import qualified System.Hardware.Serialport as SP
 
 import           CsvParser                  (parseCSVFile)
-import           Data.Data                  (Proxy (..))
-import           Data.IP                    (IPv4)
-import qualified Data.Text.IO               as T
+import           Modbus
 import           OptParser                  (AppMode (..), Opt (..), runOpts)
 import           PrettyPrint                (ppError)
 import           Repl                       (runRepl)
 import           Server                     (runServer)
 import           Types                      (ModData, ReplState (ReplState),
                                              serializeModData)
-import Modbus
 
 
 main :: IO ()
@@ -69,8 +69,6 @@ runTCPTemplateApp addr prot order tm mds =
             let sessions = map (readMBRegister proxy prot tid order) mds
             mapM (runClient (TCPWorker $ TCP.batchWorker TCP.defaultBatchConfig) client) sessions
 
-
-
 runRTUTemplateApp :: String      -- Socket Address
                   -> ModbusProtocol     -- Protocol
                   -> ByteOrder          -- Byte Order
@@ -104,8 +102,6 @@ runTCPReplApp addr tm order mdata uid =
             []
             tid
             )
-
-
 
 withSocket :: S.SockAddr -> (S.Socket -> IO a) -> IO a
 withSocket addr = bracket (connectTCP addr) close

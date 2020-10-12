@@ -30,7 +30,6 @@ main =
         , subscriptions = \_ -> Time.every 1000 NewTime
         }
 
-
 initModel : Model
 initModel =
     { modDataUpdate = newModDataUpdate initModData
@@ -39,6 +38,7 @@ initModel =
     , connectStatus = Connect
     , ipAddress = defaultIpAddr
     , socketPort = Just 502
+    , serialPort = Nothing
     , timeout = Just 1000
     , activeTab = ConnectMenu
     , csvFileName = Nothing

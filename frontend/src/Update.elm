@@ -27,7 +27,7 @@ import Types
         , decodeConnInfo
         , decodeModData
         , decodeModDataUpdate
-        , encodeIpPort
+        , encodeTCPConnectionInfo
         , encodeModDataUpdate
         , fromModType
         , newModDataUpdate
@@ -35,6 +35,7 @@ import Types
         , replaceModDataWrite
         , showConnInfo
         , writeableReg
+        , ConnectionInfo (..)
         )
 import Types.IpAddress exposing (setIpAddressByte)
 
@@ -62,17 +63,7 @@ update msg model =
             )
 
         ReceivedConnectionInfo (Ok (Just conn)) ->
-            ( { model
-                | ipAddress = conn.ipAddress
-                , socketPort = Just conn.socketPort
-                , timeout = Just conn.timeout
-                , connectStatus = Connected
-                , notifications =
-                    detailedNot
-                        model
-                        "Connected"
-                        (showConnInfo conn)
-              }
+            ( updateConnInfoModel model conn
             , jumpToBottom "status"
             )
 
@@ -386,7 +377,7 @@ connectRequest : Model -> Cmd Msg
 connectRequest model =
     Http.post
         { url = "http://localhost:4000/connect"
-        , body = Http.jsonBody <| encodeIpPort model
+        , body = Http.jsonBody <| encodeTCPConnectionInfo model
         , expect = Http.expectWhatever ConnectedResponse
         }
 
@@ -481,3 +472,32 @@ detailedNot model header detailed =
         (Just detailed)
         NotifRetracted
         :: model.notifications
+
+updateConnInfoModel : Model -> ConnectionInfo -> Model
+updateConnInfoModel model connInfo =
+    case connInfo of
+        TCPConnectionInfo tcp ->
+            { model
+              | ipAddress = tcp.ipAddress
+              , socketPort = Just tcp.socketPort
+              , serialPort = Nothing
+              , timeout = Just tcp.timeout
+              , connectStatus = Connected
+              , notifications =
+                  detailedNot
+                    model
+                    "Connected"
+                    (showConnInfo connInfo)
+            }
+        RTUConnectionInfo rtu ->
+            { model
+              | socketPort = Nothing
+              , serialPort = Just rtu.rtuAddress
+              , timeout = Just rtu.timeout
+              , connectStatus = Connected
+              , notifications =
+                  detailedNot
+                    model
+                    "Connected"
+                    (showConnInfo connInfo)
+            }

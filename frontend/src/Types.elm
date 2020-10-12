@@ -1,7 +1,7 @@
 module Types exposing
     ( ActiveTab(..)
     , ConnectStatus(..)
-    , ConnectionInfo
+    , ConnectionInfo (..)
     , MFloat
     , ModData
     , ModDataUpdate
@@ -13,7 +13,7 @@ module Types exposing
     , decodeConnInfo
     , decodeModData
     , decodeModDataUpdate
-    , encodeIpPort
+    , encodeTCPConnectionInfo
     , encodeModData
     , encodeModDataUpdate
     , flipRW
@@ -89,6 +89,7 @@ type alias Model =
     , connectStatus : ConnectStatus
     , ipAddress : IpAddress
     , socketPort : Maybe Int
+    , serialPort : Maybe String
     , timeout : Maybe Int
     , activeTab : ActiveTab
     , csvFileName : Maybe String
@@ -132,38 +133,83 @@ showConnectStatus st =
 
 
 ----------------------------------------------------------------------------------------------------------------------------------
+-- Connection Info
 -----------------------------------------------------------------------------------------------------------------------------------
 
 
-type alias ConnectionInfo =
-    { ipAddress : IpAddress
-    , socketPort : Int
-    , timeout : Int
-    }
+type ConnectionInfo
+    = TCPConnectionInfo
+        { ipAddress : IpAddress
+        , socketPort : Int
+        , timeout : Int
+        }
+    | RTUConnectionInfo
+        { rtuAddress : String
+        , timeout : Int
+        }
 
 
 decodeConnInfo : D.Decoder ConnectionInfo
 decodeConnInfo =
-    D.map3 ConnectionInfo
-        (D.field "ip address" decodeIpAddress)
-        (D.field "port" D.int)
-        (D.field "timeout" D.int)
+    D.field "connection type" D.string
+        |> D.andThen
+            (\s ->
+                case s of
+                    "tcp" ->
+                        D.map3 getTCPConnectionInfo
+                            (D.field "ip address" decodeIpAddress)
+                            (D.field "port" D.int)
+                            (D.field "timeout" D.int)
+
+                    "rtu" ->
+                        D.map2 getRTUConnectionInfo
+                            (D.field "serial port" D.string)
+                            (D.field "timeout" D.int)
+
+                    _ ->
+                        D.fail "Not a connection info"
+            )
 
 
-encodeIpPort : Model -> E.Value
-encodeIpPort model =
+encodeTCPConnectionInfo : Model -> E.Value
+encodeTCPConnectionInfo model =
     E.object
-        [ ( "ip address", E.string <| unsafeShowIp model.ipAddress )
+        [ ( "connection type" , E.string "tcp")
+        , ( "ip address", E.string <| unsafeShowIp model.ipAddress )
         , ( "port", E.int <| Maybe.withDefault 0 model.socketPort )
         , ( "timeout", E.int <| Maybe.withDefault 0 model.timeout )
         ]
 
+getTCPConnectionInfo : IpAddress -> Int -> Int -> ConnectionInfo
+getTCPConnectionInfo ip portNum tm =
+    TCPConnectionInfo
+        { ipAddress = ip
+        , socketPort = portNum
+        , timeout = tm
+        }
+
+
+getRTUConnectionInfo : String -> Int -> ConnectionInfo
+getRTUConnectionInfo address tm =
+    RTUConnectionInfo
+        { rtuAddress = address
+        , timeout = tm
+        }
+
+
+
 
 showConnInfo : ConnectionInfo -> String
-showConnInfo conn =
-    ("IP Address: " ++ Maybe.withDefault "N/A" (showIp conn.ipAddress) ++ "\n")
-        ++ ("Port: " ++ String.fromInt conn.socketPort ++ "\n")
-        ++ ("Timeout: " ++ String.fromInt conn.timeout)
+showConnInfo connInfo =
+    case connInfo of
+        TCPConnectionInfo conn ->
+            ("IP Address: " ++ Maybe.withDefault "N/A" (showIp conn.ipAddress) ++ "\n")
+                ++ ("Port: " ++ String.fromInt conn.socketPort ++ "\n")
+                ++ ("Timeout: " ++ String.fromInt conn.timeout)
+
+        RTUConnectionInfo conn ->
+            ("Serial Port: " ++ conn.rtuAddress ++ "\n")
+                ++ ("Timeout: " ++ String.fromInt conn.timeout)
 
 
 
