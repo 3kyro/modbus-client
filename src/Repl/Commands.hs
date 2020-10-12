@@ -14,7 +14,7 @@ import           Control.Monad.Trans.State.Strict (get, put)
 import           Data.Data                        (Proxy (..))
 import           Data.Either.Combinators          (mapLeft)
 import           Data.List                        (delete, find, uncons)
-import           Data.Maybe                       (catMaybes, fromJust)
+import           Data.Maybe                       (fromJust)
 import           Data.Word                        (Word16, Word8)
 
 
@@ -32,6 +32,7 @@ import           Repl.Parser                      (pReplAddrNum, pReplArg,
                                                    pReplFloat, pReplInt,
                                                    pReplWord)
 import           Types
+import Modbus (heartBeatSignal, Address(..), writeMBRegister, runClient, readMBRegister, getNewTID, TID, HeartBeat (..), Client)
 
 getCommand :: String -> Command
 getCommand s =

@@ -19,7 +19,7 @@ import           Data.List       (foldl')
 import           Data.Word       (Word16, Word8)
 import           Test.QuickCheck (Arbitrary, arbitrary, elements, frequency,
                                   oneof)
-import           Types.Modbus    (Address (..), MBRegister (..), RegType (..),
+import           Modbus    (Address (..), MBRegister (..), RegType (..),
                                   float2Word16, serializeRegType, word16ToFloat)
 
 import           Data.Range      (fromSize)
@@ -32,17 +32,17 @@ import qualified Data.Text       as T
 -- The principal modbus register data struture
 -- TODO #6 :: use opaque type for modName
 data ModData = ModData
-    { modName        :: !String -- Variable name
+    { modName        :: !String
     -- Register Type
-    , modRegType     :: !RegType -- Register Type
+    , modRegType     :: !RegType
     -- Address
-    , modAddress     :: !Word16 -- Address
+    , modAddress     :: !Word16
     -- Value
-    , modValue       :: !ModValue -- Value
+    , modValue       :: !ModValue
     -- Unit Id
-    , modUid         :: !Word8 -- Unit Id
+    , modUid         :: !Word8
     -- Description
-    , modDescription :: !T.Text -- Description
+    , modDescription :: !T.Text
     }
     deriving (Show, Eq)
 
@@ -166,6 +166,14 @@ data ModDataUpdate = MDU
     , mduRW       :: ReadWrite
     }
     deriving (Show)
+
+instance MBRegister ModDataUpdate where
+    registerType = registerType . mduModData
+    registerUID = registerUID . mduModData
+    registerAddress = registerAddress . mduModData
+    registerToWord16 order = registerToWord16 order . mduModData
+    registerFromWord16 order mdu values =
+        mdu { mduModData = registerFromWord16 order (mduModData mdu) values }
 
 instance FromJSON ModDataUpdate where
     parseJSON (Object o) = do

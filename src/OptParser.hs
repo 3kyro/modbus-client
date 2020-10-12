@@ -18,7 +18,7 @@ import           Options.Applicative (Parser, auto, execParser, flag, fullDesc,
                                       (<|>))
 
 import           Data.Word           (Word8)
-import           Types
+import Modbus (ByteOrder (..), ModbusProtocol (..))
 
 data Opt = Opt
     { appMode       :: !AppMode

@@ -2,7 +2,6 @@ module Types
     ( module Types.Repl
     , module Types.ModData
     , module Types.Server
-    , module Types.Modbus
     , ReadRegsFun
     , AppError (..)
     ) where
@@ -18,7 +17,6 @@ import qualified Network.Modbus.TCP as MB
 import Types.Repl
 import Types.ModData
 import Types.Server
-import Types.Modbus
 
 type ReadRegsFun =  MB.TransactionId -> MB.ProtocolId -> MB.UnitId -> MB.Address -> Word16 -> MB.Session IO [Word16]
 

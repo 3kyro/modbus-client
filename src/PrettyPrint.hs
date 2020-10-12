@@ -23,6 +23,7 @@ import           System.Console.ANSI
 import qualified Data.Text           as T
 
 import           Types
+import Modbus (HeartBeat (..))
 
 ppErrReset :: IO ()
 ppErrReset = do

@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: bf42f3a2028ef5c59c2ebaefe240449b058df38c750f83b65a275233a35b0c2e
+-- hash: 08e815816ccacfe19758cca0cdfde773fecbc94963be8979eef61ecc91253494
 
 name:           modbus-serve
 version:        0.1.0.0
@@ -38,7 +38,6 @@ library
       Repl.Parser
       Server
       Types
-      Types.Modbus
       Types.ModData
       Types.Repl
       Types.Server

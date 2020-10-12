@@ -4,28 +4,22 @@ import           Control.Concurrent         (newMVar)
 import           Control.Exception.Safe     (bracket)
 import           Data.Word                  (Word8)
 
-import qualified Network.Modbus.Protocol    as MB
 import qualified Network.Modbus.RTU         as RTU
 import qualified Network.Modbus.TCP         as TCP
 import qualified Network.Socket             as S
-import qualified Network.Socket.ByteString  as S
 import qualified System.Hardware.Serialport as SP
 
-import           OptParser                  (AppMode (..), Opt (..), runOpts)
-import           Repl                       (runRepl)
--- import           Server               (runServer)
 import           CsvParser                  (parseCSVFile)
 import           Data.Data                  (Proxy (..))
 import           Data.IP                    (IPv4)
-import           Data.Maybe                 (catMaybes)
 import qualified Data.Text.IO               as T
+import           OptParser                  (AppMode (..), Opt (..), runOpts)
 import           PrettyPrint                (ppError)
-import           Types                      (ByteOrder, Client (..), Config,
-                                             ModData, ModbusProtocol (..),
-                                             ReplState (ReplState), Worker (..),
-                                             getAddr, getNewTID, initTID,
-                                             readMBRegister, runClient,
+import           Repl                       (runRepl)
+import           Server                     (runServer)
+import           Types                      (ModData, ReplState (ReplState),
                                              serializeModData)
+import Modbus
 
 
 main :: IO ()
@@ -39,8 +33,7 @@ runApp (Opt mode prot input output ip portNum serial order uid tm)
         AppRepl     -> case prot of
             ModBusTCP -> runTCPReplApp (getAddr ip portNum) tm order [] uid
             ModBusRTU -> runRTUReplApp serial tm order [] uid
-        -- AppWeb -> runServer ip portNum order tm
-        AppWeb      -> undefined
+        AppWeb -> runServer prot order
 
 runAppTemplate :: ModbusProtocol        -- Protocol
                -> FilePath              -- Input File
@@ -69,7 +62,7 @@ runTCPTemplateApp :: S.SockAddr         -- Socket Address
                   -> IO [ModData]
 runTCPTemplateApp addr prot order tm mds =
     withSocket addr $ \s -> do
-            client <- newMVar $ Client (configTCP tm s)
+            client <- newMVar $ Client (getTCPConfig s tm)
             inittid <- initTID
             tid <- getNewTID inittid
             let proxy = Proxy :: Proxy Client
@@ -86,7 +79,7 @@ runRTUTemplateApp :: String      -- Socket Address
                   -> IO [ModData]
 runRTUTemplateApp serial prot order tm mds =
     withSerialPort serial $ \s -> do
-            client <- newMVar $ Client (configRTU tm s)
+            client <- newMVar $ Client (getRTUConfig s tm)
             inittid <- initTID
             tid <- getNewTID inittid
             let proxy = Proxy :: Proxy Client
@@ -98,7 +91,7 @@ runRTUTemplateApp serial prot order tm mds =
 runTCPReplApp :: S.SockAddr -> Int -> ByteOrder -> [ModData] -> Word8 -> IO ()
 runTCPReplApp addr tm order mdata uid =
     withSocket addr $ \s -> do
-        client <- newMVar $ Client (configTCP tm s)
+        client <- newMVar $ Client (getTCPConfig s tm)
         tid <- initTID
         runRepl ( ReplState
             client
@@ -112,15 +105,7 @@ runTCPReplApp addr tm order mdata uid =
             tid
             )
 
-configTCP :: Int -> S.Socket -> Config
-configTCP tm s  =
-    MB.Config
-        { TCP.cfgWrite = S.send s
-        , TCP.cfgRead = S.recv s 4096
-        , TCP.cfgCommandTimeout = tm * 1000
-        , TCP.cfgRetryWhen = const . const False
-        , TCP.cfgEnableBroadcasts = False
-        }
+
 
 withSocket :: S.SockAddr -> (S.Socket -> IO a) -> IO a
 withSocket addr = bracket (connectTCP addr) close
@@ -137,7 +122,7 @@ connectTCP addr = do
 runRTUReplApp :: String -> Int -> ByteOrder -> [ModData] -> Word8 -> IO ()
 runRTUReplApp serial tm order mdata uid =
     withSerialPort serial $ \s -> do
-        client <- newMVar $ Client (configRTU tm s)
+        client <- newMVar $ Client (getRTUConfig s tm)
         tid <- initTID
         runRepl ( ReplState
             client
@@ -151,15 +136,7 @@ runRTUReplApp serial tm order mdata uid =
             tid
             )
 
-configRTU :: Int -> SP.SerialPort -> Config
-configRTU tm s  =
-    MB.Config
-        { TCP.cfgWrite = SP.send s
-        , TCP.cfgRead = SP.recv s 4096
-        , TCP.cfgCommandTimeout = tm * 1000
-        , TCP.cfgRetryWhen = const . const False
-        , TCP.cfgEnableBroadcasts = False
-        }
+
 
 withSerialPort :: String -> (SP.SerialPort -> IO a )-> IO a
 withSerialPort s = bracket (connectRTU s) SP.closeSerial

@@ -25,7 +25,7 @@ import           Control.Monad.Catch
 import           Control.Monad.State.Strict       (lift)
 import           Data.Range                       (Range)
 import           Data.Tagged                      (Tagged)
-import           Types.Modbus                     (TID, Address, ByteOrder, Client,
+import           Modbus                     (TID, Address, ByteOrder, Client,
                                                    HeartBeat (..),
                                                    ModbusProtocol, Session,
                                                    TransactionInfo, Worker)

@@ -1,8 +1,15 @@
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE OverloadedStrings   #-}
+
 module Types.Server
     ( Server
     , ServState (..)
-    , ConnectionData (..)
+    , ServerActors (..)
+    , Connection (..)
+    , ConnectionInfo (..)
+    , getActors
+    , getTCPActors
+    , getRTUActors
     ) where
 
 import qualified Network.Socket   as S
@@ -13,31 +20,95 @@ import           Data.Aeson.Types (Value (..))
 import           Data.IP          (IPv4)
 import           Servant
 
-import           Types.Modbus     (ByteOrder, Config, HeartBeat)
+import           Modbus     (rtuBatchWorker, rtuDirectWorker, tcpBatchWorker, tcpDirectWorker, Worker, ModbusProtocol, TID, Client, ByteOrder, HeartBeat)
+import Control.Concurrent (MVar)
+import qualified System.Hardware.Serialport as SP
+import Control.Concurrent.STM (TVar)
+import qualified Data.Text as T
 
 data ServState = ServState
-    { servConn     :: !(Maybe (S.Socket, Config))
-    , servOrd      :: !ByteOrder
-    , servPool     :: ![HeartBeat]
-    , servConnInfo :: !(Maybe ConnectionData)
+    { servConnection        :: ! Connection
+    , servProtocol          :: ! ModbusProtocol
+    , servOrd               :: ! ByteOrder
+    , servTID               :: ! (TVar TID)
+    , servPool              :: ! [HeartBeat]
     }
 
-data ConnectionData = ConnectionData
-    { servIpAddress :: !IPv4
-    , servPortNum   :: !Int
-    , servTimeout   :: !Int
+data ServerActors = ServerActors
+    { sclClient         :: ! (MVar Client)
+    , sclDirectWorker   :: ! (Worker IO)
+    , sclBatchWorker    :: ! (Worker IO)
     }
 
-instance FromJSON ConnectionData where
+data Connection
+    = TCPConnection
+        { tcpSocket         :: ! S.Socket
+        , tcpConnectionInfo :: ! ConnectionInfo
+        , tcpActors         :: ! ServerActors
+        }
+    | RTUConnection
+        { rtuPort           :: !SP.SerialPort
+        , rtuConnectionInfo :: ! ConnectionInfo
+        , rtuActors         :: ! ServerActors
+        }
+    | NotConnected
+
+data ConnectionInfo
+    = TCPConnectionInfo
+        { tcpIpAddress     :: ! IPv4
+        , tcpPortNum       :: ! Int
+        , tcpTimeout       :: ! Int
+        }
+    | RTUConnectionInfo
+        { rtuAddress        :: ! String
+        , rtuTimeout        :: ! Int
+        }
+
+instance FromJSON ConnectionInfo where
     parseJSON (Object o) = do
-        ip <- o .: "ip address"
-        port <- o .: "port"
-        tm <- o .: "timeout"
-        return $ ConnectionData (read ip) port tm
+        (valueType :: T.Text) <- o .: "connection type"
+        case valueType of
+            "tcp" -> do
+                ip <- o .: "ip address"
+                port <- o .: "port"
+                tm <- o .: "timeout"
+                return $ TCPConnectionInfo (read ip) port tm
+            "rtu" -> do
+                serial <- o .: "serial port"
+                tm <- o .: "timeout"
+                return $ RTUConnectionInfo serial tm
+    parseJSON _ = fail "Not a valid Connection Info"
 
-instance ToJSON ConnectionData where
-    toJSON cd = object
-        [ "ip address" .= show (servIpAddress cd)
-        , "port" .= servPortNum cd
-        , "timeout" .= servTimeout cd
-        ]
+instance ToJSON ConnectionInfo where
+    toJSON cd =
+        case cd of
+            TCPConnectionInfo ip port tm-> object
+                [ "connection type" .= String "tcp"
+                , "ip address" .= show ip
+                , "port" .= port
+                , "timeout" .= tm
+                ]
+            RTUConnectionInfo address tm -> object
+                [ "connection type" .= String "rtu"
+                , "serial port" .= address
+                , "timeout" .= tm
+                ]
+
+getActors :: Connection -> Maybe ServerActors
+getActors (TCPConnection _ _ actors) = Just actors
+getActors (RTUConnection _ _ actors) = Just actors
+getActors NotConnected = Nothing
+
+getTCPActors :: MVar Client -> ServerActors
+getTCPActors client =
+    ServerActors
+        client
+        tcpDirectWorker
+        tcpBatchWorker
+
+getRTUActors :: MVar Client -> ServerActors
+getRTUActors client =
+    ServerActors
+        client
+        rtuDirectWorker
+        rtuBatchWorker
