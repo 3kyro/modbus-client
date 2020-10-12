@@ -402,7 +402,7 @@ instance ToJSON RegType where
 instance FromJSON RegType where
     parseJSON (String s) =
         case s of
-            "dicrete input"    -> return DiscreteInput
+            "discrete input"    -> return DiscreteInput
             "coil"             -> return Coil
             "input register"   -> return InputRegister
             "holding register" -> return HoldingRegister

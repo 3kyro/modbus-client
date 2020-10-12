@@ -1,11 +1,12 @@
 module ModbusSpec 
-       (modbusSpec) 
+       (modbusSpec)
        where
 
 import Test.Hspec
 import Test.QuickCheck
 
 import Types
+import Modbus
 import TestHelper ()
 
 modbusSpec :: IO ()
