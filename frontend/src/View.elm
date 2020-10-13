@@ -119,10 +119,14 @@ menuBar model =
         ]
 
 
-newSelectButton : Model -> String -> ActiveTab -> Element Msg
-newSelectButton model str table =
+
+-- Creates a new menu tab selection button
+
+
+newSelectTabButton : Model -> String -> ActiveTab -> Element Msg
+newSelectTabButton model str tab =
     Input.button
-        [ Background.color <| selectButtonBgdColor model table
+        [ Background.color <| selectButtonBgdColor model tab
         , focused [ Font.color white ]
         , mouseOver [ Font.color white ]
         , Border.width 0
@@ -130,14 +134,14 @@ newSelectButton model str table =
         , paddingXY 10 0
         , Font.color greyWhite
         ]
-        { onPress = Just <| ChangeActiveTab table
+        { onPress = Just <| ChangeActiveTab tab
         , label = text str
         }
 
 
 selectButtonBgdColor : Model -> ActiveTab -> Color
-selectButtonBgdColor model table =
-    if model.activeTab == table then
+selectButtonBgdColor model tab =
+    if model.activeTab == tab then
         grey
 
     else
@@ -146,32 +150,32 @@ selectButtonBgdColor model table =
 
 connectTabButton : Model -> Element Msg
 connectTabButton model =
-    newSelectButton model "Connect" ConnectMenu
+    newSelectTabButton model "Connect" ConnectMenu
 
 
 importRegisterTableButton : Model -> Element Msg
 importRegisterTableButton model =
-    newSelectButton model "Import" ImportMenu
+    newSelectTabButton model "Import" ImportMenu
 
 
 inputRegistersButton : Model -> Element Msg
 inputRegistersButton model =
-    newSelectButton model "Input Registers" InputRegistersTable
+    newSelectTabButton model "Input Registers" InputRegistersTab
 
 
 holdingRegistersButton : Model -> Element Msg
 holdingRegistersButton model =
-    newSelectButton model "Holding Registers" HoldingRegistersTable
+    newSelectTabButton model "Holding Registers" HoldingRegistersTab
 
 
 registerTableButton : Model -> Element Msg
 registerTableButton model =
-    newSelectButton model "Register Table" ModDataTable
+    newSelectTabButton model "Register Table" ModDataTab
 
 
 heartbeatButton : Model -> Element Msg
 heartbeatButton model =
-    newSelectButton model "Heartbeat Signals" HeartbeatTable
+    newSelectTabButton model "Heartbeat Signals" HeartbeatTab
 
 
 mainTab : Model -> Element Msg
@@ -194,17 +198,17 @@ infoArea model =
         ImportMenu ->
             importTab model
 
-        InputRegistersTable ->
-            inputRegistersTable
+        InputRegistersTab ->
+            inputRegistersTab
 
-        HoldingRegistersTable ->
-            holdingRegistersTable
+        HoldingRegistersTab ->
+            holdingRegistersTab
 
-        ModDataTable ->
-            modDataTable model
+        ModDataTab ->
+            modDataTab model
 
-        HeartbeatTable ->
-            heartbeatTable
+        HeartbeatTab ->
+            heartbeatTab
 
 
 
@@ -476,8 +480,8 @@ loadRegsButtonClr model =
 -- Registers Menu
 
 
-newRegisterTable : List records -> List (IndexedColumn records Msg) -> Element Msg
-newRegisterTable dt cl =
+newRegisterTab : List records -> List (IndexedColumn records Msg) -> Element Msg
+newRegisterTab dt cl =
     indexedTable
         [ Background.color grey
         , width fill
@@ -717,10 +721,10 @@ viewCheckedCell idx selected =
 viewReadWriteCell : Model -> Int -> ModDataUpdate -> Element Msg
 viewReadWriteCell model idx md =
     case model.activeTab of
-        ModDataTable ->
+        ModDataTab ->
             viewReadWriteModDataCell idx md
 
-        HoldingRegistersTable ->
+        HoldingRegistersTab ->
             none
 
         _ ->
@@ -755,24 +759,24 @@ tableCellColor idx =
         grey
 
 
-inputRegistersTable : Element Msg
-inputRegistersTable =
-    newRegisterTable [] []
+inputRegistersTab : Element Msg
+inputRegistersTab =
+    newRegisterTab [] []
 
 
-holdingRegistersTable : Element Msg
-holdingRegistersTable =
-    newRegisterTable [] []
+holdingRegistersTab : Element Msg
+holdingRegistersTab =
+    newRegisterTab [] []
 
 
-modDataTable : Model -> Element Msg
-modDataTable model =
-    newRegisterTable model.modDataUpdate <| modDataColumns model
+modDataTab : Model -> Element Msg
+modDataTab model =
+    newRegisterTab model.modDataUpdate <| modDataColumns model
 
 
-heartbeatTable : Element Msg
-heartbeatTable =
-    newRegisterTable [] []
+heartbeatTab : Element Msg
+heartbeatTab =
+    newRegisterTab [] []
 
 
 
@@ -789,16 +793,16 @@ commandArea model =
         ImportMenu ->
             none
 
-        InputRegistersTable ->
+        InputRegistersTab ->
             none
 
-        HoldingRegistersTable ->
+        HoldingRegistersTab ->
             none
 
-        ModDataTable ->
+        ModDataTab ->
             modDataCommand model
 
-        HeartbeatTable ->
+        HeartbeatTab ->
             none
 
 

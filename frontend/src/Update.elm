@@ -239,7 +239,7 @@ update msg model =
         -- Set the flag select All in the ModData table
         SelectAllChecked b ->
             case model.activeTab of
-                ModDataTable ->
+                ModDataTab ->
                     ( { model
                         | selectAllCheckbox = b
                         , selectSome = b
@@ -266,7 +266,7 @@ update msg model =
         -- Toggles the write all button in the ModData tab
         ToggleWriteAll b ->
             case model.activeTab of
-                ModDataTable ->
+                ModDataTab ->
                     ( { model
                         | readWriteAll = b
                         , modDataUpdate =

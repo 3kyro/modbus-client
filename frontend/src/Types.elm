@@ -469,10 +469,10 @@ fromModType md str =
 type ActiveTab
     = ConnectMenu
     | ImportMenu
-    | InputRegistersTable
-    | HoldingRegistersTable
-    | ModDataTable
-    | HeartbeatTable
+    | InputRegistersTab
+    | HoldingRegistersTab
+    | ModDataTab
+    | HeartbeatTab
 
 
 
