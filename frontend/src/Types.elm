@@ -81,6 +81,7 @@ type Msg
     | ExpandNotification Notification
     | SetActiveSetting (Setting Msg)
     | DummyCheckboxMsg Int Int Bool
+    | DummyNumberInputMsg Int Int String
     | NoOp
 
 
@@ -104,6 +105,7 @@ type alias Model =
     , timeZone : Time.Zone
     , settings : List (Setting Msg)
     , keepAlive : Bool
+    , keepAliveInterval : Int
     }
 
 

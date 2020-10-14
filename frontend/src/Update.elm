@@ -7,11 +7,18 @@ import File.Select as Select
 import Http
 import Json.Decode as D
 import Json.Encode as E
-import Notifications exposing
-    (Notification
-    , StatusBarState(..)
-    , NotificationState(..)
-    , changeNotificationState
+import Notifications
+    exposing
+        ( Notification
+        , NotificationState(..)
+        , StatusBarState(..)
+        , changeNotificationState
+        )
+import Settings exposing
+    ( Setting
+    , SettingStatus(..)
+    , SettingInputUpdateValue(..)
+    , updateCheckboxSetting
     )
 import Task
 import Time
@@ -19,6 +26,7 @@ import Types
     exposing
         ( ActiveTab(..)
         , ConnectStatus(..)
+        , ConnectionInfo(..)
         , ModDataUpdate
         , ModValue(..)
         , Model
@@ -27,18 +35,17 @@ import Types
         , decodeConnInfo
         , decodeModData
         , decodeModDataUpdate
-        , encodeTCPConnectionInfo
         , encodeModDataUpdate
+        , encodeTCPConnectionInfo
         , fromModType
         , newModDataUpdate
         , replaceModDataSelected
         , replaceModDataWrite
         , showConnInfo
         , writeableReg
-        , ConnectionInfo (..)
         )
 import Types.IpAddress exposing (setIpAddressByte)
-import Settings exposing (Setting, SettingStatus(..), updateCheckboxSetting)
+
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
@@ -344,7 +351,7 @@ update msg model =
         ExpandNotification not ->
             ( { model
                 | notifications = changeNotificationState not model.notifications
-                }
+              }
             , Cmd.none
             )
 
@@ -354,25 +361,51 @@ update msg model =
             )
 
         DummyCheckboxMsg settingIdx inputIdx flag ->
-            ( updateDummy model settingIdx inputIdx flag , Cmd.none)
+            ( updateDummy model settingIdx inputIdx flag, Cmd.none )
+
+        DummyNumberInputMsg settingIdx inputIdx valueStr ->
+            ( updateDummyInput model settingIdx inputIdx valueStr, Cmd.none)
 
         NoOp ->
             ( model, Cmd.none )
 
 
-updateDummy : Model
-            -> Int   -- Setting index
-            -> Int   -- child index
-            -> Bool  -- flag
-            -> Model
+updateDummy :
+    Model
+    -> Int -- Setting index
+    -> Int -- child index
+    -> Bool -- flag
+    -> Model
 updateDummy model settingIdx inputIdx newFlag =
-    case updateCheckboxSetting model.settings settingIdx inputIdx newFlag of
-        Nothing ->  { model | keepAlive = newFlag }
+    case updateCheckboxSetting model.settings settingIdx inputIdx (CheckBoxValue newFlag) of
+        Nothing ->
+            { model | keepAlive = newFlag }
+
         Just modifiedSettings ->
             { model
                 | keepAlive = newFlag
                 , settings = modifiedSettings
             }
+updateDummyInput :
+    Model
+    -> Int -- Setting index
+    -> Int -- child index
+    -> String
+    -> Model
+updateDummyInput model settingIdx inputIdx valueStr =
+    case String.toInt valueStr of
+        Nothing -> model
+        Just newInt ->
+            case updateCheckboxSetting model.settings settingIdx inputIdx (NumberInputValue newInt) of
+                Nothing ->
+                    { model | keepAliveInterval = newInt }
+
+                Just modifiedSettings ->
+                    { model
+                        | keepAliveInterval = newInt
+                        , settings = modifiedSettings
+                    }
+
 
 initCmd : Cmd Msg
 initCmd =
@@ -488,48 +521,54 @@ detailedNot model header detailed =
         :: model.notifications
 
 
+
 ------------------------------------------------------------------------------------------------------------------
 -- Model update
+
 
 updateConnInfoModel : Model -> ConnectionInfo -> Model
 updateConnInfoModel model connInfo =
     case connInfo of
         TCPConnectionInfo tcp ->
             { model
-              | ipAddress = tcp.ipAddress
-              , socketPort = Just tcp.socketPort
-              , serialPort = Nothing
-              , timeout = Just tcp.timeout
-              , connectStatus = Connected
-              , notifications =
-                  detailedNot
-                    model
-                    "Connected"
-                    (showConnInfo connInfo)
-            }
-        RTUConnectionInfo rtu ->
-            { model
-              | socketPort = Nothing
-              , serialPort = Just rtu.rtuAddress
-              , timeout = Just rtu.timeout
-              , connectStatus = Connected
-              , notifications =
-                  detailedNot
-                    model
-                    "Connected"
-                    (showConnInfo connInfo)
+                | ipAddress = tcp.ipAddress
+                , socketPort = Just tcp.socketPort
+                , serialPort = Nothing
+                , timeout = Just tcp.timeout
+                , connectStatus = Connected
+                , notifications =
+                    detailedNot
+                        model
+                        "Connected"
+                        (showConnInfo connInfo)
             }
 
-updateActiveSettingModel : Model -> Setting Msg-> Model
+        RTUConnectionInfo rtu ->
+            { model
+                | socketPort = Nothing
+                , serialPort = Just rtu.rtuAddress
+                , timeout = Just rtu.timeout
+                , connectStatus = Connected
+                , notifications =
+                    detailedNot
+                        model
+                        "Connected"
+                        (showConnInfo connInfo)
+            }
+
+
+updateActiveSettingModel : Model -> Setting Msg -> Model
 updateActiveSettingModel model setting =
     let
         newSettings =
             List.map
                 (\set ->
-                    if set.description == setting.description
-                    then { set | status = Active }
-                    else { set | status = NotActive }
+                    if set.description == setting.description then
+                        { set | status = Active }
+
+                    else
+                        { set | status = NotActive }
                 )
                 model.settings
     in
-        { model | settings = newSettings }
+    { model | settings = newSettings }

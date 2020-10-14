@@ -2,6 +2,7 @@ module Settings exposing
     ( Setting
     , SettingStatus (..)
     , SettingInput (..)
+    , SettingInputUpdateValue (..)
     , renderSettings
     , dummySetting
     , updateCheckboxSetting
@@ -48,6 +49,7 @@ type alias Setting msg =
 
 type alias StatusMessage msg = Setting msg -> msg
 type alias CheckboxMessage msg = Int -> Int -> Bool -> msg
+type alias NumberInputMessage msg = Int -> Int -> String -> msg
 
 type SettingStatus
     = Active
@@ -58,6 +60,11 @@ type SettingInput msg
         { description : String
         , flag : Bool
         , message : CheckboxMessage msg
+        }
+    | NumberInput
+        { description : String
+        , value : Int
+        , message : NumberInputMessage msg
         }
     | DropDown
     | EmptyInput
@@ -88,7 +95,7 @@ renderSetting message parentIdx setting =
         , mouseOver [ Background.color <| hoverBGColor setting.status ]
         , onClick <| message setting
         ]
-        <| (text setting.description) :: List.indexedMap (renderCheckbox parentIdx) setting.inputs
+        <| (text setting.description) :: List.indexedMap (renderSettingInput parentIdx) setting.inputs
 
 settingBGcolor : SettingStatus -> Color
 settingBGcolor settingStatus =
@@ -102,8 +109,8 @@ hoverBGColor settingStatus =
         Active -> darkGrey
         NotActive -> lightGrey
 
-renderCheckbox : Int -> Int ->  SettingInput msg -> Element msg
-renderCheckbox parentIdx idx input =
+renderSettingInput : Int -> Int ->  SettingInput msg -> Element msg
+renderSettingInput parentIdx idx input =
     case input of
         CheckBox cb ->
             Input.checkbox
@@ -113,10 +120,34 @@ renderCheckbox parentIdx idx input =
                 , checked = cb.flag
                 , label = Input.labelRight [] (text cb.description)
                 }
+        NumberInput ni ->
+            Input.text
+                []
+                { onChange = ni.message parentIdx idx
+                , text = String.fromInt ni.value
+                , placeholder = Nothing
+                , label = Input.labelLeft [] (text ni.description)
+                }
         _ -> none
 
-updateCheckboxSetting : List (Setting msg) -> Int -> Int -> Bool -> Maybe (List (Setting msg))
-updateCheckboxSetting initSettings settingIdx inputIdx newFlag =
+type SettingInputUpdateValue
+    = CheckBoxValue Bool
+    | NumberInputValue Int
+
+updateSettingInput : SettingInput msg -> SettingInputUpdateValue -> SettingInput msg
+updateSettingInput settingInput updateValue =
+    case settingInput of
+        CheckBox cb ->
+            case updateValue of
+                CheckBoxValue newFlag -> CheckBox { cb | flag = newFlag }
+                _ -> settingInput
+        NumberInput ni ->
+            case updateValue of
+                NumberInputValue newValue -> NumberInput { ni | value = newValue }
+                _ -> settingInput
+        _ -> settingInput
+updateCheckboxSetting : List (Setting msg) -> Int -> Int -> SettingInputUpdateValue -> Maybe (List (Setting msg))
+updateCheckboxSetting initSettings settingIdx inputIdx updateValue =
     let
         -- Convert the global Settings list in an array
         arrSettings = Array.fromList initSettings
@@ -133,10 +164,7 @@ updateCheckboxSetting initSettings settingIdx inputIdx newFlag =
             |> Maybe.andThen (Array.get inputIdx)
         newSettingInput =
             Maybe.map
-                (\si ->
-                    case si of
-                        CheckBox cb -> CheckBox { cb | flag = newFlag }
-                        _ -> si
+                (\si -> updateSettingInput si updateValue
                 )
                 mSettingInput
 
@@ -149,6 +177,7 @@ updateCheckboxSetting initSettings settingIdx inputIdx newFlag =
                     )
                     mArrSettingInputs
                 )
+
                 newSettingInput
             |> Maybe.map Array.toList
 

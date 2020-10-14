@@ -52,6 +52,7 @@ initModel =
     , timeZone = Time.utc
     , settings = [anotherSetting, dummySetting, { dummySetting | description = "lalal"}]
     , keepAlive = False
+    , keepAliveInterval = 1000
     }
 
 anotherSetting : Setting Msg
@@ -63,6 +64,11 @@ anotherSetting =
             { description = "Checkbox description"
             , flag = False
             , message = DummyCheckboxMsg
+            }
+        , NumberInput
+            { description = "Number Input description"
+            , value = 0
+            , message = DummyNumberInputMsg
             }
         ]
 
