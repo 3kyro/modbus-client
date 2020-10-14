@@ -526,7 +526,7 @@ updateActiveSettingModel model setting =
         newSettings =
             List.map
                 (\set ->
-                    if set == setting
+                    if set.description == setting.description
                     then { set | status = Active }
                     else { set | status = NotActive }
                 )

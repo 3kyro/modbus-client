@@ -58,7 +58,7 @@ anotherSetting : Setting Msg
 anotherSetting =
     Setting
         "A checkbox setting"
-        NotActive
+        Active
         [ CheckBox
             { description = "Checkbox description"
             , flag = False
