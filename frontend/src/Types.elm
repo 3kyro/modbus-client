@@ -29,6 +29,7 @@ module Types exposing
     , showConnectStatus
     , toMFloat
     , writeableReg
+    , keepAliveJson
     )
 
 import File exposing (File)
@@ -468,8 +469,8 @@ fromModType md str =
 
 
 
--- ActiveTab
 --------------------------------------------------------------------------------------------------
+-- ActiveTab
 
 
 type ActiveTab
@@ -515,3 +516,13 @@ toMFloat s =
 fromFloat : Float -> MFloat
 fromFloat f =
     MFloat (String.fromFloat f) f
+
+--------------------------------------------------------------------------------------------------
+-- Keep Alive
+
+keepAliveJson : Model -> E.Value
+keepAliveJson model =
+    E.object
+        [ ( "keep alive", E.bool model.keepAlive )
+        , ( "interval", E.int <| Maybe.withDefault 1 model.keepAliveInterval )
+        ]

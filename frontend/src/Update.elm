@@ -43,6 +43,7 @@ import Types
         , replaceModDataWrite
         , showConnInfo
         , writeableReg
+        , keepAliveJson
         )
 import Types.IpAddress exposing (setIpAddressByte)
 
@@ -361,7 +362,7 @@ update msg model =
             )
 
         KeepAliveMsg settingIdx inputIdx flag ->
-            ( updateKeepAliveModel model settingIdx inputIdx flag, Cmd.none )
+            ( updateKeepAliveModel model settingIdx inputIdx flag, keepAliveRequest model )
 
         KeepAliveIntervalMsg settingIdx inputIdx valueStr ->
             ( updateKeepAliveIntervalModel model settingIdx inputIdx valueStr, Cmd.none)
@@ -369,7 +370,8 @@ update msg model =
         NoOp ->
             ( model, Cmd.none )
 
-
+------------------------------------------------------------------------------------------------------------------
+-- Requests
 
 initCmd : Cmd Msg
 initCmd =
@@ -434,6 +436,14 @@ requestModData model =
     Http.post
         { url = "http://localhost:4000/parseModData"
         , body = Http.jsonBody <| E.string <| Maybe.withDefault "" model.csvContent
+        , expect = Http.expectJson ReceivedModData <| D.list decodeModData
+        }
+
+keepAliveRequest : Model -> Cmd Msg
+keepAliveRequest model =
+    Http.post
+        { url = "http://localhost:4000/keepAlive"
+        , body = Http.jsonBody <| keepAliveJson model
         , expect = Http.expectJson ReceivedModData <| D.list decodeModData
         }
 
