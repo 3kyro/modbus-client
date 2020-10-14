@@ -38,8 +38,7 @@ import Types
         , ConnectionInfo (..)
         )
 import Types.IpAddress exposing (setIpAddressByte)
-import Settings exposing (Setting, SettingStatus(..))
-import Settings exposing (SettingInput(..))
+import Settings exposing (Setting, SettingStatus(..), updateCheckboxSetting)
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
@@ -360,71 +359,20 @@ update msg model =
         NoOp ->
             ( model, Cmd.none )
 
+
 updateDummy : Model
             -> Int   -- Setting index
             -> Int   -- child index
             -> Bool  -- flag
             -> Model
 updateDummy model settingIdx inputIdx newFlag =
-    let
-        -- Convert the global Settings list in an array
-        arrSettings = Array.fromList model.settings
-        -- Get the wanted Setting from that array
-        mSetting = Array.get settingIdx arrSettings
-        -- Get the list of SettingInputs from that Setting
-        mSettingInputs =
-            Maybe.map (\set -> set.inputs) mSetting
-        -- Convert the list of SettingInputs to an Array
-        mArrSettingInputs = Maybe.map Array.fromList mSettingInputs
-        -- Find the looked for SettingInput and modify it
-        mSettingInput =
-            mArrSettingInputs
-            |> Maybe.andThen (Array.get inputIdx)
-        newSettingInput =
-            Maybe.map
-                (\si ->
-                    case si of
-                        CheckBox cb -> CheckBox { cb | flag = newFlag }
-                        _ -> si
-                )
-                mSettingInput
-
-        -- Use this modified value to create a new modified list of SettingInputs
-        mModifiedSettingInputs =
-            Maybe.andThen
-                (\setInput -> Maybe.map
-                    (\listSetInput ->
-                        Array.set inputIdx setInput listSetInput
-                    )
-                    mArrSettingInputs
-                )
-                newSettingInput
-            |> Maybe.map Array.toList
-
-        -- get the modified Setting
-        mModifiedSetting =
-            Maybe.andThen
-                (\setInputs -> Maybe.map
-                    (\setting -> { setting | inputs = setInputs } )
-                    mSetting
-                )
-                mModifiedSettingInputs
-        -- use the modified Setting to get a modified list of Settings
-        mModifiedSettings =
-            Maybe.map
-                (\setting ->
-                    Array.set settingIdx setting arrSettings
-                )
-                mModifiedSetting
-            |> Maybe.map Array.toList
-    in
-        case mModifiedSettings of
-            Nothing ->  { model | keepAlive = newFlag }
-            Just modifiedSettings ->
-                { model
-                    | keepAlive = newFlag
-                    , settings = modifiedSettings
-                }
+    case updateCheckboxSetting model.settings settingIdx inputIdx newFlag of
+        Nothing ->  { model | keepAlive = newFlag }
+        Just modifiedSettings ->
+            { model
+                | keepAlive = newFlag
+                , settings = modifiedSettings
+            }
 
 initCmd : Cmd Msg
 initCmd =
