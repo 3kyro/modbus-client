@@ -52,7 +52,7 @@ initModel =
     , timeZone = Time.utc
     , settings = [anotherSetting, dummySetting, { dummySetting | description = "lalal"}]
     , keepAlive = False
-    , keepAliveInterval = 1000
+    , keepAliveInterval = Just 1
     }
 
 anotherSetting : Setting Msg
@@ -67,7 +67,7 @@ anotherSetting =
             }
         , NumberInput
             { description = "Number Input description"
-            , value = 0
+            , value = Just 1
             , message = DummyNumberInputMsg
             }
         ]

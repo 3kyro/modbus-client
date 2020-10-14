@@ -393,19 +393,18 @@ updateDummyInput :
     -> String
     -> Model
 updateDummyInput model settingIdx inputIdx valueStr =
-    case String.toInt valueStr of
-        Nothing -> model
-        Just newInt ->
-            case updateCheckboxSetting model.settings settingIdx inputIdx (NumberInputValue newInt) of
-                Nothing ->
-                    { model | keepAliveInterval = newInt }
+    let
+        checkedValue = String.toInt valueStr
+    in
+        case updateCheckboxSetting model.settings settingIdx inputIdx (NumberInputValue checkedValue) of
+            Nothing ->
+                { model | keepAliveInterval = checkedValue }
 
-                Just modifiedSettings ->
-                    { model
-                        | keepAliveInterval = newInt
-                        , settings = modifiedSettings
-                    }
-
+            Just modifiedSettings ->
+                { model
+                    | keepAliveInterval = checkedValue
+                    , settings = modifiedSettings
+                }
 
 initCmd : Cmd Msg
 initCmd =

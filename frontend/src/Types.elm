@@ -105,7 +105,7 @@ type alias Model =
     , timeZone : Time.Zone
     , settings : List (Setting Msg)
     , keepAlive : Bool
-    , keepAliveInterval : Int
+    , keepAliveInterval : Maybe Int
     }
 
 

@@ -63,7 +63,7 @@ type SettingInput msg
         }
     | NumberInput
         { description : String
-        , value : Int
+        , value : Maybe Int
         , message : NumberInputMessage msg
         }
     | DropDown
@@ -124,7 +124,7 @@ renderSettingInput parentIdx idx input =
             Input.text
                 []
                 { onChange = ni.message parentIdx idx
-                , text = String.fromInt ni.value
+                , text = Maybe.withDefault "" <| Maybe.map String.fromInt ni.value
                 , placeholder = Nothing
                 , label = Input.labelLeft [] (text ni.description)
                 }
@@ -132,7 +132,7 @@ renderSettingInput parentIdx idx input =
 
 type SettingInputUpdateValue
     = CheckBoxValue Bool
-    | NumberInputValue Int
+    | NumberInputValue (Maybe Int)
 
 updateSettingInput : SettingInput msg -> SettingInputUpdateValue -> SettingInput msg
 updateSettingInput settingInput updateValue =
