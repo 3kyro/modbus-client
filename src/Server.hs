@@ -35,7 +35,7 @@ import Types.Server
 
 type ServerAPI
     = "modData" :> ReqBody '[JSON] [ModDataUpdate] :> Post '[JSON] [ModDataUpdate]
-    :<|> "connect" :> ReqBody '[JSON] ConnectionInfo :> Post '[JSON] ()
+    :<|> "connect" :> ReqBody '[JSON] ConnectionRequest :> Post '[JSON] ()
     :<|> "connectInfo" :> Get '[JSON] (Maybe ConnectionInfo)
     :<|> "disconnect" :> ReqBody '[JSON] String :> Post '[JSON] ()
     :<|> "parseModData" :> ReqBody '[JSON] String :> Post '[JSON] [ModData]
@@ -103,8 +103,8 @@ putState oldState newState = liftIO $ atomically $ writeTVar oldState newState
 -- Connections
 ---------------------------------------------------------------------------------------------------------------
 
-connect :: TVar ServState -> ConnectionInfo -> Handler ()
-connect state connectionInfo = do
+connect :: TVar ServState -> ConnectionRequest -> Handler ()
+connect state (ConnectionRequest connectionInfo kaValue) = do
     state' <- liftIO $ readTVarIO state
     case servConnection state' of
         TCPConnection {} -> throwError err400
@@ -118,6 +118,7 @@ connect state connectionInfo = do
                         client <- liftIO $ getTCPClient socket tm
                         putState state $ state'
                             {servConnection = TCPConnection socket connectionInfo $ getTCPActors client}
+                        keepAlive state kaValue
             RTUConnectionInfo serial tm -> do
                 mPort <- liftIO $ getRTUSerialPort serial tm
                 case mPort of

@@ -14,12 +14,13 @@ import Notifications
         , StatusBarState(..)
         , changeNotificationState
         )
-import Settings exposing
-    ( Setting
-    , SettingStatus(..)
-    , SettingInputUpdateValue(..)
-    , updateCheckboxSetting
-    )
+import Settings
+    exposing
+        ( Setting
+        , SettingInputUpdateValue(..)
+        , SettingStatus(..)
+        , updateCheckboxSetting
+        )
 import Task
 import Time
 import Types
@@ -35,15 +36,16 @@ import Types
         , decodeConnInfo
         , decodeModData
         , decodeModDataUpdate
+        , encodeKeepAlive
         , encodeModDataUpdate
         , encodeTCPConnectionInfo
+        , encodeTCPConnectionRequest
         , fromModType
         , newModDataUpdate
         , replaceModDataSelected
         , replaceModDataWrite
         , showConnInfo
         , writeableReg
-        , keepAliveJson
         )
 import Types.IpAddress exposing (setIpAddressByte)
 
@@ -165,7 +167,7 @@ update msg model =
                 case String.toInt tm of
                     Nothing ->
                         ( model, Cmd.none )
- 
+
                     Just t ->
                         if t < 0 || t > 65535 then
                             ( model, Cmd.none )
@@ -365,17 +367,21 @@ update msg model =
             ( updateKeepAliveModel model settingIdx inputIdx flag, keepAliveRequest model )
 
         KeepAliveIntervalMsg settingIdx inputIdx valueStr ->
-            ( updateKeepAliveIntervalModel model settingIdx inputIdx valueStr, Cmd.none)
+            ( updateKeepAliveIntervalModel model settingIdx inputIdx valueStr, Cmd.none )
 
         NoOp ->
             ( model, Cmd.none )
 
+
+
 ------------------------------------------------------------------------------------------------------------------
 -- Requests
+
 
 initCmd : Cmd Msg
 initCmd =
     getTimeZone
+
 
 connectionInfoRequest : Cmd Msg
 connectionInfoRequest =
@@ -389,7 +395,7 @@ connectRequest : Model -> Cmd Msg
 connectRequest model =
     Http.post
         { url = "http://localhost:4000/connect"
-        , body = Http.jsonBody <| encodeTCPConnectionInfo model
+        , body = Http.jsonBody <| encodeTCPConnectionRequest model
         , expect = Http.expectWhatever ConnectedResponse
         }
 
@@ -439,11 +445,12 @@ requestModData model =
         , expect = Http.expectJson ReceivedModData <| D.list decodeModData
         }
 
+
 keepAliveRequest : Model -> Cmd Msg
 keepAliveRequest model =
     Http.post
         { url = "http://localhost:4000/keepAlive"
-        , body = Http.jsonBody <| keepAliveJson model
+        , body = Http.jsonBody <| encodeKeepAlive model
         , expect = Http.expectJson ReceivedModData <| D.list decodeModData
         }
 
@@ -546,6 +553,7 @@ updateActiveSettingModel model setting =
     in
     { model | settings = newSettings }
 
+
 updateKeepAliveModel :
     Model
     -> Int -- Setting index
@@ -562,6 +570,8 @@ updateKeepAliveModel model settingIdx inputIdx newFlag =
                 | keepAlive = newFlag
                 , settings = modifiedSettings
             }
+
+
 updateKeepAliveIntervalModel :
     Model
     -> Int -- Setting index
@@ -570,14 +580,15 @@ updateKeepAliveIntervalModel :
     -> Model
 updateKeepAliveIntervalModel model settingIdx inputIdx valueStr =
     let
-        checkedValue = String.toInt valueStr
+        checkedValue =
+            String.toInt valueStr
     in
-        case updateCheckboxSetting model.settings settingIdx inputIdx (NumberInputValue checkedValue) of
-            Nothing ->
-                { model | keepAliveInterval = checkedValue }
+    case updateCheckboxSetting model.settings settingIdx inputIdx (NumberInputValue checkedValue) of
+        Nothing ->
+            { model | keepAliveInterval = checkedValue }
 
-            Just modifiedSettings ->
-                { model
-                    | keepAliveInterval = checkedValue
-                    , settings = modifiedSettings
-                }
+        Just modifiedSettings ->
+            { model
+                | keepAliveInterval = checkedValue
+                , settings = modifiedSettings
+            }

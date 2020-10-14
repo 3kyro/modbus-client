@@ -1,7 +1,7 @@
 module Types exposing
     ( ActiveTab(..)
     , ConnectStatus(..)
-    , ConnectionInfo (..)
+    , ConnectionInfo(..)
     , MFloat
     , ModData
     , ModDataUpdate
@@ -13,9 +13,11 @@ module Types exposing
     , decodeConnInfo
     , decodeModData
     , decodeModDataUpdate
-    , encodeTCPConnectionInfo
+    , encodeKeepAlive
     , encodeModData
     , encodeModDataUpdate
+    , encodeTCPConnectionInfo
+    , encodeTCPConnectionRequest
     , flipRW
     , fromFloat
     , fromModType
@@ -29,7 +31,6 @@ module Types exposing
     , showConnectStatus
     , toMFloat
     , writeableReg
-    , keepAliveJson
     )
 
 import File exposing (File)
@@ -41,6 +42,7 @@ import Notifications
         ( Notification
         , StatusBarState(..)
         )
+import Settings exposing (Setting)
 import String exposing (fromFloat)
 import Time
 import Types.IpAddress
@@ -51,7 +53,7 @@ import Types.IpAddress
         , showIp
         , unsafeShowIp
         )
-import Settings exposing (Setting)
+
 
 type Msg
     = ReadRegisters (Result Http.Error (List ModDataUpdate))
@@ -139,7 +141,6 @@ showConnectStatus st =
 
 
 
-
 ----------------------------------------------------------------------------------------------------------------------------------
 -- Connection Info
 -----------------------------------------------------------------------------------------------------------------------------------
@@ -179,14 +180,23 @@ decodeConnInfo =
             )
 
 
+encodeTCPConnectionRequest : Model -> E.Value
+encodeTCPConnectionRequest model =
+    E.object
+        [ ( "connection info", encodeTCPConnectionInfo model )
+        , ( "keep alive", encodeKeepAlive model )
+        ]
+
+
 encodeTCPConnectionInfo : Model -> E.Value
 encodeTCPConnectionInfo model =
     E.object
-        [ ( "connection type" , E.string "tcp")
+        [ ( "connection type", E.string "tcp" )
         , ( "ip address", E.string <| unsafeShowIp model.ipAddress )
         , ( "port", E.int <| Maybe.withDefault 0 model.socketPort )
         , ( "timeout", E.int <| Maybe.withDefault 0 model.timeout )
         ]
+
 
 getTCPConnectionInfo : IpAddress -> Int -> Int -> ConnectionInfo
 getTCPConnectionInfo ip portNum tm =
@@ -203,8 +213,6 @@ getRTUConnectionInfo address tm =
         { rtuAddress = address
         , timeout = tm
         }
-
-
 
 
 showConnInfo : ConnectionInfo -> String
@@ -518,12 +526,15 @@ fromFloat : Float -> MFloat
 fromFloat f =
     MFloat (String.fromFloat f) f
 
+
+
 --------------------------------------------------------------------------------------------------
 -- Keep Alive
 
-keepAliveJson : Model -> E.Value
-keepAliveJson model =
+
+encodeKeepAlive : Model -> E.Value
+encodeKeepAlive model =
     E.object
-        [ ( "keep alive", E.bool model.keepAlive )
+        [ ( "flag", E.bool model.keepAlive )
         , ( "interval", E.int <| Maybe.withDefault 1 model.keepAliveInterval )
         ]

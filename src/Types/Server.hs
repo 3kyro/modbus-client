@@ -1,5 +1,5 @@
-{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE OverloadedStrings   #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module Types.Server
     ( Server
@@ -7,65 +7,85 @@ module Types.Server
     , ServerActors (..)
     , Connection (..)
     , ConnectionInfo (..)
+    , ConnectionRequest (..)
     , getActors
     , getTCPActors
     , getRTUActors
     , KeepAlive (..)
     ) where
 
-import qualified Network.Socket   as S
+import qualified Network.Socket             as S
 
-import           Data.Aeson       (FromJSON, ToJSON, object, parseJSON, toJSON,
-                                   (.:), (.=))
-import           Data.Aeson.Types (Value (..))
-import           Data.IP          (IPv4)
+import           Data.Aeson                 (FromJSON, ToJSON, object,
+                                             parseJSON, toJSON, (.:), (.=))
+import           Data.Aeson.Types           (Value (..))
+import           Data.IP                    (IPv4)
 import           Servant
 
-import           Modbus     (rtuBatchWorker, rtuDirectWorker, tcpBatchWorker, tcpDirectWorker, Worker, ModbusProtocol, TID, Client, ByteOrder, HeartBeat)
-import Control.Concurrent (ThreadId, MVar)
+import           Control.Concurrent         (MVar, ThreadId)
+import           Control.Concurrent.STM     (TVar)
+import qualified Data.Text                  as T
+import           Modbus                     (ByteOrder, Client, HeartBeat,
+                                             ModbusProtocol, TID, Worker,
+                                             rtuBatchWorker, rtuDirectWorker,
+                                             tcpBatchWorker, tcpDirectWorker)
 import qualified System.Hardware.Serialport as SP
-import Control.Concurrent.STM (TVar)
-import qualified Data.Text as T
 
 data ServState = ServState
-    { servConnection        :: ! Connection
-    , servProtocol          :: ! ModbusProtocol
-    , servOrd               :: ! ByteOrder
-    , servTID               :: ! (TVar TID)
-    , servPool              :: ! [HeartBeat]
-    , servKeepAliveId       :: ! (Maybe ThreadId)
+    { servConnection  :: !Connection
+    , servProtocol    :: !ModbusProtocol
+    , servOrd         :: !ByteOrder
+    , servTID         :: !(TVar TID)
+    , servPool        :: ![HeartBeat]
+    , servKeepAliveId :: !(Maybe ThreadId)
     }
 
 data ServerActors = ServerActors
-    { sclClient         :: ! (MVar Client)
-    , sclDirectWorker   :: ! (Worker IO)
-    , sclBatchWorker    :: ! (Worker IO)
+    { sclClient       :: !(MVar Client)
+    , sclDirectWorker :: !(Worker IO)
+    , sclBatchWorker  :: !(Worker IO)
     }
 
-data Connection
-    = TCPConnection
-        { tcpSocket         :: ! S.Socket
-        , tcpConnectionInfo :: ! ConnectionInfo
-        , tcpActors         :: ! ServerActors
-        }
+data Connection = TCPConnection
+    { tcpSocket         :: !S.Socket
+    , tcpConnectionInfo :: !ConnectionInfo
+    , tcpActors         :: !ServerActors
+    }
     | RTUConnection
-        { rtuPort           :: !SP.SerialPort
-        , rtuConnectionInfo :: ! ConnectionInfo
-        , rtuActors         :: ! ServerActors
-        }
+    { rtuPort           :: !SP.SerialPort
+    , rtuConnectionInfo :: !ConnectionInfo
+    , rtuActors         :: !ServerActors
+    }
     | NotConnected
 
-data ConnectionInfo
-    = TCPConnectionInfo
-        { tcpIpAddress     :: ! IPv4
-        , tcpPortNum       :: ! Int
-        , tcpTimeout       :: ! Int
-        }
-    | RTUConnectionInfo
-        { rtuAddress        :: ! String
-        , rtuTimeout        :: ! Int
-        }
+getActors :: Connection -> Maybe ServerActors
+getActors (TCPConnection _ _ actors) = Just actors
+getActors (RTUConnection _ _ actors) = Just actors
+getActors NotConnected               = Nothing
 
+getTCPActors :: MVar Client -> ServerActors
+getTCPActors client =
+    ServerActors
+        client
+        tcpDirectWorker
+        tcpBatchWorker
+
+getRTUActors :: MVar Client -> ServerActors
+getRTUActors client =
+    ServerActors
+        client
+        rtuDirectWorker
+        rtuBatchWorker
+
+data ConnectionInfo = TCPConnectionInfo
+    { tcpIpAddress :: !IPv4
+    , tcpPortNum   :: !Int
+    , tcpTimeout   :: !Int
+    }
+    | RTUConnectionInfo
+    { rtuAddress :: !String
+    , rtuTimeout :: !Int
+    }
 
 instance FromJSON ConnectionInfo where
     parseJSON (Object o) = do
@@ -97,34 +117,26 @@ instance ToJSON ConnectionInfo where
                 , "timeout" .= tm
                 ]
 
-getActors :: Connection -> Maybe ServerActors
-getActors (TCPConnection _ _ actors) = Just actors
-getActors (RTUConnection _ _ actors) = Just actors
-getActors NotConnected = Nothing
+data ConnectionRequest = ConnectionRequest
+    { requestInfo      :: !ConnectionInfo
+    , requestKeepAlive :: !KeepAlive
+    }
 
-getTCPActors :: MVar Client -> ServerActors
-getTCPActors client =
-    ServerActors
-        client
-        tcpDirectWorker
-        tcpBatchWorker
-
-getRTUActors :: MVar Client -> ServerActors
-getRTUActors client =
-    ServerActors
-        client
-        rtuDirectWorker
-        rtuBatchWorker
-
+instance FromJSON ConnectionRequest where
+    parseJSON (Object o) = do
+        jsonInfo <- o .: "connection info"
+        jsonKeepAlive <- o .: "keep alive"
+        return $ ConnectionRequest jsonInfo jsonKeepAlive
+    parseJSON _ = fail "Not a valid ConnectionRequest"
 
 data KeepAlive = KeepAlive
-    { flag :: Bool
+    { flag     :: Bool
     , interval :: Int
     }
 
 instance FromJSON KeepAlive where
     parseJSON (Object o) = do
-        pflag <- o .: "keep alive"
+        pflag <- o .: "flag"
         pinterval <- o .: "interval"
         return $ KeepAlive pflag pinterval
     parseJSON _ = fail "Not a valid KeepAlive"
