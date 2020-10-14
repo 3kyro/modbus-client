@@ -10,6 +10,7 @@ module Types.Server
     , getActors
     , getTCPActors
     , getRTUActors
+    , KeepAlive (..)
     ) where
 
 import qualified Network.Socket   as S
@@ -21,7 +22,7 @@ import           Data.IP          (IPv4)
 import           Servant
 
 import           Modbus     (rtuBatchWorker, rtuDirectWorker, tcpBatchWorker, tcpDirectWorker, Worker, ModbusProtocol, TID, Client, ByteOrder, HeartBeat)
-import Control.Concurrent (MVar)
+import Control.Concurrent (ThreadId, MVar)
 import qualified System.Hardware.Serialport as SP
 import Control.Concurrent.STM (TVar)
 import qualified Data.Text as T
@@ -32,6 +33,7 @@ data ServState = ServState
     , servOrd               :: ! ByteOrder
     , servTID               :: ! (TVar TID)
     , servPool              :: ! [HeartBeat]
+    , servKeepAliveId       :: ! (Maybe ThreadId)
     }
 
 data ServerActors = ServerActors
@@ -63,6 +65,7 @@ data ConnectionInfo
         { rtuAddress        :: ! String
         , rtuTimeout        :: ! Int
         }
+
 
 instance FromJSON ConnectionInfo where
     parseJSON (Object o) = do
@@ -112,3 +115,16 @@ getRTUActors client =
         client
         rtuDirectWorker
         rtuBatchWorker
+
+
+data KeepAlive = KeepAlive
+    { flag :: Bool
+    , interval :: Int
+    }
+
+instance FromJSON KeepAlive where
+    parseJSON (Object o) = do
+        pflag <- o .: "keep alive"
+        pinterval <- o .: "interval"
+        return $ KeepAlive pflag pinterval
+    parseJSON _ = fail "Not a valid KeepAlive"

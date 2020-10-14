@@ -22,10 +22,10 @@ import qualified System.Process as PS
 import Control.Monad.Except (catchError)
 import CsvParser (runpCSV)
 import Control.Exception.Safe (SomeException)
-import Control.Concurrent (threadDelay, ThreadId, forkIO, MVar)
+import Control.Concurrent (killThread, threadDelay, ThreadId, forkIO, MVar)
 import Control.Exception (try)
 import qualified System.Hardware.Serialport as SP
-import Modbus (runClient, updateMBRegister, readMBRegister, getNewTID, initTID, getRTUSerialPort, getTCPSocket, getRTUClient, getTCPClient, Worker, Client, Session, TID, ModbusProtocol (..), ByteOrder)
+import Modbus (keepAliveThread, runClient, updateMBRegister, readMBRegister, getNewTID, initTID, getRTUSerialPort, getTCPSocket, getRTUClient, getTCPClient, Worker, Client, Session, TID, ModbusProtocol (..), ByteOrder)
 import Types.ModData
 import Types.Server
 
@@ -39,6 +39,7 @@ type ServerAPI
     :<|> "connectInfo" :> Get '[JSON] (Maybe ConnectionInfo)
     :<|> "disconnect" :> ReqBody '[JSON] String :> Post '[JSON] ()
     :<|> "parseModData" :> ReqBody '[JSON] String :> Post '[JSON] [ModData]
+    :<|> "keepAlive" :> ReqBody '[JSON] KeepAlive :> Post '[JSON] ()
     :<|> Raw
 
 serverAPI :: TVar ServState -> Server ServerAPI
@@ -48,6 +49,7 @@ serverAPI state
     :<|> getConnectionInfo state
     :<|> disconnect state
     :<|> parseAndSend
+    :<|> keepAlive state
     :<|> serveDirectoryWebApp "frontend"
 
 proxyAPI :: Proxy ServerAPI
@@ -158,12 +160,30 @@ getInitState protocol order = do
         order
         tid
         []
+        Nothing
 
 
 
 ---------------------------------------------------------------------------------------------------------------
 -- Requests
 ---------------------------------------------------------------------------------------------------------------
+
+keepAlive :: TVar ServState -> KeepAlive -> Handler ()
+keepAlive state kaValue = do
+    currentState <- liftIO $ readTVarIO state
+    let actors = getActors $ servConnection currentState
+    case servKeepAliveId currentState of
+        Nothing ->
+            case actors of
+                Nothing -> throwError err400
+                Just (ServerActors client _ _) -> do
+                    thread <- liftIO $ forkIO $ keepAliveThread client $ 1000000 * interval kaValue
+                    liftIO $ atomically $ writeTVar state currentState
+                            { servKeepAliveId = Just thread
+                            }
+        Just thread ->
+            liftIO $ killThread thread
+
 
 updateModData :: TVar ServState -> [ModDataUpdate] -> Handler [ModDataUpdate]
 updateModData state mdus = do
@@ -202,11 +222,6 @@ parseAndSend content =
             Left _ -> throwError err400
             Right mds -> pure mds
 
--- runServerClient :: Worker IO -> MVar Client -> Session IO a -> IO (Either SomeException a)
--- runServerClient worker client session =  try $ runClient worker client session
-
--- runUpdateSession :: Worker IO -> MVar Client -> [Maybe (Session IO a)] -> IO (Either SomeException a)
-
 runServerClientMaybe :: Worker IO -> MVar Client -> Maybe (Session IO a) -> IO ( Maybe (Either SomeException a))
 runServerClientMaybe worker client (Just session) = do
     rlt <- try $ runClient worker client session
@@ -225,8 +240,6 @@ liftException (x:xs) =
                 Left err -> Left err
                 Right y' -> Right $ Just y' : b
 
-
-
 mergeModDataUpdate :: [Maybe ModDataUpdate] -> [ModDataUpdate] -> [ModDataUpdate]
 mergeModDataUpdate [] _ = []
 mergeModDataUpdate _ [] = []
@@ -234,4 +247,5 @@ mergeModDataUpdate (x:xs) (y:ys) =
     case x of
         Nothing -> y:mergeModDataUpdate xs ys
         Just x' -> x':mergeModDataUpdate xs ys
+
 
