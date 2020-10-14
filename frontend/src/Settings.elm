@@ -26,8 +26,9 @@ import Element
         , paddingXY
         , spacing
         , alignTop
+        , focused
         )
-
+import Element.Border as Border
 import Element.Events exposing (onClick)
 import Element.Background as Background
 import Element.Font as Font
@@ -39,6 +40,7 @@ import Palette
         , lightGrey
         , greyWhite
         )
+import Element exposing (centerY)
 
 
 type alias Setting msg =
@@ -91,6 +93,7 @@ renderSetting message parentIdx setting =
         [ Background.color <| settingBGcolor setting.status
         , width fill
         , paddingXY 20 20
+        , spacing 20
         , Font.color greyWhite
         , mouseOver [ Background.color <| hoverBGColor setting.status ]
         , onClick <| message setting
@@ -122,11 +125,18 @@ renderSettingInput parentIdx idx input =
                 }
         NumberInput ni ->
             Input.text
-                []
+                [ width <| px 500
+                , height <| px 32
+                , centerY
+                , Background.color lightGrey
+                , Font.color greyWhite
+                , focused [ Border.glow greyWhite 1 ]
+                , paddingXY 5 8
+                ]
                 { onChange = ni.message parentIdx idx
                 , text = Maybe.withDefault "" <| Maybe.map String.fromInt ni.value
                 , placeholder = Nothing
-                , label = Input.labelLeft [] (text ni.description)
+                , label = Input.labelLeft [centerY] (text ni.description)
                 }
         _ -> none
 
