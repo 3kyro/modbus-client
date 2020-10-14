@@ -360,56 +360,20 @@ update msg model =
             , Cmd.none
             )
 
-        DummyCheckboxMsg settingIdx inputIdx flag ->
-            ( updateDummy model settingIdx inputIdx flag, Cmd.none )
+        KeepAliveMsg settingIdx inputIdx flag ->
+            ( updateKeepAliveModel model settingIdx inputIdx flag, Cmd.none )
 
-        DummyNumberInputMsg settingIdx inputIdx valueStr ->
-            ( updateDummyInput model settingIdx inputIdx valueStr, Cmd.none)
+        KeepAliveIntervalMsg settingIdx inputIdx valueStr ->
+            ( updateKeepAliveIntervalModel model settingIdx inputIdx valueStr, Cmd.none)
 
         NoOp ->
             ( model, Cmd.none )
 
 
-updateDummy :
-    Model
-    -> Int -- Setting index
-    -> Int -- child index
-    -> Bool -- flag
-    -> Model
-updateDummy model settingIdx inputIdx newFlag =
-    case updateCheckboxSetting model.settings settingIdx inputIdx (CheckBoxValue newFlag) of
-        Nothing ->
-            { model | keepAlive = newFlag }
-
-        Just modifiedSettings ->
-            { model
-                | keepAlive = newFlag
-                , settings = modifiedSettings
-            }
-updateDummyInput :
-    Model
-    -> Int -- Setting index
-    -> Int -- child index
-    -> String
-    -> Model
-updateDummyInput model settingIdx inputIdx valueStr =
-    let
-        checkedValue = String.toInt valueStr
-    in
-        case updateCheckboxSetting model.settings settingIdx inputIdx (NumberInputValue checkedValue) of
-            Nothing ->
-                { model | keepAliveInterval = checkedValue }
-
-            Just modifiedSettings ->
-                { model
-                    | keepAliveInterval = checkedValue
-                    , settings = modifiedSettings
-                }
 
 initCmd : Cmd Msg
 initCmd =
     getTimeZone
-
 
 connectionInfoRequest : Cmd Msg
 connectionInfoRequest =
@@ -571,3 +535,39 @@ updateActiveSettingModel model setting =
                 model.settings
     in
     { model | settings = newSettings }
+
+updateKeepAliveModel :
+    Model
+    -> Int -- Setting index
+    -> Int -- child index
+    -> Bool
+    -> Model
+updateKeepAliveModel model settingIdx inputIdx newFlag =
+    case updateCheckboxSetting model.settings settingIdx inputIdx (CheckBoxValue newFlag) of
+        Nothing ->
+            { model | keepAlive = newFlag }
+
+        Just modifiedSettings ->
+            { model
+                | keepAlive = newFlag
+                , settings = modifiedSettings
+            }
+updateKeepAliveIntervalModel :
+    Model
+    -> Int -- Setting index
+    -> Int -- child index
+    -> String
+    -> Model
+updateKeepAliveIntervalModel model settingIdx inputIdx valueStr =
+    let
+        checkedValue = String.toInt valueStr
+    in
+        case updateCheckboxSetting model.settings settingIdx inputIdx (NumberInputValue checkedValue) of
+            Nothing ->
+                { model | keepAliveInterval = checkedValue }
+
+            Just modifiedSettings ->
+                { model
+                    | keepAliveInterval = checkedValue
+                    , settings = modifiedSettings
+                }

@@ -80,8 +80,8 @@ type Msg
     | NewTime Time.Posix
     | ExpandNotification Notification
     | SetActiveSetting (Setting Msg)
-    | DummyCheckboxMsg Int Int Bool
-    | DummyNumberInputMsg Int Int String
+    | KeepAliveMsg Int Int Bool
+    | KeepAliveIntervalMsg Int Int String
     | NoOp
 
 

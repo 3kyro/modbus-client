@@ -50,25 +50,25 @@ initModel =
     , readWriteAll = Read
     , timePosix = Time.millisToPosix 0
     , timeZone = Time.utc
-    , settings = [anotherSetting, dummySetting, { dummySetting | description = "lalal"}]
+    , settings = [keepAliveSetting]
     , keepAlive = False
     , keepAliveInterval = Just 1
     }
 
-anotherSetting : Setting Msg
-anotherSetting =
+keepAliveSetting : Setting Msg
+keepAliveSetting =
     Setting
-        "A checkbox setting"
-        Active
+        "Keep Alive"
+        NotActive
         [ CheckBox
-            { description = "Checkbox description"
+            { description = "Enable keep alive"
             , flag = False
-            , message = DummyCheckboxMsg
+            , message = KeepAliveMsg
             }
         , NumberInput
-            { description = "Number Input description"
+            { description = "Keep alive interval (s)"
             , value = Just 1
-            , message = DummyNumberInputMsg
+            , message = KeepAliveIntervalMsg
             }
         ]
 
