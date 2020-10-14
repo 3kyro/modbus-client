@@ -19,7 +19,8 @@ import Types
 import Types.IpAddress exposing (defaultIpAddr)
 import Update exposing (initCmd, update)
 import View exposing (view)
-
+import Settings exposing (Setting , SettingStatus (..), SettingInput (..), dummySetting)
+import Element.Input exposing (checkbox)
 
 main : Program () Model Msg
 main =
@@ -49,8 +50,21 @@ initModel =
     , readWriteAll = Read
     , timePosix = Time.millisToPosix 0
     , timeZone = Time.utc
+    , settings = [anotherSetting, dummySetting, { dummySetting | description = "lalal"}]
+    , keepAlive = False
     }
 
+anotherSetting : Setting Msg
+anotherSetting =
+    Setting
+        "A checkbox setting"
+        NotActive
+        [ CheckBox
+            { description = "Checkbox description"
+            , flag = False
+            , message = DummyCheckboxMsg
+            }
+        ]
 
 initModData : List ModData
 initModData =

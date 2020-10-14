@@ -50,7 +50,7 @@ import Types.IpAddress
         , showIp
         , unsafeShowIp
         )
-
+import Settings exposing (Setting)
 
 type Msg
     = ReadRegisters (Result Http.Error (List ModDataUpdate))
@@ -79,6 +79,8 @@ type Msg
     | InitTime Time.Posix
     | NewTime Time.Posix
     | ExpandNotification Notification
+    | SetActiveSetting (Setting Msg)
+    | DummyCheckboxMsg Int Int Bool
     | NoOp
 
 
@@ -100,6 +102,8 @@ type alias Model =
     , readWriteAll : ReadWrite
     , timePosix : Time.Posix
     , timeZone : Time.Zone
+    , settings : List (Setting Msg)
+    , keepAlive : Bool
     }
 
 
@@ -473,6 +477,7 @@ type ActiveTab
     | HoldingRegistersTab
     | ModDataTab
     | HeartbeatTab
+    | SettingsTab
 
 
 

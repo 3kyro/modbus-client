@@ -512,8 +512,7 @@ heartBeatSignal protocol interval worker clientMVar uid tid address = do
 ---------------------------------------------------------------------------------------------------------------
 
 -- A thread implementing the TCP keep alive function
--- The global ThreadConfig contains information on wheter keep alive is active
--- and the interval between calls. In order be cross platform, we ignore OS specific
+-- In order be cross platform, we ignore OS specific
 -- implementation of the keep alive function and simply send a minimum package at every interval
 keepAliveThread :: MVar Client -> Int -> IO ()
 keepAliveThread clientMVar interval = do

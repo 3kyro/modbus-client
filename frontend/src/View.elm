@@ -75,6 +75,11 @@ import Types.IpAddress
         , IpAddressByte(..)
         , showIpAddressByte
         )
+import Settings exposing
+    ( renderSettings
+    , dummySetting
+    )
+import Settings exposing (renderSettings)
 
 
 view : Model -> Html Msg
@@ -111,11 +116,12 @@ menuBar model =
         , spacing 0
         ]
         [ connectTabButton model
-        , importRegisterTableButton model
-        , inputRegistersButton model
-        , holdingRegistersButton model
-        , registerTableButton model
-        , heartbeatButton model
+        , importRegisterTabButton model
+        , inputRegisterTabButton model
+        , holdingRegisterTabButton model
+        , registerTabButton model
+        , heartbeatTabButton model
+        , settingsTabButton model
         ]
 
 
@@ -126,7 +132,7 @@ menuBar model =
 newSelectTabButton : Model -> String -> ActiveTab -> Element Msg
 newSelectTabButton model str tab =
     Input.button
-        [ Background.color <| selectButtonBgdColor model tab
+        [ Background.color <| selectTabButtonBgdColor model tab
         , focused [ Font.color white ]
         , mouseOver [ Font.color white ]
         , Border.width 0
@@ -139,8 +145,8 @@ newSelectTabButton model str tab =
         }
 
 
-selectButtonBgdColor : Model -> ActiveTab -> Color
-selectButtonBgdColor model tab =
+selectTabButtonBgdColor : Model -> ActiveTab -> Color
+selectTabButtonBgdColor model tab =
     if model.activeTab == tab then
         grey
 
@@ -153,29 +159,33 @@ connectTabButton model =
     newSelectTabButton model "Connect" ConnectMenu
 
 
-importRegisterTableButton : Model -> Element Msg
-importRegisterTableButton model =
+importRegisterTabButton : Model -> Element Msg
+importRegisterTabButton model =
     newSelectTabButton model "Import" ImportMenu
 
 
-inputRegistersButton : Model -> Element Msg
-inputRegistersButton model =
+inputRegisterTabButton : Model -> Element Msg
+inputRegisterTabButton model =
     newSelectTabButton model "Input Registers" InputRegistersTab
 
 
-holdingRegistersButton : Model -> Element Msg
-holdingRegistersButton model =
+holdingRegisterTabButton : Model -> Element Msg
+holdingRegisterTabButton model =
     newSelectTabButton model "Holding Registers" HoldingRegistersTab
 
 
-registerTableButton : Model -> Element Msg
-registerTableButton model =
+registerTabButton : Model -> Element Msg
+registerTabButton model =
     newSelectTabButton model "Register Table" ModDataTab
 
 
-heartbeatButton : Model -> Element Msg
-heartbeatButton model =
+heartbeatTabButton : Model -> Element Msg
+heartbeatTabButton model =
     newSelectTabButton model "Heartbeat Signals" HeartbeatTab
+
+settingsTabButton : Model -> Element Msg
+settingsTabButton model =
+    newSelectTabButton model "Settings" SettingsTab
 
 
 mainTab : Model -> Element Msg
@@ -209,6 +219,9 @@ infoArea model =
 
         HeartbeatTab ->
             heartbeatTab
+
+        SettingsTab ->
+            settingsTab model
 
 
 
@@ -781,6 +794,21 @@ heartbeatTab =
 
 
 ------------------------------------------------------------------------------------------------------------------
+-- Settings Tab
+
+settingsTab : Model -> Element Msg
+settingsTab model =
+    el
+        [ Background.color grey
+        , width fill
+        , alignTop
+        , alignLeft
+        , paddingXY 20 10
+        ]
+    <|
+        renderSettings SetActiveSetting model.settings
+
+------------------------------------------------------------------------------------------------------------------
 -- Command Area
 
 
@@ -803,6 +831,9 @@ commandArea model =
             modDataCommand model
 
         HeartbeatTab ->
+            none
+
+        SettingsTab ->
             none
 
 
