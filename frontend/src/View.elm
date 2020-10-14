@@ -333,7 +333,10 @@ connectButton model =
         , Font.center
         , focused []
         ]
-        { onPress = Just ConnectRequest
+        { onPress =
+            case model.connectStatus of
+                 Connect -> Just ConnectRequest
+                 _ -> Nothing
         , label = text <| showConnectStatus model.connectStatus
         }
 
@@ -352,6 +355,8 @@ connectButtonBgd model =
 
         Disconnecting ->
             lightGrey
+
+
 
 
 disconnectButton : Model -> Element Msg
@@ -374,9 +379,6 @@ disconnectButton model =
 disconnectButtonBgd : Model -> Color
 disconnectButtonBgd model =
     case model.connectStatus of
-        Connect ->
-            grey
-
         Connecting ->
             grey
 
@@ -384,6 +386,9 @@ disconnectButtonBgd model =
             lightGrey
 
         Disconnecting ->
+            grey
+
+        Connect ->
             grey
 
 
