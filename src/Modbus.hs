@@ -442,10 +442,11 @@ float2Word16 LE float =
     floatle = runPut $ putFloatle float
     combine a b = a : [b]
 float2Word16 BE float =
-    runGet (combine <$> getWord16host <*> getWord16host) floatbe
+    runGet (combine <$> getWord16host <*> getWord16host) floatle
+
   where
-    floatbe = runPut $ putFloatbe float
-    combine a b = a : [b]
+    floatle = runPut $ putFloatle float
+    combine a b = b : [a]
 
 -- Converts a list of Word16s to a Maybe Float
 word16ToFloat :: ByteOrder -> [Word16] -> Maybe Float
@@ -455,10 +456,12 @@ word16ToFloat LE [a,b] =
   where
     float = runPut $ putWord16host a  >> putWord16host b
 word16ToFloat BE [a,b] =
-    Just $ runGet getFloatbe float
+    Just $ runGet getFloatle float
   where
-    float = runPut $ putWord16host a  >> putWord16host b
+    float = runPut $ putWord16host b  >> putWord16host a
+
 word16ToFloat _ _ = Nothing
+
 
 ---------------------------------------------------------------------------------------------------------------
 -- HeartBeat Signal
