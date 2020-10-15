@@ -1,6 +1,6 @@
-{-# LANGUAGE FlexibleInstances          #-}
-{-# LANGUAGE MultiParamTypeClasses      #-}
-{-# LANGUAGE RankNTypes                 #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE RankNTypes            #-}
 module Types.Repl
     ( Repl
     , ReplState (..)
@@ -20,27 +20,15 @@ import           System.Console.Repline           (HaskelineT)
 import           Types.ModData                    (ModData (..))
 
 
-import           Control.Exception.Safe           (throwIO)
-import           Control.Monad.Catch
-import           Control.Monad.State.Strict       (lift)
+import           Control.Concurrent.STM           (TVar)
 import           Data.Range                       (Range)
 import           Data.Tagged                      (Tagged)
-import           Modbus                     (TID, Address, ByteOrder, Client,
+import           Modbus                           (Address, ByteOrder, Client,
                                                    HeartBeat (..),
-                                                   ModbusProtocol, Session,
+                                                   ModbusProtocol, Session, TID,
                                                    TransactionInfo, Worker)
-import Control.Concurrent.STM (TVar)
 
 type Repl = HaskelineT (StateT ReplState IO)
-
-instance MonadMask Repl where
-    mask = mask
-    uninterruptibleMask = uninterruptibleMask
-    generalBracket = generalBracket
-instance MonadThrow Repl where
-    throwM = lift . throwIO
-instance MonadCatch Repl where
-    catch = catch
 
 data ReplState = ReplState
     { replClient        :: !(MVar Client)
