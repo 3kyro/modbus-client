@@ -456,12 +456,14 @@ requestModData model =
 -- Send keep alive flag seperately, as the model might not update in time
 keepAliveRequest : Model -> Bool -> Cmd Msg
 keepAliveRequest model flag =
-    Http.post
-        { url = "http://localhost:4000/keepAlive"
-        , body = Http.jsonBody <| encodeKeepAlive model flag
-        , expect = Http.expectJson KeepAliveResponseMsg decodeKeepAliveResponse
-        }
-
+    case model.connectStatus of
+        Connected ->
+            Http.post
+                { url = "http://localhost:4000/keepAlive"
+                , body = Http.jsonBody <| encodeKeepAlive model flag
+                , expect = Http.expectJson KeepAliveResponseMsg decodeKeepAliveResponse
+                }
+        _ -> Cmd.none
 
 getTimeZone : Cmd Msg
 getTimeZone =
