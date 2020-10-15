@@ -39,7 +39,6 @@ dependencies:
 - directory
 - ansi-terminal
 - safe-exceptions
-- scotty
 - aeson
 - http-types
 - servant-server
