@@ -71,8 +71,7 @@ runServer protocol order = do
     run 4000 $ server initState
 
 launchBrowser :: IO ThreadId
-launchBrowser = forkIO $ do
-    threadDelay 1000000 -- wait for the server to start
+launchBrowser = forkIO $
     case OS.os of
         Nothing -> putStrLn "Operating system not detected"
         Just os -> catchError
