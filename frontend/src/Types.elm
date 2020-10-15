@@ -85,6 +85,7 @@ type Msg
     | SetActiveSetting (Setting Msg)
     | KeepAliveMsg Int Int Bool
     | KeepAliveIntervalMsg Int Int String
+    | KeepAliveResponse (Result Http.Error String)
     | NoOp
 
 
@@ -184,7 +185,7 @@ encodeTCPConnectionRequest : Model -> E.Value
 encodeTCPConnectionRequest model =
     E.object
         [ ( "connection info", encodeTCPConnectionInfo model )
-        , ( "keep alive", encodeKeepAlive model )
+        , ( "keep alive", encodeKeepAlive model model.keepAlive )
         ]
 
 
@@ -532,9 +533,9 @@ fromFloat f =
 -- Keep Alive
 
 
-encodeKeepAlive : Model -> E.Value
-encodeKeepAlive model =
+encodeKeepAlive : Model -> Bool -> E.Value
+encodeKeepAlive model flag =
     E.object
-        [ ( "flag", E.bool model.keepAlive )
+        [ ( "flag", E.bool flag )
         , ( "interval", E.int <| Maybe.withDefault 1 model.keepAliveInterval )
         ]

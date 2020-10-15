@@ -364,13 +364,17 @@ update msg model =
             )
 
         KeepAliveMsg settingIdx inputIdx flag ->
-            ( updateKeepAliveModel model settingIdx inputIdx flag, keepAliveRequest model )
+            ( updateKeepAliveModel model settingIdx inputIdx flag, keepAliveRequest model flag )
 
         KeepAliveIntervalMsg settingIdx inputIdx valueStr ->
             ( updateKeepAliveIntervalModel model settingIdx inputIdx valueStr, Cmd.none )
 
+        KeepAliveResponse response ->
+            ( updateKeepAliveResponseModel model response, jumpToBottom "status")
+
         NoOp ->
             ( model, Cmd.none )
+
 
 
 
@@ -446,12 +450,13 @@ requestModData model =
         }
 
 
-keepAliveRequest : Model -> Cmd Msg
-keepAliveRequest model =
+-- Send keep alive flag seperately, as the model might not update in time
+keepAliveRequest : Model -> Bool -> Cmd Msg
+keepAliveRequest model flag =
     Http.post
         { url = "http://localhost:4000/keepAlive"
-        , body = Http.jsonBody <| encodeKeepAlive model
-        , expect = Http.expectJson ReceivedModData <| D.list decodeModData
+        , body = Http.jsonBody <| encodeKeepAlive model flag
+        , expect = Http.expectString KeepAliveResponse
         }
 
 
@@ -592,3 +597,17 @@ updateKeepAliveIntervalModel model settingIdx inputIdx valueStr =
                 | keepAliveInterval = checkedValue
                 , settings = modifiedSettings
             }
+
+updateKeepAliveResponseModel : Model -> (Result Http.Error String) -> Model
+updateKeepAliveResponseModel model response =
+    case response of
+        Ok message ->
+            { model | notifications = simpleNot model message }
+        Err err ->
+            { model | notifications =
+                detailedNot
+                    model
+                    "Error updating keep alive setting"
+                    (showHttpError err)
+            }
+

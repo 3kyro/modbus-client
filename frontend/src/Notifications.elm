@@ -1,10 +1,10 @@
 module Notifications exposing
     ( Notification
-    , StatusBarState (..)
+    , NotificationState(..)
+    , StatusBarState(..)
+    , changeNotificationState
     , expandButton
     , renderNotifications
-    , NotificationState (..)
-    , changeNotificationState
     )
 
 import Element
@@ -21,13 +21,13 @@ import Element
         , height
         , htmlAttribute
         , none
+        , paddingXY
         , px
         , row
         , scrollbarY
         , spacing
         , text
         , width
-        , paddingXY
         )
 import Element.Background as Background
 import Element.Border as Border
@@ -42,13 +42,16 @@ import Palette
         )
 import Time
 
+
 type StatusBarState
     = Expanded
     | Retracted
 
+
 type NotificationState
     = NotifExpanded
     | NotifRetracted
+
 
 type alias Notification =
     { time : Time.Posix
@@ -57,22 +60,29 @@ type alias Notification =
     , state : NotificationState
     }
 
+
 changeNotificationState : Notification -> List Notification -> List Notification
 changeNotificationState not nots =
     let
         fun =
             \notification ->
-                if notification.time == not.time
-                then flipExpandState notification
-                else notification
+                if notification.time == not.time then
+                    flipExpandState notification
+
+                else
+                    notification
     in
-        List.map fun nots
+    List.map fun nots
+
 
 flipExpandState : Notification -> Notification
 flipExpandState not =
     case not.state of
-       NotifExpanded -> { not | state =  NotifRetracted }
-       NotifRetracted -> { not | state =  NotifExpanded }
+        NotifExpanded ->
+            { not | state = NotifRetracted }
+
+        NotifRetracted ->
+            { not | state = NotifExpanded }
 
 
 renderNotification : Time.Zone -> (Notification -> msg) -> Notification -> Element msg
@@ -82,6 +92,7 @@ renderNotification zone notExpandMsg not =
         [ retractedNotification zone notExpandMsg not
         , detailedNotification not
         ]
+
 
 retractedNotification : Time.Zone -> (Notification -> msg) -> Notification -> Element msg
 retractedNotification zone notExpandMsg not =
@@ -96,11 +107,14 @@ retractedNotification zone notExpandMsg not =
         , renderHeader not
         ]
 
+
 detailedNotification : Notification -> Element msg
 detailedNotification not =
     case not.state of
-       NotifRetracted -> none
-       NotifExpanded ->
+        NotifRetracted ->
+            none
+
+        NotifExpanded ->
             row
                 [ height fill
                 , width fill
@@ -132,10 +146,13 @@ hhmmss zone posix =
 
 -- Format a time unit, making sure it
 -- is always displayed with two digits
+
+
 formatTime : Int -> String
 formatTime unit =
     String.padLeft 2 '0' <|
         String.fromInt unit
+
 
 renderExpandButton : Notification -> msg -> Element msg
 renderExpandButton not msg =
@@ -148,15 +165,19 @@ renderExpandButton not msg =
         }
 
 
-getExpandedText :  Notification -> String
+getExpandedText : Notification -> String
 getExpandedText not =
     case not.detailed of
-        Nothing -> ""
+        Nothing ->
+            ""
+
         Just _ ->
             case not.state of
-                NotifExpanded -> "-"
-                NotifRetracted -> "+"
+                NotifExpanded ->
+                    "-"
 
+                NotifRetracted ->
+                    "+"
 
 
 renderHeader : Notification -> Element msg
@@ -226,9 +247,7 @@ expandButtonLabel : StatusBarState -> Element msg
 expandButtonLabel state =
     case state of
         Expanded ->
-            -- "▼" '\u{25BC}'
-            text <| String.fromChar '\u{25BC}'
+            text <| String.fromChar '▼'
 
         Retracted ->
-            -- "▲" '\u{25B2}'
-            text <| String.fromChar '\u{25B2}'
+            text <| String.fromChar '▲'

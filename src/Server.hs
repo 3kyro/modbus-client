@@ -39,7 +39,7 @@ type ServerAPI
     :<|> "connectInfo" :> Get '[JSON] (Maybe ConnectionInfo)
     :<|> "disconnect" :> ReqBody '[JSON] String :> Post '[JSON] ()
     :<|> "parseModData" :> ReqBody '[JSON] String :> Post '[JSON] [ModData]
-    :<|> "keepAlive" :> ReqBody '[JSON] KeepAlive :> Post '[JSON] ()
+    :<|> "keepAlive" :> ReqBody '[JSON] KeepAlive :> Post '[JSON] String
     :<|> Raw
 
 serverAPI :: TVar ServState -> Server ServerAPI
@@ -107,9 +107,13 @@ connect :: TVar ServState -> ConnectionRequest -> Handler ()
 connect state (ConnectionRequest connectionInfo kaValue) = do
     state' <- liftIO $ readTVarIO state
     case servConnection state' of
+
+        -- Do nothing if alrady connected
         TCPConnection {} -> throwError err400
         RTUConnection {} -> throwError err400
+
         NotConnected -> case connectionInfo of
+
             TCPConnectionInfo ip portNum tm -> do
                 mSocket <- liftIO $ getTCPSocket ip portNum tm
                 case mSocket of
@@ -118,7 +122,10 @@ connect state (ConnectionRequest connectionInfo kaValue) = do
                         client <- liftIO $ getTCPClient socket tm
                         putState state $ state'
                             {servConnection = TCPConnection socket connectionInfo $ getTCPActors client}
+                        -- Launch keep alive thread, if appropriate
                         keepAlive state kaValue
+                        return ()
+
             RTUConnectionInfo serial tm -> do
                 mPort <- liftIO $ getRTUSerialPort serial tm
                 case mPort of
@@ -168,23 +175,6 @@ getInitState protocol order = do
 ---------------------------------------------------------------------------------------------------------------
 -- Requests
 ---------------------------------------------------------------------------------------------------------------
-
-keepAlive :: TVar ServState -> KeepAlive -> Handler ()
-keepAlive state kaValue = do
-    currentState <- liftIO $ readTVarIO state
-    let actors = getActors $ servConnection currentState
-    case servKeepAliveId currentState of
-        Nothing ->
-            case actors of
-                Nothing -> throwError err400
-                Just (ServerActors client _ _) -> do
-                    thread <- liftIO $ forkIO $ keepAliveThread client $ 1000000 * interval kaValue
-                    liftIO $ atomically $ writeTVar state currentState
-                            { servKeepAliveId = Just thread
-                            }
-        Just thread ->
-            liftIO $ killThread thread
-
 
 updateModData :: TVar ServState -> [ModDataUpdate] -> Handler [ModDataUpdate]
 updateModData state mdus = do
@@ -250,3 +240,36 @@ mergeModDataUpdate (x:xs) (y:ys) =
         Just x' -> x':mergeModDataUpdate xs ys
 
 
+keepAlive :: TVar ServState -> KeepAlive -> Handler String
+keepAlive state kaValue = do
+    currentState <- liftIO $ readTVarIO state
+    let actors = getActors $ servConnection currentState
+    case servKeepAliveId currentState of
+        -- If there is no current keep alive thread
+        Nothing ->
+            -- If we are asked to start a keep alive thread
+            if flag kaValue
+            then
+            -- Check for connection
+            case actors of
+                Nothing -> throwError err400
+                Just (ServerActors client _ _) -> do
+                    thread <- liftIO $ forkIO $ keepAliveThread client $ 1000000 * interval kaValue
+                    liftIO $ atomically $ writeTVar state currentState
+                            { servKeepAliveId = Just thread
+                            }
+                    return "Keep alive activated"
+            -- If asked to stop
+            else return "Keep alive not active"
+        -- If a keep alive thread is running
+        Just thread ->
+            -- If we are asked to start a keep alive thread
+            if flag kaValue
+            then return "Keep alive already active"
+            -- If asked to stop
+            else do
+                liftIO $ killThread thread
+                liftIO $ atomically $ writeTVar state currentState
+                        { servKeepAliveId = Nothing
+                        }
+                return "Keep alive stopped"
