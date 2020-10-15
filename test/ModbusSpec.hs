@@ -5,7 +5,6 @@ module ModbusSpec
 import Test.Hspec
 import Test.QuickCheck
 
-import Types
 import Modbus
 import TestHelper ()
 

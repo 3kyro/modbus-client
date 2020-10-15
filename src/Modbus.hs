@@ -77,9 +77,9 @@ import           Control.Exception.Safe     (MonadMask, MonadThrow,
 import           Control.Monad.Trans        (MonadIO, liftIO)
 import           Data.Aeson                 (FromJSON (..), ToJSON (..),
                                              Value (..))
-import           Data.Binary.Get            (getFloatbe, getFloatle,
+import           Data.Binary.Get            (getFloatle,
                                              getWord16host, runGet)
-import           Data.Binary.Put            (putFloatbe, putFloatle,
+import           Data.Binary.Put            (putFloatle,
                                              putWord16host, runPut)
 import           Data.Data                  (Proxy)
 import           Data.IP                    (toHostAddress)

@@ -1,6 +1,6 @@
 module Main where
 
-import           Control.Concurrent         (newMVar)
+import           Control.Concurrent         (forkIO, newMVar)
 import           Control.Exception.Safe     (bracket)
 import           Data.Data                  (Proxy (..))
 import           Data.IP                    (IPv4)
@@ -90,6 +90,7 @@ runTCPReplApp :: S.SockAddr -> Int -> ByteOrder -> [ModData] -> Word8 -> IO ()
 runTCPReplApp addr tm order mdata uid =
     withSocket addr $ \s -> do
         client <- newMVar $ Client (getTCPConfig s tm)
+        _ <- forkIO $ keepAliveThread client $ 2 * 1000000
         tid <- initTID
         runRepl ( ReplState
             client
