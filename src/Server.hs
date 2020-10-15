@@ -22,7 +22,7 @@ import qualified System.Process as PS
 import Control.Monad.Except (catchError)
 import CsvParser (runpCSV)
 import Control.Exception.Safe (SomeException)
-import Control.Concurrent (killThread, threadDelay, ThreadId, forkIO, MVar)
+import Control.Concurrent (killThread, ThreadId, forkIO, MVar)
 import Control.Exception (try)
 import qualified System.Hardware.Serialport as SP
 import Modbus (keepAliveThread, runClient, updateMBRegister, readMBRegister, getNewTID, initTID, getRTUSerialPort, getTCPSocket, getRTUClient, getTCPClient, Worker, Client, Session, TID, ModbusProtocol (..), ByteOrder)
@@ -39,7 +39,7 @@ type ServerAPI
     :<|> "connectInfo" :> Get '[JSON] (Maybe ConnectionInfo)
     :<|> "disconnect" :> ReqBody '[JSON] String :> Post '[JSON] ()
     :<|> "parseModData" :> ReqBody '[JSON] String :> Post '[JSON] [ModData]
-    :<|> "keepAlive" :> ReqBody '[JSON] KeepAlive :> Post '[JSON] String
+    :<|> "keepAlive" :> ReqBody '[JSON] KeepAlive :> Post '[JSON] KeepAliveResponse
     :<|> Raw
 
 serverAPI :: TVar ServState -> Server ServerAPI
@@ -239,7 +239,7 @@ mergeModDataUpdate (x:xs) (y:ys) =
         Just x' -> x':mergeModDataUpdate xs ys
 
 
-keepAlive :: TVar ServState -> KeepAlive -> Handler String
+keepAlive :: TVar ServState -> KeepAlive -> Handler KeepAliveResponse
 keepAlive state kaValue = do
     currentState <- liftIO $ readTVarIO state
     let actors = getActors $ servConnection currentState
@@ -257,18 +257,18 @@ keepAlive state kaValue = do
                     liftIO $ atomically $ writeTVar state currentState
                             { servKeepAliveId = Just thread
                             }
-                    return "Keep alive activated"
+                    return KeepAliveActivated
             -- If asked to stop
-            else return "Keep alive not active"
+            else return KeepAliveDisactivated
         -- If a keep alive thread is running
         Just thread ->
             -- If we are asked to start a keep alive thread
             if flag kaValue
-            then return "Keep alive already active"
+            then return KeepAliveActivated
             -- If asked to stop
             else do
                 liftIO $ killThread thread
                 liftIO $ atomically $ writeTVar state currentState
                         { servKeepAliveId = Nothing
                         }
-                return "Keep alive stopped"
+                return KeepAliveDisactivated

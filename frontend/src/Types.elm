@@ -31,6 +31,9 @@ module Types exposing
     , showConnectStatus
     , toMFloat
     , writeableReg
+    , KeepAliveResponse (..)
+    , decodeKeepAliveResponse
+    , showKeepAliveResponse
     )
 
 import File exposing (File)
@@ -85,7 +88,7 @@ type Msg
     | SetActiveSetting (Setting Msg)
     | KeepAliveMsg Int Int Bool
     | KeepAliveIntervalMsg Int Int String
-    | KeepAliveResponse (Result Http.Error String)
+    | KeepAliveResponseMsg (Result Http.Error KeepAliveResponse)
     | NoOp
 
 
@@ -539,3 +542,29 @@ encodeKeepAlive model flag =
         [ ( "flag", E.bool flag )
         , ( "interval", E.int <| Maybe.withDefault 1 model.keepAliveInterval )
         ]
+
+type KeepAliveResponse
+    = KeepAliveActivated
+    | KeepAliveDisactivated
+
+showKeepAliveResponse : KeepAliveResponse -> String
+showKeepAliveResponse kar =
+    case kar of
+        KeepAliveActivated -> "Keep alive activated"
+        KeepAliveDisactivated -> "Keep alive disactivated"
+
+decodeKeepAliveResponse : D.Decoder KeepAliveResponse
+decodeKeepAliveResponse =
+    D.string
+        |> D.andThen
+            (\s ->
+                case s of
+                    "Keep alive activated" ->
+                        D.succeed KeepAliveActivated
+
+                    "Keep alive disactivated" ->
+                        D.succeed KeepAliveDisactivated
+
+                    _ ->
+                        D.fail "Not a KeepAliveResponse"
+            )

@@ -12,6 +12,7 @@ module Types.Server
     , getTCPActors
     , getRTUActors
     , KeepAlive (..)
+    , KeepAliveResponse (..)
     ) where
 
 import qualified Network.Socket             as S
@@ -140,3 +141,12 @@ instance FromJSON KeepAlive where
         pinterval <- o .: "interval"
         return $ KeepAlive pflag pinterval
     parseJSON _ = fail "Not a valid KeepAlive"
+
+
+data KeepAliveResponse
+        = KeepAliveActivated
+        | KeepAliveDisactivated
+
+instance ToJSON KeepAliveResponse where
+    toJSON KeepAliveActivated = String "Keep alive activated"
+    toJSON KeepAliveDisactivated = String "Keep alive disactivated"

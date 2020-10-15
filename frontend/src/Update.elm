@@ -46,6 +46,9 @@ import Types
         , replaceModDataWrite
         , showConnInfo
         , writeableReg
+        , KeepAliveResponse(..)
+        , decodeKeepAliveResponse
+        , showKeepAliveResponse
         )
 import Types.IpAddress exposing (setIpAddressByte)
 
@@ -369,7 +372,7 @@ update msg model =
         KeepAliveIntervalMsg settingIdx inputIdx valueStr ->
             ( updateKeepAliveIntervalModel model settingIdx inputIdx valueStr, Cmd.none )
 
-        KeepAliveResponse response ->
+        KeepAliveResponseMsg response ->
             ( updateKeepAliveResponseModel model response, jumpToBottom "status")
 
         NoOp ->
@@ -456,7 +459,7 @@ keepAliveRequest model flag =
     Http.post
         { url = "http://localhost:4000/keepAlive"
         , body = Http.jsonBody <| encodeKeepAlive model flag
-        , expect = Http.expectString KeepAliveResponse
+        , expect = Http.expectJson KeepAliveResponseMsg decodeKeepAliveResponse
         }
 
 
@@ -598,11 +601,11 @@ updateKeepAliveIntervalModel model settingIdx inputIdx valueStr =
                 , settings = modifiedSettings
             }
 
-updateKeepAliveResponseModel : Model -> (Result Http.Error String) -> Model
+updateKeepAliveResponseModel : Model -> (Result Http.Error KeepAliveResponse) -> Model
 updateKeepAliveResponseModel model response =
     case response of
         Ok message ->
-            { model | notifications = simpleNot model message }
+            { model | notifications = simpleNot model ( showKeepAliveResponse message) }
         Err err ->
             { model | notifications =
                 detailedNot
