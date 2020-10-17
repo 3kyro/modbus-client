@@ -55,8 +55,6 @@ module Modbus
     , HeartBeat (..)
     , heartBeatSignal
 
-    , keepAliveThread
-
     , getTCPClient
     , getRTUClient
     , getTCPConfig
@@ -77,10 +75,8 @@ import           Control.Exception.Safe     (MonadMask, MonadThrow,
 import           Control.Monad.Trans        (MonadIO, liftIO)
 import           Data.Aeson                 (FromJSON (..), ToJSON (..),
                                              Value (..))
-import           Data.Binary.Get            (getFloatle,
-                                             getWord16host, runGet)
-import           Data.Binary.Put            (putFloatle,
-                                             putWord16host, runPut)
+import           Data.Binary.Get            (getFloatle, getWord16host, runGet)
+import           Data.Binary.Put            (putFloatle, putWord16host, runPut)
 import           Data.Data                  (Proxy)
 import           Data.IP                    (toHostAddress)
 import           Data.IP.Internal           (IPv4)
@@ -402,7 +398,7 @@ instance ToJSON RegType where
 instance FromJSON RegType where
     parseJSON (String s) =
         case s of
-            "discrete input"    -> return DiscreteInput
+            "discrete input"   -> return DiscreteInput
             "coil"             -> return Coil
             "input register"   -> return InputRegister
             "holding register" -> return HoldingRegister
@@ -509,23 +505,6 @@ heartBeatSignal protocol interval worker clientMVar uid tid address = do
                 putMVar status someExcept
             Right ()        ->
                 return ()
-
----------------------------------------------------------------------------------------------------------------
--- Keep Alive
----------------------------------------------------------------------------------------------------------------
-
--- A thread implementing the TCP keep alive function
--- In order be cross platform, we ignore OS specific
--- implementation of the keep alive function and simply send a minimum package at every interval
-keepAliveThread :: MVar Client -> Int -> IO ()
-keepAliveThread clientMVar interval = do
-    threadDelay interval
-    -- take the global TCP client
-    bracket (liftIO $ takeMVar clientMVar) (liftIO . putMVar clientMVar)
-        $ \(Client config) ->
-            MB.cfgWrite config $ B.pack ""
-    -- recurse
-    keepAliveThread clientMVar interval
 
 ---------------------------------------------------------------------------------------------------------------
 -- Config

@@ -51,6 +51,7 @@ dependencies:
 - bytestring
 - serialport
 - exceptions
+- keep-alive
 library:
   source-dirs: src
 

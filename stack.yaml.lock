@@ -16,6 +16,17 @@ packages:
     git: https://github.com/3kyro/modbus-tcp.git
     commit: 4c4490810df6a1d97022825066120d970859a73a
 - completed:
+    name: keep-alive
+    version: 0.1.0.0
+    git: https://github.com/3kyro/keep-alive.git
+    pantry-tree:
+      size: 798
+      sha256: 02c5c6a693db763d8887493190f1c1b544942da1ddd6525a493fd7fbb8d6911d
+    commit: 33b21745d5a920a51e0acd70d2bb44711795d0a2
+  original:
+    git: https://github.com/3kyro/keep-alive.git
+    commit: 33b21745d5a920a51e0acd70d2bb44711795d0a2
+- completed:
     hackage: either-5.0.1.1@sha256:41167573bf575b7e0e24283a52fba8ce7bed5a7cc2984bba0dce305a0ab66f0d,1973
     pantry-tree:
       size: 657
