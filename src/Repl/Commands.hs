@@ -227,8 +227,8 @@ replWriteModData mds = do
 -- address and timer pairs
 heartbeat :: [String] -> Repl ()
 heartbeat [] = liftIO $ putStrLn $
-    "Usage: heartbeat [identifier] [timer(ms)]\n"
-    ++ "e.g. heartbeat 10 1000000 watch_reg 500000"
+    "Usage: heartbeat [identifier] [timer in seconds]\n"
+    ++ "e.g. heartbeat 10 60 watch_reg 20"
 heartbeat args = do
     let mPairs = getPairs args
     case mPairs of
@@ -250,9 +250,10 @@ startHeartbeat (addr, timer)
             let client = replClient state
             let uid = replUId state
             let tid = replTransactionId state
+            let tm = timer * 1000000 -- in microseconds
             let address = Address addr
             let protocol = replProtocol state
-            heart <- liftIO $ heartBeatSignal protocol timer worker client uid tid address
+            heart <- liftIO $ heartBeatSignal protocol tm worker client uid tid address
             putHeartBeat heart
 
 -- Parse the argument list and call stopHeartbeatThread on

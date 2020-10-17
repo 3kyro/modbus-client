@@ -131,7 +131,7 @@ parseSerialPort = option auto
     ( long      "serial"
     <> metavar  "SERIALPORT"
     <> value    ""
-    <> help     "Serial Port of MODBUS RTU"
+    <> help     "Serial Port for modbus RTU"
     )
 
 parseFloatRepr :: Parser ByteOrder
@@ -156,6 +156,6 @@ parseTimeout :: Parser Int
 parseTimeout = option auto
     (  long     "timeout"
     <> metavar  "TIMEOUT"
-    <> value    1000
-    <> help     "Timeout in ms"
+    <> value    10
+    <> help     "Timeout in seconds"
     )

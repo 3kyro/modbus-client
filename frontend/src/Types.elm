@@ -100,7 +100,7 @@ type alias Model =
     , ipAddress : IpAddress
     , socketPort : Maybe Int
     , serialPort : Maybe String
-    , timeout : Maybe Int
+    , timeout : Maybe Int  -- in seconds
     , activeTab : ActiveTab
     , csvFileName : Maybe String
     , csvContent : Maybe String
@@ -154,11 +154,11 @@ type ConnectionInfo
     = TCPConnectionInfo
         { ipAddress : IpAddress
         , socketPort : Int
-        , timeout : Int
+        , timeout : Int -- in seconds
         }
     | RTUConnectionInfo
         { rtuAddress : String
-        , timeout : Int
+        , timeout : Int -- in seconds
         }
 
 

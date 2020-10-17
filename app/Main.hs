@@ -1,6 +1,6 @@
 module Main where
 
-import           Control.Concurrent         (forkIO, newMVar)
+import           Control.Concurrent         (newMVar)
 import           Control.Exception.Safe     (bracket)
 import           Data.Data                  (Proxy (..))
 import           Data.IP                    (IPv4)
@@ -26,13 +26,15 @@ main :: IO ()
 main = runApp =<< runOpts
 
 runApp :: Opt -> IO ()
-runApp (Opt mode prot input output ip portNum serial order uid tm)
- =
+runApp (Opt mode prot input output ip portNum serial order uid tm) =
+  let
+    tms = tm * 1000000 -- timeout in microseconds
+  in
     case mode of
-        AppTemplate -> runAppTemplate prot input output ip portNum serial order tm
+        AppTemplate -> runAppTemplate prot input output ip portNum serial order tms
         AppRepl     -> case prot of
-            ModBusTCP -> runTCPReplApp (getAddr ip portNum) tm order [] uid
-            ModBusRTU -> runRTUReplApp serial tm order [] uid
+            ModBusTCP -> runTCPReplApp (getAddr ip portNum) tms order [] uid
+            ModBusRTU -> runRTUReplApp serial tms order [] uid
         AppWeb -> runServer prot order
 
 runAppTemplate :: ModbusProtocol        -- Protocol
@@ -90,7 +92,6 @@ runTCPReplApp :: S.SockAddr -> Int -> ByteOrder -> [ModData] -> Word8 -> IO ()
 runTCPReplApp addr tm order mdata uid =
     withSocket addr $ \s -> do
         client <- newMVar $ Client (getTCPConfig s tm)
-        _ <- forkIO $ keepAliveThread client $ 2 * 1000000
         tid <- initTID
         runRepl ( ReplState
             client
@@ -132,8 +133,6 @@ runRTUReplApp serial tm order mdata uid =
             []
             tid
             )
-
-
 
 withSerialPort :: String -> (SP.SerialPort -> IO a )-> IO a
 withSerialPort s = bracket (connectRTU s) SP.closeSerial

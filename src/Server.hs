@@ -114,11 +114,12 @@ connect state (ConnectionRequest connectionInfo kaValue) = do
         NotConnected -> case connectionInfo of
 
             TCPConnectionInfo ip portNum tm -> do
-                mSocket <- liftIO $ getTCPSocket ip portNum tm
+                let tms = tm * 1000000 -- in microseconds
+                mSocket <- liftIO $ getTCPSocket ip portNum tms
                 case mSocket of
                     Nothing -> throwError err300
                     Just socket -> do
-                        client <- liftIO $ getTCPClient socket tm
+                        client <- liftIO $ getTCPClient socket tms
                         putState state $ state'
                             {servConnection = TCPConnection socket connectionInfo $ getTCPActors client}
                         -- Launch keep alive thread, if appropriate
@@ -126,11 +127,12 @@ connect state (ConnectionRequest connectionInfo kaValue) = do
                         return ()
 
             RTUConnectionInfo serial tm -> do
-                mPort <- liftIO $ getRTUSerialPort serial tm
+                let tms = tm * 1000000 -- in microseconds
+                mPort <- liftIO $ getRTUSerialPort serial tms
                 case mPort of
                     Nothing -> throwError err300
                     Just port -> do
-                        client <- liftIO $ getRTUClient port tm
+                        client <- liftIO $ getRTUClient port tms
                         putState state $ state'
                             {servConnection = RTUConnection port connectionInfo $ getRTUActors client}
 

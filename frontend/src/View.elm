@@ -317,7 +317,7 @@ timeout model =
         { onChange = ChangeTimeout
         , text = Maybe.withDefault "" <| Maybe.map String.fromInt model.timeout
         , placeholder = Nothing
-        , label = Input.labelLeft [ Font.color white ] <| el [ width <| px 100 ] (text "Timeout (ms)")
+        , label = Input.labelLeft [ Font.color white ] <| el [ width <| px 100 ] (text "Timeout in seconds")
         }
 
 

@@ -81,11 +81,11 @@ getRTUActors client =
 data ConnectionInfo = TCPConnectionInfo
     { tcpIpAddress :: !IPv4
     , tcpPortNum   :: !Int
-    , tcpTimeout   :: !Int
+    , tcpTimeout   :: !Int -- in seconds
     }
     | RTUConnectionInfo
     { rtuAddress :: !String
-    , rtuTimeout :: !Int
+    , rtuTimeout :: !Int -- in seconds
     }
 
 instance FromJSON ConnectionInfo where
