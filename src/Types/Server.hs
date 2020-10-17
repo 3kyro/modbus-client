@@ -24,7 +24,7 @@ import           Data.Aeson.Types           (Value (..))
 import           Data.IP                    (IPv4)
 import           Servant
 
-import           Control.Concurrent         (MVar, ThreadId)
+import           Control.Concurrent         (MVar)
 import           Control.Concurrent.STM     (TVar)
 import qualified Data.Text                  as T
 import           Modbus                     (ByteOrder, Client, HeartBeat,
@@ -40,7 +40,6 @@ data ServState = ServState
     , servOrd         :: !ByteOrder
     , servTID         :: !(TVar TID)
     , servPool        :: ![HeartBeat]
-    , servKeepAliveId :: !(Maybe ThreadId)
     }
 
 data ServerActors = ServerActors
@@ -138,7 +137,7 @@ data KeepAliveServ = KeepAliveServ
     { flag     :: Bool
     , idle     :: Int
     , interval :: Int
-    }
+    } deriving (Show)
 
 instance FromJSON KeepAliveServ where
     parseJSON (Object o) = do
