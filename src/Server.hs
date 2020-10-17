@@ -156,14 +156,42 @@ disconnect state str = case str of
             currentState <- liftIO $ readTVarIO state
             let connection = servConnection currentState
             case connection of
-                TCPConnection socket _ _ -> liftIO $ S.gracefulClose socket 1000
-                RTUConnection port _ _ -> liftIO $ SP.closeSerial port
+                TCPConnection socket _ _ -> disconnectTCP state socket
+                RTUConnection port _ _ -> disconnectRTU state port
                 NotConnected -> throwError err400
             liftIO $ atomically $ writeTVar state $ currentState
                 { servConnection = NotConnected
                 , servPool = []
                 }
         _ -> throwError err400
+
+disconnectTCP :: TVar ServState -> S.Socket -> Handler ()
+disconnectTCP state socket = do
+    result <- liftIO $ try $ liftIO $ S.gracefulClose socket 1000
+    case result of
+        Left (_ :: SomeException) -> do
+            -- make sure we set the state to not connected
+            currentState <- liftIO $ readTVarIO state
+            liftIO $ atomically $ writeTVar state $ currentState
+                { servConnection = NotConnected
+                , servPool = []
+                }
+            throwError err500
+        Right () -> return ()
+
+disconnectRTU :: TVar ServState -> SP.SerialPort -> Handler ()
+disconnectRTU state port = do
+    result <- liftIO $ try $ liftIO $ liftIO $ SP.closeSerial port
+    case result of
+        Left (_ :: SomeException) -> do
+            -- make sure we set the state to not connected
+            currentState <- liftIO $ readTVarIO state
+            liftIO $ atomically $ writeTVar state $ currentState
+                { servConnection = NotConnected
+                , servPool = []
+                }
+            throwError err500
+        Right () -> return ()
 
 -- Creates the initial state the server boot's up with
 getInitState :: ModbusProtocol -> ByteOrder -> IO (TVar ServState)
