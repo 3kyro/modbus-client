@@ -542,8 +542,8 @@ encodeKeepAlive : Model -> Bool -> E.Value
 encodeKeepAlive model flag =
     E.object
         [ ( "flag", E.bool flag )
-        , ( "idle", E.int <| Maybe.withDefault 1 model.keepAliveIdle )
-        , ( "interval", E.int <| Maybe.withDefault 1 model.keepAliveInterval )
+        , ( "idle", E.int <| Maybe.withDefault 60 model.keepAliveIdle )
+        , ( "interval", E.int <| Maybe.withDefault 10 model.keepAliveInterval )
         ]
 
 type KeepAliveResponse
