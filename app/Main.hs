@@ -5,6 +5,7 @@ import           Control.Exception.Safe     (bracket)
 import           Data.Data                  (Proxy (..))
 import           Data.IP                    (IPv4)
 import           Data.Word                  (Word8)
+import           Network.Socket.KeepAlive
 
 import qualified Data.Text.IO               as T
 import qualified Network.Modbus.RTU         as RTU
@@ -19,21 +20,21 @@ import           PrettyPrint                (ppError)
 import           Repl                       (runRepl)
 import           Server                     (runServer)
 import           Types                      (ModData, ReplState (ReplState),
-                                             serializeModData)
+                                             serializeModData, AppError (..))
 
 
 main :: IO ()
 main = runApp =<< runOpts
 
 runApp :: Opt -> IO ()
-runApp (Opt mode prot input output ip portNum serial order uid tm) =
+runApp (Opt mode prot input output ip portNum serial order uid tm kaonoff kaidle kaintvl) =
   let
     tms = tm * 1000000 -- timeout in microseconds
   in
     case mode of
         AppTemplate -> runAppTemplate prot input output ip portNum serial order tms
         AppRepl     -> case prot of
-            ModBusTCP -> runTCPReplApp (getAddr ip portNum) tms order [] uid
+            ModBusTCP -> runTCPReplApp (getAddr ip portNum) tms order [] uid $ KeepAlive kaonoff kaidle kaintvl
             ModBusRTU -> runRTUReplApp serial tms order [] uid
         AppWeb -> runServer prot order
 
@@ -88,10 +89,22 @@ runRTUTemplateApp serial prot order tm mds =
 
 
 -- Run the application's REPL
-runTCPReplApp :: S.SockAddr -> Int -> ByteOrder -> [ModData] -> Word8 -> IO ()
-runTCPReplApp addr tm order mdata uid =
+runTCPReplApp ::
+    S.SockAddr
+    -> Int
+    -> ByteOrder
+    -> [ModData]
+    -> Word8
+    -> KeepAlive
+    -> IO ()
+runTCPReplApp addr tm order mdata uid ka =
     withSocket addr $ \s -> do
         client <- newMVar $ Client (getTCPConfig s tm)
+        S.withFdSocket s $ \fd -> do
+            rlt <- setKeepAlive fd ka
+            case rlt of
+                Left err -> ppError $ AppKeepAliveError err
+                Right () -> return ()
         tid <- initTID
         runRepl ( ReplState
             client

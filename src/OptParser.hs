@@ -12,13 +12,13 @@ module OptParser
        where
 
 import           Data.IP             (IPv4)
-import           Options.Applicative (Parser, auto, execParser, flag, fullDesc,
+import           Options.Applicative (switch, Parser, auto, execParser, flag, fullDesc,
                                       help, helper, info, long, metavar, option,
                                       progDesc, short, strOption, value, (<**>),
                                       (<|>))
 
-import           Data.Word           (Word8)
-import Modbus (ByteOrder (..), ModbusProtocol (..))
+import           Data.Word           (Word32, Word8)
+import           Modbus              (ByteOrder (..), ModbusProtocol (..))
 
 data Opt = Opt
     { appMode       :: !AppMode
@@ -31,6 +31,9 @@ data Opt = Opt
     , byteOrder     :: !ByteOrder
     , uId           :: !Word8
     , timeout       :: !Int
+    , kaOnOff       :: !Bool
+    , kaIdle        :: !Word32
+    , kaIntv        :: !Word32
     }
 
 data AppMode = AppTemplate
@@ -58,6 +61,10 @@ opt = Opt
     <*> parseFloatRepr
     <*> parseUid
     <*> parseTimeout
+    <*> parseKaOnOff
+    <*> parseKaIdle
+    <*> parseKaIntv
+
 
 parseAppMode :: Parser AppMode
 parseAppMode = parseRepl <|> parseServer
@@ -158,4 +165,26 @@ parseTimeout = option auto
     <> metavar  "TIMEOUT"
     <> value    10
     <> help     "Timeout in seconds"
+    )
+
+parseKaOnOff :: Parser Bool
+parseKaOnOff = switch
+    (  long     "keepalive"
+    <> help     "Enable keep alive"
+    )
+
+parseKaIdle :: Parser Word32
+parseKaIdle = option auto
+    (  long     "idle"
+    <> metavar  "KEEPALIVE_IDLE"
+    <> value    120
+    <> help     "Keep alive idle time in seconds"
+    )
+
+parseKaIntv :: Parser Word32
+parseKaIntv = option auto
+    (  long     "interval"
+    <> metavar  "KEEPALIVE_INTERVAL"
+    <> value    60
+    <> help     "Keep alive interval time in seconds"
     )
