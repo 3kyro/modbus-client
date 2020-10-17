@@ -20,12 +20,12 @@ packages:
     version: 0.1.0.0
     git: https://github.com/3kyro/keep-alive.git
     pantry-tree:
-      size: 798
-      sha256: 02c5c6a693db763d8887493190f1c1b544942da1ddd6525a493fd7fbb8d6911d
-    commit: 33b21745d5a920a51e0acd70d2bb44711795d0a2
+      size: 794
+      sha256: b79528025b1daa10cf56b4b58b95f5593dc92d179cd3926aa22fa979db5df582
+    commit: 74602db060c2ace4f00a556af4d79c48f3cf4af5
   original:
     git: https://github.com/3kyro/keep-alive.git
-    commit: 33b21745d5a920a51e0acd70d2bb44711795d0a2
+    commit: 74602db060c2ace4f00a556af4d79c48f3cf4af5
 - completed:
     hackage: either-5.0.1.1@sha256:41167573bf575b7e0e24283a52fba8ce7bed5a7cc2984bba0dce305a0ab66f0d,1973
     pantry-tree:

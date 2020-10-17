@@ -38,7 +38,7 @@ extra-deps:
   - git: https://github.com/3kyro/modbus-tcp.git
     commit: 4c4490810df6a1d97022825066120d970859a73a
   - git: https://github.com/3kyro/keep-alive.git
-    commit: 33b21745d5a920a51e0acd70d2bb44711795d0a2
+    commit: 74602db060c2ace4f00a556af4d79c48f3cf4af5
   - either-5.0.1.1
   - monad-batcher-0.0.0.0
   - serialport-0.4.7
