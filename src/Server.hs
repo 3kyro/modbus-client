@@ -1,34 +1,41 @@
-{-# LANGUAGE DataKinds #-}
-{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE RankNTypes            #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE TypeOperators         #-}
 module Server (runServer)  where
 
-import Control.Monad.STM (atomically)
-import Control.Concurrent.STM (writeTVar, readTVarIO, TVar, newTVar)
-import Control.Monad.Trans (MonadIO(liftIO))
-import Network.Wai.Handler.Warp (run)
-import Servant
+import           Control.Concurrent.STM     (TVar, newTVar, readTVarIO,
+                                             writeTVar)
+import           Control.Monad.STM          (atomically)
+import           Control.Monad.Trans        (MonadIO (liftIO))
+import           Network.Wai.Handler.Warp   (run)
+import           Servant
 
-import qualified Data.Text as T
-import qualified Network.Socket as S
-import qualified System.OS as OS
-import qualified System.Process as PS
+import qualified Data.Text                  as T
+import qualified Network.Socket             as S
+import qualified System.OS                  as OS
+import qualified System.Process             as PS
 
 
-import Control.Monad.Except (catchError)
-import CsvParser (runpCSV)
-import Control.Exception.Safe (SomeException)
-import Control.Concurrent (killThread, ThreadId, forkIO, MVar)
-import Control.Exception (try)
+import           Control.Concurrent         (MVar, ThreadId, forkIO)
+import           Control.Exception          (try)
+import           Control.Exception.Safe     (SomeException)
+import           Control.Monad.Except       (catchError)
+import           CsvParser                  (runpCSV)
+import           Modbus                     (ByteOrder, Client,
+                                             ModbusProtocol (..), Session, TID,
+                                             Worker, getNewTID, getRTUClient,
+                                             getRTUSerialPort, getTCPClient,
+                                             getTCPSocket, initTID,
+                                             readMBRegister, runClient,
+                                             updateMBRegister)
+import           Network.Socket.KeepAlive
 import qualified System.Hardware.Serialport as SP
-import Modbus (keepAliveThread, runClient, updateMBRegister, readMBRegister, getNewTID, initTID, getRTUSerialPort, getTCPSocket, getRTUClient, getTCPClient, Worker, Client, Session, TID, ModbusProtocol (..), ByteOrder)
-import Types.ModData
-import Types.Server
-
+import           Types.ModData
+import           Types.Server
 ---------------------------------------------------------------------------------------------------------------
 -- API
 ---------------------------------------------------------------------------------------------------------------
@@ -39,7 +46,7 @@ type ServerAPI
     :<|> "connectInfo" :> Get '[JSON] (Maybe ConnectionInfo)
     :<|> "disconnect" :> ReqBody '[JSON] String :> Post '[JSON] ()
     :<|> "parseModData" :> ReqBody '[JSON] String :> Post '[JSON] [ModData]
-    :<|> "keepAlive" :> ReqBody '[JSON] KeepAlive :> Post '[JSON] KeepAliveResponse
+    :<|> "keepAlive" :> ReqBody '[JSON] KeepAliveServ :> Post '[JSON] KeepAliveResponse
     :<|> Raw
 
 serverAPI :: TVar ServState -> Server ServerAPI
@@ -122,7 +129,6 @@ connect state (ConnectionRequest connectionInfo kaValue) = do
                         client <- liftIO $ getTCPClient socket tms
                         putState state $ state'
                             {servConnection = TCPConnection socket connectionInfo $ getTCPActors client}
-                        -- Launch keep alive thread, if appropriate
                         keepAlive state kaValue
                         return ()
 
@@ -142,7 +148,7 @@ getConnectionInfo state = do
         case connection of
             TCPConnection _ info _ -> return $ Just info
             RTUConnection _ info _ -> return $ Just info
-            NotConnected -> return Nothing
+            NotConnected           -> return Nothing
 
 disconnect :: TVar ServState -> String -> Handler ()
 disconnect state str = case str of
@@ -171,8 +177,6 @@ getInitState protocol order = do
         []
         Nothing
 
-
-
 ---------------------------------------------------------------------------------------------------------------
 -- Requests
 ---------------------------------------------------------------------------------------------------------------
@@ -191,7 +195,7 @@ updateModData state mdus = do
             resp <- liftIO $ mapM (runServerClientMaybe batchWorker client) sessions
             let resp' = liftException resp
             case resp' of
-                Left _ -> throwError err500
+                Left _    -> throwError err500
                 Right md' -> return $ mergeModDataUpdate md' mdus
 
 modUpdateSession :: ModbusProtocol -> TID -> ByteOrder -> ModDataUpdate -> Maybe (Session IO ModDataUpdate)
@@ -199,7 +203,7 @@ modUpdateSession prot tid order mdu =
     if mduSelected mdu
     then
         case mduRW mdu of
-            MDURead -> Just $ readMBRegister proxy prot tid order mdu
+            MDURead  -> Just $ readMBRegister proxy prot tid order mdu
             MDUWrite -> Just $ updateMBRegister proxy prot tid order mdu
     else Nothing
   where
@@ -211,7 +215,7 @@ parseAndSend content =
         md = runpCSV $ T.pack content
     in
         case md of
-            Left _ -> throwError err400
+            Left _    -> throwError err400
             Right mds -> pure mds
 
 runServerClientMaybe :: Worker IO -> MVar Client -> Maybe (Session IO a) -> IO ( Maybe (Either SomeException a))
@@ -241,36 +245,28 @@ mergeModDataUpdate (x:xs) (y:ys) =
         Just x' -> x':mergeModDataUpdate xs ys
 
 
-keepAlive :: TVar ServState -> KeepAlive -> Handler KeepAliveResponse
+keepAlive :: TVar ServState -> KeepAliveServ -> Handler KeepAliveResponse
 keepAlive state kaValue = do
     currentState <- liftIO $ readTVarIO state
-    let actors = getActors $ servConnection currentState
-    case servKeepAliveId currentState of
-        -- If there is no current keep alive thread
-        Nothing ->
-            -- If we are asked to start a keep alive thread
-            if flag kaValue
-            then
-            -- Check for connection
-            case actors of
-                Nothing -> throwError err400
-                Just (ServerActors client _ _) -> do
-                    thread <- liftIO $ forkIO $ keepAliveThread client $ 1000000 * interval kaValue
-                    liftIO $ atomically $ writeTVar state currentState
-                            { servKeepAliveId = Just thread
-                            }
-                    return KeepAliveActivated
-            -- If asked to stop
-            else return KeepAliveDisactivated
-        -- If a keep alive thread is running
-        Just thread ->
-            -- If we are asked to start a keep alive thread
-            if flag kaValue
+    let conn = servConnection currentState
+    case conn of
+        TCPConnection sock _ _ -> do
+            setKeepAliveServ sock (toKeepAlive kaValue)
+            on <- getKeepAliveServ sock
+            if on
             then return KeepAliveActivated
-            -- If asked to stop
-            else do
-                liftIO $ killThread thread
-                liftIO $ atomically $ writeTVar state currentState
-                        { servKeepAliveId = Nothing
-                        }
-                return KeepAliveDisactivated
+            else return KeepAliveDisactivated
+        _ -> throwError err400
+
+setKeepAliveServ :: S.Socket -> KeepAlive -> Handler ()
+setKeepAliveServ sock ka = do
+    rlt <- liftIO $ S.withFdSocket sock $ \fd ->
+        setKeepAlive fd ka
+    case rlt of
+        Left _   -> throwError err500
+        Right () -> return ()
+
+getKeepAliveServ :: S.Socket -> Handler Bool
+getKeepAliveServ sock = liftIO $
+    S.withFdSocket sock $ \fd -> getKeepAliveOnOff fd
+

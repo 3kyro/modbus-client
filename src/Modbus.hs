@@ -87,7 +87,6 @@ import           Test.QuickCheck            (Arbitrary (..), arbitrary,
                                              elements)
 
 
-import qualified Data.ByteString.Char8      as B
 import qualified Network.Modbus.Protocol    as MB
 import qualified Network.Modbus.RTU         as RTU
 import qualified Network.Modbus.TCP         as TCP

@@ -52,8 +52,8 @@ initModel =
     , timeZone = Time.utc
     , settings = [keepAliveSetting]
     , keepAlive = False
-    , keepAliveIdle = Just 120
-    , keepAliveInterval = Just 30
+    , keepAliveIdle = Nothing
+    , keepAliveInterval = Nothing
     }
 
 keepAliveSetting : Setting Msg
@@ -68,12 +68,12 @@ keepAliveSetting =
             }
         , NumberInput
             { description = "Keep alive idle (s)"
-            , value = Just 1
+            , value = Just 60
             , message = KeepAliveIdleMsg
             }
         , NumberInput
             { description = "Keep alive interval (s)"
-            , value = Just 1
+            , value = Just 10
             , message = KeepAliveIntervalMsg
             }
         ]

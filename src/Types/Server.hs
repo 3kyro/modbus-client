@@ -11,8 +11,9 @@ module Types.Server
     , getActors
     , getTCPActors
     , getRTUActors
-    , KeepAlive (..)
+    , KeepAliveServ (..)
     , KeepAliveResponse (..)
+    , toKeepAlive
     ) where
 
 import qualified Network.Socket             as S
@@ -30,6 +31,7 @@ import           Modbus                     (ByteOrder, Client, HeartBeat,
                                              ModbusProtocol, TID, Worker,
                                              rtuBatchWorker, rtuDirectWorker,
                                              tcpBatchWorker, tcpDirectWorker)
+import           Network.Socket.KeepAlive   (KeepAlive (..))
 import qualified System.Hardware.Serialport as SP
 
 data ServState = ServState
@@ -81,10 +83,12 @@ getRTUActors client =
 data ConnectionInfo = TCPConnectionInfo
     { tcpIpAddress :: !IPv4
     , tcpPortNum   :: !Int
+    -- in seconds
     , tcpTimeout   :: !Int -- in seconds
     }
     | RTUConnectionInfo
     { rtuAddress :: !String
+    -- in seconds
     , rtuTimeout :: !Int -- in seconds
     }
 
@@ -120,7 +124,7 @@ instance ToJSON ConnectionInfo where
 
 data ConnectionRequest = ConnectionRequest
     { requestInfo      :: !ConnectionInfo
-    , requestKeepAlive :: !KeepAlive
+    , requestKeepAlive :: !KeepAliveServ
     }
 
 instance FromJSON ConnectionRequest where
@@ -130,23 +134,28 @@ instance FromJSON ConnectionRequest where
         return $ ConnectionRequest jsonInfo jsonKeepAlive
     parseJSON _ = fail "Not a valid ConnectionRequest"
 
-data KeepAlive = KeepAlive
+data KeepAliveServ = KeepAliveServ
     { flag     :: Bool
+    , idle     :: Int
     , interval :: Int
     }
 
-instance FromJSON KeepAlive where
+instance FromJSON KeepAliveServ where
     parseJSON (Object o) = do
         pflag <- o .: "flag"
+        pidle <- o .: "idle"
         pinterval <- o .: "interval"
-        return $ KeepAlive pflag pinterval
+        return $ KeepAliveServ pflag pidle pinterval
     parseJSON _ = fail "Not a valid KeepAlive"
 
 
-data KeepAliveResponse
-        = KeepAliveActivated
-        | KeepAliveDisactivated
+data KeepAliveResponse = KeepAliveActivated
+    | KeepAliveDisactivated
 
 instance ToJSON KeepAliveResponse where
-    toJSON KeepAliveActivated = String "Keep alive activated"
+    toJSON KeepAliveActivated    = String "Keep alive activated"
     toJSON KeepAliveDisactivated = String "Keep alive disactivated"
+
+toKeepAlive :: KeepAliveServ -> KeepAlive
+toKeepAlive (KeepAliveServ flag tidle tintv) =
+    KeepAlive flag (fromIntegral tidle) (fromIntegral tintv)
