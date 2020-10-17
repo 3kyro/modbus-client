@@ -87,6 +87,7 @@ type Msg
     | ExpandNotification Notification
     | SetActiveSetting (Setting Msg)
     | KeepAliveMsg Int Int Bool
+    | KeepAliveIdleMsg Int Int String
     | KeepAliveIntervalMsg Int Int String
     | KeepAliveResponseMsg (Result Http.Error KeepAliveResponse)
     | NoOp
@@ -112,7 +113,8 @@ type alias Model =
     , timeZone : Time.Zone
     , settings : List (Setting Msg)
     , keepAlive : Bool
-    , keepAliveInterval : Maybe Int
+    , keepAliveIdle : Maybe Int -- in seconds
+    , keepAliveInterval : Maybe Int -- in seconds
     }
 
 
@@ -540,6 +542,7 @@ encodeKeepAlive : Model -> Bool -> E.Value
 encodeKeepAlive model flag =
     E.object
         [ ( "flag", E.bool flag )
+        , ( "idle", E.int <| Maybe.withDefault 1 model.keepAliveInterval )
         , ( "interval", E.int <| Maybe.withDefault 1 model.keepAliveInterval )
         ]
 

@@ -369,6 +369,9 @@ update msg model =
         KeepAliveMsg settingIdx inputIdx flag ->
             ( updateKeepAliveModel model settingIdx inputIdx flag, keepAliveRequest model flag )
 
+        KeepAliveIdleMsg settingIdx inputIdx valueStr ->
+            ( updateKeepAliveIdleModel model settingIdx inputIdx valueStr, Cmd.none )
+
         KeepAliveIntervalMsg settingIdx inputIdx valueStr ->
             ( updateKeepAliveIntervalModel model settingIdx inputIdx valueStr, Cmd.none )
 
@@ -600,6 +603,26 @@ updateKeepAliveIntervalModel model settingIdx inputIdx valueStr =
         Just modifiedSettings ->
             { model
                 | keepAliveInterval = checkedValue
+                , settings = modifiedSettings
+            }
+updateKeepAliveIdleModel :
+    Model
+    -> Int -- Setting index
+    -> Int -- child index
+    -> String
+    -> Model
+updateKeepAliveIdleModel model settingIdx inputIdx valueStr =
+    let
+        checkedValue =
+            String.toInt valueStr
+    in
+    case updateCheckboxSetting model.settings settingIdx inputIdx (NumberInputValue checkedValue) of
+        Nothing ->
+            { model | keepAliveIdle = checkedValue }
+
+        Just modifiedSettings ->
+            { model
+                | keepAliveIdle = checkedValue
                 , settings = modifiedSettings
             }
 
