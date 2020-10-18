@@ -429,6 +429,19 @@ data ByteOrder = LE
 instance Arbitrary ByteOrder where
     arbitrary = elements [LE, BE]
 
+instance ToJSON ByteOrder where
+    toJSON bo =
+        case bo of
+            LE -> String "le"
+            BE -> String "be"
+
+instance FromJSON ByteOrder where
+    parseJSON (String s) =
+        case s of
+            "le" -> return LE
+            "be" -> return BE
+            _    -> fail "Not a ByteOrder"
+
 -- Converts a Float to a list of Word16s
 float2Word16 :: ByteOrder -> Float -> [Word16]
 float2Word16 LE float =

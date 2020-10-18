@@ -47,6 +47,7 @@ type ServerAPI
     :<|> "disconnect" :> ReqBody '[JSON] String :> Post '[JSON] ()
     :<|> "parseModData" :> ReqBody '[JSON] String :> Post '[JSON] [ModData]
     :<|> "keepAlive" :> ReqBody '[JSON] KeepAliveServ :> Post '[JSON] KeepAliveResponse
+    :<|> "byteOrder" :> ReqBody '[JSON] ByteOrder :> Post '[JSON] ByteOrder
     :<|> Raw
 
 serverAPI :: TVar ServState -> Server ServerAPI
@@ -57,6 +58,7 @@ serverAPI state
     :<|> disconnect state
     :<|> parseAndSend
     :<|> keepAlive state
+    :<|> byteOrder state
     :<|> serveDirectoryWebApp "frontend"
 
 proxyAPI :: Proxy ServerAPI
@@ -297,3 +299,10 @@ getKeepAliveServ :: S.Socket -> Handler Bool
 getKeepAliveServ sock = liftIO $
     S.withFdSocket sock $ \fd -> getKeepAliveOnOff fd
 
+byteOrder :: TVar ServState -> ByteOrder -> Handler ByteOrder
+byteOrder state order = do
+    currentState <- liftIO $ readTVarIO state
+    liftIO $ atomically $ writeTVar state $ currentState
+        { servOrd = order
+        }
+    return order

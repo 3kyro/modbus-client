@@ -77,7 +77,6 @@ import Types.IpAddress
         )
 import Settings exposing
     ( renderSettings
-    , dummySetting
     )
 import Settings exposing (renderSettings)
 

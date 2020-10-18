@@ -34,6 +34,12 @@ module Types exposing
     , KeepAliveResponse (..)
     , decodeKeepAliveResponse
     , showKeepAliveResponse
+    , SettingOption (..)
+    , ByteOrder (..)
+    , encodeByteOrder
+    , decodeByteOrder
+    , showByteOrderResponse
+    , toByteOrder
     )
 
 import File exposing (File)
@@ -85,11 +91,13 @@ type Msg
     | InitTime Time.Posix
     | NewTime Time.Posix
     | ExpandNotification Notification
-    | SetActiveSetting (Setting Msg)
+    | SetActiveSetting (Setting SettingOption Msg)
     | KeepAliveMsg Int Int Bool
     | KeepAliveIdleMsg Int Int String
     | KeepAliveIntervalMsg Int Int String
     | KeepAliveResponseMsg (Result Http.Error KeepAliveResponse)
+    | ChangeByteOrderMsg Int Int SettingOption
+    | ChangeByteOrderResponse (Result Http.Error ByteOrder)
     | NoOp
 
 
@@ -102,6 +110,7 @@ type alias Model =
     , socketPort : Maybe Int
     , serialPort : Maybe String
     , timeout : Maybe Int  -- in seconds
+    , byteOrder : ByteOrder
     , activeTab : ActiveTab
     , csvFileName : Maybe String
     , csvContent : Maybe String
@@ -111,7 +120,7 @@ type alias Model =
     , readWriteAll : ReadWrite
     , timePosix : Time.Posix
     , timeZone : Time.Zone
-    , settings : List (Setting Msg)
+    , settings : List (Setting SettingOption Msg)
     , keepAlive : Bool
     , keepAliveIdle : Maybe Int -- in seconds
     , keepAliveInterval : Maybe Int -- in seconds
@@ -123,6 +132,11 @@ type ConnectStatus
     | Connecting
     | Connected
     | Disconnecting
+
+type SettingOption
+    = SetLE
+    | SetBE
+
 
 
 newModDataUpdate : List ModData -> List ModDataUpdate
@@ -571,3 +585,45 @@ decodeKeepAliveResponse =
                     _ ->
                         D.fail "Not a KeepAliveResponse"
             )
+
+--------------------------------------------------------------------------------------------------
+-- ByteOrder
+--------------------------------------------------------------------------------------------------
+
+type ByteOrder
+    = LE
+    | BE
+
+encodeByteOrder : ByteOrder -> E.Value
+encodeByteOrder order =
+    case order of
+        LE -> E.string "le"
+        BE -> E.string "be"
+
+decodeByteOrder : D.Decoder ByteOrder
+decodeByteOrder =
+    D.string
+        |> D.andThen
+            (\s ->
+                case s of
+                    "le" ->
+                        D.succeed LE
+
+                    "be" ->
+                        D.succeed BE
+
+                    _ ->
+                        D.fail "Not a ByteOrder"
+            )
+
+showByteOrderResponse : ByteOrder -> String
+showByteOrderResponse order =
+    case order of
+        LE -> "Byte order changed to Little Endian"
+        BE -> "Byte order changed to Big Endian"
+
+toByteOrder : SettingOption -> ByteOrder
+toByteOrder option =
+    case option of
+        SetLE -> LE
+        SetBE -> BE

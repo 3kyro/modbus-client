@@ -15,11 +15,13 @@ import Types
         , RegType(..)
         , fromFloat
         , newModDataUpdate
+        , SettingOption (..)
+        , ByteOrder (..)
         )
 import Types.IpAddress exposing (defaultIpAddr)
 import Update exposing (initCmd, update)
 import View exposing (view)
-import Settings exposing (Setting , SettingStatus (..), SettingInput (..), dummySetting)
+import Settings exposing (Setting , SettingStatus (..), SettingInput (..))
 import Element.Input exposing (checkbox)
 
 main : Program () Model Msg
@@ -41,6 +43,7 @@ initModel =
     , socketPort = Just 502
     , serialPort = Nothing
     , timeout = Just 60
+    , byteOrder = LE
     , activeTab = ConnectMenu
     , csvFileName = Nothing
     , csvContent = Nothing
@@ -50,13 +53,13 @@ initModel =
     , readWriteAll = Read
     , timePosix = Time.millisToPosix 0
     , timeZone = Time.utc
-    , settings = [keepAliveSetting]
+    , settings = [keepAliveSetting, byteOrderSetting]
     , keepAlive = False
     , keepAliveIdle = Nothing
     , keepAliveInterval = Nothing
     }
 
-keepAliveSetting : Setting Msg
+keepAliveSetting : Setting SettingOption Msg
 keepAliveSetting =
     Setting
         "Keep Alive"
@@ -77,6 +80,24 @@ keepAliveSetting =
             , message = KeepAliveIntervalMsg
             }
         ]
+
+byteOrderSetting : Setting SettingOption Msg
+byteOrderSetting =
+    Setting
+        "Byte order"
+        NotActive
+        [ Radio
+            { description = "Endianess"
+            , values =
+                [ (SetLE, "Little Endian")
+                , (SetBE, "Big Endian")
+                ]
+            , selected = Just SetLE
+            , message = ChangeByteOrderMsg
+            }
+
+        ]
+
 
 initModData : List ModData
 initModData =

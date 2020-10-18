@@ -20,13 +20,14 @@ import Settings
         ( Setting
         , SettingInputUpdateValue(..)
         , SettingStatus(..)
-        , updateCheckboxSetting
+        , updateIndexedSetting
         )
 import Task
 import Time
 import Types
     exposing
         ( ActiveTab(..)
+        , ByteOrder(..)
         , ConnectStatus(..)
         , ConnectionInfo(..)
         , KeepAliveResponse(..)
@@ -37,6 +38,7 @@ import Types
         , Msg(..)
         , ReadWrite
         , RegType(..)
+        , SettingOption(..)
         , decodeConnInfo
         , decodeKeepAliveResponse
         , decodeModData
@@ -52,6 +54,10 @@ import Types
         , showConnInfo
         , showKeepAliveResponse
         , writeableReg
+        , encodeByteOrder
+        , decodeByteOrder
+        , showByteOrderResponse
+        , toByteOrder
         )
 import Types.IpAddress exposing (IpAddressByte, setIpAddressByte)
 
@@ -211,6 +217,12 @@ update msg model =
         KeepAliveResponseMsg response ->
             ( updateKeepAliveResponseModel model response, jumpToBottom "status" )
 
+        ChangeByteOrderMsg settingIdx inputIdx setting ->
+            ( changeByteOrderModelUpdate model settingIdx inputIdx setting, changeByteOrderRequest (toByteOrder setting) )
+
+        ChangeByteOrderResponse result ->
+            ( changeByteOrderResponseModelUpdate model result, jumpToBottom "status" )
+        
         NoOp ->
             ( model, Cmd.none )
 
@@ -332,6 +344,14 @@ jumpToBottom id =
         |> Task.andThen (\info -> Dom.setViewportOf id 0 info.scene.height)
         |> Task.attempt (\_ -> NoOp)
 
+
+changeByteOrderRequest : ByteOrder -> Cmd Msg
+changeByteOrderRequest order =
+    Http.post
+        { url = "http://localhost:4000/byteOrder"
+        , body = Http.jsonBody <| encodeByteOrder order
+        , expect = Http.expectJson ChangeByteOrderResponse decodeByteOrder
+        }
 
 simpleNot : Model -> String -> List Notification
 simpleNot model header =
@@ -481,7 +501,7 @@ changePortModelUpdate model str =
                     { model | socketPort = Just p }
 
 
-activeSettingModelUpdate : Model -> Setting Msg -> Model
+activeSettingModelUpdate : Model -> Setting SettingOption Msg -> Model
 activeSettingModelUpdate model setting =
     let
         newSettings =
@@ -579,7 +599,7 @@ keepAliveModelUpdate :
     -> Bool
     -> Model
 keepAliveModelUpdate model settingIdx inputIdx newFlag =
-    case updateCheckboxSetting model.settings settingIdx inputIdx (CheckBoxValue newFlag) of
+    case updateIndexedSetting model.settings settingIdx inputIdx (CheckBoxValue newFlag) of
         Nothing ->
             { model | keepAlive = newFlag }
 
@@ -613,7 +633,7 @@ keepAliveIdleModelUpdate model settingIdx inputIdx valueStr =
         checkedValue =
             String.toInt valueStr
     in
-    case updateCheckboxSetting model.settings settingIdx inputIdx (NumberInputValue checkedValue) of
+    case updateIndexedSetting model.settings settingIdx inputIdx (NumberInputValue checkedValue) of
         Nothing ->
             { model | keepAliveIdle = checkedValue }
 
@@ -666,7 +686,7 @@ keepAliveIntervalModelUpdate model settingIdx inputIdx valueStr =
         checkedValue =
             String.toInt valueStr
     in
-    case updateCheckboxSetting model.settings settingIdx inputIdx (NumberInputValue checkedValue) of
+    case updateIndexedSetting model.settings settingIdx inputIdx (NumberInputValue checkedValue) of
         Nothing ->
             { model | keepAliveInterval = checkedValue }
 
@@ -701,6 +721,7 @@ changeModDataValueModelUpdate model idx str =
                 | modDataUpdate = Array.toList <| Array.set idx md arrMDU
             }
 
+
 expandStatusModelUpdate : Model -> Model
 expandStatusModelUpdate model =
     case model.statusBarState of
@@ -725,3 +746,34 @@ updateKeepAliveResponseModel model response =
                         "Error updating keep alive setting"
                         (showHttpError err)
             }
+
+
+changeByteOrderModelUpdate : Model -> Int -> Int -> SettingOption -> Model
+changeByteOrderModelUpdate model settingIdx inputIdx option =
+    let
+        order = toByteOrder option
+    in
+    case updateIndexedSetting model.settings settingIdx inputIdx (RadioValue (Just option)) of
+        Nothing ->
+            model
+
+        Just modifiedSettings ->
+            { model
+                | byteOrder = order
+                , settings = modifiedSettings
+            }
+
+changeByteOrderResponseModelUpdate : Model -> Result Http.Error ByteOrder-> Model
+changeByteOrderResponseModelUpdate model result =
+    case result of
+        Ok order ->
+            { model | notifications = simpleNot model (showByteOrderResponse order) }
+        Err err ->
+            { model
+                | notifications =
+                    detailedNot
+                        model
+                        "Error updating byte order setting"
+                        (showHttpError err)
+            }
+
