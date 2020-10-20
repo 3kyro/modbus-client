@@ -118,9 +118,8 @@ menuBar model =
         ]
         [ connectTabButton model
         , importRegisterTabButton model
-        , inputRegisterTabButton model
-        , holdingRegisterTabButton model
-        , registerTabButton model
+        , registersTabButton model
+        , registerTableTabButton model
         , heartbeatTabButton model
         , settingsTabButton model
         ]
@@ -165,18 +164,14 @@ importRegisterTabButton model =
     newSelectTabButton model "Import" ImportMenu
 
 
-inputRegisterTabButton : Model -> Element Msg
-inputRegisterTabButton model =
-    newSelectTabButton model "Input Registers" InputRegistersTab
+registersTabButton : Model -> Element Msg
+registersTabButton model =
+    newSelectTabButton model "Registers" RegistersTab
 
 
-holdingRegisterTabButton : Model -> Element Msg
-holdingRegisterTabButton model =
-    newSelectTabButton model "Holding Registers" HoldingRegistersTab
 
-
-registerTabButton : Model -> Element Msg
-registerTabButton model =
+registerTableTabButton : Model -> Element Msg
+registerTableTabButton model =
     newSelectTabButton model "Register Table" ModDataTab
 
 
@@ -209,11 +204,8 @@ infoArea model =
         ImportMenu ->
             importTab model
 
-        InputRegistersTab ->
+        RegistersTab ->
             inputRegistersTab
-
-        HoldingRegistersTab ->
-            holdingRegistersTab
 
         ModDataTab ->
             modDataTab model
@@ -743,9 +735,6 @@ viewReadWriteCell model idx md =
         ModDataTab ->
             viewReadWriteModDataCell idx md
 
-        HoldingRegistersTab ->
-            none
-
         _ ->
             none
 
@@ -838,10 +827,7 @@ commandArea model =
         ImportMenu ->
             none
 
-        InputRegistersTab ->
-            none
-
-        HoldingRegistersTab ->
+        RegistersTab ->
             none
 
         ModDataTab ->

@@ -136,6 +136,7 @@ type alias Model =
     , keepAliveInterval : Maybe Int -- in seconds
     , dummyMessageStatus : Bool
     , dummyDropdown : Dropdown DummyOption Msg
+
     }
 
 
@@ -517,8 +518,7 @@ fromModType md str =
 type ActiveTab
     = ConnectMenu
     | ImportMenu
-    | InputRegistersTab
-    | HoldingRegistersTab
+    | RegistersTab
     | ModDataTab
     | HeartbeatTab
     | SettingsTab
