@@ -60,6 +60,7 @@ import Types
         , toByteOrder
         )
 import Types.IpAddress exposing (IpAddressByte, setIpAddressByte)
+import Dropdown exposing (setDropdownExpanded, setDropdown)
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -222,7 +223,10 @@ update msg model =
 
         ChangeByteOrderResponse result ->
             ( changeByteOrderResponseModelUpdate model result, jumpToBottom "status" )
-        
+
+        ExpandDummyDropdown value ->
+            ( { model | dummyDropdown = setDropdown model.dummyDropdown value }, Cmd.none)
+
         NoOp ->
             ( model, Cmd.none )
 

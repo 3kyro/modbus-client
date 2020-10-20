@@ -68,6 +68,7 @@ import Types
         , getRegType
         , showConnectStatus
         , writeableReg
+        , DummyOption (..)
         )
 import Types.IpAddress
     exposing
@@ -80,6 +81,7 @@ import Settings exposing
     )
 import Settings exposing (renderSettings)
 
+import Dropdown exposing (..)
 
 view : Model -> Html Msg
 view model =
@@ -217,7 +219,7 @@ infoArea model =
             modDataTab model
 
         HeartbeatTab ->
-            heartbeatTab
+            heartbeatTab model
 
         SettingsTab ->
             settingsTab model
@@ -791,10 +793,21 @@ modDataTab model =
     newRegisterTab model.modDataUpdate <| modDataColumns model
 
 
-heartbeatTab : Element Msg
-heartbeatTab =
-    newRegisterTab [] []
-
+heartbeatTab : Model -> Element Msg
+heartbeatTab model =
+    column
+    []
+    [ text "A line above the heavens"
+    , row
+        []
+        [ text "An into to a dropdown "
+        , dropdown
+            []
+            model.dummyDropdown
+        , text " some final words"
+        ]
+    , text "a line on the abyss, now even more extended"
+    ]
 
 
 ------------------------------------------------------------------------------------------------------------------

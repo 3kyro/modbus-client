@@ -1,28 +1,32 @@
 module App exposing (main)
 
 import Browser
+import Dropdown exposing (Dropdown, Option, getOption)
+import Element exposing (text)
+import Element.Input exposing (checkbox)
 import Notifications exposing (StatusBarState(..))
+import Settings exposing (Setting, SettingInput(..), SettingStatus(..))
 import Time
 import Types
     exposing
         ( ActiveTab(..)
+        , ByteOrder(..)
         , ConnectStatus(..)
+        , DummyOption(..)
         , ModData
         , ModValue(..)
         , Model
         , Msg(..)
         , ReadWrite(..)
         , RegType(..)
+        , SettingOption(..)
         , fromFloat
         , newModDataUpdate
-        , SettingOption (..)
-        , ByteOrder (..)
         )
 import Types.IpAddress exposing (defaultIpAddr)
 import Update exposing (initCmd, update)
 import View exposing (view)
-import Settings exposing (Setting , SettingStatus (..), SettingInput (..))
-import Element.Input exposing (checkbox)
+
 
 main : Program () Model Msg
 main =
@@ -32,6 +36,7 @@ main =
         , update = update
         , subscriptions = \_ -> Time.every 1000 NewTime
         }
+
 
 initModel : Model
 initModel =
@@ -53,11 +58,14 @@ initModel =
     , readWriteAll = Read
     , timePosix = Time.millisToPosix 0
     , timeZone = Time.utc
-    , settings = [keepAliveSetting, byteOrderSetting]
+    , settings = [ keepAliveSetting, byteOrderSetting ]
     , keepAlive = False
     , keepAliveIdle = Nothing
     , keepAliveInterval = Nothing
+    , dummyMessageStatus = False
+    , dummyDropdown = dummyDrop
     }
+
 
 keepAliveSetting : Setting SettingOption Msg
 keepAliveSetting =
@@ -81,6 +89,7 @@ keepAliveSetting =
             }
         ]
 
+
 byteOrderSetting : Setting SettingOption Msg
 byteOrderSetting =
     Setting
@@ -89,14 +98,47 @@ byteOrderSetting =
         [ Radio
             { description = "Endianess"
             , values =
-                [ (SetLE, "Little Endian")
-                , (SetBE, "Big Endian")
+                [ ( SetLE, "Little Endian" )
+                , ( SetBE, "Big Endian" )
                 ]
             , selected = Just SetLE
             , message = ChangeByteOrderMsg
             }
-
         ]
+
+
+dummyDrop : Dropdown DummyOption Msg
+dummyDrop =
+    { onClick = ExpandDummyDropdown
+    , options = [ dummyOption1, dummyOption2, dummyOption3, dummyOption4 ]
+    , selected = dummyOption1
+    , expanded = False
+    , label = "Dummy label"
+    }
+
+
+
+-- newRegisterTab [] []
+
+
+dummyOption1 : Option DummyOption Msg
+dummyOption1 =
+    getOption DummyOption1 (text "Dummy option 1")
+
+
+dummyOption2 : Option DummyOption Msg
+dummyOption2 =
+    getOption DummyOption2 (text "Dummy option 2")
+
+
+dummyOption3 : Option DummyOption Msg
+dummyOption3 =
+    getOption DummyOption3 (text "Dummy option 3")
+
+
+dummyOption4 : Option DummyOption Msg
+dummyOption4 =
+    getOption DummyOption4 (text "Dummy option 4")
 
 
 initModData : List ModData

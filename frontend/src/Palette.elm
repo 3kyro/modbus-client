@@ -20,6 +20,8 @@ module Palette exposing
     , smallFont
     , steelBlue
     , white
+    , dClrHover
+    , dClrNotExpanded
     )
 
 import Element exposing (Attribute, Color, rgb255)
@@ -129,3 +131,11 @@ cloudBurst =
 fireBrick : Color
 fireBrick =
     rgb255 179 45 17
+
+dClrNotExpanded : Color
+dClrNotExpanded =
+    rgb255 96 135 201
+
+dClrHover : Color
+dClrHover =
+    rgb255 69 96 142

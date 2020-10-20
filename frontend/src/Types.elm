@@ -1,7 +1,10 @@
 module Types exposing
     ( ActiveTab(..)
+    , ByteOrder(..)
     , ConnectStatus(..)
     , ConnectionInfo(..)
+    , DummyOption(..)
+    , KeepAliveResponse(..)
     , MFloat
     , ModData
     , ModDataUpdate
@@ -10,9 +13,13 @@ module Types exposing
     , Msg(..)
     , ReadWrite(..)
     , RegType(..)
+    , SettingOption(..)
+    , decodeByteOrder
     , decodeConnInfo
+    , decodeKeepAliveResponse
     , decodeModData
     , decodeModDataUpdate
+    , encodeByteOrder
     , encodeKeepAlive
     , encodeModData
     , encodeModDataUpdate
@@ -27,21 +34,16 @@ module Types exposing
     , newModDataUpdate
     , replaceModDataSelected
     , replaceModDataWrite
+    , showByteOrderResponse
     , showConnInfo
     , showConnectStatus
+    , showKeepAliveResponse
+    , toByteOrder
     , toMFloat
     , writeableReg
-    , KeepAliveResponse (..)
-    , decodeKeepAliveResponse
-    , showKeepAliveResponse
-    , SettingOption (..)
-    , ByteOrder (..)
-    , encodeByteOrder
-    , decodeByteOrder
-    , showByteOrderResponse
-    , toByteOrder
     )
 
+import Dropdown exposing (..)
 import File exposing (File)
 import Http
 import Json.Decode as D
@@ -98,7 +100,15 @@ type Msg
     | KeepAliveResponseMsg (Result Http.Error KeepAliveResponse)
     | ChangeByteOrderMsg Int Int SettingOption
     | ChangeByteOrderResponse (Result Http.Error ByteOrder)
+    | ExpandDummyDropdown (Option DummyOption Msg)
     | NoOp
+
+
+type DummyOption
+    = DummyOption1
+    | DummyOption2
+    | DummyOption3
+    | DummyOption4
 
 
 type alias Model =
@@ -109,7 +119,7 @@ type alias Model =
     , ipAddress : IpAddress
     , socketPort : Maybe Int
     , serialPort : Maybe String
-    , timeout : Maybe Int  -- in seconds
+    , timeout : Maybe Int -- in seconds
     , byteOrder : ByteOrder
     , activeTab : ActiveTab
     , csvFileName : Maybe String
@@ -124,6 +134,8 @@ type alias Model =
     , keepAlive : Bool
     , keepAliveIdle : Maybe Int -- in seconds
     , keepAliveInterval : Maybe Int -- in seconds
+    , dummyMessageStatus : Bool
+    , dummyDropdown : Dropdown DummyOption Msg
     }
 
 
@@ -133,10 +145,10 @@ type ConnectStatus
     | Connected
     | Disconnecting
 
+
 type SettingOption
     = SetLE
     | SetBE
-
 
 
 newModDataUpdate : List ModData -> List ModDataUpdate
@@ -560,15 +572,21 @@ encodeKeepAlive model flag =
         , ( "interval", E.int <| Maybe.withDefault 10 model.keepAliveInterval )
         ]
 
+
 type KeepAliveResponse
     = KeepAliveActivated
     | KeepAliveDisactivated
 
+
 showKeepAliveResponse : KeepAliveResponse -> String
 showKeepAliveResponse kar =
     case kar of
-        KeepAliveActivated -> "Keep alive activated"
-        KeepAliveDisactivated -> "Keep alive disactivated"
+        KeepAliveActivated ->
+            "Keep alive activated"
+
+        KeepAliveDisactivated ->
+            "Keep alive disactivated"
+
 
 decodeKeepAliveResponse : D.Decoder KeepAliveResponse
 decodeKeepAliveResponse =
@@ -586,19 +604,27 @@ decodeKeepAliveResponse =
                         D.fail "Not a KeepAliveResponse"
             )
 
+
+
 --------------------------------------------------------------------------------------------------
 -- ByteOrder
 --------------------------------------------------------------------------------------------------
+
 
 type ByteOrder
     = LE
     | BE
 
+
 encodeByteOrder : ByteOrder -> E.Value
 encodeByteOrder order =
     case order of
-        LE -> E.string "le"
-        BE -> E.string "be"
+        LE ->
+            E.string "le"
+
+        BE ->
+            E.string "be"
+
 
 decodeByteOrder : D.Decoder ByteOrder
 decodeByteOrder =
@@ -616,14 +642,22 @@ decodeByteOrder =
                         D.fail "Not a ByteOrder"
             )
 
+
 showByteOrderResponse : ByteOrder -> String
 showByteOrderResponse order =
     case order of
-        LE -> "Byte order changed to Little Endian"
-        BE -> "Byte order changed to Big Endian"
+        LE ->
+            "Byte order changed to Little Endian"
+
+        BE ->
+            "Byte order changed to Big Endian"
+
 
 toByteOrder : SettingOption -> ByteOrder
 toByteOrder option =
     case option of
-        SetLE -> LE
-        SetBE -> BE
+        SetLE ->
+            LE
+
+        SetBE ->
+            BE
