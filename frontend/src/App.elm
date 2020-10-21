@@ -5,6 +5,7 @@ import Dropdown exposing (Dropdown, Option, getOption)
 import Element exposing (text)
 import Element.Input exposing (checkbox)
 import Notifications exposing (StatusBarState(..))
+import ReadWrite exposing (ReadWrite(..))
 import Settings exposing (Setting, SettingInput(..), SettingStatus(..))
 import Time
 import Types
@@ -13,20 +14,19 @@ import Types
         , ByteOrder(..)
         , ConnectStatus(..)
         , ModData
+        , ModDataUpdate
         , ModValue(..)
         , Model
         , Msg(..)
-        , ReadWrite(..)
         , RegType(..)
         , SettingOption(..)
+        , ValueType(..)
         , fromFloat
         , newModDataUpdate
-        , ValueType(..)
         )
 import Types.IpAddress exposing (defaultIpAddr)
 import Update exposing (initCmd, update)
 import View exposing (view)
-import Types exposing (ModDataUpdate)
 
 
 main : Program () Model Msg
@@ -72,46 +72,56 @@ initModel =
     , regMdu = initRegMdu
     }
 
+
 regDropdown : Dropdown RegType Msg
 regDropdown =
     { onClick = RegRegTypeDrop
-    , options = [inputRegisterOption, holdingRegisterOption]
+    , options = [ inputRegisterOption, holdingRegisterOption ]
     , selected = inputRegisterOption
     , expanded = False
     , label = ""
     }
 
+
 getRegTypeOption : RegType -> Option RegType Msg
 getRegTypeOption rg =
     case rg of
-        InputRegister -> inputRegisterOption
-        HoldingRegister -> holdingRegisterOption
+        InputRegister ->
+            inputRegisterOption
+
+        HoldingRegister ->
+            holdingRegisterOption
+
 
 inputRegisterOption : Option RegType Msg
 inputRegisterOption =
-    getOption InputRegister ( text "Input Register")
+    getOption InputRegister (text "Input Register")
+
 
 holdingRegisterOption : Option RegType Msg
 holdingRegisterOption =
-    getOption HoldingRegister ( text "Holding Register")
+    getOption HoldingRegister (text "Holding Register")
 
 
 valueTypeDropdown : Dropdown ValueType Msg
 valueTypeDropdown =
     { onClick = RegValueTypeDrop
-    , options = [wordOption, floatOption]
+    , options = [ wordOption, floatOption ]
     , selected = wordOption
     , expanded = False
     , label = ""
     }
 
+
 wordOption : Option ValueType Msg
 wordOption =
     getOption VWord (text "Word")
 
+
 floatOption : Option ValueType Msg
 floatOption =
     getOption VFloat (text "Float")
+
 
 initRegMdu : ModDataUpdate
 initRegMdu =
@@ -126,6 +136,7 @@ initRegMdu =
     , mduSelected = False -- not used in this context
     , mduRW = Read
     }
+
 
 keepAliveSetting : Setting SettingOption Msg
 keepAliveSetting =
@@ -165,9 +176,6 @@ byteOrderSetting =
             , message = ChangeByteOrderMsg
             }
         ]
-
-
-
 
 
 initModData : List ModData

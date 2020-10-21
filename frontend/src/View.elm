@@ -66,8 +66,6 @@ import Types
         , ModDataUpdate
         , Model
         , Msg(..)
-        , ReadWrite(..)
-        , flipRW
         , getModValue
         , getModValueType
         , getModValueUpdate
@@ -81,7 +79,11 @@ import Types.IpAddress
         , IpAddressByte(..)
         , showIpAddressByte
         )
-
+import ReadWrite exposing
+    ( ReadWrite(..)
+    , readWriteButton
+    , flipRW
+    )
 
 view : Model -> Html Msg
 view model =
@@ -624,46 +626,26 @@ readWriteColumn model =
             , Font.color greyWhite
             ]
         <|
-            readWriteButton model.readWriteAll <|
-                Just <|
+            readWriteButton
+                model.readWriteAll
+                    blueSapphire
+                    fireBrick
+                <|
                     ToggleWriteAll <|
                         flipRW model.readWriteAll
     , width = px 50
     , view = \i md -> viewReadWriteCell model i md
     }
 
+-- rwButtonBGClr : ReadWrite -> Color
+-- rwButtonBGClr rw =
+--     case rw of
+--         Read ->
+--             blueSapphire
 
-readWriteButton : ReadWrite -> Maybe Msg -> Element Msg
-readWriteButton rw msg =
-    Input.button
-        [ Background.color <| rwButtonBGClr rw
-        , centerY
-        , padding 3
-        , focused []
-        ]
-        { onPress = msg
-        , label = readWriteButtonText rw
-        }
+--         Write ->
+--             fireBrick
 
-
-rwButtonBGClr : ReadWrite -> Color
-rwButtonBGClr rw =
-    case rw of
-        Read ->
-            blueSapphire
-
-        Write ->
-            fireBrick
-
-
-readWriteButtonText : ReadWrite -> Element Msg
-readWriteButtonText rw =
-    case rw of
-        Read ->
-            text "Read"
-
-        Write ->
-            text "Write"
 
 
 selectColumn : Model -> IndexedColumn ModDataUpdate Msg
@@ -750,14 +732,15 @@ viewReadWriteModDataCell idx md =
         ]
     <|
         if writeableReg md.mduModData then
-            readWriteButton md.mduRW <|
-                Just <|
+            readWriteButton md.mduRW
+                blueSapphire
+                fireBrick
+            <|
                     ModDataWrite idx <|
                         flipRW md.mduRW
 
         else
             none
-
 
 tableCellColor : Int -> Color
 tableCellColor idx =
@@ -800,8 +783,11 @@ registersTab model =
             , placeholder = Nothing
             , label = Input.labelHidden "Unit Id"
             }
-        , readWriteButton model.regRW <|
-            Just <|
+        , readWriteButton
+            model.regRW
+            blueSapphire
+            fireBrick
+             <|
                 RegToggleRW <|
                     flipRW model.regRW
         ]

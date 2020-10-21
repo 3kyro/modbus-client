@@ -2,6 +2,7 @@ module Update exposing (getPosixTime, getTimeZone, initCmd, update)
 
 import Array
 import Browser.Dom as Dom
+import Dropdown exposing (setDropdown, setDropdownExpanded)
 import Element exposing (onLeft)
 import File
 import File.Select as Select
@@ -14,6 +15,10 @@ import Notifications
         , NotificationState(..)
         , StatusBarState(..)
         , changeNotificationState
+        )
+import ReadWrite
+    exposing
+        ( ReadWrite(..)
         )
 import Settings
     exposing
@@ -36,34 +41,32 @@ import Types
         , ModValue(..)
         , Model
         , Msg(..)
-        , ReadWrite
         , RegType(..)
         , SettingOption(..)
+        , decodeByteOrder
         , decodeConnInfo
         , decodeKeepAliveResponse
         , decodeModData
         , decodeModDataUpdate
+        , encodeByteOrder
         , encodeKeepAlive
         , encodeModDataUpdate
         , encodeTCPConnectionInfo
         , encodeTCPConnectionRequest
         , fromModType
         , fromModTypeUpdate
-        , setRegTypeUpdate
-        , setRegAddressUpdate
         , newModDataUpdate
         , replaceModDataSelected
         , replaceModDataWrite
+        , setRegAddressUpdate
+        , setRegTypeUpdate
+        , showByteOrderResponse
         , showConnInfo
         , showKeepAliveResponse
-        , writeableReg
-        , encodeByteOrder
-        , decodeByteOrder
-        , showByteOrderResponse
         , toByteOrder
+        , writeableReg
         )
 import Types.IpAddress exposing (IpAddressByte, setIpAddressByte)
-import Dropdown exposing (setDropdownExpanded, setDropdown)
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -231,16 +234,20 @@ update msg model =
             ( { model
                 | regTypeDd = setDropdown model.regTypeDd value
                 , regMdu = setRegTypeUpdate model.regMdu model.regTypeDd.selected.value
-            }, Cmd.none)
+              }
+            , Cmd.none
+            )
 
         RegValueTypeDrop value ->
-            ( { model | valueTypeDd = setDropdown model.valueTypeDd value }, Cmd.none)
+            ( { model | valueTypeDd = setDropdown model.valueTypeDd value }, Cmd.none )
 
         RegAddress str ->
             ( { model
                 | regAddress = String.toInt str
                 , regMdu = setRegAddressUpdate model.regMdu <| Maybe.withDefault 0 (String.toInt str)
-            }, Cmd.none )
+              }
+            , Cmd.none
+            )
 
         RegUid str ->
             ( { model | regUid = String.toInt str }, Cmd.none )
@@ -383,6 +390,7 @@ changeByteOrderRequest order =
         , body = Http.jsonBody <| encodeByteOrder order
         , expect = Http.expectJson ChangeByteOrderResponse decodeByteOrder
         }
+
 
 simpleNot : Model -> String -> List Notification
 simpleNot model header =
@@ -782,7 +790,8 @@ updateKeepAliveResponseModel model response =
 changeByteOrderModelUpdate : Model -> Int -> Int -> SettingOption -> Model
 changeByteOrderModelUpdate model settingIdx inputIdx option =
     let
-        order = toByteOrder option
+        order =
+            toByteOrder option
     in
     case updateIndexedSetting model.settings settingIdx inputIdx (RadioValue (Just option)) of
         Nothing ->
@@ -794,11 +803,13 @@ changeByteOrderModelUpdate model settingIdx inputIdx option =
                 , settings = modifiedSettings
             }
 
-changeByteOrderResponseModelUpdate : Model -> Result Http.Error ByteOrder-> Model
+
+changeByteOrderResponseModelUpdate : Model -> Result Http.Error ByteOrder -> Model
 changeByteOrderResponseModelUpdate model result =
     case result of
         Ok order ->
             { model | notifications = simpleNot model (showByteOrderResponse order) }
+
         Err err ->
             { model
                 | notifications =
@@ -807,4 +818,3 @@ changeByteOrderResponseModelUpdate model result =
                         "Error updating byte order setting"
                         (showHttpError err)
             }
-

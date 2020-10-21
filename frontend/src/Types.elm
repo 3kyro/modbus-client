@@ -10,10 +10,9 @@ module Types exposing
     , ModValue(..)
     , Model
     , Msg(..)
-    , ReadWrite(..)
-    , ValueType (..)
     , RegType(..)
     , SettingOption(..)
+    , ValueType(..)
     , decodeByteOrder
     , decodeConnInfo
     , decodeKeepAliveResponse
@@ -25,19 +24,18 @@ module Types exposing
     , encodeModDataUpdate
     , encodeTCPConnectionInfo
     , encodeTCPConnectionRequest
-    , flipRW
     , fromFloat
     , fromModType
     , fromModTypeUpdate
     , getModValue
-    , getModValueUpdate
     , getModValueType
+    , getModValueUpdate
     , getRegType
-    , setRegTypeUpdate
-    , setRegAddressUpdate
     , newModDataUpdate
     , replaceModDataSelected
     , replaceModDataWrite
+    , setRegAddressUpdate
+    , setRegTypeUpdate
     , showByteOrderResponse
     , showConnInfo
     , showConnectStatus
@@ -51,11 +49,17 @@ import Dropdown exposing (..)
 import File exposing (File)
 import Http
 import Json.Decode as D
-import Json.Encode as E
+import Json.Encode as E exposing (Value)
 import Notifications
     exposing
         ( Notification
         , StatusBarState(..)
+        )
+import ReadWrite
+    exposing
+        ( ReadWrite(..)
+        , decodeRW
+        , encodeRW
         )
 import Settings exposing (Setting)
 import String exposing (fromFloat)
@@ -68,7 +72,6 @@ import Types.IpAddress
         , showIp
         , unsafeShowIp
         )
-import Json.Encode exposing (Value)
 
 
 type Msg
@@ -146,6 +149,7 @@ type alias Model =
     , regNumReg : Maybe Int
     , regMdu : ModDataUpdate
     }
+
 
 type ConnectStatus
     = Connect
@@ -309,6 +313,7 @@ type ValueType
     = VWord
     | VFloat
 
+
 type ModValue
     = ModWord (Maybe Int)
     | ModFloat (Maybe MFloat)
@@ -347,6 +352,7 @@ getModValue mv =
 getModValueUpdate : ModDataUpdate -> Maybe String
 getModValueUpdate mdu =
     getModValue mdu.mduModData.modValue
+
 
 encodeModData : ModData -> E.Value
 encodeModData md =
@@ -473,48 +479,6 @@ replaceModDataWrite idx rw =
             md
 
 
-type ReadWrite
-    = Read
-    | Write
-
-
-flipRW : ReadWrite -> ReadWrite
-flipRW rw =
-    case rw of
-        Read ->
-            Write
-
-        Write ->
-            Read
-
-
-encodeRW : ReadWrite -> E.Value
-encodeRW rw =
-    case rw of
-        Read ->
-            E.string "read"
-
-        Write ->
-            E.string "write"
-
-
-decodeRW : D.Decoder ReadWrite
-decodeRW =
-    D.string
-        |> D.andThen
-            (\s ->
-                case s of
-                    "read" ->
-                        D.succeed Read
-
-                    "write" ->
-                        D.succeed Write
-
-                    _ ->
-                        D.fail "Neither Read or Write"
-            )
-
-
 fromModType : ModData -> String -> ModData
 fromModType md str =
     case md.modValue of
@@ -524,25 +488,31 @@ fromModType md str =
         ModFloat _ ->
             { md | modValue = ModFloat <| toMFloat str }
 
+
 fromModTypeUpdate : ModDataUpdate -> String -> ModDataUpdate
 fromModTypeUpdate mdu str =
     { mdu | mduModData = fromModType mdu.mduModData str }
+
 
 setRegType : ModData -> RegType -> ModData
 setRegType md rt =
     { md | modRegType = rt }
 
+
 setRegTypeUpdate : ModDataUpdate -> RegType -> ModDataUpdate
 setRegTypeUpdate mdu rt =
     { mdu | mduModData = setRegType mdu.mduModData rt }
+
 
 setRegAddress : ModData -> Int -> ModData
 setRegAddress md addr =
     { md | modAddress = addr }
 
+
 setRegAddressUpdate : ModDataUpdate -> Int -> ModDataUpdate
 setRegAddressUpdate mdu addr =
     { mdu | mduModData = setRegAddress mdu.mduModData addr }
+
 
 
 --------------------------------------------------------------------------------------------------
