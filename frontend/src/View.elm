@@ -79,10 +79,11 @@ import Types.IpAddress
         , IpAddressByte(..)
         , showIpAddressByte
         )
+import RegisterTab exposing (renderRegistersTab)
 import ReadWrite exposing
     ( ReadWrite(..)
-    , readWriteButton
     , flipRW
+    , readWriteButton
     )
 
 view : Model -> Html Msg
@@ -753,72 +754,7 @@ tableCellColor idx =
 
 registersTab : Model -> Element Msg
 registersTab model =
-    row
-        [ spacing 20
-        , paddingXY 20 20
-        , alignTop
-        ]
-    <|
-        [ text "Register type: "
-        , dropdown
-            []
-            model.regTypeDd
-        , text "Address"
-        , Input.text
-            [ width <| px 100 ]
-            { onChange = RegAddress
-            , text = Maybe.withDefault "" <| Maybe.map String.fromInt model.regAddress
-            , placeholder = Nothing
-            , label = Input.labelHidden "Register Address"
-            }
-        , text "Value Type"
-        , dropdown
-            []
-            model.valueTypeDd
-        , text "Unit id"
-        , Input.text
-            [ width <| px 100 ]
-            { onChange = RegUid
-            , text = Maybe.withDefault "" <| Maybe.map String.fromInt model.regUid
-            , placeholder = Nothing
-            , label = Input.labelHidden "Unit Id"
-            }
-        , readWriteButton
-            model.regRW
-            blueSapphire
-            fireBrick
-             <|
-                RegToggleRW <|
-                    flipRW model.regRW
-        ]
-            ++ regNumInput model
-
-
-regNumInput : Model -> List (Element Msg)
-regNumInput model =
-    case model.regRW of
-        Read ->
-            [ text "Number of registers"
-            , Input.text
-                [ width <| px 100 ]
-                { onChange = RegNumber
-                , text = Maybe.withDefault "" <| Maybe.map String.fromInt model.regNumReg
-                , placeholder = Nothing
-                , label = Input.labelHidden "Number"
-                }
-            ]
-
-        Write ->
-            [ text "Value"
-            , Input.text
-                [ width <| px 100 ]
-                { onChange = RegModValue
-                , text = Maybe.withDefault "" <| getModValueUpdate model.regMdu
-                , placeholder = Nothing
-                , label = Input.labelHidden "Value"
-                }
-            ]
-
+    renderRegistersTab model
 
 holdingRegistersTab : Element Msg
 holdingRegistersTab =
