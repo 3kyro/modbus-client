@@ -61,6 +61,7 @@ import Types
         , setRegAddressUpdate
         , setRegTypeUpdate
         , setRegUidUpdate
+        , setRegRWUpdate
         , showByteOrderResponse
         , showConnInfo
         , showKeepAliveResponse
@@ -259,7 +260,10 @@ update msg model =
             )
 
         RegToggleRW rw ->
-            ( { model | regRW = rw }, Cmd.none )
+            ( { model | regMdu = setRegRWUpdate model.regMdu rw
+                }
+            , Cmd.none
+            )
 
         RegNumber str ->
             ( { model | regNumReg = String.toInt str }, Cmd.none )

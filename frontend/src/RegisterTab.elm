@@ -61,19 +61,19 @@ renderRegistersTab model =
             , label = Input.labelHidden "Unit Id"
             }
         , readWriteButton
-            model.regRW
+            model.regMdu.mduRW
             blueSapphire
             fireBrick
           <|
             RegToggleRW <|
-                flipRW model.regRW
+                flipRW model.regMdu.mduRW
         ]
             ++ regNumInput model
 
 
 regNumInput : Model -> List (Element Msg)
 regNumInput model =
-    case model.regRW of
+    case model.regMdu.mduRW of
         Read ->
             [ text "Number of registers"
             , Input.text

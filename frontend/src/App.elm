@@ -67,7 +67,6 @@ initModel =
     , valueTypeDd = valueTypeDropdown
     , regAddress = Just 0
     , regUid = Just 1
-    , regRW = Read
     , regNumReg = Nothing
     , regMdu = initRegMdu
     }

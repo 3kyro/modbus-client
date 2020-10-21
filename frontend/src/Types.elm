@@ -35,6 +35,7 @@ module Types exposing
     , replaceModDataSelected
     , replaceModDataWrite
     , setRegAddressUpdate
+    , setRegRWUpdate
     , setRegTypeUpdate
     , setRegUidUpdate
     , showByteOrderResponse
@@ -146,7 +147,6 @@ type alias Model =
     , valueTypeDd : Dropdown ValueType Msg
     , regAddress : Maybe Int
     , regUid : Maybe Int
-    , regRW : ReadWrite
     , regNumReg : Maybe Int
     , regMdu : ModDataUpdate
     }
@@ -523,6 +523,11 @@ setRegUid md uid =
 setRegUidUpdate : ModDataUpdate -> Int -> ModDataUpdate
 setRegUidUpdate mdu uid =
     { mdu | mduModData = setRegUid mdu.mduModData uid }
+
+
+setRegRWUpdate : ModDataUpdate -> ReadWrite -> ModDataUpdate
+setRegRWUpdate mdu rw =
+    { mdu | mduRW = rw }
 
 
 
