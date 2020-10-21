@@ -641,6 +641,7 @@ readWriteColumn model =
 -- rwButtonBGClr : ReadWrite -> Color
 -- rwButtonBGClr rw =
 --     case rw of
+
 --         Read ->
 --             blueSapphire
 

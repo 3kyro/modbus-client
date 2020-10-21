@@ -36,6 +36,7 @@ module Types exposing
     , replaceModDataWrite
     , setRegAddressUpdate
     , setRegTypeUpdate
+    , setRegUidUpdate
     , showByteOrderResponse
     , showConnInfo
     , showConnectStatus
@@ -512,6 +513,16 @@ setRegAddress md addr =
 setRegAddressUpdate : ModDataUpdate -> Int -> ModDataUpdate
 setRegAddressUpdate mdu addr =
     { mdu | mduModData = setRegAddress mdu.mduModData addr }
+
+
+setRegUid : ModData -> Int -> ModData
+setRegUid md uid =
+    { md | modUid = uid }
+
+
+setRegUidUpdate : ModDataUpdate -> Int -> ModDataUpdate
+setRegUidUpdate mdu uid =
+    { mdu | mduModData = setRegUid mdu.mduModData uid }
 
 
 
