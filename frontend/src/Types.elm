@@ -3,7 +3,6 @@ module Types exposing
     , ByteOrder(..)
     , ConnectStatus(..)
     , ConnectionInfo(..)
-    , DummyOption(..)
     , KeepAliveResponse(..)
     , MFloat
     , ModData
@@ -12,6 +11,7 @@ module Types exposing
     , Model
     , Msg(..)
     , ReadWrite(..)
+    , ValueType (..)
     , RegType(..)
     , SettingOption(..)
     , decodeByteOrder
@@ -28,9 +28,13 @@ module Types exposing
     , flipRW
     , fromFloat
     , fromModType
+    , fromModTypeUpdate
     , getModValue
+    , getModValueUpdate
     , getModValueType
     , getRegType
+    , setRegTypeUpdate
+    , setRegAddressUpdate
     , newModDataUpdate
     , replaceModDataSelected
     , replaceModDataWrite
@@ -64,6 +68,7 @@ import Types.IpAddress
         , showIp
         , unsafeShowIp
         )
+import Json.Encode exposing (Value)
 
 
 type Msg
@@ -100,15 +105,14 @@ type Msg
     | KeepAliveResponseMsg (Result Http.Error KeepAliveResponse)
     | ChangeByteOrderMsg Int Int SettingOption
     | ChangeByteOrderResponse (Result Http.Error ByteOrder)
-    | ExpandDummyDropdown (Option DummyOption Msg)
+    | RegRegTypeDrop (Option RegType Msg)
+    | RegValueTypeDrop (Option ValueType Msg)
+    | RegAddress String
+    | RegUid String
+    | RegToggleRW ReadWrite
+    | RegNumber String
+    | RegModValue String
     | NoOp
-
-
-type DummyOption
-    = DummyOption1
-    | DummyOption2
-    | DummyOption3
-    | DummyOption4
 
 
 type alias Model =
@@ -134,11 +138,14 @@ type alias Model =
     , keepAlive : Bool
     , keepAliveIdle : Maybe Int -- in seconds
     , keepAliveInterval : Maybe Int -- in seconds
-    , dummyMessageStatus : Bool
-    , dummyDropdown : Dropdown DummyOption Msg
-
+    , regTypeDd : Dropdown RegType Msg
+    , valueTypeDd : Dropdown ValueType Msg
+    , regAddress : Maybe Int
+    , regUid : Maybe Int
+    , regRW : ReadWrite
+    , regNumReg : Maybe Int
+    , regMdu : ModDataUpdate
     }
-
 
 type ConnectStatus
     = Connect
@@ -298,6 +305,10 @@ writeableReg md =
             True
 
 
+type ValueType
+    = VWord
+    | VFloat
+
 type ModValue
     = ModWord (Maybe Int)
     | ModFloat (Maybe MFloat)
@@ -332,6 +343,10 @@ getModValue mv =
         ModFloat v ->
             Maybe.map showMFloat v
 
+
+getModValueUpdate : ModDataUpdate -> Maybe String
+getModValueUpdate mdu =
+    getModValue mdu.mduModData.modValue
 
 encodeModData : ModData -> E.Value
 encodeModData md =
@@ -509,6 +524,25 @@ fromModType md str =
         ModFloat _ ->
             { md | modValue = ModFloat <| toMFloat str }
 
+fromModTypeUpdate : ModDataUpdate -> String -> ModDataUpdate
+fromModTypeUpdate mdu str =
+    { mdu | mduModData = fromModType mdu.mduModData str }
+
+setRegType : ModData -> RegType -> ModData
+setRegType md rt =
+    { md | modRegType = rt }
+
+setRegTypeUpdate : ModDataUpdate -> RegType -> ModDataUpdate
+setRegTypeUpdate mdu rt =
+    { mdu | mduModData = setRegType mdu.mduModData rt }
+
+setRegAddress : ModData -> Int -> ModData
+setRegAddress md addr =
+    { md | modAddress = addr }
+
+setRegAddressUpdate : ModDataUpdate -> Int -> ModDataUpdate
+setRegAddressUpdate mdu addr =
+    { mdu | mduModData = setRegAddress mdu.mduModData addr }
 
 
 --------------------------------------------------------------------------------------------------

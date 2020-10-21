@@ -1,5 +1,6 @@
 module View exposing (view)
 
+import Dropdown exposing (..)
 import Element
     exposing
         ( Attribute
@@ -53,6 +54,10 @@ import Palette
         , smallFont
         , white
         )
+import Settings
+    exposing
+        ( renderSettings
+        )
 import Types
     exposing
         ( ActiveTab(..)
@@ -65,10 +70,10 @@ import Types
         , flipRW
         , getModValue
         , getModValueType
+        , getModValueUpdate
         , getRegType
         , showConnectStatus
         , writeableReg
-        , DummyOption (..)
         )
 import Types.IpAddress
     exposing
@@ -76,12 +81,7 @@ import Types.IpAddress
         , IpAddressByte(..)
         , showIpAddressByte
         )
-import Settings exposing
-    ( renderSettings
-    )
-import Settings exposing (renderSettings)
 
-import Dropdown exposing (..)
 
 view : Model -> Html Msg
 view model =
@@ -169,7 +169,6 @@ registersTabButton model =
     newSelectTabButton model "Registers" RegistersTab
 
 
-
 registerTableTabButton : Model -> Element Msg
 registerTableTabButton model =
     newSelectTabButton model "Register Table" ModDataTab
@@ -178,6 +177,7 @@ registerTableTabButton model =
 heartbeatTabButton : Model -> Element Msg
 heartbeatTabButton model =
     newSelectTabButton model "Heartbeat Signals" HeartbeatTab
+
 
 settingsTabButton : Model -> Element Msg
 settingsTabButton model =
@@ -205,7 +205,7 @@ infoArea model =
             importTab model
 
         RegistersTab ->
-            inputRegistersTab
+            registersTab model
 
         ModDataTab ->
             modDataTab model
@@ -328,8 +328,11 @@ connectButton model =
         ]
         { onPress =
             case model.connectStatus of
-                 Connect -> Just ConnectRequest
-                 _ -> Nothing
+                Connect ->
+                    Just ConnectRequest
+
+                _ ->
+                    Nothing
         , label = text <| showConnectStatus model.connectStatus
         }
 
@@ -348,8 +351,6 @@ connectButtonBgd model =
 
         Disconnecting ->
             lightGrey
-
-
 
 
 disconnectButton : Model -> Element Msg
@@ -767,9 +768,70 @@ tableCellColor idx =
         grey
 
 
-inputRegistersTab : Element Msg
-inputRegistersTab =
-    newRegisterTab [] []
+registersTab : Model -> Element Msg
+registersTab model =
+    row
+        [ spacing 20
+        , paddingXY 20 20
+        , alignTop
+        ]
+    <|
+        [ text "Register type: "
+        , dropdown
+            []
+            model.regTypeDd
+        , text "Address"
+        , Input.text
+            [ width <| px 100 ]
+            { onChange = RegAddress
+            , text = Maybe.withDefault "" <| Maybe.map String.fromInt model.regAddress
+            , placeholder = Nothing
+            , label = Input.labelHidden "Register Address"
+            }
+        , text "Value Type"
+        , dropdown
+            []
+            model.valueTypeDd
+        , text "Unit id"
+        , Input.text
+            [ width <| px 100 ]
+            { onChange = RegUid
+            , text = Maybe.withDefault "" <| Maybe.map String.fromInt model.regUid
+            , placeholder = Nothing
+            , label = Input.labelHidden "Unit Id"
+            }
+        , readWriteButton model.regRW <|
+            Just <|
+                RegToggleRW <|
+                    flipRW model.regRW
+        ]
+            ++ regNumInput model
+
+
+regNumInput : Model -> List (Element Msg)
+regNumInput model =
+    case model.regRW of
+        Read ->
+            [ text "Number of registers"
+            , Input.text
+                [ width <| px 100 ]
+                { onChange = RegNumber
+                , text = Maybe.withDefault "" <| Maybe.map String.fromInt model.regNumReg
+                , placeholder = Nothing
+                , label = Input.labelHidden "Number"
+                }
+            ]
+
+        Write ->
+            [ text "Value"
+            , Input.text
+                [ width <| px 100 ]
+                { onChange = RegModValue
+                , text = Maybe.withDefault "" <| getModValueUpdate model.regMdu
+                , placeholder = Nothing
+                , label = Input.labelHidden "Value"
+                }
+            ]
 
 
 holdingRegistersTab : Element Msg
@@ -784,23 +846,13 @@ modDataTab model =
 
 heartbeatTab : Model -> Element Msg
 heartbeatTab model =
-    column
-    []
-    [ text "A line above the heavens"
-    , row
-        []
-        [ text "An into to a dropdown "
-        , dropdown
-            []
-            model.dummyDropdown
-        , text " some final words"
-        ]
-    , text "a line on the abyss, now even more extended"
-    ]
+    none
+
 
 
 ------------------------------------------------------------------------------------------------------------------
 -- Settings Tab
+
 
 settingsTab : Model -> Element Msg
 settingsTab model =
@@ -813,6 +865,8 @@ settingsTab model =
         ]
     <|
         renderSettings SetActiveSetting model.settings
+
+
 
 ------------------------------------------------------------------------------------------------------------------
 -- Command Area

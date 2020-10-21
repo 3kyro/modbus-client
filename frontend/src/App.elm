@@ -12,7 +12,6 @@ import Types
         ( ActiveTab(..)
         , ByteOrder(..)
         , ConnectStatus(..)
-        , DummyOption(..)
         , ModData
         , ModValue(..)
         , Model
@@ -22,10 +21,12 @@ import Types
         , SettingOption(..)
         , fromFloat
         , newModDataUpdate
+        , ValueType(..)
         )
 import Types.IpAddress exposing (defaultIpAddr)
 import Update exposing (initCmd, update)
 import View exposing (view)
+import Types exposing (ModDataUpdate)
 
 
 main : Program () Model Msg
@@ -62,10 +63,69 @@ initModel =
     , keepAlive = False
     , keepAliveIdle = Nothing
     , keepAliveInterval = Nothing
-    , dummyMessageStatus = False
-    , dummyDropdown = dummyDrop
+    , regTypeDd = regDropdown
+    , valueTypeDd = valueTypeDropdown
+    , regAddress = Just 0
+    , regUid = Just 1
+    , regRW = Read
+    , regNumReg = Nothing
+    , regMdu = initRegMdu
     }
 
+regDropdown : Dropdown RegType Msg
+regDropdown =
+    { onClick = RegRegTypeDrop
+    , options = [inputRegisterOption, holdingRegisterOption]
+    , selected = inputRegisterOption
+    , expanded = False
+    , label = ""
+    }
+
+getRegTypeOption : RegType -> Option RegType Msg
+getRegTypeOption rg =
+    case rg of
+        InputRegister -> inputRegisterOption
+        HoldingRegister -> holdingRegisterOption
+
+inputRegisterOption : Option RegType Msg
+inputRegisterOption =
+    getOption InputRegister ( text "Input Register")
+
+holdingRegisterOption : Option RegType Msg
+holdingRegisterOption =
+    getOption HoldingRegister ( text "Holding Register")
+
+
+valueTypeDropdown : Dropdown ValueType Msg
+valueTypeDropdown =
+    { onClick = RegValueTypeDrop
+    , options = [wordOption, floatOption]
+    , selected = wordOption
+    , expanded = False
+    , label = ""
+    }
+
+wordOption : Option ValueType Msg
+wordOption =
+    getOption VWord (text "Word")
+
+floatOption : Option ValueType Msg
+floatOption =
+    getOption VFloat (text "Float")
+
+initRegMdu : ModDataUpdate
+initRegMdu =
+    { mduModData =
+        { modName = "Register"
+        , modRegType = InputRegister
+        , modAddress = 0
+        , modValue = ModWord Nothing
+        , modUid = 1
+        , modDescription = "Used for getting raw registers from the server"
+        }
+    , mduSelected = False -- not used in this context
+    , mduRW = Read
+    }
 
 keepAliveSetting : Setting SettingOption Msg
 keepAliveSetting =
@@ -107,38 +167,7 @@ byteOrderSetting =
         ]
 
 
-dummyDrop : Dropdown DummyOption Msg
-dummyDrop =
-    { onClick = ExpandDummyDropdown
-    , options = [ dummyOption1, dummyOption2, dummyOption3, dummyOption4 ]
-    , selected = dummyOption1
-    , expanded = False
-    , label = "Dummy label"
-    }
 
-
-
--- newRegisterTab [] []
-
-
-dummyOption1 : Option DummyOption Msg
-dummyOption1 =
-    getOption DummyOption1 (text "Dummy option 1")
-
-
-dummyOption2 : Option DummyOption Msg
-dummyOption2 =
-    getOption DummyOption2 (text "Dummy option 2")
-
-
-dummyOption3 : Option DummyOption Msg
-dummyOption3 =
-    getOption DummyOption3 (text "Dummy option 3")
-
-
-dummyOption4 : Option DummyOption Msg
-dummyOption4 =
-    getOption DummyOption4 (text "Dummy option 4")
 
 
 initModData : List ModData

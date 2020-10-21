@@ -48,6 +48,9 @@ import Types
         , encodeTCPConnectionInfo
         , encodeTCPConnectionRequest
         , fromModType
+        , fromModTypeUpdate
+        , setRegTypeUpdate
+        , setRegAddressUpdate
         , newModDataUpdate
         , replaceModDataSelected
         , replaceModDataWrite
@@ -224,8 +227,32 @@ update msg model =
         ChangeByteOrderResponse result ->
             ( changeByteOrderResponseModelUpdate model result, jumpToBottom "status" )
 
-        ExpandDummyDropdown value ->
-            ( { model | dummyDropdown = setDropdown model.dummyDropdown value }, Cmd.none)
+        RegRegTypeDrop value ->
+            ( { model
+                | regTypeDd = setDropdown model.regTypeDd value
+                , regMdu = setRegTypeUpdate model.regMdu model.regTypeDd.selected.value
+            }, Cmd.none)
+
+        RegValueTypeDrop value ->
+            ( { model | valueTypeDd = setDropdown model.valueTypeDd value }, Cmd.none)
+
+        RegAddress str ->
+            ( { model
+                | regAddress = String.toInt str
+                , regMdu = setRegAddressUpdate model.regMdu <| Maybe.withDefault 0 (String.toInt str)
+            }, Cmd.none )
+
+        RegUid str ->
+            ( { model | regUid = String.toInt str }, Cmd.none )
+
+        RegToggleRW rw ->
+            ( { model | regRW = rw }, Cmd.none )
+
+        RegNumber str ->
+            ( { model | regNumReg = String.toInt str }, Cmd.none )
+
+        RegModValue str ->
+            ( { model | regMdu = fromModTypeUpdate model.regMdu str }, Cmd.none )
 
         NoOp ->
             ( model, Cmd.none )
