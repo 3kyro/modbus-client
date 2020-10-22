@@ -54,6 +54,13 @@ import Palette
         , smallFont
         , white
         )
+import ReadWrite
+    exposing
+        ( ReadWrite(..)
+        , flipRW
+        , readWriteButton
+        )
+import RegisterTab exposing (renderRegistersTab)
 import Settings
     exposing
         ( renderSettings
@@ -71,7 +78,7 @@ import Types
         , getModValueUpdate
         , getRegType
         , showConnectStatus
-        , writeableReg
+        , isWriteableReg
         )
 import Types.IpAddress
     exposing
@@ -79,12 +86,7 @@ import Types.IpAddress
         , IpAddressByte(..)
         , showIpAddressByte
         )
-import RegisterTab exposing (renderRegistersTab)
-import ReadWrite exposing
-    ( ReadWrite(..)
-    , flipRW
-    , readWriteButton
-    )
+
 
 view : Model -> Html Msg
 view model =
@@ -629,25 +631,25 @@ readWriteColumn model =
         <|
             readWriteButton
                 model.readWriteAll
-                    blueSapphire
-                    fireBrick
-                <|
+                blueSapphire
+                fireBrick
+            <|
+                Just <|
                     ToggleWriteAll <|
                         flipRW model.readWriteAll
     , width = px 50
     , view = \i md -> viewReadWriteCell model i md
     }
 
+
+
 -- rwButtonBGClr : ReadWrite -> Color
 -- rwButtonBGClr rw =
 --     case rw of
-
 --         Read ->
 --             blueSapphire
-
 --         Write ->
 --             fireBrick
-
 
 
 selectColumn : Model -> IndexedColumn ModDataUpdate Msg
@@ -733,16 +735,18 @@ viewReadWriteModDataCell idx md =
         , Font.center
         ]
     <|
-        if writeableReg md.mduModData then
+        if isWriteableReg md.mduModData.modRegType then
             readWriteButton md.mduRW
                 blueSapphire
                 fireBrick
             <|
+                Just <|
                     ModDataWrite idx <|
                         flipRW md.mduRW
 
         else
             none
+
 
 tableCellColor : Int -> Color
 tableCellColor idx =
@@ -756,6 +760,7 @@ tableCellColor idx =
 registersTab : Model -> Element Msg
 registersTab model =
     renderRegistersTab model
+
 
 holdingRegistersTab : Element Msg
 holdingRegistersTab =

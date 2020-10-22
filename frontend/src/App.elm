@@ -69,6 +69,7 @@ initModel =
     , regUid = Just 1
     , regNumReg = Nothing
     , regMdu = initRegMdu
+    , regResponse = []
     }
 
 

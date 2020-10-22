@@ -31,6 +31,7 @@ module Types exposing
     , getModValueType
     , getModValueUpdate
     , getRegType
+    , isWriteableReg
     , newModDataUpdate
     , replaceModDataSelected
     , replaceModDataWrite
@@ -44,7 +45,6 @@ module Types exposing
     , showKeepAliveResponse
     , toByteOrder
     , toMFloat
-    , writeableReg
     )
 
 import Dropdown exposing (..)
@@ -149,6 +149,7 @@ type alias Model =
     , regUid : Maybe Int
     , regNumReg : Maybe Int
     , regMdu : ModDataUpdate
+    , regResponse : List ModDataUpdate
     }
 
 
@@ -300,9 +301,9 @@ type RegType
     | HoldingRegister
 
 
-writeableReg : ModData -> Bool
-writeableReg md =
-    case md.modRegType of
+isWriteableReg : RegType -> Bool
+isWriteableReg rt =
+    case rt of
         InputRegister ->
             False
 
@@ -473,7 +474,7 @@ replaceModDataSelected idx checked =
 replaceModDataWrite : Int -> ReadWrite -> Int -> ModDataUpdate -> ModDataUpdate
 replaceModDataWrite idx rw =
     \i md ->
-        if i == idx && writeableReg md.mduModData then
+        if i == idx && isWriteableReg md.mduModData.modRegType then
             { md | mduRW = rw }
 
         else
@@ -502,7 +503,15 @@ setRegType md rt =
 
 setRegTypeUpdate : ModDataUpdate -> RegType -> ModDataUpdate
 setRegTypeUpdate mdu rt =
-    { mdu | mduModData = setRegType mdu.mduModData rt }
+    if isWriteableReg rt then
+        { mdu | mduModData = setRegType mdu.mduModData rt }
+
+    else
+        -- Only writeable register can be Write
+        { mdu
+            | mduModData = setRegType mdu.mduModData rt
+            , mduRW = Read
+        }
 
 
 setRegAddress : ModData -> Int -> ModData

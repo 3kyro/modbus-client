@@ -2,7 +2,7 @@ module Update exposing (getPosixTime, getTimeZone, initCmd, update)
 
 import Array
 import Browser.Dom as Dom
-import Dropdown exposing (setDropdown, setDropdownExpanded)
+import Dropdown exposing (Option, setDropdown, setDropdownExpanded)
 import Element exposing (onLeft)
 import File
 import File.Select as Select
@@ -55,18 +55,18 @@ import Types
         , encodeTCPConnectionRequest
         , fromModType
         , fromModTypeUpdate
+        , isWriteableReg
         , newModDataUpdate
         , replaceModDataSelected
         , replaceModDataWrite
         , setRegAddressUpdate
+        , setRegRWUpdate
         , setRegTypeUpdate
         , setRegUidUpdate
-        , setRegRWUpdate
         , showByteOrderResponse
         , showConnInfo
         , showKeepAliveResponse
         , toByteOrder
-        , writeableReg
         )
 import Types.IpAddress exposing (IpAddressByte, setIpAddressByte)
 
@@ -232,10 +232,10 @@ update msg model =
         ChangeByteOrderResponse result ->
             ( changeByteOrderResponseModelUpdate model result, jumpToBottom "status" )
 
-        RegRegTypeDrop value ->
+        RegRegTypeDrop opt ->
             ( { model
-                | regTypeDd = setDropdown model.regTypeDd value
-                , regMdu = setRegTypeUpdate model.regMdu model.regTypeDd.selected.value
+                | regTypeDd = setDropdown model.regTypeDd opt
+                , regMdu = setRegTypeUpdate model.regMdu opt.value
               }
             , Cmd.none
             )
@@ -255,15 +255,24 @@ update msg model =
             ( { model
                 | regUid = String.toInt str
                 , regMdu = setRegUidUpdate model.regMdu <| Maybe.withDefault 1 (String.toInt str)
-                }
+              }
             , Cmd.none
             )
 
         RegToggleRW rw ->
-            ( { model | regMdu = setRegRWUpdate model.regMdu rw
-                }
-            , Cmd.none
-            )
+            if isWriteableReg model.regMdu.mduModData.modRegType then
+                ( { model
+                    | regMdu = setRegRWUpdate model.regMdu rw
+                  }
+                , Cmd.none
+                )
+
+            else
+                ( { model
+                    | regMdu = setRegRWUpdate model.regMdu Read
+                  }
+                , Cmd.none
+                )
 
         RegNumber str ->
             ( { model | regNumReg = String.toInt str }, Cmd.none )
@@ -702,7 +711,7 @@ toggleWriteAllModelUpdate model b =
                 , modDataUpdate =
                     List.map
                         (\mdu ->
-                            if writeableReg mdu.mduModData then
+                            if isWriteableReg mdu.mduModData.modRegType then
                                 { mdu | mduRW = b }
 
                             else

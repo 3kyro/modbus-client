@@ -61,7 +61,7 @@ readWriteButton :
     ReadWrite -- Value to render
     -> Color -- Read Color
     -> Color -- Write Color
-    -> msg -- Message on change
+    -> Maybe msg -- Message on change
     -> Element msg
 readWriteButton rw clrRead clrWrite msg =
     Input.button
@@ -70,7 +70,7 @@ readWriteButton rw clrRead clrWrite msg =
         , padding 3
         , focused []
         ]
-        { onPress = Just msg
+        { onPress = msg
         , label = readWriteButtonText rw
         }
 

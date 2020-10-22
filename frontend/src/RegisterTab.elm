@@ -25,6 +25,7 @@ import Types
         ( Model
         , Msg(..)
         , getModValueUpdate
+        , isWriteableReg
         )
 
 
@@ -65,7 +66,7 @@ renderRegistersTab model =
             blueSapphire
             fireBrick
           <|
-            RegToggleRW <|
+            Just <| RegToggleRW <|
                 flipRW model.regMdu.mduRW
         ]
             ++ regNumInput model
@@ -95,3 +96,4 @@ regNumInput model =
                 , label = Input.labelHidden "Value"
                 }
             ]
+
