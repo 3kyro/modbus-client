@@ -68,32 +68,28 @@ renderRegistersTab model =
           <|
             Just <| RegToggleRW <|
                 flipRW model.regMdu.mduRW
+        , regNumInput model
         ]
-            ++ regNumInput model
 
 
-regNumInput : Model -> List (Element Msg)
+regNumInput : Model -> Element Msg
 regNumInput model =
     case model.regMdu.mduRW of
         Read ->
-            [ text "Number of registers"
-            , Input.text
+            Input.text
                 [ width <| px 100 ]
                 { onChange = RegNumber
                 , text = Maybe.withDefault "" <| Maybe.map String.fromInt model.regNumReg
                 , placeholder = Nothing
-                , label = Input.labelHidden "Number"
+                , label = Input.labelLeft [] <| text "Number of registers"
                 }
-            ]
 
         Write ->
-            [ text "Value"
-            , Input.text
+            Input.text
                 [ width <| px 100 ]
                 { onChange = RegModValue
                 , text = Maybe.withDefault "" <| getModValueUpdate model.regMdu
                 , placeholder = Nothing
-                , label = Input.labelHidden "Value"
+                , label = Input.labelLeft [] <| text "Value"
                 }
-            ]
 
