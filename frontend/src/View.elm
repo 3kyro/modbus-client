@@ -45,6 +45,14 @@ import ModData
         , getModValueUpdate
         , isWriteableReg
         , showRegType
+        , modNameColumn
+        , modRegTypeColumn
+        , modAddressColumn
+        , modValueTypeColumn
+        , modValueColumn
+        , modUidColumn
+        , modDescriptionColumn
+        , tableCellColor
         )
 import Notifications
     exposing
@@ -519,109 +527,12 @@ modDataColumns model =
     , modRegTypeColumn
     , modAddressColumn
     , modValueTypeColumn
-    , modValueColumn
+    , modValueColumn (Just ChangeModDataValue)
     , modUidColumn
     , modDescriptionColumn
     , readWriteColumn model
     , selectColumn model
     ]
-
-
-modNameColumn : IndexedColumn ModDataUpdate Msg
-modNameColumn =
-    { header = el [ height <| px 38 ] <| el headerTextAttr <| text "Name"
-    , width = fillPortion 1
-    , view = \i md -> viewCell i md.mduModData.modName
-    }
-
-
-modRegTypeColumn : IndexedColumn ModDataUpdate Msg
-modRegTypeColumn =
-    { header = el [ height <| px 38 ] <| el headerTextAttr <| text "Register Type"
-    , width = fillPortion 1
-    , view = \i md -> viewCell i <| showRegType md.mduModData.modRegType
-    }
-
-
-modAddressColumn : IndexedColumn ModDataUpdate Msg
-modAddressColumn =
-    { header = el [ height <| px 38 ] <| el headerTextAttr <| text "Register Address"
-    , width = fillPortion 1
-    , view = \i md -> viewCell i <| String.fromInt md.mduModData.modAddress
-    }
-
-
-modValueTypeColumn : IndexedColumn ModDataUpdate Msg
-modValueTypeColumn =
-    { header = el [ height <| px 38 ] <| el headerTextAttr <| text "Value Type"
-    , width = fillPortion 1
-    , view = \i md -> viewCell i <| getModValueType md.mduModData.modValue
-    }
-
-
-modValueColumn : IndexedColumn ModDataUpdate Msg
-modValueColumn =
-    { header = el [ height <| px 38 ] <| el headerTextAttr <| text "Value"
-    , width = fillPortion 1
-    , view = \idx md -> viewModValueColumn idx md
-    }
-
-
-viewModValueColumn : Int -> ModDataUpdate -> Element Msg
-viewModValueColumn idx md =
-    case md.mduRW of
-        Read ->
-            viewReadModValue idx md
-
-        Write ->
-            viewWriteModValue idx md.mduModData
-
-
-viewReadModValue : Int -> ModDataUpdate -> Element Msg
-viewReadModValue idx md =
-    viewCell idx <|
-        Maybe.withDefault "Nothing" <|
-            getModValue md.mduModData.modValue
-
-
-viewWriteModValue : Int -> ModData -> Element Msg
-viewWriteModValue idx md =
-    el
-        [ Background.color <| tableCellColor idx
-        , Font.center
-        ]
-    <|
-        Input.text
-            [ Background.color <| tableCellColor idx
-            , Font.color greyWhite
-            , Border.width 1
-            , height <| px 38
-
-            -- 11 is a magic number here :(
-            , paddingXY 0 11
-            , focused []
-            ]
-            { onChange = ChangeModDataValue idx
-            , text = Maybe.withDefault "" <| getModValue md.modValue
-            , placeholder = Nothing
-            , label = Input.labelHidden "Value Input"
-            }
-
-
-modUidColumn : IndexedColumn ModDataUpdate Msg
-modUidColumn =
-    { header = el [ height <| px 38 ] <| el headerTextAttr <| text "Unit Id"
-    , width = fillPortion 1
-    , view = \i md -> viewCell i <| String.fromInt md.mduModData.modUid
-    }
-
-
-modDescriptionColumn : IndexedColumn ModDataUpdate Msg
-modDescriptionColumn =
-    { header = el [ height <| px 38 ] <| el [ alignLeft, centerY ] <| text "Description"
-    , width = fillPortion 4
-    , view = \i md -> viewDescCell i md.mduModData.modDescription
-    }
 
 
 readWriteColumn : Model -> IndexedColumn ModDataUpdate Msg
@@ -670,33 +581,6 @@ selectCheckbox msg flag =
         }
 
 
-headerTextAttr : List (Attribute Msg)
-headerTextAttr =
-    [ centerX, centerY ]
-
-
-viewCell : Int -> String -> Element Msg
-viewCell idx str =
-    el
-        [ Background.color <| tableCellColor idx
-        , Font.color greyWhite
-        , height <| px 38
-        , Font.center
-        ]
-        (el [ centerX, centerY ] <| text str)
-
-
-viewDescCell : Int -> String -> Element Msg
-viewDescCell idx str =
-    el
-        [ Background.color <| tableCellColor idx
-        , Font.color greyWhite
-        , height <| px 38
-        , Font.center
-        ]
-        (el [ alignLeft, centerY ] <| text str)
-
-
 viewCheckedCell : Int -> Bool -> Element Msg
 viewCheckedCell idx selected =
     el
@@ -739,15 +623,6 @@ viewReadWriteModDataCell idx md =
 
         else
             none
-
-
-tableCellColor : Int -> Color
-tableCellColor idx =
-    if modBy 2 idx == 0 then
-        lightGrey
-
-    else
-        grey
 
 
 registersTab : Model -> Element Msg

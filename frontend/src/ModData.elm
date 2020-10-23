@@ -23,6 +23,14 @@ module ModData exposing
     , setRegTypeUpdate
     , setRegUidUpdate
     , showRegType
+    , modNameColumn
+    , modRegTypeColumn
+    , modAddressColumn
+    , modValueTypeColumn
+    , modValueColumn
+    , modUidColumn
+    , modDescriptionColumn
+    , tableCellColor
     )
 
 import Json.Decode as D
@@ -33,7 +41,31 @@ import ReadWrite
         , decodeRW
         , encodeRW
         )
-
+import Palette exposing
+    ( grey
+    , lightGrey
+    , greyWhite
+    )
+import Element.Background as Background
+import Element.Font as Font
+import Element.Input as Input
+import Element.Border as Border
+import Element exposing
+    ( IndexedColumn
+    , el
+    , height
+    , px
+    , Attribute
+    , centerX
+    , centerY
+    , fillPortion
+    , text
+    , Element
+    , Color
+    , paddingXY
+    , focused
+    , alignLeft
+    )
 
 
 --------------------------------------------------------------------------------------------------
@@ -219,6 +251,147 @@ offsetMdu mdu num =
             mdus
 
 
+modNameColumn : IndexedColumn ModDataUpdate msg
+modNameColumn =
+    { header = el [ height <| px 38 ] <| el headerTextAttr <| text "Name"
+    , width = fillPortion 1
+    , view = \i md -> viewCell i md.mduModData.modName
+    }
+
+modRegTypeColumn : IndexedColumn ModDataUpdate msg
+modRegTypeColumn =
+    { header = el [ height <| px 38 ] <| el headerTextAttr <| text "Register Type"
+    , width = fillPortion 1
+    , view = \i md -> viewCell i <| showRegType md.mduModData.modRegType
+    }
+
+modAddressColumn : IndexedColumn ModDataUpdate msg
+modAddressColumn =
+    { header = el [ height <| px 38 ] <| el headerTextAttr <| text "Register Address"
+    , width = fillPortion 1
+    , view = \i md -> viewCell i <| String.fromInt md.mduModData.modAddress
+    }
+
+modValueTypeColumn : IndexedColumn ModDataUpdate msg
+modValueTypeColumn =
+    { header = el [ height <| px 38 ] <| el headerTextAttr <| text "Value Type"
+    , width = fillPortion 1
+    , view = \i md -> viewCell i <| getModValueType md.mduModData.modValue
+    }
+
+modValueColumn : Maybe (Int -> String -> msg) -> IndexedColumn ModDataUpdate msg
+modValueColumn cmd =
+    { header = el [ height <| px 38 ] <| el headerTextAttr <| text "Value"
+    , width = fillPortion 1
+    , view = \idx md -> viewModValueColumn cmd idx md
+    }
+
+viewModValueColumn : Maybe (Int -> String -> msg) -> Int -> ModDataUpdate -> Element msg
+viewModValueColumn cmd idx md =
+    case md.mduRW of
+        Read ->
+            viewReadModValue idx md.mduModData
+
+        Write ->
+            viewWriteModValue cmd idx md.mduModData
+
+viewWriteModValue : Maybe (Int -> String -> msg) -> Int -> ModData -> Element msg
+viewWriteModValue mcmd idx md =
+    let
+        attr =
+            [ Background.color <| tableCellColor idx
+            , Font.color greyWhite
+            , Border.width 1
+            , height <| px 38
+
+            -- 11 is a magic number here :(
+            , paddingXY 0 11
+            , focused []
+            ]
+
+    in
+        case mcmd of
+            Nothing ->
+                el
+                    [ Background.color <| tableCellColor idx
+                    , Font.center
+                    ]
+                <| viewReadModValue idx md
+            Just cmd ->
+                el
+                    [ Background.color <| tableCellColor idx
+                    , Font.center
+                    ]
+                    <|
+                    Input.text
+                        [ Background.color <| tableCellColor idx
+                        , Font.color greyWhite
+                        , Border.width 1
+                        , height <| px 38
+
+                        -- 11 is a magic number here :(
+                        , paddingXY 0 11
+                        , focused []
+                        ]
+                        { onChange = cmd idx
+                        , text = Maybe.withDefault "" <| getModValue md.modValue
+                        , placeholder = Nothing
+                        , label = Input.labelHidden "Value Input"
+                        }
+
+
+viewReadModValue : Int -> ModData -> Element msg
+viewReadModValue idx md =
+    viewCell idx <|
+        Maybe.withDefault "Nothing" <|
+            getModValue md.modValue
+
+modUidColumn : IndexedColumn ModDataUpdate msg
+modUidColumn =
+    { header = el [ height <| px 38 ] <| el headerTextAttr <| text "Unit Id"
+    , width = fillPortion 1
+    , view = \i md -> viewCell i <| String.fromInt md.mduModData.modUid
+    }
+
+modDescriptionColumn : IndexedColumn ModDataUpdate msg
+modDescriptionColumn =
+    { header = el [ height <| px 38 ] <| el [ alignLeft, centerY ] <| text "Description"
+    , width = fillPortion 4
+    , view = \i md -> viewDescCell i md.mduModData.modDescription
+    }
+
+viewDescCell : Int -> String -> Element msg
+viewDescCell idx str =
+    el
+        [ Background.color <| tableCellColor idx
+        , Font.color greyWhite
+        , height <| px 38
+        , Font.center
+        ]
+        (el [ alignLeft, centerY ] <| text str)
+
+
+headerTextAttr : List (Attribute msg)
+headerTextAttr =
+    [ centerX, centerY ]
+
+viewCell : Int -> String -> Element msg
+viewCell idx str =
+    el
+        [ Background.color <| tableCellColor idx
+        , Font.color greyWhite
+        , height <| px 38
+        , Font.center
+        ]
+        (el [ centerX, centerY ] <| text str)
+
+tableCellColor : Int -> Color
+tableCellColor idx =
+    if modBy 2 idx == 0 then
+        lightGrey
+
+    else
+        grey
 
 --------------------------------------------------------------------------------------------------
 -- RegType
