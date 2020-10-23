@@ -12,6 +12,10 @@ import Element
         , spacing
         , text
         , width
+        , fill
+        , indexedTable
+        , IndexedColumn
+        , column
         )
 import Element.Background as Background
 import Element.Font as Font
@@ -29,14 +33,31 @@ import Types
         ( Model
         , Msg(..)
         )
+import ModData exposing
+    ( ModDataUpdate
+    , modRegTypeColumn
+    , modAddressColumn
+    , modValueTypeColumn
+    , modValueColumn
+    , modUidColumn
+    )
 
+import Palette exposing (lightGrey, greyWhite)
 
 renderRegistersTab : Model -> Element Msg
 renderRegistersTab model =
+    column
+        [ alignTop
+
+        ]
+        [ renderInputBar model
+        , renderOutput model.regResponse
+        ]
+renderInputBar : Model -> Element Msg
+renderInputBar model =
     row
         [ spacing 20
         , paddingXY 20 20
-        , alignTop
         ]
     <|
         [ text "Register type: "
@@ -105,3 +126,21 @@ regNumInput model =
                 , placeholder = Nothing
                 , label = Input.labelLeft [] <| text "Value"
                 }
+
+renderOutput : List ModDataUpdate -> Element Msg
+renderOutput mdus =
+    indexedTable
+        []
+        { data = mdus
+        , columns = responseColumns mdus
+        }
+
+responseColumns : List ModDataUpdate -> List (IndexedColumn ModDataUpdate Msg)
+responseColumns mdus =
+    [ modRegTypeColumn
+    , modAddressColumn
+    , modValueTypeColumn
+    , modValueColumn Nothing
+    , modUidColumn
+    ]
+

@@ -18,8 +18,7 @@ import ModData
         , decodeModData
         , decodeModDataUpdate
         , encodeModDataUpdate
-        , fromModType
-        , fromModTypeUpdate
+        , setModValueUpdate
         , isWriteableReg
         , newModDataUpdate
         , offsetMdu
@@ -29,6 +28,9 @@ import ModData
         , setRegRWUpdate
         , setRegTypeUpdate
         , setRegUidUpdate
+        , setModValueUpdate
+        , fromModValueInput
+        , fromModValueInputUpdate
         )
 import Notifications
     exposing
@@ -259,8 +261,11 @@ update msg model =
             , Cmd.none
             )
 
-        RegValueTypeDrop value ->
-            ( { model | valueTypeDd = setDropdown model.valueTypeDd value }
+        RegValueTypeDrop opt ->
+            ( { model
+                | valueTypeDd = setDropdown model.valueTypeDd opt
+                , regMdu = setModValueUpdate model.regMdu opt.value
+            }
             , Cmd.none
             )
 
@@ -285,7 +290,7 @@ update msg model =
             )
 
         RegModValue str ->
-            ( { model | regMdu = fromModTypeUpdate model.regMdu str }
+            ( regModValueModelUpdate model str
             , Cmd.none
             )
 
@@ -810,7 +815,7 @@ changeModDataValueModelUpdate model idx str =
 
         -- change the Modvamue of the Maybe modData
         newMaybeMd =
-            Maybe.map (\mdu -> { mdu | mduModData = fromModType mdu.mduModData str }) maybeMDU
+            Maybe.map (\mdu -> { mdu | mduModData = fromModValueInput mdu.mduModData str }) maybeMDU
     in
     case newMaybeMd of
         Nothing ->
@@ -916,6 +921,16 @@ regToggleRWModelUpdate model rw =
         { model
             | regMdu = setRegRWUpdate model.regMdu Read
         }
+
+regModValueModelUpdate : Model -> String -> Model
+regModValueModelUpdate model str =
+    { model | regMdu = fromModValueInputUpdate model.regMdu str }
+    -- let
+    --     mdu = setModValueUpdate model.regMdu model.reg
+    --     newMdu = { mdu | }
+    -- in
+
+
 
 
 updateRegMduModelUpdate : Model -> Result Http.Error (List ModDataUpdate) -> Model

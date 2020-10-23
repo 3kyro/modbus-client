@@ -10,7 +10,6 @@ import ModData
         , ModDataUpdate
         , ModValue(..)
         , RegType(..)
-        , ValueType(..)
         , fromFloat
         , newModDataUpdate
         )
@@ -106,7 +105,7 @@ holdingRegisterOption =
     getOption HoldingRegister (text "Holding Register")
 
 
-valueTypeDropdown : Dropdown ValueType Msg
+valueTypeDropdown : Dropdown ModValue Msg
 valueTypeDropdown =
     { onClick = RegValueTypeDrop
     , options = [ wordOption, floatOption ]
@@ -116,14 +115,14 @@ valueTypeDropdown =
     }
 
 
-wordOption : Option ValueType Msg
+wordOption : Option ModValue Msg
 wordOption =
-    getOption VWord (text "Word")
+    getOption (ModWord Nothing) (text "Word")
 
 
-floatOption : Option ValueType Msg
+floatOption : Option ModValue Msg
 floatOption =
-    getOption VFloat (text "Float")
+    getOption (ModFloat Nothing) (text "Float")
 
 
 initRegMdu : ModDataUpdate

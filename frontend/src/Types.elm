@@ -31,7 +31,7 @@ import ModData
         ( ModData
         , ModDataUpdate
         , RegType(..)
-        , ValueType(..)
+        , ModValue(..)
         )
 import Notifications
     exposing
@@ -98,7 +98,7 @@ type Msg
     | ChangeByteOrderMsg Int Int SettingsOptions
     | ChangeByteOrderResponse (Result Http.Error ByteOrder)
     | RegRegTypeDrop (Option RegType Msg)
-    | RegValueTypeDrop (Option ValueType Msg)
+    | RegValueTypeDrop (Option ModValue Msg)
     | RegAddress String
     | RegUid String
     | RegToggleRW ReadWrite
@@ -139,7 +139,7 @@ type alias Model =
     , keepAliveIdle : Maybe Int -- in seconds
     , keepAliveInterval : Maybe Int -- in seconds
     , regTypeDd : Dropdown RegType Msg
-    , valueTypeDd : Dropdown ValueType Msg
+    , valueTypeDd : Dropdown ModValue Msg
     , regAddress : Maybe Int
     , regUid : Maybe Int
     , regNumReg : Maybe Int
