@@ -191,16 +191,22 @@ update msg model =
             )
 
         TimeZone zone ->
-            ( { model | timeZone = zone }, initTime )
+            ( { model | timeZone = zone }
+            , initTime
+            )
 
         -- Get current posix
         NewTime time ->
-            ( { model | timePosix = time }, Cmd.none )
+            ( { model | timePosix = time }
+            , Cmd.none
+            )
 
         -- Part of initialisation sequence,
         -- will only be run once per page load
         InitTime time ->
-            ( { model | timePosix = time }, connectionInfoRequest )
+            ( { model | timePosix = time }
+            , connectionInfoRequest
+            )
 
         ExpandNotification not ->
             ( { model
@@ -215,73 +221,74 @@ update msg model =
             )
 
         KeepAliveMsg settingIdx inputIdx flag ->
-            ( keepAliveModelUpdate model settingIdx inputIdx flag, keepAliveRequest model flag )
+            ( keepAliveModelUpdate model settingIdx inputIdx flag
+            , keepAliveRequest model flag
+            )
 
         KeepAliveIdleMsg settingIdx inputIdx valueStr ->
-            ( keepAliveIdleModelUpdate model settingIdx inputIdx valueStr, Cmd.none )
+            ( keepAliveIdleModelUpdate model settingIdx inputIdx valueStr
+            , Cmd.none
+            )
 
         KeepAliveIntervalMsg settingIdx inputIdx valueStr ->
-            ( keepAliveIntervalModelUpdate model settingIdx inputIdx valueStr, Cmd.none )
+            ( keepAliveIntervalModelUpdate model settingIdx inputIdx valueStr
+            , Cmd.none
+            )
 
         KeepAliveResponseMsg response ->
-            ( updateKeepAliveResponseModel model response, jumpToBottom "status" )
+            ( updateKeepAliveResponseModel model response
+            , jumpToBottom "status"
+            )
 
         ChangeByteOrderMsg settingIdx inputIdx setting ->
-            ( changeByteOrderModelUpdate model settingIdx inputIdx setting, changeByteOrderRequest (toByteOrder setting) )
+            ( changeByteOrderModelUpdate model settingIdx inputIdx setting
+            , changeByteOrderRequest (toByteOrder setting)
+            )
 
         ChangeByteOrderResponse result ->
-            ( changeByteOrderResponseModelUpdate model result, jumpToBottom "status" )
+            ( changeByteOrderResponseModelUpdate model result
+            , jumpToBottom "status"
+            )
 
         RegRegTypeDrop opt ->
-            ( { model
-                | regTypeDd = setDropdown model.regTypeDd opt
-                , regMdu = setRegTypeUpdate model.regMdu opt.value
-              }
+            ( regTypeDropModelUpdate model opt
             , Cmd.none
             )
 
         RegValueTypeDrop value ->
-            ( { model | valueTypeDd = setDropdown model.valueTypeDd value }, Cmd.none )
+            ( { model | valueTypeDd = setDropdown model.valueTypeDd value }
+            , Cmd.none
+            )
 
         RegAddress str ->
-            ( { model
-                | regAddress = String.toInt str
-                , regMdu = setRegAddressUpdate model.regMdu <| Maybe.withDefault 0 (String.toInt str)
-              }
+            ( regAddressModelUpdate model str
             , Cmd.none
             )
 
         RegUid str ->
-            ( { model
-                | regUid = String.toInt str
-                , regMdu = setRegUidUpdate model.regMdu <| Maybe.withDefault 1 (String.toInt str)
-              }
+            ( regUidModelUpdate model str
             , Cmd.none
             )
 
         RegToggleRW rw ->
-            if isWriteableReg model.regMdu.mduModData.modRegType then
-                ( { model
-                    | regMdu = setRegRWUpdate model.regMdu rw
-                  }
-                , Cmd.none
-                )
-
-            else
-                ( { model
-                    | regMdu = setRegRWUpdate model.regMdu Read
-                  }
-                , Cmd.none
-                )
+            ( regToggleRWModelUpdate model rw
+            , Cmd.none
+            )
 
         RegNumber str ->
-            ( { model | regNumReg = String.toInt str }, Cmd.none )
+            ( { model | regNumReg = String.toInt str }
+            , Cmd.none
+            )
 
         RegModValue str ->
-            ( { model | regMdu = fromModTypeUpdate model.regMdu str }, Cmd.none )
+            ( { model | regMdu = fromModTypeUpdate model.regMdu str }
+            , Cmd.none
+            )
 
         NoOp ->
-            ( model, Cmd.none )
+            ( model
+            , Cmd.none
+            )
 
 
 
@@ -837,3 +844,40 @@ changeByteOrderResponseModelUpdate model result =
                         "Error updating byte order setting"
                         (showHttpError err)
             }
+
+
+regTypeDropModelUpdate : Model -> Option RegType Msg -> Model
+regTypeDropModelUpdate model opt =
+    { model
+        | regTypeDd = setDropdown model.regTypeDd opt
+        , regMdu = setRegTypeUpdate model.regMdu opt.value
+    }
+
+
+regAddressModelUpdate : Model -> String -> Model
+regAddressModelUpdate model str =
+    { model
+        | regAddress = String.toInt str
+        , regMdu = setRegAddressUpdate model.regMdu <| Maybe.withDefault 0 (String.toInt str)
+    }
+
+
+regUidModelUpdate : Model -> String -> Model
+regUidModelUpdate model str =
+    { model
+        | regUid = String.toInt str
+        , regMdu = setRegUidUpdate model.regMdu <| Maybe.withDefault 1 (String.toInt str)
+    }
+
+
+regToggleRWModelUpdate : Model -> ReadWrite -> Model
+regToggleRWModelUpdate model rw =
+    if isWriteableReg model.regMdu.mduModData.modRegType then
+        { model
+            | regMdu = setRegRWUpdate model.regMdu rw
+        }
+
+    else
+        { model
+            | regMdu = setRegRWUpdate model.regMdu Read
+        }
