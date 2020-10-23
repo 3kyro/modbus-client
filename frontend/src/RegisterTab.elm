@@ -11,8 +11,11 @@ import Element
         , spacing
         , text
         , width
+        , fill
         )
 import Element.Input as Input
+import Element.Background as Background
+import Element.Font as Font
 import Palette exposing (blueSapphire, fireBrick)
 import ReadWrite
     exposing
@@ -27,7 +30,7 @@ import Types
         , getModValueUpdate
         , isWriteableReg
         )
-
+import Palette exposing (lightGrey, greyWhite)
 
 renderRegistersTab : Model -> Element Msg
 renderRegistersTab model =
@@ -69,6 +72,16 @@ renderRegistersTab model =
             Just <| RegToggleRW <|
                 flipRW model.regMdu.mduRW
         , regNumInput model
+        , Input.button
+            [ Background.color lightGrey
+            , width fill
+            , Font.center
+            , Font.color greyWhite
+            , paddingXY 0 10
+            ]
+            { onPress = Just UpdateRegMdu
+            , label = text "Update"
+            }
         ]
 
 

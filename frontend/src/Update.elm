@@ -67,6 +67,7 @@ import Types
         , showConnInfo
         , showKeepAliveResponse
         , toByteOrder
+        , offsetMdu
         )
 import Types.IpAddress exposing (IpAddressByte, setIpAddressByte)
 
@@ -285,6 +286,14 @@ update msg model =
             , Cmd.none
             )
 
+        UpdateRegMdu ->
+            ( model, updateRegMdu model.regMdu model.regNumReg )
+
+        UpdateRegMduResponse response ->
+            ( updateRegMduModelUpdate model response
+            , jumpToBottom "status"
+            )
+
         NoOp ->
             ( model
             , Cmd.none
@@ -408,16 +417,6 @@ jumpToBottom id =
         |> Task.andThen (\info -> Dom.setViewportOf id 0 info.scene.height)
         |> Task.attempt (\_ -> NoOp)
 
-
-changeByteOrderRequest : ByteOrder -> Cmd Msg
-changeByteOrderRequest order =
-    Http.post
-        { url = "http://localhost:4000/byteOrder"
-        , body = Http.jsonBody <| encodeByteOrder order
-        , expect = Http.expectJson ChangeByteOrderResponse decodeByteOrder
-        }
-
-
 simpleNot : Model -> String -> List Notification
 simpleNot model header =
     Notification
@@ -437,7 +436,30 @@ detailedNot model header detailed =
         NotifRetracted
         :: model.notifications
 
+changeByteOrderRequest : ByteOrder -> Cmd Msg
+changeByteOrderRequest order =
+    Http.post
+        { url = "http://localhost:4000/byteOrder"
+        , body = Http.jsonBody <| encodeByteOrder order
+        , expect = Http.expectJson ChangeByteOrderResponse decodeByteOrder
+        }
 
+updateRegMdu : ModDataUpdate -> Maybe Int -> Cmd Msg
+updateRegMdu mdu mnum =
+    Http.post
+        { url = "http://localhost:4000/modData"
+        , body = Http.jsonBody <| E.list encodeModDataUpdate <| getRegMduList mdu mnum
+        , expect = Http.expectJson UpdateRegMduResponse <| D.list decodeModDataUpdate
+        }
+
+
+getRegMduList : ModDataUpdate -> Maybe Int -> List ModDataUpdate
+getRegMduList mdu mnum =
+    if isWriteableReg mdu.mduModData.modRegType
+    then [mdu]
+    else case mnum of
+        Nothing -> []
+        Just num -> offsetMdu mdu num
 
 ------------------------------------------------------------------------------------------------------------------
 -- Model updates
@@ -881,3 +903,20 @@ regToggleRWModelUpdate model rw =
         { model
             | regMdu = setRegRWUpdate model.regMdu Read
         }
+updateRegMduModelUpdate : Model -> Result Http.Error (List ModDataUpdate) -> Model
+updateRegMduModelUpdate model result =
+    case result of
+        Ok mdus ->
+            { model
+                | notifications = simpleNot model "Register request retrieved"
+                , regResponse = mdus
+            }
+
+        Err err ->
+            { model
+                | notifications =
+                    detailedNot
+                        model
+                        "Error retriving requested registers"
+                        (showHttpError err)
+            }

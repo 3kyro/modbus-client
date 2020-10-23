@@ -77,8 +77,8 @@ import Types
         , getModValueType
         , getModValueUpdate
         , getRegType
-        , showConnectStatus
         , isWriteableReg
+        , showConnectStatus
         )
 import Types.IpAddress
     exposing
@@ -640,16 +640,6 @@ readWriteColumn model =
     , width = px 50
     , view = \i md -> viewReadWriteCell model i md
     }
-
-
-
--- rwButtonBGClr : ReadWrite -> Color
--- rwButtonBGClr rw =
---     case rw of
---         Read ->
---             blueSapphire
---         Write ->
---             fireBrick
 
 
 selectColumn : Model -> IndexedColumn ModDataUpdate Msg

@@ -45,6 +45,7 @@ module Types exposing
     , showKeepAliveResponse
     , toByteOrder
     , toMFloat
+    , offsetMdu
     )
 
 import Dropdown exposing (..)
@@ -117,6 +118,8 @@ type Msg
     | RegToggleRW ReadWrite
     | RegNumber String
     | RegModValue String
+    | UpdateRegMdu
+    | UpdateRegMduResponse (Result Http.Error (List ModDataUpdate) )
     | NoOp
 
 
@@ -538,7 +541,26 @@ setRegRWUpdate : ModDataUpdate -> ReadWrite -> ModDataUpdate
 setRegRWUpdate mdu rw =
     { mdu | mduRW = rw }
 
+incrementModDataAddr : ModData -> ModData
+incrementModDataAddr md =
+    { md | modAddress = md.modAddress + (getModValueMult md.modValue) }
 
+getModValueMult : ModValue -> Int
+getModValueMult mv =
+    case mv of
+        ModWord _ -> 1
+        ModFloat _ -> 2
+
+
+offsetMdu : ModDataUpdate -> Int -> List ModDataUpdate
+offsetMdu mdu num =
+    let
+        mdus = List.repeat (num - 1) mdu
+    in
+        mdu ::
+            List.map
+                (\m -> { m | mduModData = incrementModDataAddr m.mduModData } )
+                mdus
 
 --------------------------------------------------------------------------------------------------
 -- ActiveTab

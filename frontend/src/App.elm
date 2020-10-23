@@ -133,7 +133,7 @@ initRegMdu =
         , modUid = 1
         , modDescription = "Used for getting raw registers from the server"
         }
-    , mduSelected = False -- not used in this context
+    , mduSelected = True
     , mduRW = Read
     }
 
