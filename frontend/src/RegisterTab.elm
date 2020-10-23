@@ -5,18 +5,19 @@ import Element
     exposing
         ( Element
         , alignTop
+        , fill
         , paddingXY
         , px
         , row
         , spacing
         , text
         , width
-        , fill
         )
-import Element.Input as Input
 import Element.Background as Background
 import Element.Font as Font
-import Palette exposing (blueSapphire, fireBrick)
+import Element.Input as Input
+import ModData exposing (getModValueUpdate)
+import Palette exposing (blueSapphire, fireBrick, greyWhite, lightGrey)
 import ReadWrite
     exposing
         ( ReadWrite(..)
@@ -27,10 +28,8 @@ import Types
     exposing
         ( Model
         , Msg(..)
-        , getModValueUpdate
-        , isWriteableReg
         )
-import Palette exposing (lightGrey, greyWhite)
+
 
 renderRegistersTab : Model -> Element Msg
 renderRegistersTab model =
@@ -69,8 +68,9 @@ renderRegistersTab model =
             blueSapphire
             fireBrick
           <|
-            Just <| RegToggleRW <|
-                flipRW model.regMdu.mduRW
+            Just <|
+                RegToggleRW <|
+                    flipRW model.regMdu.mduRW
         , regNumInput model
         , Input.button
             [ Background.color lightGrey
@@ -105,4 +105,3 @@ regNumInput model =
                 , placeholder = Nothing
                 , label = Input.labelLeft [] <| text "Value"
                 }
-

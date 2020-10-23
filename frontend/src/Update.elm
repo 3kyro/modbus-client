@@ -9,6 +9,27 @@ import File.Select as Select
 import Http
 import Json.Decode as D
 import Json.Encode as E
+import ModData
+    exposing
+        ( ModData
+        , ModDataUpdate
+        , ModValue(..)
+        , RegType(..)
+        , decodeModData
+        , decodeModDataUpdate
+        , encodeModDataUpdate
+        , fromModType
+        , fromModTypeUpdate
+        , isWriteableReg
+        , newModDataUpdate
+        , offsetMdu
+        , replaceModDataSelected
+        , replaceModDataWrite
+        , setRegAddressUpdate
+        , setRegRWUpdate
+        , setRegTypeUpdate
+        , setRegUidUpdate
+        )
 import Notifications
     exposing
         ( Notification
@@ -36,38 +57,20 @@ import Types
         , ConnectStatus(..)
         , ConnectionInfo(..)
         , KeepAliveResponse(..)
-        , ModData
-        , ModDataUpdate
-        , ModValue(..)
         , Model
         , Msg(..)
-        , RegType(..)
-        , SettingOption(..)
+        , SettingsOptions(..)
         , decodeByteOrder
         , decodeConnInfo
         , decodeKeepAliveResponse
-        , decodeModData
-        , decodeModDataUpdate
         , encodeByteOrder
         , encodeKeepAlive
-        , encodeModDataUpdate
         , encodeTCPConnectionInfo
         , encodeTCPConnectionRequest
-        , fromModType
-        , fromModTypeUpdate
-        , isWriteableReg
-        , newModDataUpdate
-        , replaceModDataSelected
-        , replaceModDataWrite
-        , setRegAddressUpdate
-        , setRegRWUpdate
-        , setRegTypeUpdate
-        , setRegUidUpdate
         , showByteOrderResponse
         , showConnInfo
         , showKeepAliveResponse
         , toByteOrder
-        , offsetMdu
         )
 import Types.IpAddress exposing (IpAddressByte, setIpAddressByte)
 
@@ -417,6 +420,7 @@ jumpToBottom id =
         |> Task.andThen (\info -> Dom.setViewportOf id 0 info.scene.height)
         |> Task.attempt (\_ -> NoOp)
 
+
 simpleNot : Model -> String -> List Notification
 simpleNot model header =
     Notification
@@ -436,6 +440,7 @@ detailedNot model header detailed =
         NotifRetracted
         :: model.notifications
 
+
 changeByteOrderRequest : ByteOrder -> Cmd Msg
 changeByteOrderRequest order =
     Http.post
@@ -443,6 +448,7 @@ changeByteOrderRequest order =
         , body = Http.jsonBody <| encodeByteOrder order
         , expect = Http.expectJson ChangeByteOrderResponse decodeByteOrder
         }
+
 
 updateRegMdu : ModDataUpdate -> Maybe Int -> Cmd Msg
 updateRegMdu mdu mnum =
@@ -455,11 +461,18 @@ updateRegMdu mdu mnum =
 
 getRegMduList : ModDataUpdate -> Maybe Int -> List ModDataUpdate
 getRegMduList mdu mnum =
-    if isWriteableReg mdu.mduModData.modRegType
-    then [mdu]
-    else case mnum of
-        Nothing -> []
-        Just num -> offsetMdu mdu num
+    if isWriteableReg mdu.mduModData.modRegType then
+        [ mdu ]
+
+    else
+        case mnum of
+            Nothing ->
+                []
+
+            Just num ->
+                offsetMdu mdu num
+
+
 
 ------------------------------------------------------------------------------------------------------------------
 -- Model updates
@@ -588,7 +601,7 @@ changePortModelUpdate model str =
                     { model | socketPort = Just p }
 
 
-activeSettingModelUpdate : Model -> Setting SettingOption Msg -> Model
+activeSettingModelUpdate : Model -> Setting SettingsOptions Msg -> Model
 activeSettingModelUpdate model setting =
     let
         newSettings =
@@ -835,7 +848,7 @@ updateKeepAliveResponseModel model response =
             }
 
 
-changeByteOrderModelUpdate : Model -> Int -> Int -> SettingOption -> Model
+changeByteOrderModelUpdate : Model -> Int -> Int -> SettingsOptions -> Model
 changeByteOrderModelUpdate model settingIdx inputIdx option =
     let
         order =
@@ -903,6 +916,8 @@ regToggleRWModelUpdate model rw =
         { model
             | regMdu = setRegRWUpdate model.regMdu Read
         }
+
+
 updateRegMduModelUpdate : Model -> Result Http.Error (List ModDataUpdate) -> Model
 updateRegMduModelUpdate model result =
     case result of

@@ -36,6 +36,16 @@ import Element.Font as Font
 import Element.Input as Input
 import Html exposing (Html)
 import Html.Attributes
+import ModData
+    exposing
+        ( ModData
+        , ModDataUpdate
+        , getModValue
+        , getModValueType
+        , getModValueUpdate
+        , isWriteableReg
+        , showRegType
+        )
 import Notifications
     exposing
         ( StatusBarState(..)
@@ -69,15 +79,8 @@ import Types
     exposing
         ( ActiveTab(..)
         , ConnectStatus(..)
-        , ModData
-        , ModDataUpdate
         , Model
         , Msg(..)
-        , getModValue
-        , getModValueType
-        , getModValueUpdate
-        , getRegType
-        , isWriteableReg
         , showConnectStatus
         )
 import Types.IpAddress
@@ -536,7 +539,7 @@ modRegTypeColumn : IndexedColumn ModDataUpdate Msg
 modRegTypeColumn =
     { header = el [ height <| px 38 ] <| el headerTextAttr <| text "Register Type"
     , width = fillPortion 1
-    , view = \i md -> viewCell i <| getRegType md.mduModData.modRegType
+    , view = \i md -> viewCell i <| showRegType md.mduModData.modRegType
     }
 
 

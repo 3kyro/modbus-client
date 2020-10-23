@@ -4,6 +4,16 @@ import Browser
 import Dropdown exposing (Dropdown, Option, getOption)
 import Element exposing (text)
 import Element.Input exposing (checkbox)
+import ModData
+    exposing
+        ( ModData
+        , ModDataUpdate
+        , ModValue(..)
+        , RegType(..)
+        , ValueType(..)
+        , fromFloat
+        , newModDataUpdate
+        )
 import Notifications exposing (StatusBarState(..))
 import ReadWrite exposing (ReadWrite(..))
 import Settings exposing (Setting, SettingInput(..), SettingStatus(..))
@@ -13,16 +23,9 @@ import Types
         ( ActiveTab(..)
         , ByteOrder(..)
         , ConnectStatus(..)
-        , ModData
-        , ModDataUpdate
-        , ModValue(..)
         , Model
         , Msg(..)
-        , RegType(..)
-        , SettingOption(..)
-        , ValueType(..)
-        , fromFloat
-        , newModDataUpdate
+        , SettingsOptions(..)
         )
 import Types.IpAddress exposing (defaultIpAddr)
 import Update exposing (initCmd, update)
@@ -138,7 +141,7 @@ initRegMdu =
     }
 
 
-keepAliveSetting : Setting SettingOption Msg
+keepAliveSetting : Setting SettingsOptions Msg
 keepAliveSetting =
     Setting
         "Keep Alive"
@@ -161,7 +164,7 @@ keepAliveSetting =
         ]
 
 
-byteOrderSetting : Setting SettingOption Msg
+byteOrderSetting : Setting SettingsOptions Msg
 byteOrderSetting =
     Setting
         "Byte order"
