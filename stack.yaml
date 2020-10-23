@@ -37,11 +37,10 @@ packages:
 extra-deps:
   - git: https://github.com/3kyro/modbus-tcp.git
     commit: 4c4490810df6a1d97022825066120d970859a73a
-  - git: https://github.com/3kyro/keep-alive.git
-    commit: 74602db060c2ace4f00a556af4d79c48f3cf4af5
   - either-5.0.1.1
   - monad-batcher-0.0.0.0
   - serialport-0.4.7
+  - keep-alive-0.1.1.0
 # - acme-missiles-0.3
 # - git: https://github.com/commercialhaskell/stack.git
 #   commit: e7b331f14bcffb8367cd58fbfc8b40ec7642100a
