@@ -18,19 +18,18 @@ import ModData
         , decodeModData
         , decodeModDataUpdate
         , encodeModDataUpdate
-        , setModValueUpdate
+        , fromModValueInput
+        , fromModValueInputUpdate
         , isWriteableReg
         , newModDataUpdate
         , offsetMdu
         , replaceModDataSelected
         , replaceModDataWrite
+        , setModValueUpdate
         , setRegAddressUpdate
         , setRegRWUpdate
         , setRegTypeUpdate
         , setRegUidUpdate
-        , setModValueUpdate
-        , fromModValueInput
-        , fromModValueInputUpdate
         )
 import Notifications
     exposing
@@ -265,7 +264,7 @@ update msg model =
             ( { model
                 | valueTypeDd = setDropdown model.valueTypeDd opt
                 , regMdu = setModValueUpdate model.regMdu opt.value
-            }
+              }
             , Cmd.none
             )
 
@@ -295,7 +294,7 @@ update msg model =
             )
 
         UpdateRegMdu ->
-            ( model, updateRegMdu model.regMdu model.regNumReg )
+            ( model, updateRegMdu model )
 
         UpdateRegMduResponse response ->
             ( updateRegMduModelUpdate model response
@@ -455,27 +454,28 @@ changeByteOrderRequest order =
         }
 
 
-updateRegMdu : ModDataUpdate -> Maybe Int -> Cmd Msg
-updateRegMdu mdu mnum =
+updateRegMdu : Model -> Cmd Msg
+updateRegMdu model =
     Http.post
         { url = "http://localhost:4000/modData"
-        , body = Http.jsonBody <| E.list encodeModDataUpdate <| getRegMduList mdu mnum
+        , body = Http.jsonBody <| E.list encodeModDataUpdate <| getRegMduList model
         , expect = Http.expectJson UpdateRegMduResponse <| D.list decodeModDataUpdate
         }
 
 
-getRegMduList : ModDataUpdate -> Maybe Int -> List ModDataUpdate
-getRegMduList mdu mnum =
-    if isWriteableReg mdu.mduModData.modRegType then
-        [ mdu ]
+getRegMduList : Model -> List ModDataUpdate
+getRegMduList model =
+    case model.regMdu.mduRW of
+        Write ->
+            [ model.regMdu ]
 
-    else
-        case mnum of
-            Nothing ->
-                []
+        Read ->
+            case model.regNumReg of
+                Nothing ->
+                    []
 
-            Just num ->
-                offsetMdu mdu num
+                Just num ->
+                    offsetMdu model.regMdu num
 
 
 
@@ -922,15 +922,17 @@ regToggleRWModelUpdate model rw =
             | regMdu = setRegRWUpdate model.regMdu Read
         }
 
+
 regModValueModelUpdate : Model -> String -> Model
 regModValueModelUpdate model str =
     { model | regMdu = fromModValueInputUpdate model.regMdu str }
-    -- let
-    --     mdu = setModValueUpdate model.regMdu model.reg
-    --     newMdu = { mdu | }
-    -- in
 
 
+
+-- let
+--     mdu = setModValueUpdate model.regMdu model.reg
+--     newMdu = { mdu | }
+-- in
 
 
 updateRegMduModelUpdate : Model -> Result Http.Error (List ModDataUpdate) -> Model

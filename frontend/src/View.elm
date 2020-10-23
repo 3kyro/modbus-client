@@ -44,14 +44,14 @@ import ModData
         , getModValueType
         , getModValueUpdate
         , isWriteableReg
-        , showRegType
+        , modAddressColumn
+        , modDescriptionColumn
         , modNameColumn
         , modRegTypeColumn
-        , modAddressColumn
-        , modValueTypeColumn
-        , modValueColumn
         , modUidColumn
-        , modDescriptionColumn
+        , modValueColumn
+        , modValueTypeColumn
+        , showRegType
         , tableCellColor
         )
 import Notifications

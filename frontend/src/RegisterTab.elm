@@ -4,23 +4,31 @@ import Dropdown exposing (dropdown)
 import Element
     exposing
         ( Element
+        , IndexedColumn
         , alignTop
+        , column
         , fill
+        , indexedTable
         , paddingXY
         , px
         , row
         , spacing
         , text
         , width
-        , fill
-        , indexedTable
-        , IndexedColumn
-        , column
         )
 import Element.Background as Background
 import Element.Font as Font
 import Element.Input as Input
-import ModData exposing (getModValueUpdate)
+import ModData
+    exposing
+        ( ModDataUpdate
+        , getModValueUpdate
+        , modAddressColumn
+        , modRegTypeColumn
+        , modUidColumn
+        , modValueColumn
+        , modValueTypeColumn
+        )
 import Palette exposing (blueSapphire, fireBrick, greyWhite, lightGrey)
 import ReadWrite
     exposing
@@ -33,26 +41,18 @@ import Types
         ( Model
         , Msg(..)
         )
-import ModData exposing
-    ( ModDataUpdate
-    , modRegTypeColumn
-    , modAddressColumn
-    , modValueTypeColumn
-    , modValueColumn
-    , modUidColumn
-    )
 
-import Palette exposing (lightGrey, greyWhite)
 
 renderRegistersTab : Model -> Element Msg
 renderRegistersTab model =
     column
         [ alignTop
-
         ]
         [ renderInputBar model
         , renderOutput model.regResponse
         ]
+
+
 renderInputBar : Model -> Element Msg
 renderInputBar model =
     row
@@ -127,6 +127,7 @@ regNumInput model =
                 , label = Input.labelLeft [] <| text "Value"
                 }
 
+
 renderOutput : List ModDataUpdate -> Element Msg
 renderOutput mdus =
     indexedTable
@@ -134,6 +135,7 @@ renderOutput mdus =
         { data = mdus
         , columns = responseColumns mdus
         }
+
 
 responseColumns : List ModDataUpdate -> List (IndexedColumn ModDataUpdate Msg)
 responseColumns mdus =
@@ -143,4 +145,3 @@ responseColumns mdus =
     , modValueColumn Nothing
     , modUidColumn
     ]
-

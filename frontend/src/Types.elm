@@ -30,8 +30,8 @@ import ModData
     exposing
         ( ModData
         , ModDataUpdate
-        , RegType(..)
         , ModValue(..)
+        , RegType(..)
         )
 import Notifications
     exposing
