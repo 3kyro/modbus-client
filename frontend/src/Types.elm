@@ -139,7 +139,7 @@ type alias Model =
     , keepAliveIdle : Maybe Int -- in seconds
     , keepAliveInterval : Maybe Int -- in seconds
     , regTypeDd : Dropdown RegType Msg
-    , valueTypeDd : Dropdown ModValue Msg
+    , regModValueDd : Dropdown ModValue Msg
     , regAddress : Maybe Int
     , regUid : Maybe Int
     , regNumReg : Maybe Int

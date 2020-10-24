@@ -21,7 +21,7 @@ import ModData
         , fromModValueInput
         , fromModValueInputUpdate
         , isWriteableReg
-        , newModDataUpdate
+        , newModDataUpdate 
         , offsetMdu
         , replaceModDataSelected
         , replaceModDataWrite
@@ -262,7 +262,7 @@ update msg model =
 
         RegValueTypeDrop opt ->
             ( { model
-                | valueTypeDd = setDropdown model.valueTypeDd opt
+                | regModValueDd = setDropdown model.regModValueDd opt
                 , regMdu = setModValueUpdate model.regMdu opt.value
               }
             , Cmd.none

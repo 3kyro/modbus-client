@@ -19,6 +19,7 @@ import Element
 import Element.Background as Background
 import Element.Font as Font
 import Element.Input as Input
+import Element.Events as Events
 import ModData
     exposing
         ( ModDataUpdate
@@ -75,7 +76,7 @@ renderInputBar model =
         , text "Value Type"
         , dropdown
             []
-            model.valueTypeDd
+            model.regModValueDd
         , text "Unit id"
         , Input.text
             [ width <| px 100 ]

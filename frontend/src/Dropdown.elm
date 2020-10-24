@@ -56,6 +56,13 @@ dropdown attributes drop =
         []
         whatToRender
 
+expand : Dropdown value msg -> Dropdown value msg
+expand dd =
+    { dd | expanded = True }
+
+retrack : Dropdown value msg -> Dropdown value msg
+retrack dd =
+    { dd | expanded = False }
 
 getOption : value -> Element msg -> Option value msg
 getOption value element =
