@@ -150,6 +150,7 @@ left model =
         ]
         [ navigationModule model
         , manipulationModule model
+        , logoModule model
         ]
 
 
@@ -161,8 +162,7 @@ right model =
 navigationModule : Model -> Element Msg
 navigationModule model =
     el
-        [ Background.color blueSapphire
-        , width fill
+        [ width fill
         , height <| fillPortion 1
         ]
     <|
@@ -177,6 +177,16 @@ manipulationModule model =
         ]
     <|
         renderManModule model
+
+logoModule : Model -> Element Msg
+logoModule model =
+    el
+        [ Background.color background
+        , width fill
+        , height <| fillPortion 1
+        ]
+    <| renderLogoModule model
+
 
 
 infoModule : Model -> Element Msg
@@ -323,16 +333,8 @@ renderManModule model =
 
 
 connectNavModule : Model -> Element Msg
-connectNavModule model =
-    el
-        [ Background.color background
-        , Font.size 20
-        , Font.color lightGrey
-        , alignLeft
-        , alignBottom
-        ]
-    <|
-        text "Modbus Serve"
+connectNavModule model = none
+
 
 
 importNavModule : Model -> Element Msg
@@ -360,6 +362,28 @@ settingsNavModule model =
     none
 
 
+
+------------------------------------------------------------------------------------------------------------------
+-- Logo Module
+------------------------------------------------------------------------------------------------------------------
+
+renderLogoModule : Model -> Element Msg
+renderLogoModule model =
+    case model.activeTab of
+        _ -> simpleLogo
+
+
+simpleLogo : Element Msg
+simpleLogo =
+    el
+        [ Background.color background
+        , Font.size 20
+        , Font.color lightGrey
+        , alignLeft
+        , alignBottom
+        ]
+    <|
+        text "Modbus Serve"
 
 ------------------------------------------------------------------------------------------------------------------
 -- Info Module
