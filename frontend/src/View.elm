@@ -178,6 +178,7 @@ manipulationModule model =
     <|
         renderManModule model
 
+
 logoModule : Model -> Element Msg
 logoModule model =
     el
@@ -185,8 +186,8 @@ logoModule model =
         , width fill
         , height <| fillPortion 1
         ]
-    <| renderLogoModule model
-
+    <|
+        renderLogoModule model
 
 
 infoModule : Model -> Element Msg
@@ -333,8 +334,14 @@ renderManModule model =
 
 
 connectNavModule : Model -> Element Msg
-connectNavModule model = none
-
+connectNavModule model =
+    column
+        [ spacing 10
+        , width fill
+        ]
+        [ connectButton model
+        , disconnectButton model
+        ]
 
 
 importNavModule : Model -> Element Msg
@@ -367,10 +374,12 @@ settingsNavModule model =
 -- Logo Module
 ------------------------------------------------------------------------------------------------------------------
 
+
 renderLogoModule : Model -> Element Msg
 renderLogoModule model =
     case model.activeTab of
-        _ -> simpleLogo
+        _ ->
+            simpleLogo
 
 
 simpleLogo : Element Msg
@@ -385,6 +394,8 @@ simpleLogo =
     <|
         text "Modbus Serve"
 
+
+
 ------------------------------------------------------------------------------------------------------------------
 -- Info Module
 ------------------------------------------------------------------------------------------------------------------
@@ -393,8 +404,17 @@ simpleLogo =
 renderInfoModule : Model -> Element Msg
 renderInfoModule model =
     case model.activeTab of
-        ConnectMenu -> connectIsland model
-        _ -> none
+        ConnectMenu ->
+            connectIsland model
+
+        _ ->
+            none
+
+
+
+------------------------------------------------------------------------------------------------------------------
+-- Connect
+------------------------------------------------------------------------------------------------------------------
 
 
 connectIsland : Model -> Element Msg
@@ -411,8 +431,6 @@ connectIsland model =
         [ ipaddress model
         , portNum model
         , timeout model
-        , connectButton model
-        , disconnectButton model
         ]
 
 
