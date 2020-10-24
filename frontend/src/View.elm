@@ -101,60 +101,162 @@ import Types.IpAddress
 
 view : Model -> Html Msg
 view model =
-    layout [] <| page model
-
-
-page : Model -> Element Msg
-page model =
-    column
+    layout
         [ Background.color grey
         , width fill
         , height fill
         , smallFont
         ]
-        [ menuBar model
-        , mainTab model
+    <|
+        page model
+
+
+page : Model -> Element Msg
+page model =
+    column
+        [ width fill
+        , height fill
+        ]
+        [ mainModule model
         , notifications model
         ]
 
 
+mainModule : Model -> Element Msg
+mainModule model =
+    row
+        [ width fill
+        , height fill
+        , padding 50
+        , spacing 50
+        ]
+        [ left model
+        , right model
+        ]
+
+
+left : Model -> Element Msg
+left model =
+    column
+        [ width <| fillPortion 1
+        , height fill
+        , spacing 50
+        ]
+        [ navigationModule model
+        , manipulationModule model
+        ]
+
+
+right : Model -> Element Msg
+right model =
+    infoModule model
+
+
+navigationModule : Model -> Element Msg
+navigationModule model =
+    el
+        [ Background.color blueSapphire
+        , width fill
+        , height <| fillPortion 1
+        , sh
+        ]
+    <|
+        renderNavModule model
+
+
+manipulationModule : Model -> Element Msg
+manipulationModule model =
+    el
+        [ Background.color blueSapphire
+        , width fill
+        , height <| fillPortion 4
+        , sh
+        ]
+    <|
+        text "manipulation"
+
+
+infoModule : Model -> Element Msg
+infoModule model =
+    el
+        [ Background.color blueSapphire
+        , width <| fillPortion 4
+        , height fill
+        , sh
+        ]
+    <|
+        text "info"
+
+
+sh : Attribute Msg
+sh =
+    Border.shadow
+        { offset = ( 0, 0 )
+        , size = 0.2
+        , blur = 100
+        , color = darkGrey
+        }
+
+
 
 ------------------------------------------------------------------------------------------------------------------
--- Menu Bar
+-- Navigation Buttons
+------------------------------------------------------------------------------------------------------------------
 
 
-menuBar : Model -> Element Msg
-menuBar model =
-    row
+renderNavModule : Model -> Element Msg
+renderNavModule model =
+    column
         [ Background.color darkGrey
-        , alignTop
         , width fill
-        , height <| px 38
+        , height fill
         , spacing 0
+        ]
+        [ firstNavRow model
+        , secondNavRow model
+        ]
+
+
+firstNavRow : Model -> Element Msg
+firstNavRow model =
+    row
+        [ width fill
+        , height fill
         ]
         [ connectTabButton model
         , importRegisterTabButton model
         , registersTabButton model
-        , registerTableTabButton model
+        ]
+
+
+secondNavRow : Model -> Element Msg
+secondNavRow model =
+    row
+        [ width fill
+        , height fill
+        ]
+        [ registerTableTabButton model
         , heartbeatTabButton model
         , settingsTabButton model
         ]
 
 
 
--- Creates a new menu tab selection button
+-- Creates a new navigation button selection button
 
 
-newSelectTabButton : Model -> String -> ActiveTab -> Element Msg
-newSelectTabButton model str tab =
+newNavigationButton : Model -> String -> ActiveTab -> Element Msg
+newNavigationButton model str tab =
     Input.button
         [ Background.color <| selectTabButtonBgdColor model tab
         , focused [ Font.color white ]
         , mouseOver [ Font.color white ]
         , Border.width 0
         , height fill
+        , width <| fillPortion 1
         , paddingXY 10 0
         , Font.color greyWhite
+        , Font.center
         ]
         { onPress = Just <| ChangeActiveTab tab
         , label = text str
@@ -172,32 +274,44 @@ selectTabButtonBgdColor model tab =
 
 connectTabButton : Model -> Element Msg
 connectTabButton model =
-    newSelectTabButton model "Connect" ConnectMenu
+    newNavigationButton model "Connect" ConnectMenu
 
 
 importRegisterTabButton : Model -> Element Msg
 importRegisterTabButton model =
-    newSelectTabButton model "Import" ImportMenu
+    newNavigationButton model "Import" ImportMenu
 
 
 registersTabButton : Model -> Element Msg
 registersTabButton model =
-    newSelectTabButton model "Registers" RegistersTab
+    newNavigationButton model "Registers" RegistersTab
 
 
 registerTableTabButton : Model -> Element Msg
 registerTableTabButton model =
-    newSelectTabButton model "Register Table" ModDataTab
+    newNavigationButton model "Table" ModDataTab
 
 
 heartbeatTabButton : Model -> Element Msg
 heartbeatTabButton model =
-    newSelectTabButton model "Heartbeat Signals" HeartbeatTab
+    newNavigationButton model "Heartbeat" HeartbeatTab
 
 
 settingsTabButton : Model -> Element Msg
 settingsTabButton model =
-    newSelectTabButton model "Settings" SettingsTab
+    newNavigationButton model "Settings" SettingsTab
+
+
+
+------------------------------------------------------------------------------------------------------------------
+-- Manipulation Module
+------------------------------------------------------------------------------------------------------------------
+
+
+
+------------------------------------------------------------------------------------------------------------------
+-- Manipulation Module
+------------------------------------------------------------------------------------------------------------------
 
 
 mainTab : Model -> Element Msg
