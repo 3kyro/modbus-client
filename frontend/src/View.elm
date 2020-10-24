@@ -421,6 +421,9 @@ renderInfoModule model =
         ModDataTab ->
             newRegisterTab model.modDataUpdate <| modDataColumns model
 
+        SettingsTab ->
+            settingsTab model
+
         _ ->
             none
 
@@ -836,6 +839,7 @@ updateSelectedButton model =
 
 ------------------------------------------------------------------------------------------------------------------
 -- Settings Tab
+------------------------------------------------------------------------------------------------------------------
 
 
 settingsTab : Model -> Element Msg
@@ -853,8 +857,8 @@ settingsTab model =
 
 
 ------------------------------------------------------------------------------------------------------------------
--- Status Bar
--- An expandable status bar at the bottom of the page
+-- Notifications
+------------------------------------------------------------------------------------------------------------------
 
 
 notifications : Model -> Element Msg
