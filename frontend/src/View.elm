@@ -227,8 +227,8 @@ firstNavRow model =
         , height fill
         ]
         [ connectTabButton model
-        , importRegisterTabButton model
         , registersTabButton model
+        , registerTableTabButton model
         ]
 
 
@@ -238,9 +238,9 @@ secondNavRow model =
         [ width fill
         , height fill
         ]
-        [ registerTableTabButton model
-        , heartbeatTabButton model
+        [ heartbeatTabButton model
         , settingsTabButton model
+        , emptyTabButton model
         ]
 
 
@@ -280,11 +280,6 @@ connectTabButton model =
     newNavigationButton model "Connect" ConnectMenu
 
 
-importRegisterTabButton : Model -> Element Msg
-importRegisterTabButton model =
-    newNavigationButton model "Import" ImportMenu
-
-
 registersTabButton : Model -> Element Msg
 registersTabButton model =
     newNavigationButton model "Registers" RegistersTab
@@ -305,6 +300,17 @@ settingsTabButton model =
     newNavigationButton model "Settings" SettingsTab
 
 
+emptyTabButton : Model -> Element Msg
+emptyTabButton model =
+    el
+        [ Border.width 0
+        , height fill
+        , width <| fillPortion 1
+        , paddingXY 10 0
+        ]
+        none
+
+
 
 ------------------------------------------------------------------------------------------------------------------
 -- Manipulation Module
@@ -316,9 +322,6 @@ renderManModule model =
     case model.activeTab of
         ConnectMenu ->
             connectNavModule model
-
-        ImportMenu ->
-            importNavModule model
 
         RegistersTab ->
             registersNavModule model
@@ -344,11 +347,6 @@ connectNavModule model =
         ]
 
 
-importNavModule : Model -> Element Msg
-importNavModule model =
-    none
-
-
 registersNavModule : Model -> Element Msg
 registersNavModule model =
     none
@@ -356,7 +354,14 @@ registersNavModule model =
 
 tableNavModule : Model -> Element Msg
 tableNavModule model =
-    none
+    column
+        [ spacing 10
+        , width fill
+        ]
+        [ updateSelectedButton model
+        , loadCSVButton
+        , loadRegisterTableButton model
+        ]
 
 
 heartbeatNavModule : Model -> Element Msg
@@ -406,6 +411,9 @@ renderInfoModule model =
     case model.activeTab of
         ConnectMenu ->
             connectIsland model
+
+        ModDataTab ->
+            newRegisterTab model.modDataUpdate <| modDataColumns model
 
         _ ->
             none
@@ -570,7 +578,8 @@ disconnectButtonBgd model =
 
 
 ------------------------------------------------------------------------------------------------------------------
--- Import Menu
+-- Import
+------------------------------------------------------------------------------------------------------------------
 
 
 importTab : Model -> Element Msg
@@ -586,18 +595,12 @@ importTab model =
 
 importActiveTab : Model -> Element Msg
 importActiveTab model =
-    column
-        [ Background.color grey
-        , width <| px 500
-        , height <| px 500
-        , spacing 20
-        , paddingXY 10 20
-        , centerX
-        , centerY
-        ]
-        [ loadCSVButton
-        , loadRegisterTableButton model
-        ]
+    indexedTable
+        []
+        { data = model.modDataUpdate
+        , columns =
+            []
+        }
 
 
 loadCSVButton : Element Msg
@@ -617,42 +620,35 @@ loadCSVButton =
         }
 
 
-showCSVFile : Model -> Element Msg
-showCSVFile model =
-    case model.csvFileName of
+loadRegisterTableButton : Model -> Element Msg
+loadRegisterTableButton model =
+    case model.csvContent of
+        Just _ ->
+            Input.button
+                [ Background.color <| loadRegsButtonClr model
+                , mouseOver [ Font.color white ]
+                , height <| px 38
+                , width fill
+                , paddingXY 0 0
+                , Font.color greyWhite
+                , Font.center
+                , focused []
+                ]
+                { onPress = Just ModDataRequest
+                , label = text <| csvLoadButtonText model.csvLoaded
+                }
+
         Nothing ->
             none
 
-        Just filename ->
-            el
-                [ Font.color white, centerX ]
-                (text <| csvLoadButtonText model.csvLoaded filename)
 
-
-csvLoadButtonText : Bool -> String -> String
-csvLoadButtonText flag str =
+csvLoadButtonText : Bool -> String
+csvLoadButtonText flag =
     if flag then
-        str ++ " registers imported!"
+        "Registers Imported"
 
     else
-        "Import registers from " ++ str
-
-
-loadRegisterTableButton : Model -> Element Msg
-loadRegisterTableButton model =
-    Input.button
-        [ Background.color <| loadRegsButtonClr model
-        , mouseOver [ Font.color white ]
-        , height <| px 38
-        , width fill
-        , paddingXY 0 0
-        , Font.color greyWhite
-        , Font.center
-        , focused []
-        ]
-        { onPress = Just ModDataRequest
-        , label = showCSVFile model
-        }
+        "Import Registers"
 
 
 loadRegsButtonClr : Model -> Color
@@ -666,12 +662,13 @@ loadRegsButtonClr model =
                 lightGrey
 
         Nothing ->
-            grey
+            background
 
 
 
 ------------------------------------------------------------------------------------------------------------------
 -- Registers Menu
+------------------------------------------------------------------------------------------------------------------
 
 
 newRegisterTab : List records -> List (IndexedColumn records Msg) -> Element Msg
@@ -689,7 +686,8 @@ newRegisterTab dt cl =
 
 modDataColumns : Model -> List (IndexedColumn ModDataUpdate Msg)
 modDataColumns model =
-    [ modNameColumn
+    [ selectColumn model
+    , modNameColumn
     , modRegTypeColumn
     , modAddressColumn
     , modValueTypeColumn
@@ -697,7 +695,6 @@ modDataColumns model =
     , modUidColumn
     , modDescriptionColumn
     , readWriteColumn model
-    , selectColumn model
     ]
 
 
@@ -726,7 +723,9 @@ selectColumn : Model -> IndexedColumn ModDataUpdate Msg
 selectColumn model =
     { header =
         el
-            [ height <| px 38 ]
+            [ height <| px 38
+            , paddingXY 10 0
+            ]
         <|
             selectCheckbox SelectAllChecked model.selectAllCheckbox
     , width = px 30
@@ -754,6 +753,7 @@ viewCheckedCell idx selected =
         , Font.color greyWhite
         , height <| px 38
         , Font.center
+        , paddingXY 10 0
         ]
     <|
         selectCheckbox (ModDataChecked idx) selected
@@ -811,6 +811,22 @@ heartbeatTab model =
     none
 
 
+updateSelectedButton : Model -> Element Msg
+updateSelectedButton model =
+    Input.button
+        [ Background.color lightGrey
+        , width fill
+        , height <| px 38
+        , Font.center
+        , Font.color greyWhite
+        , paddingXY 0 10
+        , focused []
+        ]
+        { onPress = Just <| RefreshRequest model.modDataUpdate
+        , label = text "Update Selected"
+        }
+
+
 
 ------------------------------------------------------------------------------------------------------------------
 -- Settings Tab
@@ -827,64 +843,6 @@ settingsTab model =
         ]
     <|
         renderSettings SetActiveSetting model.settings
-
-
-
-------------------------------------------------------------------------------------------------------------------
--- Command Area
-
-
-commandArea : Model -> Element Msg
-commandArea model =
-    case model.activeTab of
-        ConnectMenu ->
-            none
-
-        ImportMenu ->
-            none
-
-        RegistersTab ->
-            none
-
-        ModDataTab ->
-            modDataCommand model
-
-        HeartbeatTab ->
-            none
-
-        SettingsTab ->
-            none
-
-
-modDataCommand : Model -> Element Msg
-modDataCommand model =
-    if model.selectSome then
-        column
-            [ Background.color grey
-            , width <| px 300
-            , height fill
-            , Border.widthXY 1 0
-            , Border.color lightGrey
-            , padding 10
-            ]
-            [ updateSelectedButton model ]
-
-    else
-        none
-
-
-updateSelectedButton : Model -> Element Msg
-updateSelectedButton model =
-    Input.button
-        [ Background.color lightGrey
-        , width fill
-        , Font.center
-        , Font.color greyWhite
-        , paddingXY 0 10
-        ]
-        { onPress = Just <| RefreshRequest model.modDataUpdate
-        , label = text "Update Selected"
-        }
 
 
 

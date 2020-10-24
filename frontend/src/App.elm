@@ -43,7 +43,7 @@ main =
 
 initModel : Model
 initModel =
-    { modDataUpdate = newModDataUpdate initModData
+    { modDataUpdate = []
     , notifications = []
     , statusBarState = Retracted
     , connectStatus = Connect

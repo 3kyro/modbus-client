@@ -293,7 +293,6 @@ showConnInfo connInfo =
 
 type ActiveTab
     = ConnectMenu
-    | ImportMenu
     | RegistersTab
     | ModDataTab
     | HeartbeatTab
