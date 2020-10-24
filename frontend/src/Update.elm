@@ -2,7 +2,7 @@ module Update exposing (getPosixTime, getTimeZone, initCmd, update)
 
 import Array
 import Browser.Dom as Dom
-import Dropdown exposing (Option, setDropdown, setDropdownExpanded)
+import Dropdown exposing (Option, retract, setDropdown, setDropdownExpanded)
 import Element exposing (onLeft)
 import File
 import File.Select as Select
@@ -21,7 +21,7 @@ import ModData
         , fromModValueInput
         , fromModValueInputUpdate
         , isWriteableReg
-        , newModDataUpdate 
+        , newModDataUpdate
         , offsetMdu
         , replaceModDataSelected
         , replaceModDataWrite
@@ -68,6 +68,7 @@ import Types
         , encodeKeepAlive
         , encodeTCPConnectionInfo
         , encodeTCPConnectionRequest
+        , retractDropdowns
         , showByteOrderResponse
         , showConnInfo
         , showKeepAliveResponse
@@ -135,7 +136,9 @@ update msg model =
             )
 
         ChangeActiveTab tab ->
-            ( { model | activeTab = tab }, Cmd.none )
+            ( changeActiveTabModelUpdate model tab
+            , Cmd.none
+            )
 
         CsvRequested ->
             ( model, Select.file [] CsvSelected )
@@ -264,6 +267,7 @@ update msg model =
             ( { model
                 | regModValueDd = setDropdown model.regModValueDd opt
                 , regMdu = setModValueUpdate model.regMdu opt.value
+                , regTypeDd = retract model.regTypeDd
               }
             , Cmd.none
             )
@@ -294,7 +298,12 @@ update msg model =
             )
 
         UpdateRegMdu ->
-            ( model, updateRegMdu model )
+            ( { model
+                | regModValueDd = retract model.regModValueDd
+                , regTypeDd = retract model.regTypeDd
+              }
+            , updateRegMdu model
+            )
 
         UpdateRegMduResponse response ->
             ( updateRegMduModelUpdate model response
@@ -661,6 +670,17 @@ disconnectedResponseModelUpdate model result =
             }
 
 
+changeActiveTabModelUpdate : Model -> ActiveTab -> Model
+changeActiveTabModelUpdate model tab =
+    let
+        retractedModel =
+            retractDropdowns model
+    in
+    { retractedModel
+        | activeTab = tab
+    }
+
+
 receivedModDataModelUpdate : Model -> Result Http.Error (List ModData) -> Model
 receivedModDataModelUpdate model result =
     case result of
@@ -891,6 +911,7 @@ regTypeDropModelUpdate model opt =
     { model
         | regTypeDd = setDropdown model.regTypeDd opt
         , regMdu = setRegTypeUpdate model.regMdu opt.value
+        , regModValueDd = retract model.regModValueDd
     }
 
 

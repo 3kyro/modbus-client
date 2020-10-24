@@ -14,6 +14,7 @@ module Types exposing
     , encodeKeepAlive
     , encodeTCPConnectionInfo
     , encodeTCPConnectionRequest
+    , retractDropdowns
     , showByteOrderResponse
     , showConnInfo
     , showConnectStatus
@@ -145,6 +146,14 @@ type alias Model =
     , regNumReg : Maybe Int
     , regMdu : ModDataUpdate
     , regResponse : List ModDataUpdate
+    }
+
+
+retractDropdowns : Model -> Model
+retractDropdowns model =
+    { model
+        | regModValueDd = retract model.regModValueDd
+        , regTypeDd = retract model.regTypeDd
     }
 
 
