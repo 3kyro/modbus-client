@@ -97,12 +97,12 @@ getRegTypeOption rg =
 
 inputRegisterOption : Option RegType Msg
 inputRegisterOption =
-    getOption InputRegister (text "Input Register")
+    getOption InputRegister (text "Input")
 
 
 holdingRegisterOption : Option RegType Msg
 holdingRegisterOption =
-    getOption HoldingRegister (text "Holding Register")
+    getOption HoldingRegister (text "Holding")
 
 
 valueTypeDropdown : Dropdown ModValue Msg

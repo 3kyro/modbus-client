@@ -84,7 +84,7 @@ import ReadWrite
         , flipRW
         , readWriteButton
         )
-import RegisterTab exposing (renderRegistersTab)
+import RegisterTab exposing (regNav, renderOutput, sendRegRequestButton)
 import Settings
     exposing
         ( renderSettings
@@ -349,7 +349,10 @@ connectNavModule model =
 
 registersNavModule : Model -> Element Msg
 registersNavModule model =
-    none
+    el
+        [ width fill ]
+    <|
+        regNav model
 
 
 tableNavModule : Model -> Element Msg
@@ -411,6 +414,9 @@ renderInfoModule model =
     case model.activeTab of
         ConnectMenu ->
             connectIsland model
+
+        RegistersTab ->
+            renderOutput model.regResponse
 
         ModDataTab ->
             newRegisterTab model.modDataUpdate <| modDataColumns model
@@ -793,7 +799,7 @@ viewReadWriteModDataCell idx md =
 
 registersTab : Model -> Element Msg
 registersTab model =
-    renderRegistersTab model
+    none
 
 
 holdingRegistersTab : Element Msg
