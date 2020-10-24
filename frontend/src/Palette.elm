@@ -22,11 +22,15 @@ module Palette exposing
     , white
     , dClrHover
     , dClrNotExpanded
+    , background
     )
 
 import Element exposing (Attribute, Color, rgb255)
 import Element.Font as Font
 
+background : Color
+background =
+    rgb255 30 30 30
 
 darkGrey : Color
 darkGrey =

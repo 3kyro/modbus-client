@@ -7,6 +7,7 @@ import Element
         , Color
         , Element
         , IndexedColumn
+        , alignBottom
         , alignLeft
         , alignTop
         , centerX
@@ -21,10 +22,13 @@ import Element
         , indexedTable
         , layout
         , mouseOver
+        , moveDown
+        , moveLeft
         , none
         , padding
         , paddingXY
         , px
+        , rotate
         , row
         , spacing
         , text
@@ -62,7 +66,9 @@ import Notifications
         )
 import Palette
     exposing
-        ( blueSapphire
+        ( background
+        , black
+        , blueSapphire
         , darkGrey
         , fireBrick
         , grey
@@ -102,7 +108,7 @@ import Types.IpAddress
 view : Model -> Html Msg
 view model =
     layout
-        [ Background.color grey
+        [ Background.color background
         , width fill
         , height fill
         , smallFont
@@ -158,7 +164,6 @@ navigationModule model =
         [ Background.color blueSapphire
         , width fill
         , height <| fillPortion 1
-        , sh
         ]
     <|
         renderNavModule model
@@ -167,35 +172,22 @@ navigationModule model =
 manipulationModule : Model -> Element Msg
 manipulationModule model =
     el
-        [ Background.color blueSapphire
-        , width fill
+        [ width fill
         , height <| fillPortion 4
-        , sh
         ]
     <|
-        text "manipulation"
+        renderManModule model
 
 
 infoModule : Model -> Element Msg
 infoModule model =
     el
-        [ Background.color blueSapphire
+        [ Background.color grey
         , width <| fillPortion 4
         , height fill
-        , sh
         ]
     <|
-        text "info"
-
-
-sh : Attribute Msg
-sh =
-    Border.shadow
-        { offset = ( 0, 0 )
-        , size = 0.2
-        , blur = 100
-        , color = darkGrey
-        }
+        renderInfoModule model
 
 
 
@@ -308,59 +300,77 @@ settingsTabButton model =
 ------------------------------------------------------------------------------------------------------------------
 
 
-
-------------------------------------------------------------------------------------------------------------------
--- Manipulation Module
-------------------------------------------------------------------------------------------------------------------
-
-
-mainTab : Model -> Element Msg
-mainTab model =
-    row
-        [ width fill
-        , height fill
-        ]
-        [ infoArea model
-        , commandArea model
-        ]
-
-
-infoArea : Model -> Element Msg
-infoArea model =
+renderManModule : Model -> Element Msg
+renderManModule model =
     case model.activeTab of
         ConnectMenu ->
-            connectTab model
+            connectNavModule model
 
         ImportMenu ->
-            importTab model
+            importNavModule model
 
         RegistersTab ->
-            registersTab model
+            registersNavModule model
 
         ModDataTab ->
-            modDataTab model
+            tableNavModule model
 
         HeartbeatTab ->
-            heartbeatTab model
+            heartbeatNavModule model
 
         SettingsTab ->
-            settingsTab model
+            settingsNavModule model
+
+
+connectNavModule : Model -> Element Msg
+connectNavModule model =
+    el
+        [ Background.color background
+        , Font.size 20
+        , Font.color lightGrey
+        , alignLeft
+        , alignBottom
+        ]
+    <|
+        text "Modbus Serve"
+
+
+importNavModule : Model -> Element Msg
+importNavModule model =
+    none
+
+
+registersNavModule : Model -> Element Msg
+registersNavModule model =
+    none
+
+
+tableNavModule : Model -> Element Msg
+tableNavModule model =
+    none
+
+
+heartbeatNavModule : Model -> Element Msg
+heartbeatNavModule model =
+    none
+
+
+settingsNavModule : Model -> Element Msg
+settingsNavModule model =
+    none
 
 
 
 ------------------------------------------------------------------------------------------------------------------
--- Connect Menu
+-- Info Module
+------------------------------------------------------------------------------------------------------------------
 
 
-connectTab : Model -> Element Msg
-connectTab model =
-    el
-        [ Background.color grey
-        , width fill
-        , height fill
-        ]
-    <|
-        connectIsland model
+renderInfoModule : Model -> Element Msg
+renderInfoModule model =
+    case model.activeTab of
+        ConnectMenu -> connectIsland model
+        _ -> none
 
 
 connectIsland : Model -> Element Msg
@@ -440,7 +450,7 @@ timeout model =
         { onChange = ChangeTimeout
         , text = Maybe.withDefault "" <| Maybe.map String.fromInt model.timeout
         , placeholder = Nothing
-        , label = Input.labelLeft [ Font.color white ] <| el [ width <| px 100 ] (text "Timeout in seconds")
+        , label = Input.labelLeft [ Font.color white ] <| el [ width <| px 100 ] (text "Timeout (s)")
         }
 
 
