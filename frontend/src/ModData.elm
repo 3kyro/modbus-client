@@ -273,7 +273,7 @@ modNameColumn =
 
 modRegTypeColumn : IndexedColumn ModDataUpdate msg
 modRegTypeColumn =
-    { header = el [ height <| px 38 ] <| el headerTextAttr <| text "Register Type"
+    { header = el [ height <| px 38 ] <| el headerTextAttr <| text "Type"
     , width = fillPortion 1
     , view = \i md -> viewCell i <| showRegType md.mduModData.modRegType
     }
@@ -281,7 +281,7 @@ modRegTypeColumn =
 
 modAddressColumn : IndexedColumn ModDataUpdate msg
 modAddressColumn =
-    { header = el [ height <| px 38 ] <| el headerTextAttr <| text "Register Address"
+    { header = el [ height <| px 38 ] <| el headerTextAttr <| text "Address"
     , width = fillPortion 1
     , view = \i md -> viewCell i <| String.fromInt md.mduModData.modAddress
     }
