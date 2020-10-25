@@ -2,7 +2,6 @@
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
-{-# LANGUAGE RankNTypes            #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE TypeOperators         #-}
 module Server (runServer)  where
@@ -20,18 +19,16 @@ import qualified System.OS                  as OS
 import qualified System.Process             as PS
 
 
-import           Control.Concurrent         (MVar, ThreadId, forkIO)
+import           Control.Concurrent         (ThreadId, forkIO)
 import           Control.Exception          (try)
 import           Control.Exception.Safe     (SomeException)
 import           Control.Monad.Except       (catchError)
 import           CsvParser                  (runpCSV)
-import           Modbus                     (ByteOrder, Client,
-                                             ModbusProtocol (..), Session, TID,
-                                             Worker, getNewTID, getRTUClient,
-                                             getRTUSerialPort, getTCPClient,
+import           Modbus                     (tcpUpdateMBRegister, tcpReadMBRegister, ByteOrder, ModbusClient (..),
+                                             ModbusProtocol (..), TCPSession, TID, getNewTID, getTCPClient,
                                              getTCPSocket, initTID,
-                                             readMBRegister, runClient,
-                                             updateMBRegister)
+
+                                             )
 import           Network.Socket.KeepAlive
 import qualified System.Hardware.Serialport as SP
 import           Types.ModData
@@ -134,15 +131,15 @@ connect state (ConnectionRequest connectionInfo kaValue) = do
                         keepAlive state kaValue
                         return ()
 
-            RTUConnectionInfo serial tm -> do
-                let tms = tm * 1000000 -- in microseconds
-                mPort <- liftIO $ getRTUSerialPort serial tms
-                case mPort of
-                    Nothing -> throwError err300
-                    Just port -> do
-                        client <- liftIO $ getRTUClient port tms
-                        putState state $ state'
-                            {servConnection = RTUConnection port connectionInfo $ getRTUActors client}
+            -- RTUConnectionInfo serial tm -> do
+            --     let tms = tm * 1000000 -- in microseconds
+            --     mPort <- liftIO $ getRTUSerialPort serial tms
+            --     case mPort of
+            --         Nothing -> throwError err300
+            --         Just port -> do
+            --             client <- liftIO $ getRTUClient port tms
+            --             putState state $ state'
+            --                 {servConnection = RTUConnection port connectionInfo $ getRTUActors client}
 
 getConnectionInfo :: TVar ServState -> Handler (Maybe ConnectionInfo)
 getConnectionInfo state = do
@@ -213,30 +210,23 @@ getInitState protocol order = do
 updateModData :: TVar ServState -> [ModDataUpdate] -> Handler [ModDataUpdate]
 updateModData state mdus = do
     state' <- liftIO $ readTVarIO state
-    let prot = servProtocol state'
     let order = servOrd state'
     tid <- liftIO $ getNewTID $ servTID state'
     let actors = getActors $ servConnection state'
     case actors of
         Nothing -> throwError err400
         Just (ServerActors client _ batchWorker) -> do
-            let sessions = map (modUpdateSession prot tid order) mdus
-            resp <- liftIO $ mapM (runServerClientMaybe batchWorker client) sessions
-            let resp' = liftException resp
-            case resp' of
-                Left _    -> throwError err500
-                Right md' -> return $ mergeModDataUpdate md' mdus
+            let sessions = traverse (modUpdateSession tid order) mdus
+            liftIO $ tcpRunClient batchWorker client sessions
 
-modUpdateSession :: ModbusProtocol -> TID -> ByteOrder -> ModDataUpdate -> Maybe (Session IO ModDataUpdate)
-modUpdateSession prot tid order mdu =
+modUpdateSession :: TID -> ByteOrder -> ModDataUpdate -> TCPSession IO ModDataUpdate
+modUpdateSession tid order mdu =
     if mduSelected mdu
     then
         case mduRW mdu of
-            MDURead  -> Just $ readMBRegister proxy prot tid order mdu
-            MDUWrite -> Just $ updateMBRegister proxy prot tid order mdu
-    else Nothing
-  where
-    proxy = Proxy :: Proxy Client
+            MDURead  -> tcpReadMBRegister tid order mdu
+            MDUWrite -> tcpUpdateMBRegister tid order mdu
+    else pure mdu
 
 parseAndSend :: String -> Handler [ModData]
 parseAndSend content =
@@ -246,33 +236,6 @@ parseAndSend content =
         case md of
             Left _    -> throwError err400
             Right mds -> pure mds
-
-runServerClientMaybe :: Worker IO -> MVar Client -> Maybe (Session IO a) -> IO ( Maybe (Either SomeException a))
-runServerClientMaybe worker client (Just session) = do
-    rlt <- try $ runClient worker client session
-    return $ Just rlt
-runServerClientMaybe _ _ Nothing = return Nothing
-
--- TODO : Find tail recursive alternative
-liftException :: [Maybe (Either a b)] -> Either a [Maybe b]
-liftException [] = Right []
-liftException (x:xs) =
-    case liftException xs of
-        Left err -> Left err
-        Right b -> case x of
-            Nothing -> Right $ Nothing : b
-            Just y -> case y of
-                Left err -> Left err
-                Right y' -> Right $ Just y' : b
-
-mergeModDataUpdate :: [Maybe ModDataUpdate] -> [ModDataUpdate] -> [ModDataUpdate]
-mergeModDataUpdate [] _ = []
-mergeModDataUpdate _ [] = []
-mergeModDataUpdate (x:xs) (y:ys) =
-    case x of
-        Nothing -> y:mergeModDataUpdate xs ys
-        Just x' -> x':mergeModDataUpdate xs ys
-
 
 keepAlive :: TVar ServState -> KeepAliveServ -> Handler KeepAliveResponse
 keepAlive state kaValue = do

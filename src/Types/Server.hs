@@ -10,7 +10,7 @@ module Types.Server
     , ConnectionRequest (..)
     , getActors
     , getTCPActors
-    , getRTUActors
+    -- , getRTUActors
     , KeepAliveServ (..)
     , KeepAliveResponse (..)
     , toKeepAlive
@@ -28,8 +28,7 @@ import           Control.Concurrent         (MVar)
 import           Control.Concurrent.STM     (TVar)
 import qualified Data.Text                  as T
 import           Modbus                     (ByteOrder, Client, HeartBeat,
-                                             ModbusProtocol, TID, Worker,
-                                             rtuBatchWorker, rtuDirectWorker,
+                                             ModbusProtocol, TID, TCPWorker(..),
                                              tcpBatchWorker, tcpDirectWorker)
 import           Network.Socket.KeepAlive   (KeepAlive (..))
 import qualified System.Hardware.Serialport as SP
@@ -44,8 +43,8 @@ data ServState = ServState
 
 data ServerActors = ServerActors
     { sclClient       :: !(MVar Client)
-    , sclDirectWorker :: !(Worker IO)
-    , sclBatchWorker  :: !(Worker IO)
+    , sclDirectWorker :: !(TCPWorker IO)
+    , sclBatchWorker  :: !(TCPWorker IO)
     }
 
 data Connection = TCPConnection
@@ -72,12 +71,12 @@ getTCPActors client =
         tcpDirectWorker
         tcpBatchWorker
 
-getRTUActors :: MVar Client -> ServerActors
-getRTUActors client =
-    ServerActors
-        client
-        rtuDirectWorker
-        rtuBatchWorker
+-- getRTUActors :: MVar Client -> ServerActors
+-- getRTUActors client =
+--     ServerActors
+--         client
+--         rtuDirectWorker
+--         rtuBatchWorker
 
 data ConnectionInfo = TCPConnectionInfo
     { tcpIpAddress :: !IPv4

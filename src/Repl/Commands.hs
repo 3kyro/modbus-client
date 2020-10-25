@@ -1,4 +1,3 @@
-{-# LANGUAGE RankNTypes #-}
 module Repl.Commands
     ( commandsCompl
     , getCommand
@@ -11,7 +10,6 @@ import           Control.Exception.Safe           (try)
 import           Control.Monad.Trans              (lift, liftIO)
 import           Control.Monad.Trans.Except       (ExceptT, except, runExceptT)
 import           Control.Monad.Trans.State.Strict (get, put)
-import           Data.Data                        (Proxy (..))
 import           Data.Either.Combinators          (mapLeft)
 import           Data.List                        (delete, find, uncons)
 import           Data.Maybe                       (fromJust)
@@ -32,7 +30,7 @@ import           Repl.Parser                      (pReplAddrNum, pReplArg,
                                                    pReplFloat, pReplInt,
                                                    pReplWord)
 import           Types
-import Modbus (heartBeatSignal, Address(..), writeMBRegister, runClient, readMBRegister, getNewTID, TID, HeartBeat (..), Client)
+import Modbus (rtuWriteMBRegister, tcpWriteMBRegister, rtuRunClient, rtuReadMBRegister, tcpRunClient, tcpReadMBRegister, heartBeatSignal, Address(..), getNewTID, TID, HeartBeat (..), ModbusProtocol (..))
 
 getCommand :: String -> Command
 getCommand s =
@@ -158,11 +156,16 @@ replReadModData mds = do
     let protocol = replProtocol state
     tid <- replGetTID
     let order = replByteOrder state
-    let proxy = Proxy :: Proxy Client
-    let sessions = map (readMBRegister proxy protocol tid order) mds
-    let worker = replBatchWorker state
     let client = replClient state
-    maybemdata <- runReplClient $ mapM (runClient worker client) sessions
+    maybemdata <- case protocol of
+            ModBusTCP -> do
+                let session = traverse (tcpReadMBRegister tid order) mds
+                let worker = replTCPBatchWorker state
+                runReplClient $ tcpRunClient worker client session
+            ModBusRTU -> do
+                let session = traverse (rtuReadMBRegister tid order) mds
+                let worker = replRTUBatchWorker state
+                runReplClient $ rtuRunClient worker client session
     replRunExceptT (except maybemdata) []
 
 
@@ -211,11 +214,16 @@ replWriteModData mds = do
     let protocol = replProtocol state
     tid <- replGetTID
     let order = replByteOrder state
-    let proxy = Proxy :: Proxy Client
-    let sessions = map (writeMBRegister proxy protocol tid order) mds
-    let worker = replBatchWorker state
     let client = replClient state
-    maybemdata <- runReplClient $ mapM (runClient worker client) sessions
+    maybemdata <- case protocol of
+        ModBusTCP -> do
+            let sessions = traverse (tcpWriteMBRegister tid order) mds
+            let worker = replTCPBatchWorker state
+            runReplClient $ tcpRunClient worker client sessions
+        ModBusRTU -> do
+            let sessions = traverse (rtuWriteMBRegister tid order) mds
+            let worker = replRTUBatchWorker state
+            runReplClient $ rtuRunClient worker client sessions
     replRunExceptT (except maybemdata) []
     return ()
 
@@ -246,14 +254,19 @@ startHeartbeat (addr, timer)
     | otherwise =
         afterActiveThreadCheck addr $ do
             state <- replGet
-            let worker = replDirectWorker state
             let client = replClient state
             let uid = replUId state
             let tid = replTransactionId state
             let tm = timer * 1000000 -- in microseconds
             let address = Address addr
             let protocol = replProtocol state
-            heart <- liftIO $ heartBeatSignal protocol tm worker client uid tid address
+            heart <- case protocol of
+                ModBusTCP -> do
+                    let worker = Left $ replTCPDirectWorker state
+                    liftIO $ heartBeatSignal tm worker client uid tid address
+                ModBusRTU -> do
+                    let worker = Right $ replRTUDirectWorker state
+                    liftIO $ heartBeatSignal tm worker client uid tid address
             putHeartBeat heart
 
 -- Parse the argument list and call stopHeartbeatThread on

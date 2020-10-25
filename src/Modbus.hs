@@ -1,20 +1,10 @@
-{-# LANGUAGE AllowAmbiguousTypes     #-}
-{-# LANGUAGE ConstrainedClassMethods #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE DeriveFunctor           #-}
-{-# LANGUAGE FlexibleContexts        #-}
 {-# LANGUAGE OverloadedStrings       #-}
 {-# LANGUAGE ScopedTypeVariables     #-}
 
 module Modbus
-    ( ModbusClient
-    , runClient
-    , readInputRegisters
-    , readHoldingRegisters
-    , writeSingleRegister
-    , writeMultipleRegisters
-    , readMBRegister
-    , writeMBRegister
-    , updateMBRegister
+    ( ModbusClient (..)
 
     , Config
     , Address (..)
@@ -24,13 +14,15 @@ module Modbus
 
     , MBRegister (..)
 
-    , Worker (..)
+    , TCPWorker (..)
+    , RTUWorker (..)
     , tcpDirectWorker
     , tcpBatchWorker
     , rtuDirectWorker
     , rtuBatchWorker
 
-    , Session (..)
+    , TCPSession (..)
+    , RTUSession (..)
 
     , TransactionInfo (..)
     , UID
@@ -63,7 +55,7 @@ module Modbus
     , getTCPSocket
     , getRTUSerialPort
 
-    ) where
+    ,tcpReadInputRegisters,rtuReadInputRegisters,tcpReadHoldingRegisters,rtuReadHoldingRegisters,tcpWriteSingleRegister,rtuWriteSingleRegister,tcpWriteMultipleRegisters,rtuWriteMultipleRegisters,tcpReadMBRegister,rtuReadMBRegister,tcpWriteMBRegister,rtuWriteMBRegister,tcpUpdateMBRegister,rtuUpdateMBRegister) where
 
 import           Control.Concurrent         (MVar, ThreadId, forkFinally,
                                              newEmptyMVar, newMVar, putMVar,
@@ -77,7 +69,6 @@ import           Data.Aeson                 (FromJSON (..), ToJSON (..),
                                              Value (..))
 import           Data.Binary.Get            (getFloatle, getWord16host, runGet)
 import           Data.Binary.Put            (putFloatle, putWord16host, runPut)
-import           Data.Data                  (Proxy)
 import           Data.IP                    (toHostAddress)
 import           Data.IP.Internal           (IPv4)
 import           Data.Range                 (Range (..), begin, fromSize)
@@ -85,7 +76,6 @@ import           Data.Word                  (Word16, Word8)
 import           Network.Modbus.Protocol    (Address, Config)
 import           Test.QuickCheck            (Arbitrary (..), arbitrary,
                                              elements)
-
 
 import qualified Network.Modbus.Protocol    as MB
 import qualified Network.Modbus.RTU         as RTU
@@ -101,54 +91,18 @@ import qualified System.Timeout             as TM
 ---------------------------------------------------------------------------------------------------------------
 
 class ModbusClient a where
-    runClient :: (MonadIO m, MonadThrow m, Application m, MonadMask m)
-        => Worker m     -- Aworker that will execute the session
+    tcpRunClient :: (MonadIO m, MonadThrow m, Application m, MonadMask m)
+        => TCPWorker m     -- Aworker that will execute the session
         -> MVar a       -- The Client used by all threads
-        -> Session m b  -- Session to be run
+        -> TCPSession m b  -- TCPSession to be run
         -> m b
-    readInputRegisters :: (MonadIO m, MonadThrow m)
-        => ModbusProtocol
-        -> TransactionInfo
-        -> Range Address
-        -> Session m [Word16]
-    readHoldingRegisters :: (MonadIO m, MonadThrow m)
-        => ModbusProtocol
-        -> TransactionInfo
-        -> Range Address
-        -> Session m [Word16]
-    writeSingleRegister :: (MonadIO m, MonadThrow m)
-        => ModbusProtocol
-        -> TransactionInfo
-        -> Address
-        -> Word16
-        -> Session m ()
-    writeMultipleRegisters :: (MonadIO m, MonadThrow m)
-        => ModbusProtocol
-        -> TransactionInfo
-        -> Address
-        -> [Word16]
-        -> Session m ()
-    readMBRegister :: (MonadIO m, MonadThrow m, MBRegister b)
-        => Proxy a
-        -> ModbusProtocol
-        -> TID
-        -> ByteOrder
-        -> b
-        -> Session m b
-    writeMBRegister :: (MonadIO m, MonadThrow m, MBRegister b)
-        => Proxy a
-        -> ModbusProtocol
-        -> TID
-        -> ByteOrder
-        -> b
-        -> Session m ()
-    updateMBRegister :: (MonadIO m, MonadThrow m, MBRegister b)
-        => Proxy a
-        -> ModbusProtocol
-        -> TID
-        -> ByteOrder
-        -> b
-        -> Session m b
+    rtuRunClient :: (MonadIO m, MonadThrow m, Application m, MonadMask m)
+        => RTUWorker m     -- Aworker that will execute the session
+        -> MVar a       -- The Client used by all threads
+        -> RTUSession m b  -- RTUSession to be run
+        -> m b
+
+
 
 ---------------------------------------------------------------------------------------------------------------
 -- ModbusProtocol
@@ -179,90 +133,177 @@ newtype Client = Client Config
 
 instance ModbusClient Client where
 
-    runClient worker configMVar session =
+    tcpRunClient worker configMVar session =
         bracket getClient releaseClient
             $ \(Client config) ->
-                    case worker of
-                            TCPWorker tcpworker -> do
-                                let TCPSession session' = session
-                                TCP.runSession tcpworker config session'
-                            RTUWorker rtuworker -> do
-                                let RTUSession session' = session
-                                RTU.runSession rtuworker config session'
+                    let TCPSession session' = session
+                    in TCP.runSession (unTCPWorker worker) config session'
       where
         getClient = liftIO $ takeMVar configMVar
         releaseClient = liftIO . putMVar configMVar
 
-    readInputRegisters ModBusTCP tpu range = TCPSession (TCP.readInputRegisters (getTPU tpu) range)
-    readInputRegisters ModBusRTU tpu range = RTUSession (RTU.readInputRegisters (RTU.UnitId $ getUID tpu) range)
-
-    readHoldingRegisters ModBusTCP tpu range = TCPSession (TCP.readHoldingRegisters (getTPU tpu) range)
-    readHoldingRegisters ModBusRTU tpu range = RTUSession (RTU.readHoldingRegisters (RTU.UnitId $ getUID tpu) range)
-
-    writeSingleRegister ModBusTCP tpu address value = TCPSession (TCP.writeSingleRegister (getTPU tpu) address value)
-    writeSingleRegister ModBusRTU tpu address value = RTUSession (RTU.writeSingleRegister (RTU.UnitId $ getUID tpu) address value)
-
-    writeMultipleRegisters ModBusTCP tpu address values = TCPSession (TCP.writeMultipleRegisters (getTPU tpu) address values)
-    writeMultipleRegisters ModBusRTU tpu address values = RTUSession (RTU.writeMultipleRegisters (RTU.UnitId $ getUID tpu) address values)
-
-    readMBRegister _ protocol tid bo reg =
-        case registerType reg of
-            InputRegister -> do
-                let rlt = readInput
-                registerFromWord16 bo reg <$> rlt
-            HoldingRegister -> do
-                let rlt = readHolding
-                registerFromWord16 bo reg <$> rlt
+    rtuRunClient worker configMVar session =
+        bracket getClient releaseClient
+            $ \(Client config) ->
+                    let RTUSession session' = session
+                    in RTU.runSession (unRTUWorker worker) config session'
       where
-        readInput = case protocol of
-            ModBusTCP -> TCPSession (TCP.readInputRegisters tpu range)
-            ModBusRTU -> RTUSession (RTU.readInputRegisters (RTU.UnitId $ registerUID reg) range)
-        readHolding = case protocol of
-            ModBusTCP -> TCPSession (TCP.readHoldingRegisters tpu range)
-            ModBusRTU -> RTUSession (RTU.readHoldingRegisters (RTU.UnitId $ registerUID reg) range)
-        tpu = getRegisterTPU (registerUID reg) tid
-        range = registerAddress reg
+        getClient = liftIO $ takeMVar configMVar
+        releaseClient = liftIO . putMVar configMVar
+
+tcpReadInputRegisters :: (MonadIO m, MonadThrow m)
+    => TransactionInfo
+    -> Range Address
+    -> TCPSession m [Word16]
+tcpReadInputRegisters tpu range = TCPSession (TCP.readInputRegisters (getTPU tpu) range)
+
+rtuReadInputRegisters :: (MonadIO m, MonadThrow m)
+    => TransactionInfo
+    -> Range Address
+    -> RTUSession m [Word16]
+rtuReadInputRegisters tpu range = RTUSession (RTU.readInputRegisters (RTU.UnitId $ getUID tpu) range)
 
 
-    writeMBRegister _ protocol tid bo reg =
-        case protocol of
-            ModBusTCP ->
-                TCPSession $ case registerType reg of
-                    InputRegister -> throw $ MB.OtherException "Non writable Register Type"
-                    HoldingRegister -> TCP.writeMultipleRegisters tpu address values
-            ModBusRTU ->
-                RTUSession $ case registerType reg of
-                    InputRegister -> throw $ MB.OtherException "Non writable Register Type"
-                    HoldingRegister -> RTU.writeMultipleRegisters (RTU.UnitId $ registerUID reg) address values
-      where
-        values = registerToWord16 bo reg
-        tpu = getRegisterTPU (registerUID reg) tid
-        address = begin $ registerAddress reg
+tcpReadHoldingRegisters :: (MonadIO m, MonadThrow m)
+    => TransactionInfo
+    -> Range Address
+    -> TCPSession m [Word16]
+tcpReadHoldingRegisters tpu range = TCPSession (TCP.readHoldingRegisters (getTPU tpu) range)
 
-    updateMBRegister _ protocol tid bo reg =
-        case protocol of
-            ModBusTCP ->
-                TCPSession $ case registerType reg of
-                    InputRegister -> throw $ MB.OtherException "Non writable Register Type"
-                    HoldingRegister -> do
-                        TCP.writeMultipleRegisters tpu address values
-                        registerFromWord16 bo reg <$> readTCP
+rtuReadHoldingRegisters :: (MonadIO m, MonadThrow m)
+    => TransactionInfo
+    -> Range Address
+    -> RTUSession m [Word16]
+rtuReadHoldingRegisters tpu range = RTUSession (RTU.readHoldingRegisters (RTU.UnitId $ getUID tpu) range)
 
-            ModBusRTU ->
-                RTUSession $ case registerType reg of
-                    InputRegister -> throw $ MB.OtherException "Non writable Register Type"
-                    HoldingRegister -> do
-                        RTU.writeMultipleRegisters uid address values
-                        registerFromWord16 bo reg <$> readRTU
+tcpWriteSingleRegister :: (MonadIO m, MonadThrow m)
+    => TransactionInfo
+    -> Address
+    -> Word16
+    -> TCPSession m ()
+tcpWriteSingleRegister tpu address value = TCPSession (TCP.writeSingleRegister (getTPU tpu) address value)
 
-      where
-        values = registerToWord16 bo reg
-        tpu = getRegisterTPU (registerUID reg) tid
-        uid = RTU.UnitId $ registerUID reg
-        address = begin $ registerAddress reg
-        readTCP = TCP.readHoldingRegisters tpu $ fromSize address range
-        readRTU = RTU.readHoldingRegisters uid $ fromSize address range
-        range = MB.Address $ fromIntegral $ length values
+rtuWriteSingleRegister :: (MonadIO m, MonadThrow m)
+    => TransactionInfo
+    -> Address
+    -> Word16
+    -> RTUSession m ()
+
+rtuWriteSingleRegister tpu address value = RTUSession (RTU.writeSingleRegister (RTU.UnitId $ getUID tpu) address value)
+
+tcpWriteMultipleRegisters :: (MonadIO m, MonadThrow m)
+    => TransactionInfo
+    -> Address
+    -> [Word16]
+    -> TCPSession m ()
+tcpWriteMultipleRegisters tpu address values = TCPSession (TCP.writeMultipleRegisters (getTPU tpu) address values)
+
+rtuWriteMultipleRegisters :: (MonadIO m, MonadThrow m)
+    => TransactionInfo
+    -> Address
+    -> [Word16]
+    -> RTUSession m ()
+rtuWriteMultipleRegisters tpu address values = RTUSession (RTU.writeMultipleRegisters (RTU.UnitId $ getUID tpu) address values)
+
+tcpReadMBRegister :: (MonadIO m, MonadThrow m, MBRegister b)
+    => TID
+    -> ByteOrder
+    -> b
+    -> TCPSession m b
+tcpReadMBRegister tid bo reg =
+    case registerType reg of
+        InputRegister ->
+            let rlt = readInput
+            in registerFromWord16 bo reg <$> rlt
+        HoldingRegister ->
+            let rlt = readHolding
+            in registerFromWord16 bo reg <$> rlt
+    where
+    readInput = TCPSession (TCP.readInputRegisters tpu range)
+    readHolding = TCPSession (TCP.readHoldingRegisters tpu range)
+    tpu = getRegisterTPU (registerUID reg) tid
+    range = registerAddress reg
+
+rtuReadMBRegister :: (MonadIO m, MonadThrow m, MBRegister b)
+    => TID
+    -> ByteOrder
+    -> b
+    -> RTUSession m b
+rtuReadMBRegister _ bo reg =
+    case registerType reg of
+        InputRegister ->
+            let rlt = readInput
+            in registerFromWord16 bo reg <$> rlt
+        HoldingRegister ->
+            let rlt = readHolding
+            in registerFromWord16 bo reg <$> rlt
+    where
+    readInput = RTUSession (RTU.readInputRegisters (RTU.UnitId $ registerUID reg) range)
+    readHolding = RTUSession (RTU.readHoldingRegisters (RTU.UnitId $ registerUID reg) range)
+    range = registerAddress reg
+
+tcpWriteMBRegister :: (MonadIO m, MonadThrow m, MBRegister b)
+    => TID
+    -> ByteOrder
+    -> b
+    -> TCPSession m ()
+tcpWriteMBRegister tid bo reg =
+            TCPSession $ case registerType reg of
+                InputRegister -> throw $ MB.OtherException "Non writable Register Type"
+                HoldingRegister -> TCP.writeMultipleRegisters tpu address values
+    where
+    values = registerToWord16 bo reg
+    tpu = getRegisterTPU (registerUID reg) tid
+    address = begin $ registerAddress reg
+
+rtuWriteMBRegister :: (MonadIO m, MonadThrow m, MBRegister b)
+    => TID
+    -> ByteOrder
+    -> b
+    -> RTUSession m ()
+rtuWriteMBRegister _ bo reg =
+            RTUSession $ case registerType reg of
+                InputRegister -> throw $ MB.OtherException "Non writable Register Type"
+                HoldingRegister -> RTU.writeMultipleRegisters (RTU.UnitId $ registerUID reg) address values
+    where
+    values = registerToWord16 bo reg
+    address = begin $ registerAddress reg
+
+tcpUpdateMBRegister :: (MonadIO m, MonadThrow m, MBRegister b)
+    => TID
+    -> ByteOrder
+    -> b
+    -> TCPSession m b
+tcpUpdateMBRegister tid bo reg =
+            TCPSession $ case registerType reg of
+                InputRegister -> throw $ MB.OtherException "Non writable Register Type"
+                HoldingRegister ->
+                    TCP.writeMultipleRegisters tpu address values *>
+                    (registerFromWord16 bo reg <$> readTCP)
+    where
+    values = registerToWord16 bo reg
+    tpu = getRegisterTPU (registerUID reg) tid
+    address = begin $ registerAddress reg
+    readTCP = TCP.readHoldingRegisters tpu $ fromSize address range
+    range = MB.Address $ fromIntegral $ length values
+
+rtuUpdateMBRegister :: (MonadIO m, MonadThrow m, MBRegister b)
+    => TID
+    -> ByteOrder
+    -> b
+    -> RTUSession m b
+rtuUpdateMBRegister _ bo reg =
+            RTUSession $ case registerType reg of
+                InputRegister -> throw $ MB.OtherException "Non writable Register Type"
+                HoldingRegister ->
+                    RTU.writeMultipleRegisters uid address values *>
+                    (registerFromWord16 bo reg <$> readRTU)
+    where
+    values = registerToWord16 bo reg
+    uid = RTU.UnitId $ registerUID reg
+    address = begin $ registerAddress reg
+    readRTU = RTU.readHoldingRegisters uid $ fromSize address range
+    range = MB.Address $ fromIntegral $ length values
 
 ---------------------------------------------------------------------------------------------------------------
 -- Application
@@ -292,20 +333,20 @@ class MBRegister a where
 ---------------------------------------------------------------------------------------------------------------
 
 -- Workers execute Sessions
-data Worker m = RTUWorker (RTU.Worker m)
-    | TCPWorker (TCP.Worker m)
+newtype RTUWorker m = RTUWorker { unRTUWorker :: RTU.Worker m }
+newtype TCPWorker m = TCPWorker { unTCPWorker :: TCP.Worker m }
 
-tcpDirectWorker :: Worker IO
+tcpDirectWorker :: TCPWorker IO
 tcpDirectWorker = TCPWorker TCP.directWorker
 
-tcpBatchWorker :: Worker IO
+tcpBatchWorker :: TCPWorker IO
 tcpBatchWorker = TCPWorker $ TCP.batchWorker TCP.defaultBatchConfig
 
-rtuDirectWorker :: Worker IO
+rtuDirectWorker :: RTUWorker IO
 rtuDirectWorker = RTUWorker RTU.directWorker
 
-rtuBatchWorker :: Worker IO
-rtuBatchWorker = TCPWorker $ TCP.batchWorker TCP.defaultBatchConfig
+rtuBatchWorker :: RTUWorker IO
+rtuBatchWorker = RTUWorker $ RTU.batchWorker RTU.defaultBatchConfig
 
 ---------------------------------------------------------------------------------------------------------------
 -- Session
@@ -313,9 +354,11 @@ rtuBatchWorker = TCPWorker $ TCP.batchWorker TCP.defaultBatchConfig
 
 -- AN RTU/TCP Session
 -- Sessions are executed by workers and can be batched
-data Session m a = RTUSession (RTU.Session m a)
-    | TCPSession (TCP.Session m a)
-    deriving (Functor)
+newtype TCPSession m a = TCPSession { unTCPSession :: TCP.Session m a }
+    deriving (Functor, Applicative)
+
+newtype RTUSession m a = RTUSession { unRTUSession :: RTU.Session m a }
+    deriving (Functor, Applicative)
 
 ---------------------------------------------------------------------------------------------------------------
 -- TransactionInfo
@@ -489,15 +532,14 @@ data HeartBeat = HeartBeat
 
 -- Spawns a heartbeat signal thread
 heartBeatSignal :: (MonadIO m, Application m, ModbusClient a, MonadThrow m, MonadMask m)
-    => ModbusProtocol
-    -> Int              -- HeartBeat signal period in ms
-    -> Worker m         -- Worker to execute the session
+    => Int              -- HeartBeat signal period in ms
+    -> Either (TCPWorker m) (RTUWorker m)         -- Worker to execute the session
     -> MVar a           -- Client configuration
     -> Word8
     -> TVar TID
     -> Address          -- HeartBeat signal register address
     -> m HeartBeat
-heartBeatSignal protocol interval worker clientMVar uid tid address = do
+heartBeatSignal interval worker clientMVar uid tid address = do
     status <- liftIO newEmptyMVar
     threadid <- liftIO $ forkFinally (execApp $ thread address 0) (finally status)
     return $ HeartBeat address interval threadid status
@@ -506,10 +548,13 @@ heartBeatSignal protocol interval worker clientMVar uid tid address = do
         liftIO $ threadDelay interval
         tid' <- liftIO $ getNewTID tid
         let tpu' = setTPU uid tid'
-        let session = case protocol of
-                ModBusTCP -> TCPSession (TCP.writeSingleRegister (getTPU tpu') address acc)
-                ModBusRTU -> RTUSession (RTU.writeSingleRegister (RTU.UnitId uid) address acc)
-        runClient worker clientMVar session
+        case worker of
+            Left tcpworker ->
+                let session = TCPSession (TCP.writeSingleRegister (getTPU tpu') address acc)
+                in tcpRunClient tcpworker clientMVar session
+            Right rtuworker ->
+                let session = RTUSession (RTU.writeSingleRegister (RTU.UnitId uid) address acc)
+                in rtuRunClient rtuworker clientMVar session
         thread address' (acc + 1)
     finally status terminationStatus =
         case terminationStatus of

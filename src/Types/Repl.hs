@@ -1,6 +1,3 @@
-{-# LANGUAGE FlexibleInstances     #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE RankNTypes            #-}
 module Types.Repl
     ( Repl
     , ReplState (..)
@@ -23,18 +20,20 @@ import           Types.ModData                    (ModData (..))
 import           Control.Concurrent.STM           (TVar)
 import           Data.Range                       (Range)
 import           Data.Tagged                      (Tagged)
-import           Modbus                           (Address, ByteOrder, Client,
+import           Modbus                           (RTUWorker, Address, ByteOrder, Client,
                                                    HeartBeat (..),
-                                                   ModbusProtocol, Session, TID,
-                                                   TransactionInfo, Worker)
+                                                   ModbusProtocol, TCPSession, TID,
+                                                   TransactionInfo, TCPWorker)
 
 type Repl = HaskelineT (StateT ReplState IO)
 
 data ReplState = ReplState
     { replClient        :: !(MVar Client)
     , replProtocol      :: !ModbusProtocol
-    , replDirectWorker  :: !(Worker IO)
-    , replBatchWorker   :: !(Worker IO)
+    , replTCPDirectWorker  :: !(TCPWorker IO)
+    , replTCPBatchWorker   :: !(TCPWorker IO)
+    , replRTUDirectWorker  :: !(RTUWorker IO)
+    , replRTUBatchWorker   :: !(RTUWorker IO)
     , replByteOrder     :: !ByteOrder
     , replModData       :: ![ModData]
     , replUId           :: !Word8
@@ -64,4 +63,4 @@ data Command = ReadInputRegistersWord
     | CommandNotFound
     deriving (Eq, Show)
 
-type ReadRegFun a = TransactionInfo -> Range Address -> Tagged a (Session IO [Word16])
+type ReadRegFun a = TransactionInfo -> Range Address -> Tagged a (TCPSession IO [Word16])

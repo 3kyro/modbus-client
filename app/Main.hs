@@ -2,7 +2,6 @@ module Main where
 
 import           Control.Concurrent         (newMVar)
 import           Control.Exception.Safe     (bracket)
-import           Data.Data                  (Proxy (..))
 import           Data.IP                    (IPv4)
 import           Data.Word                  (Word8)
 import           Network.Socket.KeepAlive
@@ -19,8 +18,9 @@ import           OptParser                  (AppMode (..), Opt (..), runOpts)
 import           PrettyPrint                (ppError)
 import           Repl                       (runRepl)
 import           Server                     (runServer)
-import           Types                      (ModData, ReplState (ReplState),
-                                             serializeModData, AppError (..))
+import           Types                      (AppError (..), ModData,
+                                             ReplState (ReplState),
+                                             serializeModData)
 
 
 main :: IO ()
@@ -53,39 +53,35 @@ runAppTemplate prot input output ip portNum serial order tm = do
         Left err -> ppError err
         Right md' -> do
             rsp <- case prot of
-                ModBusTCP -> runTCPTemplateApp (getAddr ip portNum) prot order tm md'
-                ModBusRTU -> runRTUTemplateApp serial prot order tm md'
+                ModBusTCP -> runTCPTemplateApp (getAddr ip portNum) order tm md'
+                ModBusRTU -> runRTUTemplateApp serial order tm md'
             T.writeFile output (serializeModData rsp)
 
 runTCPTemplateApp :: S.SockAddr         -- Socket Address
-                  -> ModbusProtocol     -- Protocol
                   -> ByteOrder          -- Byte Order
                   -> Int                -- Timeout
                   -> [ModData]
                   -> IO [ModData]
-runTCPTemplateApp addr prot order tm mds =
+runTCPTemplateApp addr order tm mds =
     withSocket addr $ \s -> do
             client <- newMVar $ Client (getTCPConfig s tm)
             inittid <- initTID
             tid <- getNewTID inittid
-            let proxy = Proxy :: Proxy Client
-            let sessions = map (readMBRegister proxy prot tid order) mds
-            mapM (runClient (TCPWorker $ TCP.batchWorker TCP.defaultBatchConfig) client) sessions
+            let sessions = traverse (tcpReadMBRegister tid order) mds
+            tcpRunClient tcpBatchWorker client sessions
 
 runRTUTemplateApp :: String      -- Socket Address
-                  -> ModbusProtocol     -- Protocol
                   -> ByteOrder          -- Byte Order
                   -> Int                -- Timeout
                   -> [ModData]
                   -> IO [ModData]
-runRTUTemplateApp serial prot order tm mds =
+runRTUTemplateApp serial order tm mds =
     withSerialPort serial $ \s -> do
             client <- newMVar $ Client (getRTUConfig s tm)
             inittid <- initTID
             tid <- getNewTID inittid
-            let proxy = Proxy :: Proxy Client
-            let sessions = map (readMBRegister proxy prot tid order) mds
-            mapM (runClient (RTUWorker $ RTU.batchWorker RTU.defaultBatchConfig) client) sessions
+            let sessions = traverse (rtuReadMBRegister tid order) mds
+            rtuRunClient rtuBatchWorker client sessions
 
 
 -- Run the application's REPL
@@ -111,6 +107,8 @@ runTCPReplApp addr tm order mdata uid ka =
             ModBusTCP
             (TCPWorker TCP.directWorker)
             (TCPWorker $ TCP.batchWorker TCP.defaultBatchConfig)
+            (RTUWorker RTU.directWorker)
+            (RTUWorker $ RTU.batchWorker RTU.defaultBatchConfig)
             order
             mdata
             uid
@@ -138,6 +136,8 @@ runRTUReplApp serial tm order mdata uid =
         runRepl ( ReplState
             client
             ModBusRTU
+            (TCPWorker TCP.directWorker)
+            (TCPWorker $ TCP.batchWorker TCP.defaultBatchConfig)
             (RTUWorker RTU.directWorker)
             (RTUWorker $ RTU.batchWorker RTU.defaultBatchConfig)
             order
