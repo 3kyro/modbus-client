@@ -1,7 +1,7 @@
+{-# LANGUAGE DeriveFunctor              #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE DeriveFunctor           #-}
-{-# LANGUAGE OverloadedStrings       #-}
-{-# LANGUAGE ScopedTypeVariables     #-}
+{-# LANGUAGE OverloadedStrings          #-}
+{-# LANGUAGE ScopedTypeVariables        #-}
 
 module Modbus
     ( ModbusClient (..)
@@ -55,7 +55,29 @@ module Modbus
     , getTCPSocket
     , getRTUSerialPort
 
-    ,tcpReadInputRegisters,rtuReadInputRegisters,tcpReadHoldingRegisters,rtuReadHoldingRegisters,tcpWriteSingleRegister,rtuWriteSingleRegister,tcpWriteMultipleRegisters,rtuWriteMultipleRegisters,tcpReadMBRegister,rtuReadMBRegister,tcpWriteMBRegister,rtuWriteMBRegister,tcpUpdateMBRegister,rtuUpdateMBRegister) where
+
+    ,tcpReadInputRegisters
+    ,rtuReadInputRegisters
+    ,tcpReadHoldingRegisters
+    ,rtuReadHoldingRegisters
+    ,tcpWriteSingleRegister
+    ,rtuWriteSingleRegister
+    ,tcpWriteMultipleRegisters
+    ,rtuWriteMultipleRegisters
+    ,tcpReadMBRegister
+    ,rtuReadMBRegister
+    ,tcpWriteMBRegister
+    ,rtuWriteMBRegister
+    ,tcpUpdateMBRegister
+    ,rtuUpdateMBRegister
+
+    , SerialSettings (..)
+    , buildSerialSettings
+    , BaudRate (..)
+    , StopBits (..)
+    , Parity (..)
+
+    ) where
 
 import           Control.Concurrent         (MVar, ThreadId, forkFinally,
                                              newEmptyMVar, newMVar, putMVar,
@@ -66,7 +88,7 @@ import           Control.Exception.Safe     (MonadMask, MonadThrow,
                                              SomeException, bracket, throw, try)
 import           Control.Monad.Trans        (MonadIO, liftIO)
 import           Data.Aeson                 (FromJSON (..), ToJSON (..),
-                                             Value (..))
+                                             Value (..), object, (.:), (.=))
 import           Data.Binary.Get            (getFloatle, getWord16host, runGet)
 import           Data.Binary.Put            (putFloatle, putWord16host, runPut)
 import           Data.IP                    (toHostAddress)
@@ -92,12 +114,12 @@ import qualified System.Timeout             as TM
 
 class ModbusClient a where
     tcpRunClient :: (MonadIO m, MonadThrow m, Application m, MonadMask m)
-        => TCPWorker m     -- Aworker that will execute the session
+        => TCPWorker m     -- A worker that will execute the session
         -> MVar a       -- The Client used by all threads
         -> TCPSession m b  -- TCPSession to be run
         -> m b
     rtuRunClient :: (MonadIO m, MonadThrow m, Application m, MonadMask m)
-        => RTUWorker m     -- Aworker that will execute the session
+        => RTUWorker m     -- A worker that will execute the session
         -> MVar a       -- The Client used by all threads
         -> RTUSession m b  -- RTUSession to be run
         -> m b
@@ -213,11 +235,9 @@ tcpReadMBRegister :: (MonadIO m, MonadThrow m, MBRegister b)
 tcpReadMBRegister tid bo reg =
     case registerType reg of
         InputRegister ->
-            let rlt = readInput
-            in registerFromWord16 bo reg <$> rlt
+            registerFromWord16 bo reg <$> readInput
         HoldingRegister ->
-            let rlt = readHolding
-            in registerFromWord16 bo reg <$> rlt
+            registerFromWord16 bo reg <$> readHolding
     where
     readInput = TCPSession (TCP.readInputRegisters tpu range)
     readHolding = TCPSession (TCP.readHoldingRegisters tpu range)
@@ -225,18 +245,15 @@ tcpReadMBRegister tid bo reg =
     range = registerAddress reg
 
 rtuReadMBRegister :: (MonadIO m, MonadThrow m, MBRegister b)
-    => TID
-    -> ByteOrder
+    => ByteOrder
     -> b
     -> RTUSession m b
-rtuReadMBRegister _ bo reg =
+rtuReadMBRegister bo reg =
     case registerType reg of
         InputRegister ->
-            let rlt = readInput
-            in registerFromWord16 bo reg <$> rlt
+            registerFromWord16 bo reg <$> readInput
         HoldingRegister ->
-            let rlt = readHolding
-            in registerFromWord16 bo reg <$> rlt
+            registerFromWord16 bo reg <$> readHolding
     where
     readInput = RTUSession (RTU.readInputRegisters (RTU.UnitId $ registerUID reg) range)
     readHolding = RTUSession (RTU.readHoldingRegisters (RTU.UnitId $ registerUID reg) range)
@@ -257,11 +274,10 @@ tcpWriteMBRegister tid bo reg =
     address = begin $ registerAddress reg
 
 rtuWriteMBRegister :: (MonadIO m, MonadThrow m, MBRegister b)
-    => TID
-    -> ByteOrder
+    => ByteOrder
     -> b
     -> RTUSession m ()
-rtuWriteMBRegister _ bo reg =
+rtuWriteMBRegister bo reg =
             RTUSession $ case registerType reg of
                 InputRegister -> throw $ MB.OtherException "Non writable Register Type"
                 HoldingRegister -> RTU.writeMultipleRegisters (RTU.UnitId $ registerUID reg) address values
@@ -288,11 +304,10 @@ tcpUpdateMBRegister tid bo reg =
     range = MB.Address $ fromIntegral $ length values
 
 rtuUpdateMBRegister :: (MonadIO m, MonadThrow m, MBRegister b)
-    => TID
-    -> ByteOrder
+    => ByteOrder
     -> b
     -> RTUSession m b
-rtuUpdateMBRegister _ bo reg =
+rtuUpdateMBRegister bo reg =
             RTUSession $ case registerType reg of
                 InputRegister -> throw $ MB.OtherException "Non writable Register Type"
                 HoldingRegister ->
@@ -578,9 +593,10 @@ getTCPSocket ip port tm = do
         Right m -> return $ s <$ m
 
 -- Connect to the server using a new socket and checking for a timeout
-getRTUSerialPort :: String -> Int -> IO (Maybe SP.SerialPort)
-getRTUSerialPort serial tm = do
-    let s = SP.openSerial serial SP.defaultSerialSettings { SP.commSpeed = SP.CS9600 }
+getRTUSerialPort :: String -> SerialSettings -> IO (Maybe SP.SerialPort)
+getRTUSerialPort serial settings = do
+    let s = SP.openSerial serial (unSR settings)
+    let tm = SP.timeout (unSR settings) * 100000 -- from tenths of second to microsecond
     ( rlt :: Either SomeException (Maybe SP.SerialPort) ) <- try $ TM.timeout tm s
     case rlt of
         Left _  -> return Nothing
@@ -602,7 +618,6 @@ getTCPConfig s timeout = MB.Config
     }
 
 getRTUConfig :: SP.SerialPort -> Int -> Config
-
 getRTUConfig s timeout = MB.Config
     { MB.cfgWrite = SP.send s
     , MB.cfgRead = SP.recv s 4096
@@ -615,3 +630,145 @@ getAddr :: IPv4 -> Int -> S.SockAddr
 getAddr ip portNum = S.SockAddrInet (fromIntegral portNum) (toHostAddress ip)
 
 
+---------------------------------------------------------------------------------------------------------------
+-- SerialSettings
+---------------------------------------------------------------------------------------------------------------
+
+newtype SerialSettings = SR { unSR :: SP.SerialPortSettings }
+
+buildSerialSettings :: BaudRate -> StopBits -> Parity -> Int -> SerialSettings
+buildSerialSettings baudrate stopbits parity tm =
+    SR $ SP.SerialPortSettings
+            (unBR baudrate)
+            8
+            (unSB stopbits)
+            (unParity parity)
+            SP.NoFlowControl
+            tm
+
+instance FromJSON SerialSettings where
+    parseJSON (Object o) = do
+        baudrate <- o .: "baudrate"
+        stopbits <- o .: "stopbits"
+        parity <- o .: "parity"
+        timeout <- o .: "timeout"
+        pure $
+            SR $ SP.SerialPortSettings
+                    (unBR baudrate)
+                    8
+                    (unSB stopbits)
+                    (unParity parity)
+                    SP.NoFlowControl
+                    (timeout `div` 10) -- from seconds to tenths of second
+
+instance ToJSON SerialSettings where
+    toJSON sr =
+      let
+          sps = unSR sr
+      in object
+        [ "baudrate" .= BR (SP.commSpeed sps)
+        , "stopbits" .= SB (SP.stopb sps)
+        , "parity" .= Parity (SP.parity sps)
+        , "timeout" .=  (10 * SP.timeout sps) -- from tenths of second to seconds
+        ]
+
+instance Arbitrary SerialSettings where
+    arbitrary = SR <$>
+        ( SP.SerialPortSettings
+            <$> (unBR <$> arbitrary)
+            <*> arbitrary
+            <*> (unSB <$> arbitrary)
+            <*> (unParity <$> arbitrary)
+            <*> pure SP.NoFlowControl
+            <*> arbitrary
+        )
+
+newtype BaudRate = BR { unBR :: SP.CommSpeed }
+
+instance FromJSON BaudRate where
+    parseJSON (String s) =
+        case s of
+            "BR110"    -> pure $ BR SP.CS110
+            "BR300"    -> pure $ BR SP.CS300
+            "BR600"    -> pure $ BR SP.CS600
+            "BR1200"   -> pure $ BR SP.CS1200
+            "BR2400"   -> pure $ BR SP.CS2400
+            "BR4800"   -> pure $ BR SP.CS4800
+            "BR9600"   -> pure $ BR SP.CS9600
+            "BR19200"  -> pure $ BR SP.CS19200
+            "BR38400"  -> pure $ BR SP.CS38400
+            "BR57600"  -> pure $ BR SP.CS57600
+            "BR115200" -> pure $ BR SP.CS115200
+            _          -> fail "Not a BaudRate"
+    parseJSON _ = fail "Not a BaudRate"
+
+instance ToJSON BaudRate where
+    toJSON br =
+        case unBR br of
+            SP.CS110    -> String "BR110"
+            SP.CS300    -> String "BR300"
+            SP.CS600    -> String "BR600"
+            SP.CS1200   -> String "BR1200"
+            SP.CS2400   -> String "BR2400"
+            SP.CS4800   -> String "BR4800"
+            SP.CS9600   -> String "BR9600"
+            SP.CS19200  -> String "BR19200"
+            SP.CS38400  -> String "BR38400"
+            SP.CS57600  -> String "BR57600"
+            SP.CS115200 -> String "BR115200"
+
+instance Arbitrary BaudRate where
+    arbitrary =
+        elements
+            [ BR SP.CS110
+            , BR SP.CS300
+            , BR SP.CS600
+            , BR SP.CS1200
+            , BR SP.CS2400
+            , BR SP.CS4800
+            , BR SP.CS9600
+            , BR SP.CS19200
+            , BR SP.CS38400
+            , BR SP.CS57600
+            , BR SP.CS115200
+            ]
+
+newtype StopBits = SB { unSB :: SP.StopBits }
+
+instance FromJSON StopBits where
+    parseJSON (String s) =
+        case s of
+            "one" -> pure $ SB SP.One
+            "two" -> pure $ SB SP.Two
+            _     -> fail "Not a StopBit"
+    parseJSON _ = fail "Not a StopBit"
+
+instance ToJSON StopBits where
+    toJSON sb =
+        case unSB sb of
+            SP.One -> String "one"
+            SP.Two -> String "two"
+
+instance Arbitrary StopBits where
+    arbitrary =
+        elements [ SB SP.One, SB SP.Two ]
+
+newtype Parity = Parity { unParity :: SP.Parity}
+
+instance FromJSON Parity where
+    parseJSON (String s) =
+        case s of
+            "odd"  -> pure $ Parity SP.Odd
+            "even" -> pure $ Parity SP.Even
+            _      -> fail "Not a Parity"
+    parseJSON _ = fail "Not a Parity"
+
+instance ToJSON Parity where
+    toJSON parity =
+        case unParity parity of
+            SP.Odd  -> "odd"
+            SP.Even -> "even"
+
+instance Arbitrary Parity where
+    arbitrary =
+        elements [ Parity SP.Odd, Parity SP.Even]

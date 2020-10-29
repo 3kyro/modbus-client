@@ -21,6 +21,7 @@ import Element
 import Element.Background as Background
 import Element.Border as Border
 import Element.Events as Events
+import Element.Font as Font
 import Element.Input exposing (Label)
 import Html.Attributes exposing (selected)
 import Palette
@@ -80,7 +81,7 @@ renderExpandedDropdown attributes drop =
     el
         [ below <|
             column
-                (attributes ++ [ padding 0, height <| px 38, width fill, spacing 10 ])
+                (attributes ++ [ padding 0, height <| px 38, width fill, Font.center])
             <|
                 renderRemainingOptions attributes drop
         , width fill
@@ -141,3 +142,33 @@ setDropdown drop value =
         | selected = value
         , expanded = not drop.expanded
     }
+
+
+setDropdownSelected : Dropdown value msg -> value -> Dropdown value msg
+setDropdownSelected drop value =
+    let
+        mopt =
+            pickFirst drop.options value
+    in
+    case mopt of
+        Just opt ->
+            { drop
+                | selected = opt
+            }
+
+        Nothing ->
+            drop
+
+
+pickFirst : List (Option value msg) -> value -> Maybe (Option value msg)
+pickFirst opts value =
+    case List.head opts of
+        Just opt ->
+            if opt.value == value then
+                Just opt
+
+            else
+                pickFirst (Maybe.withDefault [] <| List.tail opts) value
+
+        Nothing ->
+            Nothing

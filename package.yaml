@@ -45,7 +45,6 @@ dependencies:
 - wai
 - warp
 - stm
-- system-info
 - tagged
 - hspec-golden-aeson  >= 0.7.0.0 && < 0.8
 - bytestring

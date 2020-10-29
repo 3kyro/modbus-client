@@ -92,9 +92,11 @@ import Settings
 import Types
     exposing
         ( ActiveTab(..)
+        , ConnectActiveTab(..)
         , ConnectStatus(..)
         , Model
         , Msg(..)
+        , OS(..)
         , showConnectStatus
         )
 import Types.IpAddress
@@ -342,7 +344,9 @@ connectNavModule model =
         [ spacing 10
         , width fill
         ]
-        [ connectButton model
+        [ connActiveTabButton model TCPTab
+        , connActiveTabButton model RTUTab
+        , connectButton model
         , disconnectButton model
         ]
 
@@ -375,6 +379,17 @@ heartbeatNavModule model =
 settingsNavModule : Model -> Element Msg
 settingsNavModule model =
     none
+
+
+emptySpace : Element Msg
+emptySpace =
+    el
+        [ Background.color background
+        , height <| px 38
+        , width fill
+        , paddingXY 0 0
+        ]
+        none
 
 
 
@@ -436,81 +451,12 @@ renderInfoModule model =
 
 connectIsland : Model -> Element Msg
 connectIsland model =
-    column
-        [ Background.color grey
-        , centerX
-        , centerY
-        , width <| px 500
-        , height <| px 500
-        , spacing 20
-        , paddingXY 10 20
-        ]
-        [ ipaddress model
-        , portNum model
-        , timeout model
-        ]
+    case model.connActiveTab of
+        TCPTab ->
+            tcpConnectIsland model
 
-
-ipaddress : Model -> Element Msg
-ipaddress model =
-    row
-        [ spacing 5
-        , Font.color white
-        ]
-        [ el [ width <| px 100 ] <| text "IP Address"
-        , ipAddressInput Byte0 model.ipAddress
-        , ipAddressInput Byte1 model.ipAddress
-        , ipAddressInput Byte2 model.ipAddress
-        , ipAddressInput Byte3 model.ipAddress
-        ]
-
-
-ipAddressInput : IpAddressByte -> IpAddress -> Element Msg
-ipAddressInput byte ip =
-    Input.text
-        [ width <| px 70
-        , Background.color lightGrey
-        , htmlAttribute <| Html.Attributes.maxlength 3
-        , Font.color white
-        , focused [ Border.glow white 1 ]
-        ]
-        { onChange = ChangeIpAddress byte
-        , text = showIpAddressByte byte ip
-        , placeholder = Nothing
-        , label = Input.labelHidden "Byte"
-        }
-
-
-portNum : Model -> Element Msg
-portNum model =
-    Input.text
-        [ width <| px 70
-        , Background.color lightGrey
-        , htmlAttribute <| Html.Attributes.maxlength 5
-        , Font.color white
-        , focused [ Border.glow white 1 ]
-        ]
-        { onChange = ChangePort
-        , text = Maybe.withDefault "" <| Maybe.map String.fromInt model.socketPort
-        , placeholder = Nothing
-        , label = Input.labelLeft [ Font.color white ] <| el [ width <| px 100 ] (text "Port")
-        }
-
-
-timeout : Model -> Element Msg
-timeout model =
-    Input.text
-        [ width <| px 70
-        , Background.color lightGrey
-        , htmlAttribute <| Html.Attributes.maxlength 5
-        , Font.color white
-        , focused [ Border.glow white 1 ]
-        ]
-        { onChange = ChangeTimeout
-        , text = Maybe.withDefault "" <| Maybe.map String.fromInt model.timeout
-        , placeholder = Nothing
-        , label = Input.labelLeft [ Font.color white ] <| el [ width <| px 100 ] (text "Timeout (s)")
-        }
+        RTUTab ->
+            rtuConnectIsland model
 
 
 connectButton : Model -> Element Msg
@@ -585,6 +531,316 @@ disconnectButtonBgd model =
             grey
 
 
+connActiveTabButton : Model -> ConnectActiveTab -> Element Msg
+connActiveTabButton model connTab =
+    Input.button
+        [ Background.color <| connActiveTabClr model connTab
+        , mouseOver [ Font.color white ]
+        , height <| px 38
+        , width fill
+        , paddingXY 0 0
+        , Font.color greyWhite
+        , Font.center
+        , focused []
+        ]
+        { onPress =
+            if model.connActiveTab == connTab then
+                Nothing
+
+            else
+                Just <| ChangeActiveConnectTab connTab
+        , label = text <| connActiveTabText connTab
+        }
+
+
+connActiveTabText : ConnectActiveTab -> String
+connActiveTabText connTab =
+    case connTab of
+        TCPTab ->
+            "Modbus TCP"
+
+        RTUTab ->
+            "Modbus RTU"
+
+
+connActiveTabClr : Model -> ConnectActiveTab -> Color
+connActiveTabClr model connTab =
+    if model.connActiveTab == connTab then
+        blueSapphire
+
+    else
+        lightGrey
+
+
+
+------------------------------------------------------------------------------------------------------------------
+-- Connect Rows
+------------------------------------------------------------------------------------------------------------------
+-- Row structure for single inputs
+-- [ spacing 5]
+-- [ Main Label , 150 px] [Left label, 50 px] [Input, 70 px] [ Right label, 50 px]
+
+
+mainLabel : String -> Element Msg
+mainLabel str =
+    el
+        [ width <| px 150
+        , Font.color white
+        ]
+    <|
+        text str
+
+
+leftLabel : String -> Element Msg
+leftLabel str =
+    el
+        [ width <| px 50
+        , Font.color white
+        , Font.alignRight
+        ]
+    <|
+        text str
+
+
+connInput :
+    Int -- Input max length
+    ->
+        { onChange : String -> Msg
+        , text : String
+        , placeholder : Maybe (Input.Placeholder Msg)
+        , label : Input.Label Msg
+        }
+    -> Element Msg
+connInput maxLen inputRecord =
+    Input.text
+        [ width <| px 100
+        , Background.color lightGrey
+        , htmlAttribute <| Html.Attributes.maxlength maxLen
+        , Font.color white
+        , focused [ Border.glow white 1 ]
+        ]
+        inputRecord
+
+
+rigthLabel : String -> Element Msg
+rigthLabel str =
+    el
+        [ width <| px 50
+        , Font.color white
+        ]
+    <|
+        text str
+
+
+
+------------------------------------------------------------------------------------------------------------------
+-- TCP Connect
+------------------------------------------------------------------------------------------------------------------
+
+
+tcpConnectIsland : Model -> Element Msg
+tcpConnectIsland model =
+    column
+        [ Background.color grey
+        , centerX
+        , centerY
+        , width <| px 500
+        , height <| px 500
+        , spacing 20
+        , paddingXY 10 20
+        ]
+        [ ipaddress model
+        , portNum model
+        , timeout model
+        ]
+
+
+ipaddress : Model -> Element Msg
+ipaddress model =
+    row
+        [ spacing 5
+        , Font.color white
+        ]
+        [ mainLabel "IP Address"
+        , leftLabel ""
+        , ipAddressInput Byte0 model.ipAddress
+        , ipAddressInput Byte1 model.ipAddress
+        , ipAddressInput Byte2 model.ipAddress
+        , ipAddressInput Byte3 model.ipAddress
+        , rigthLabel ""
+        ]
+
+
+ipAddressInput : IpAddressByte -> IpAddress -> Element Msg
+ipAddressInput byte ip =
+    connInput 3
+        { onChange = ChangeIpAddress byte
+        , text = showIpAddressByte byte ip
+        , placeholder = Nothing
+        , label = Input.labelHidden "Byte"
+        }
+
+
+portNum : Model -> Element Msg
+portNum model =
+    row
+        [ spacing 5 ]
+        [ mainLabel "Port"
+        , leftLabel ""
+        , connInput 5
+            { onChange = ChangePort
+            , text = Maybe.withDefault "" <| Maybe.map String.fromInt model.socketPort
+            , placeholder = Nothing
+            , label = Input.labelHidden "Port"
+            }
+        , rigthLabel ""
+        ]
+
+
+timeout : Model -> Element Msg
+timeout model =
+    row
+        [ spacing 5 ]
+        [ mainLabel "Timeout"
+        , leftLabel ""
+        , connInput 5
+            { onChange = ChangeTimeout
+            , text = Maybe.withDefault "" <| Maybe.map String.fromInt model.timeout
+            , placeholder = Nothing
+            , label = Input.labelHidden "timeout"
+            }
+        , rigthLabel "(s)"
+        ]
+
+
+
+------------------------------------------------------------------------------------------------------------------
+-- RTU Connect
+------------------------------------------------------------------------------------------------------------------
+
+
+rtuConnectIsland : Model -> Element Msg
+rtuConnectIsland model =
+    column
+        [ Background.color grey
+        , centerX
+        , centerY
+        , width <| px 500
+        , height <| px 500
+        , spacing 20
+        , paddingXY 10 20
+        ]
+        [ serialPort model
+        , baudrate model
+        , stopbits model
+        , parity model
+        , timeout model
+        ]
+
+
+serialPort : Model -> Element Msg
+serialPort model =
+    row
+        [ spacing 5 ]
+        [ mainLabel "Serial Port"
+        , leftLabel <| serialPortLabel model.os
+        , connInput 20
+            { onChange = ChangeSerialPort
+            , text = serialPortText model.os model.serialPort
+            , placeholder = Nothing
+            , label = Input.labelHidden "serial port"
+            }
+        , rigthLabel ""
+        ]
+
+
+serialPortLabel : OS -> String
+serialPortLabel os =
+    case os of
+        Linux ->
+            "ttyS"
+
+        Windows ->
+            "COM"
+
+        Other ->
+            "Serial Port"
+
+
+serialPortText : OS -> Maybe String -> String
+serialPortText os serialport =
+    case os of
+        Windows ->
+            -- COM port should only be numerical,
+            -- so we convert the string to a Maybe Int and back again
+            let
+                maybeInt =
+                    Maybe.andThen String.toInt serialport
+            in
+            Maybe.withDefault "" <| Maybe.map String.fromInt maybeInt
+
+        _ ->
+            -- A linux ttyS can be non numerical,
+            -- eg ttySUSB0 for USB-Serial converters
+            Maybe.withDefault "" serialport
+
+
+baudrate : Model -> Element Msg
+baudrate model =
+    row
+        [ spacing 5 ]
+        [ mainLabel "Baud Rate"
+        , leftLabel ""
+        , dropdown
+            [ Background.color blueSapphire
+            , width <| px 100
+            , padding 11
+            , height <| px 38
+            , Font.center
+            , Font.color greyWhite
+            , spacing 0
+            ]
+            model.baudrateDd
+        , rigthLabel ""
+        ]
+
+stopbits : Model -> Element Msg
+stopbits model =
+    row
+        [ spacing 5 ]
+        [ mainLabel "Stop Bits"
+        , leftLabel ""
+        , dropdown
+            [ Background.color blueSapphire
+            , width <| px 100
+            , padding 11
+            , height <| px 38
+            , Font.center
+            , Font.color greyWhite
+            , spacing 0
+            ]
+            model.stopBitsDd
+        , rigthLabel ""
+        ]
+
+parity : Model -> Element Msg
+parity model =
+    row
+        [ spacing 5]
+        [ mainLabel "Parity"
+        , leftLabel ""
+        , dropdown
+            [ Background.color blueSapphire
+            , width <| px 100
+            , padding 11
+            , height <| px 38
+            , Font.center
+            , Font.color greyWhite
+            , spacing 0
+            ]
+            model.parityDd
+        , rigthLabel ""
+        ]
 
 ------------------------------------------------------------------------------------------------------------------
 -- Import

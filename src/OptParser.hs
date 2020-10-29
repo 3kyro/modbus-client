@@ -11,14 +11,18 @@ module OptParser
        )
        where
 
-import           Data.IP             (IPv4)
-import           Options.Applicative (switch, Parser, auto, execParser, flag, fullDesc,
-                                      help, helper, info, long, metavar, option,
-                                      progDesc, short, strOption, value, (<**>),
-                                      (<|>))
+import           Data.IP                    (IPv4)
+import           Options.Applicative        (eitherReader, Parser, ReadM, auto, execParser,
+                                             flag, fullDesc, help, helper, info,
+                                             long, metavar, option,
+                                             progDesc, short, strOption, switch,
+                                             value, (<**>), (<|>))
 
-import           Data.Word           (Word32, Word8)
-import           Modbus              (ByteOrder (..), ModbusProtocol (..))
+import           Data.Word                  (Word32, Word8)
+import           Modbus                     (BaudRate (..), ByteOrder (..),
+                                             ModbusProtocol (..), Parity (..),
+                                             StopBits (..))
+import qualified System.Hardware.Serialport as SP
 
 data Opt = Opt
     { appMode       :: !AppMode
@@ -31,6 +35,9 @@ data Opt = Opt
     , byteOrder     :: !ByteOrder
     , uId           :: !Word8
     , timeout       :: !Int
+    , baudrate      :: !BaudRate
+    , stopbits      :: !StopBits
+    , parity        :: !Parity
     , kaOnOff       :: !Bool
     , kaIdle        :: !Word32
     , kaIntv        :: !Word32
@@ -61,6 +68,9 @@ opt = Opt
     <*> parseFloatRepr
     <*> parseUid
     <*> parseTimeout
+    <*> parseBaudRate
+    <*> parseStopBits
+    <*> parseParity
     <*> parseKaOnOff
     <*> parseKaIdle
     <*> parseKaIntv
@@ -134,7 +144,7 @@ parsePort = option auto
     )
 
 parseSerialPort :: Parser String
-parseSerialPort = option auto
+parseSerialPort = strOption
     ( long      "serial"
     <> metavar  "SERIALPORT"
     <> value    ""
@@ -167,6 +177,30 @@ parseTimeout = option auto
     <> help     "Timeout in seconds"
     )
 
+parseBaudRate :: Parser BaudRate
+parseBaudRate = option baudrateReader
+    (  long     "baud"
+    <> metavar  "BAUDRATE"
+    <> value    (BR SP.CS9600)
+    <> help     "Serial port connection speed"
+    )
+
+parseStopBits :: Parser StopBits
+parseStopBits = option stopbitsReader
+    (  long     "stop"
+    <> metavar  "STOPBITS"
+    <> value    (SB SP.One)
+    <> help     "Serial message stop bits"
+    )
+
+parseParity :: Parser Parity
+parseParity = option parityReader
+    (  long     "parity"
+    <> metavar  "PARITY"
+    <> value    (Parity SP.Odd)
+    <> help     "Serial message parity"
+    )
+
 parseKaOnOff :: Parser Bool
 parseKaOnOff = switch
     (  long     "keepalive"
@@ -188,3 +222,54 @@ parseKaIntv = option auto
     <> value    60
     <> help     "Keep alive interval time in seconds"
     )
+
+
+
+---------------------------------------------------------------------------------------------------------------
+-- Readers
+---------------------------------------------------------------------------------------------------------------
+
+baudrateReader :: ReadM BaudRate
+baudrateReader =
+    let
+        mbr str = case str of
+            "110"    -> Right $ BR SP.CS110
+            "300"    -> Right $ BR SP.CS300
+            "600"    -> Right $ BR SP.CS600
+            "1200"   -> Right $ BR SP.CS1200
+            "2400"   -> Right $ BR SP.CS2400
+            "4800"   -> Right $ BR SP.CS4800
+            "9600"   -> Right $ BR SP.CS9600
+            "19200"  -> Right $ BR SP.CS19200
+            "38400"  -> Right $ BR SP.CS38400
+            "57600"  -> Right $ BR SP.CS57600
+            "115200" -> Right $ BR SP.CS115200
+            _      -> Left $ "\nInvalid baud rate input. \n"
+                             ++ "Valid inputs:\n"
+                             ++ "110\n300\n600\n"
+                             ++ "1200\n2400\n4800\n9600\n"
+                             ++ "19200\n38400\n57600\n115200\n"
+    in
+        eitherReader mbr
+
+stopbitsReader :: ReadM StopBits
+stopbitsReader =
+    let
+        msb str = case str of
+            "one" -> Right $ SB SP.One
+            "two" -> Right $ SB SP.Two
+            _      -> Left $ "\nInvalid stop bits input. \n"
+                             ++ "Valid inputs: one, two"
+    in
+        eitherReader msb
+
+parityReader :: ReadM Parity
+parityReader =
+    let
+        mpr str = case str of
+            "odd"  -> Right $ Parity SP.Odd
+            "even" -> Right $ Parity SP.Even
+            _      -> Left $ "\nInvalid parity input. \n"
+                             ++ "Valid inputs: odd, even"
+    in
+        eitherReader mpr

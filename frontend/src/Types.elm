@@ -1,17 +1,25 @@
 module Types exposing
     ( ActiveTab(..)
+    , BaudRate(..)
     , ByteOrder(..)
+    , ConnectActiveTab(..)
     , ConnectStatus(..)
     , ConnectionInfo(..)
+    , InitInfo
     , KeepAliveResponse(..)
     , Model
     , Msg(..)
+    , OS(..)
+    , Parity(..)
     , SettingsOptions(..)
+    , StopBits(..)
     , decodeByteOrder
     , decodeConnInfo
+    , decodeInitInfo
     , decodeKeepAliveResponse
     , encodeByteOrder
     , encodeKeepAlive
+    , encodeRTUConnectionRequest
     , encodeTCPConnectionInfo
     , encodeTCPConnectionRequest
     , retractDropdowns
@@ -19,6 +27,7 @@ module Types exposing
     , showConnInfo
     , showConnectStatus
     , showKeepAliveResponse
+    , showOs
     , toByteOrder
     )
 
@@ -107,6 +116,12 @@ type Msg
     | RegModValue String
     | UpdateRegMdu
     | UpdateRegMduResponse (Result Http.Error (List ModDataUpdate))
+    | ReceivedInitInfo (Result Http.Error InitInfo)
+    | ChangeActiveConnectTab ConnectActiveTab
+    | ChangeSerialPort String
+    | BaudRateDrop (Option BaudRate Msg)
+    | StopBitsDrop (Option StopBits Msg)
+    | ParityDrop (Option Parity Msg)
     | NoOp
 
 
@@ -117,28 +132,13 @@ type Msg
 
 
 type alias Model =
-    { modDataUpdate : List ModDataUpdate
-    , statusBarState : StatusBarState
-    , notifications : List Notification
-    , connectStatus : ConnectStatus
-    , ipAddress : IpAddress
-    , socketPort : Maybe Int
-    , serialPort : Maybe String
-    , timeout : Maybe Int -- in seconds
-    , byteOrder : ByteOrder
-    , activeTab : ActiveTab
-    , csvFileName : Maybe String
-    , csvContent : Maybe String
-    , csvLoaded : Bool
+    { -- register table
+      modDataUpdate : List ModDataUpdate
     , selectAllCheckbox : Bool
     , selectSome : Bool
     , readWriteAll : ReadWrite
-    , timePosix : Time.Posix
-    , timeZone : Time.Zone
-    , settings : List (Setting SettingsOptions Msg)
-    , keepAlive : Bool
-    , keepAliveIdle : Maybe Int -- in seconds
-    , keepAliveInterval : Maybe Int -- in seconds
+
+    -- register tab
     , regTypeDd : Dropdown RegType Msg
     , regModValueDd : Dropdown ModValue Msg
     , regAddress : Maybe Int
@@ -146,6 +146,48 @@ type alias Model =
     , regNumReg : Maybe Int
     , regMdu : ModDataUpdate
     , regResponse : List ModDataUpdate
+
+    -- notifications
+    , statusBarState : StatusBarState
+    , notifications : List Notification
+    , connectStatus : ConnectStatus
+
+    -- tabs
+    , activeTab : ActiveTab
+
+    -- connect tab
+    , connActiveTab : ConnectActiveTab
+    , timeout : Maybe Int -- in seconds
+
+    -- TCP Connections
+    , ipAddress : IpAddress
+    , serialPort : Maybe String
+
+    -- RTU connections
+    , socketPort : Maybe Int
+    , os : OS
+    , baudrate : BaudRate
+    , baudrateDd : Dropdown BaudRate Msg
+    , stopBits : StopBits
+    , stopBitsDd : Dropdown StopBits Msg
+    , parity : Parity
+    , parityDd : Dropdown Parity Msg
+
+    -- CSV
+    , csvFileName : Maybe String
+    , csvContent : Maybe String
+    , csvLoaded : Bool
+
+    -- time
+    , timePosix : Time.Posix
+    , timeZone : Time.Zone
+
+    -- settings
+    , settings : List (Setting SettingsOptions Msg)
+    , keepAlive : Bool
+    , keepAliveIdle : Maybe Int -- in seconds
+    , keepAliveInterval : Maybe Int -- in seconds
+    , byteOrder : ByteOrder
     }
 
 
@@ -154,6 +196,9 @@ retractDropdowns model =
     { model
         | regModValueDd = retract model.regModValueDd
         , regTypeDd = retract model.regTypeDd
+        , baudrateDd = retract model.baudrateDd
+        , stopBitsDd = retract model.stopBitsDd
+        , parityDd = retract model.parityDd
     }
 
 
@@ -211,7 +256,7 @@ type ConnectionInfo
         }
     | RTUConnectionInfo
         { rtuAddress : String
-        , timeout : Int -- in seconds
+        , serialSettings : SerialSettings
         }
 
 
@@ -230,7 +275,7 @@ decodeConnInfo =
                     "rtu" ->
                         D.map2 getRTUConnectionInfo
                             (D.field "serial port" D.string)
-                            (D.field "timeout" D.int)
+                            (D.field "settings" decodeSerialSettings)
 
                     _ ->
                         D.fail "Not a connection info"
@@ -245,6 +290,14 @@ encodeTCPConnectionRequest model =
         ]
 
 
+encodeRTUConnectionRequest : Model -> E.Value
+encodeRTUConnectionRequest model =
+    E.object
+        [ ( "connection info", encodeRTUConnectionInfo model )
+        , ( "keep alive", encodeKeepAlive model model.keepAlive )
+        ]
+
+
 encodeTCPConnectionInfo : Model -> E.Value
 encodeTCPConnectionInfo model =
     E.object
@@ -252,6 +305,23 @@ encodeTCPConnectionInfo model =
         , ( "ip address", E.string <| unsafeShowIp model.ipAddress )
         , ( "port", E.int <| Maybe.withDefault 0 model.socketPort )
         , ( "timeout", E.int <| Maybe.withDefault 0 model.timeout )
+        ]
+
+
+encodeRTUConnectionInfo : Model -> E.Value
+encodeRTUConnectionInfo model =
+    E.object
+        [ ( "connection type", E.string "rtu" )
+        , ( "serial port", E.string <| Maybe.withDefault "" model.serialPort )
+        , ( "settings"
+          , encodeSerialSettings <|
+                SerialSettings
+                    model.baudrate
+                    model.stopBits
+                    model.parity
+                <|
+                    Maybe.withDefault 1 model.timeout
+          )
         ]
 
 
@@ -264,11 +334,11 @@ getTCPConnectionInfo ip portNum tm =
         }
 
 
-getRTUConnectionInfo : String -> Int -> ConnectionInfo
-getRTUConnectionInfo address tm =
+getRTUConnectionInfo : String -> SerialSettings -> ConnectionInfo
+getRTUConnectionInfo address settings =
     RTUConnectionInfo
         { rtuAddress = address
-        , timeout = tm
+        , serialSettings = settings
         }
 
 
@@ -281,8 +351,69 @@ showConnInfo connInfo =
                 ++ ("Timeout: " ++ String.fromInt conn.timeout)
 
         RTUConnectionInfo conn ->
-            ("Serial Port: " ++ conn.rtuAddress ++ "\n")
-                ++ ("Timeout: " ++ String.fromInt conn.timeout)
+            "Serial Port: " ++ conn.rtuAddress ++ "\n"
+
+
+
+-- ++ ("Timeout: " ++ String.fromInt conn.timeout)
+--------------------------------------------------------------------------------------------------
+-- InitInfo
+--------------------------------------------------------------------------------------------------
+
+
+type alias InitInfo =
+    { initConnInfo : Maybe ConnectionInfo
+    , initOS : OS
+    }
+
+
+decodeInitInfo : D.Decoder InitInfo
+decodeInitInfo =
+    D.map2 InitInfo
+        (D.field "connection info" <| D.maybe decodeConnInfo)
+        (D.field "os" decodeOS)
+
+
+
+--------------------------------------------------------------------------------------------------
+-- OS
+--------------------------------------------------------------------------------------------------
+
+
+type OS
+    = Linux
+    | Windows
+    | Other
+
+
+decodeOS : D.Decoder OS
+decodeOS =
+    D.string
+        |> D.andThen
+            (\s ->
+                case s of
+                    "linux" ->
+                        D.succeed Linux
+
+                    "windows" ->
+                        D.succeed Windows
+
+                    _ ->
+                        D.succeed Other
+            )
+
+
+showOs : OS -> String
+showOs os =
+    case os of
+        Linux ->
+            "linux"
+
+        Windows ->
+            "windows"
+
+        Other ->
+            "not detected"
 
 
 
@@ -297,6 +428,17 @@ type ActiveTab
     | ModDataTab
     | HeartbeatTab
     | SettingsTab
+
+
+
+--------------------------------------------------------------------------------------------------
+-- ConnectActiveTab
+--------------------------------------------------------------------------------------------------
+
+
+type ConnectActiveTab
+    = TCPTab
+    | RTUTab
 
 
 
@@ -402,3 +544,196 @@ toByteOrder option =
 
         SetBE ->
             BE
+
+
+
+--------------------------------------------------------------------------------------------------
+-- SerialSettings
+--------------------------------------------------------------------------------------------------
+-- Settings used for serial communication
+
+
+type alias SerialSettings =
+    { baudRate : BaudRate
+    , stopBits : StopBits
+    , parity : Parity
+    , timeout : Int
+    }
+
+
+decodeSerialSettings : D.Decoder SerialSettings
+decodeSerialSettings =
+    D.map4 SerialSettings
+        (D.field "baudrate" decodeBaudRate)
+        (D.field "stopbits" decodeStopBits)
+        (D.field "parity" decodeParity)
+        (D.field "timeout" D.int)
+
+
+encodeSerialSettings : SerialSettings -> E.Value
+encodeSerialSettings ss =
+    E.object
+        [ ( "baudrate", encodeBaudRate ss.baudRate )
+        , ( "stopbits", encodeStopBits ss.stopBits )
+        , ( "parity", encodeParity ss.parity )
+        , ( "timeout", E.int ss.timeout )
+        ]
+
+
+type BaudRate
+    = BR110
+    | BR300
+    | BR600
+    | BR1200
+    | BR2400
+    | BR4800
+    | BR9600
+    | BR19200
+    | BR38400
+    | BR57600
+    | BR115200
+
+
+decodeBaudRate : D.Decoder BaudRate
+decodeBaudRate =
+    D.string
+        |> D.andThen
+            (\s ->
+                case s of
+                    "BR110" ->
+                        D.succeed BR110
+
+                    "BR300" ->
+                        D.succeed BR300
+
+                    "BR600" ->
+                        D.succeed BR600
+
+                    "BR1200" ->
+                        D.succeed BR1200
+
+                    "BR2400" ->
+                        D.succeed BR2400
+
+                    "BR4800" ->
+                        D.succeed BR4800
+
+                    "BR9600" ->
+                        D.succeed BR9600
+
+                    "BR19200" ->
+                        D.succeed BR19200
+
+                    "BR38400" ->
+                        D.succeed BR38400
+
+                    "BR57600" ->
+                        D.succeed BR57600
+
+                    "BR115200" ->
+                        D.succeed BR115200
+
+                    _ ->
+                        D.fail "Not a BaudRate"
+            )
+
+
+encodeBaudRate : BaudRate -> E.Value
+encodeBaudRate br =
+    case br of
+        BR110 ->
+            E.string "BR110"
+
+        BR300 ->
+            E.string "BR300"
+
+        BR600 ->
+            E.string "BR600"
+
+        BR1200 ->
+            E.string "BR1200"
+
+        BR2400 ->
+            E.string "BR2400"
+
+        BR4800 ->
+            E.string "BR4800"
+
+        BR9600 ->
+            E.string "BR9600"
+
+        BR19200 ->
+            E.string "BR19200"
+
+        BR38400 ->
+            E.string "BR38400"
+
+        BR57600 ->
+            E.string "BR57600"
+
+        BR115200 ->
+            E.string "BR115200"
+
+
+type StopBits
+    = OneStopBit
+    | TwoStopBits
+
+
+decodeStopBits : D.Decoder StopBits
+decodeStopBits =
+    D.string
+        |> D.andThen
+            (\s ->
+                case s of
+                    "one" ->
+                        D.succeed OneStopBit
+
+                    "two" ->
+                        D.succeed TwoStopBits
+
+                    _ ->
+                        D.fail "Not a StopBit"
+            )
+
+
+encodeStopBits : StopBits -> E.Value
+encodeStopBits sb =
+    case sb of
+        OneStopBit ->
+            E.string "one"
+
+        TwoStopBits ->
+            E.string "two"
+
+
+type Parity
+    = OddParity
+    | EvenParity
+
+
+decodeParity : D.Decoder Parity
+decodeParity =
+    D.string
+        |> D.andThen
+            (\s ->
+                case s of
+                    "odd" ->
+                        D.succeed OddParity
+
+                    "even" ->
+                        D.succeed EvenParity
+
+                    _ ->
+                        D.fail "Not a Parity"
+            )
+
+
+encodeParity : Parity -> E.Value
+encodeParity pr =
+    case pr of
+        OddParity ->
+            E.string "odd"
+
+        EvenParity ->
+            E.string "even"

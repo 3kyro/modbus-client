@@ -15,20 +15,23 @@ import           Servant
 
 import qualified Data.Text                  as T
 import qualified Network.Socket             as S
-import qualified System.OS                  as OS
+import qualified System.Info
 import qualified System.Process             as PS
 
 
-import           Control.Concurrent         (ThreadId, forkIO)
 import           Control.Exception          (try)
 import           Control.Exception.Safe     (SomeException)
-import           Control.Monad.Except       (catchError)
 import           CsvParser                  (runpCSV)
-import           Modbus                     (tcpUpdateMBRegister, tcpReadMBRegister, ByteOrder, ModbusClient (..),
-                                             ModbusProtocol (..), TCPSession, TID, getNewTID, getTCPClient,
+import           Modbus                     (ByteOrder, ModbusClient (..),
+                                             ModbusProtocol (..), RTUSession,
+                                             SerialSettings (..), TCPSession,
+                                             TID, getNewTID, getRTUClient,
+                                             getRTUSerialPort, getTCPClient,
                                              getTCPSocket, initTID,
-
-                                             )
+                                             rtuReadMBRegister,
+                                             rtuUpdateMBRegister,
+                                             tcpReadMBRegister,
+                                             tcpUpdateMBRegister, unSR)
 import           Network.Socket.KeepAlive
 import qualified System.Hardware.Serialport as SP
 import           Types.ModData
@@ -45,6 +48,7 @@ type ServerAPI
     :<|> "parseModData" :> ReqBody '[JSON] String :> Post '[JSON] [ModData]
     :<|> "keepAlive" :> ReqBody '[JSON] KeepAliveServ :> Post '[JSON] KeepAliveResponse
     :<|> "byteOrder" :> ReqBody '[JSON] ByteOrder :> Post '[JSON] ByteOrder
+    :<|> "init" :> Get '[JSON] InitRequest
     :<|> Raw
 
 serverAPI :: TVar ServState -> Server ServerAPI
@@ -56,6 +60,7 @@ serverAPI state
     :<|> parseAndSend
     :<|> keepAlive state
     :<|> byteOrder state
+    :<|> initRequest state
     :<|> serveDirectoryWebApp "frontend"
 
 proxyAPI :: Proxy ServerAPI
@@ -73,32 +78,17 @@ runServer :: ModbusProtocol
           -> IO ()
 runServer protocol order = do
     initState <- getInitState protocol order
-    launchBrowser
+    spawnBrowser System.Info.os
     run 4000 $ server initState
 
-launchBrowser :: IO ThreadId
-launchBrowser = forkIO $
-    case OS.os of
-        Nothing -> putStrLn "Operating system not detected"
-        Just os -> catchError
-            (spawnBrowser $ OS.unOS os)
-            (const $ putStrLn $ "Error while starting default browser\n"
-            ++ "To run the application, open http://localhost:4000/index.html in a browser"
-            )
-
-
 spawnBrowser :: String -> IO ()
-spawnBrowser os
-    | "Linux" `elem` osInfo
-    = PS.spawnProcess "xdg-open" ["http://localhost:4000/index.html"] >> pure ()
-    | "Windows" `elem` osInfo
-    = PS.spawnProcess "start" ["http://localhost:4000/index.html"] >> pure ()
-    | otherwise
-    = putStrLn
+spawnBrowser os =
+    case os of
+    "linux" -> PS.spawnProcess "xdg-open" ["http://localhost:4000/index.html"] >> pure ()
+    "windows" -> PS.spawnProcess "start" ["http://localhost:4000/index.html"] >> pure ()
+    _ -> putStrLn
         $ "Cannot start default browser\n"
         ++ "To run the application, open http://localhost:4000/index.html in a browser"
-  where
-      osInfo = words os
 
 
 putState :: TVar ServState -> ServState -> Handler ()
@@ -123,23 +113,28 @@ connect state (ConnectionRequest connectionInfo kaValue) = do
                 let tms = tm * 1000000 -- in microseconds
                 mSocket <- liftIO $ getTCPSocket ip portNum tms
                 case mSocket of
-                    Nothing -> throwError err300
+                    Nothing -> throwError err500
                     Just socket -> do
                         client <- liftIO $ getTCPClient socket tms
                         putState state $ state'
-                            {servConnection = TCPConnection socket connectionInfo $ getTCPActors client}
+                            { servConnection = TCPConnection socket connectionInfo $ setActors client
+                            , servProtocol = ModBusTCP
+                            }
                         keepAlive state kaValue
                         return ()
 
-            -- RTUConnectionInfo serial tm -> do
-            --     let tms = tm * 1000000 -- in microseconds
-            --     mPort <- liftIO $ getRTUSerialPort serial tms
-            --     case mPort of
-            --         Nothing -> throwError err300
-            --         Just port -> do
-            --             client <- liftIO $ getRTUClient port tms
-            --             putState state $ state'
-            --                 {servConnection = RTUConnection port connectionInfo $ getRTUActors client}
+            RTUConnectionInfo serial settings -> do
+                let tms = SP.timeout (unSR settings) * 1000000 -- in microseconds
+                mPort <- liftIO $ getRTUSerialPort serial settings
+                case mPort of
+                    Nothing -> throwError err500
+                    Just port -> do
+                        client <- liftIO $ getRTUClient port tms
+                        putState state $ state'
+                            { servConnection = RTUConnection port connectionInfo $ setActors client
+                            , servProtocol = ModBusRTU
+                            }
+
 
 getConnectionInfo :: TVar ServState -> Handler (Maybe ConnectionInfo)
 getConnectionInfo state = do
@@ -156,8 +151,8 @@ disconnect state str = case str of
             let connection = servConnection currentState
             case connection of
                 TCPConnection socket _ _ -> disconnectTCP state socket
-                RTUConnection port _ _ -> disconnectRTU state port
-                NotConnected -> throwError err400
+                RTUConnection port _ _   -> disconnectRTU state port
+                NotConnected             -> throwError err400
             liftIO $ atomically $ writeTVar state $ currentState
                 { servConnection = NotConnected
                 , servPool = []
@@ -180,7 +175,7 @@ disconnectTCP state socket = do
 
 disconnectRTU :: TVar ServState -> SP.SerialPort -> Handler ()
 disconnectRTU state port = do
-    result <- liftIO $ try $ liftIO $ liftIO $ SP.closeSerial port
+    result <- liftIO $ try $ SP.closeSerial port
     case result of
         Left (_ :: SomeException) -> do
             -- make sure we set the state to not connected
@@ -215,17 +210,34 @@ updateModData state mdus = do
     let actors = getActors $ servConnection state'
     case actors of
         Nothing -> throwError err400
-        Just (ServerActors client _ batchWorker) -> do
-            let sessions = traverse (modUpdateSession tid order) mdus
-            liftIO $ tcpRunClient batchWorker client sessions
+        Just actors ->
+            let client = sclClient actors
+            in case servProtocol state' of
+                ModBusTCP ->
+                    let worker = sclTCPBatchWorker actors
+                        sessions = traverse (tcpModUpdateSession tid order) mdus
+                    in  liftIO $ tcpRunClient worker client sessions
+                ModBusRTU ->
+                    let worker = sclRTUBatchWorker actors
+                        sessions = traverse (rtuModUpdateSession order) mdus
+                    in  liftIO $ rtuRunClient worker client sessions
 
-modUpdateSession :: TID -> ByteOrder -> ModDataUpdate -> TCPSession IO ModDataUpdate
-modUpdateSession tid order mdu =
+tcpModUpdateSession :: TID -> ByteOrder -> ModDataUpdate -> TCPSession IO ModDataUpdate
+tcpModUpdateSession tid order mdu =
     if mduSelected mdu
     then
         case mduRW mdu of
             MDURead  -> tcpReadMBRegister tid order mdu
             MDUWrite -> tcpUpdateMBRegister tid order mdu
+    else pure mdu
+
+rtuModUpdateSession :: ByteOrder -> ModDataUpdate -> RTUSession IO ModDataUpdate
+rtuModUpdateSession order mdu =
+    if mduSelected mdu
+    then
+        case mduRW mdu of
+            MDURead  -> rtuReadMBRegister order mdu
+            MDUWrite -> rtuUpdateMBRegister order mdu
     else pure mdu
 
 parseAndSend :: String -> Handler [ModData]
@@ -269,3 +281,12 @@ byteOrder state order = do
         { servOrd = order
         }
     return order
+
+initRequest :: TVar ServState -> Handler InitRequest
+initRequest state =
+    let
+    os = case System.Info.os of
+        "linux"   -> pure Linux
+        "windows" -> pure Windows
+        _         -> pure Other
+    in InitRequest <$> getConnectionInfo state <*> os

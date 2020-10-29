@@ -2,7 +2,7 @@ module Update exposing (getPosixTime, getTimeZone, initCmd, update)
 
 import Array
 import Browser.Dom as Dom
-import Dropdown exposing (Option, retract, setDropdown, setDropdownExpanded)
+import Dropdown exposing (Option, retract, setDropdown, setDropdownExpanded, setDropdownSelected)
 import Element exposing (onLeft)
 import File
 import File.Select as Select
@@ -54,15 +54,19 @@ import Time
 import Types
     exposing
         ( ActiveTab(..)
+        , BaudRate
         , ByteOrder(..)
         , ConnectStatus(..)
         , ConnectionInfo(..)
+        , InitInfo
         , KeepAliveResponse(..)
         , Model
         , Msg(..)
         , SettingsOptions(..)
+        , StopBits
         , decodeByteOrder
         , decodeConnInfo
+        , decodeInitInfo
         , decodeKeepAliveResponse
         , encodeByteOrder
         , encodeKeepAlive
@@ -72,9 +76,13 @@ import Types
         , showByteOrderResponse
         , showConnInfo
         , showKeepAliveResponse
+        , showOs
         , toByteOrder
+        , ConnectActiveTab(..)
+        , encodeRTUConnectionRequest
         )
 import Types.IpAddress exposing (IpAddressByte, setIpAddressByte)
+import Types exposing (Parity)
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -213,7 +221,7 @@ update msg model =
         -- will only be run once per page load
         InitTime time ->
             ( { model | timePosix = time }
-            , connectionInfoRequest
+            , Cmd.none
             )
 
         ExpandNotification not ->
@@ -310,6 +318,36 @@ update msg model =
             , jumpToBottom "status"
             )
 
+        ReceivedInitInfo response ->
+            ( initInfoModelUpdate model response
+            , jumpToBottom "status"
+            )
+
+        ChangeActiveConnectTab tab ->
+            ( { model | connActiveTab = tab }
+            , Cmd.none
+            )
+
+        ChangeSerialPort str ->
+            ( changeSerialPortModelUpdate model str
+            , Cmd.none
+            )
+
+        BaudRateDrop opt ->
+            ( baudRateDdModelUpdate model opt
+            , Cmd.none
+            )
+
+        StopBitsDrop opt ->
+            ( stopBitsModelUpdate model opt
+            , Cmd.none
+            )
+
+        ParityDrop opt ->
+            ( parityModelUpdate model opt
+            , Cmd.none
+            )
+
         NoOp ->
             ( model
             , Cmd.none
@@ -324,7 +362,18 @@ update msg model =
 
 initCmd : Cmd Msg
 initCmd =
-    getTimeZone
+    Cmd.batch
+        [ getTimeZone
+        , initRequest
+        ]
+
+
+initRequest : Cmd Msg
+initRequest =
+    Http.get
+        { url = "http://localhost:4000/init"
+        , expect = Http.expectJson ReceivedInitInfo decodeInitInfo
+        }
 
 
 connectionInfoRequest : Cmd Msg
@@ -337,11 +386,16 @@ connectionInfoRequest =
 
 connectRequest : Model -> Cmd Msg
 connectRequest model =
-    Http.post
-        { url = "http://localhost:4000/connect"
-        , body = Http.jsonBody <| encodeTCPConnectionRequest model
-        , expect = Http.expectWhatever ConnectedResponse
-        }
+    let
+        encodeRequest = case model.connActiveTab of
+            TCPTab -> encodeTCPConnectionRequest model
+            RTUTab -> encodeRTUConnectionRequest model
+    in
+        Http.post
+            { url = "http://localhost:4000/connect"
+            , body = Http.jsonBody <| encodeRequest
+            , expect = Http.expectWhatever ConnectedResponse
+            }
 
 
 disconnectRequest : Cmd Msg
@@ -515,39 +569,8 @@ readRegistersModelUpdate model result =
 receivedConnectionInfoModelUpdate : Model -> Result Http.Error (Maybe ConnectionInfo) -> Model
 receivedConnectionInfoModelUpdate model result =
     case result of
-        Ok (Just connInfo) ->
-            case connInfo of
-                TCPConnectionInfo tcp ->
-                    { model
-                        | ipAddress = tcp.ipAddress
-                        , socketPort = Just tcp.socketPort
-                        , serialPort = Nothing
-                        , timeout = Just tcp.timeout
-                        , connectStatus = Connected
-                        , notifications =
-                            detailedNot
-                                model
-                                "Connected"
-                                (showConnInfo connInfo)
-                    }
-
-                RTUConnectionInfo rtu ->
-                    { model
-                        | socketPort = Nothing
-                        , serialPort = Just rtu.rtuAddress
-                        , timeout = Just rtu.timeout
-                        , connectStatus = Connected
-                        , notifications =
-                            detailedNot
-                                model
-                                "Connected"
-                                (showConnInfo connInfo)
-                    }
-
-        Ok Nothing ->
-            { model
-                | notifications = simpleNot model "Not Connected"
-            }
+        Ok mconninfo ->
+            connInfoModelUpdate model mconninfo
 
         Err err ->
             { model
@@ -973,3 +996,117 @@ updateRegMduModelUpdate model result =
                         "Error retriving requested registers"
                         (showHttpError err)
             }
+
+
+initInfoModelUpdate : Model -> Result Http.Error InitInfo -> Model
+initInfoModelUpdate model result =
+    case result of
+        Ok info ->
+            let
+                connmodel =
+                    connInfoModelUpdate model info.initConnInfo
+            in
+            { connmodel
+                | os = info.initOS
+                , notifications =
+                    simpleNot connmodel <|
+                        "Server operating system: "
+                            ++ showOs info.initOS
+            }
+
+        Err err ->
+            { model
+                | notifications =
+                    detailedNot
+                        model
+                        "Error retriving init info from server"
+                        (showHttpError err)
+            }
+
+
+connInfoModelUpdate : Model -> Maybe ConnectionInfo -> Model
+connInfoModelUpdate model mconninfo =
+    case mconninfo of
+        Just conninfo ->
+            case conninfo of
+                TCPConnectionInfo tcp ->
+                    { model
+                        | ipAddress = tcp.ipAddress
+                        , socketPort = Just tcp.socketPort
+                        , serialPort = Nothing
+                        , timeout = Just tcp.timeout
+                        , connectStatus = Connected
+                        , notifications =
+                            detailedNot
+                                model
+                                "Connected"
+                                (showConnInfo conninfo)
+                    }
+
+                RTUConnectionInfo rtu ->
+                    { model
+                        | socketPort = Nothing
+                        , serialPort = Just rtu.rtuAddress
+                        , baudrate = rtu.serialSettings.baudRate
+                        , baudrateDd = setDropdownSelected model.baudrateDd rtu.serialSettings.baudRate
+                        , stopBits = rtu.serialSettings.stopBits
+                        , stopBitsDd = setDropdownSelected model.stopBitsDd rtu.serialSettings.stopBits
+                        , parity = rtu.serialSettings.parity
+                        , parityDd = setDropdownSelected model.parityDd rtu.serialSettings.parity
+                        , timeout = Just <| rtu.serialSettings.timeout
+                        , connectStatus = Connected
+                        , notifications =
+                            detailedNot
+                                model
+                                "Connected"
+                                (showConnInfo conninfo)
+                    }
+
+        Nothing ->
+            { model
+                | notifications = simpleNot model "Not Connected"
+            }
+
+
+changeSerialPortModelUpdate : Model -> String -> Model
+changeSerialPortModelUpdate model str =
+    if String.isEmpty str then
+        { model | serialPort = Nothing }
+
+    else
+        { model | serialPort = Just str }
+
+
+baudRateDdModelUpdate : Model -> Option BaudRate Msg -> Model
+baudRateDdModelUpdate model opt =
+    let
+        retracted =
+            retractDropdowns model
+    in
+    { retracted
+        | baudrateDd = setDropdown model.baudrateDd opt
+        , baudrate = opt.value
+    }
+
+
+stopBitsModelUpdate : Model -> Option StopBits Msg -> Model
+stopBitsModelUpdate model opt =
+    let
+        retracted =
+            retractDropdowns model
+    in
+    { retracted
+        | stopBitsDd = setDropdown model.stopBitsDd opt
+        , stopBits = opt.value
+    }
+
+parityModelUpdate : Model -> Option Parity Msg -> Model
+parityModelUpdate model opt =
+    let
+        retracted =
+            retractDropdowns model
+    in
+    { retracted
+        | parityDd = setDropdown model.parityDd opt
+        , parity = opt.value
+    }
