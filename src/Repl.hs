@@ -1,20 +1,20 @@
-module Repl
-    ( runRepl
-    , ReplState(..)
-    ) where
+module Repl (
+    runRepl,
+    ReplState (..),
+) where
 
 import Control.Monad.Trans (liftIO)
 import Control.Monad.Trans.State.Strict (evalStateT)
 import Data.List (isPrefixOf)
-import System.Console.Repline 
-    (  evalRepl
-     , WordCompleter
-     , CompleterStyle( Word )
-    )
+import System.Console.Repline (
+    CompleterStyle (Word),
+    WordCompleter,
+    evalRepl,
+ )
 
-import Types
 import Repl.Commands (cmd, commandsCompl, list)
 import Repl.Help (help, helpCompl)
+import Types
 
 runRepl :: ReplState -> IO ()
 runRepl = evalStateT haskelineStack
@@ -29,7 +29,7 @@ completer :: Monad m => WordCompleter m
 completer n = return $ filter (isPrefixOf n) (commandsCompl ++ helpCompl)
 
 options :: [(String, [String] -> Repl ())]
-options = [
-      ("help", help)  -- :help
-    , ("list", list)  -- :help
-  ]
+options =
+    [ ("help", help) -- :help
+    , ("list", list) -- :help
+    ]

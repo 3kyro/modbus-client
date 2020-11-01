@@ -7,6 +7,7 @@ import Element
         , Color
         , Element
         , IndexedColumn
+        , alignBottom
         , alignLeft
         , alignTop
         , centerX
@@ -21,10 +22,13 @@ import Element
         , indexedTable
         , layout
         , mouseOver
+        , moveDown
+        , moveLeft
         , none
         , padding
         , paddingXY
         , px
+        , rotate
         , row
         , spacing
         , text
@@ -44,14 +48,14 @@ import ModData
         , getModValueType
         , getModValueUpdate
         , isWriteableReg
-        , showRegType
+        , modAddressColumn
+        , modDescriptionColumn
         , modNameColumn
         , modRegTypeColumn
-        , modAddressColumn
-        , modValueTypeColumn
-        , modValueColumn
         , modUidColumn
-        , modDescriptionColumn
+        , modValueColumn
+        , modValueTypeColumn
+        , showRegType
         , tableCellColor
         )
 import Notifications
@@ -62,7 +66,9 @@ import Notifications
         )
 import Palette
     exposing
-        ( blueSapphire
+        ( background
+        , black
+        , blueSapphire
         , darkGrey
         , fireBrick
         , grey
@@ -78,7 +84,7 @@ import ReadWrite
         , flipRW
         , readWriteButton
         )
-import RegisterTab exposing (renderRegistersTab)
+import RegisterTab exposing (regNav, renderOutput, sendRegRequestButton)
 import Settings
     exposing
         ( renderSettings
@@ -86,9 +92,11 @@ import Settings
 import Types
     exposing
         ( ActiveTab(..)
+        , ConnectActiveTab(..)
         , ConnectStatus(..)
         , Model
         , Msg(..)
+        , OS(..)
         , showConnectStatus
         )
 import Types.IpAddress
@@ -101,60 +109,159 @@ import Types.IpAddress
 
 view : Model -> Html Msg
 view model =
-    layout [] <| page model
+    layout
+        [ Background.color background
+        , width fill
+        , height fill
+        , smallFont
+        ]
+    <|
+        page model
 
 
 page : Model -> Element Msg
 page model =
     column
-        [ Background.color grey
-        , width fill
+        [ width fill
         , height fill
-        , smallFont
         ]
-        [ menuBar model
-        , mainTab model
+        [ mainModule model
         , notifications model
         ]
 
 
+mainModule : Model -> Element Msg
+mainModule model =
+    row
+        [ width fill
+        , height fill
+        , padding 50
+        , spacing 50
+        ]
+        [ left model
+        , right model
+        ]
+
+
+left : Model -> Element Msg
+left model =
+    column
+        [ width <| fillPortion 1
+        , height fill
+        , spacing 50
+        ]
+        [ navigationModule model
+        , manipulationModule model
+        , logoModule model
+        ]
+
+
+right : Model -> Element Msg
+right model =
+    infoModule model
+
+
+navigationModule : Model -> Element Msg
+navigationModule model =
+    el
+        [ width fill
+        , height <| fillPortion 1
+        ]
+    <|
+        renderNavModule model
+
+
+manipulationModule : Model -> Element Msg
+manipulationModule model =
+    el
+        [ width fill
+        , height <| fillPortion 4
+        ]
+    <|
+        renderManModule model
+
+
+logoModule : Model -> Element Msg
+logoModule model =
+    el
+        [ Background.color background
+        , width fill
+        , height <| fillPortion 1
+        ]
+    <|
+        renderLogoModule model
+
+
+infoModule : Model -> Element Msg
+infoModule model =
+    el
+        [ Background.color grey
+        , width <| fillPortion 4
+        , height fill
+        ]
+    <|
+        renderInfoModule model
+
+
 
 ------------------------------------------------------------------------------------------------------------------
--- Menu Bar
+-- Navigation Buttons
+------------------------------------------------------------------------------------------------------------------
 
 
-menuBar : Model -> Element Msg
-menuBar model =
-    row
+renderNavModule : Model -> Element Msg
+renderNavModule model =
+    column
         [ Background.color darkGrey
-        , alignTop
         , width fill
-        , height <| px 38
+        , height fill
         , spacing 0
         ]
+        [ firstNavRow model
+        , secondNavRow model
+        ]
+
+
+firstNavRow : Model -> Element Msg
+firstNavRow model =
+    row
+        [ width fill
+        , height fill
+        ]
         [ connectTabButton model
-        , importRegisterTabButton model
         , registersTabButton model
         , registerTableTabButton model
-        , heartbeatTabButton model
+        ]
+
+
+secondNavRow : Model -> Element Msg
+secondNavRow model =
+    row
+        [ width fill
+        , height fill
+        ]
+        [ heartbeatTabButton model
         , settingsTabButton model
+        , emptyTabButton model
         ]
 
 
 
--- Creates a new menu tab selection button
+-- Creates a new navigation button selection button
 
 
-newSelectTabButton : Model -> String -> ActiveTab -> Element Msg
-newSelectTabButton model str tab =
+newNavigationButton : Model -> String -> ActiveTab -> Element Msg
+newNavigationButton model str tab =
     Input.button
         [ Background.color <| selectTabButtonBgdColor model tab
         , focused [ Font.color white ]
         , mouseOver [ Font.color white ]
         , Border.width 0
         , height fill
+        , width <| fillPortion 1
         , paddingXY 10 0
         , Font.color greyWhite
+        , Font.center
         ]
         { onPress = Just <| ChangeActiveTab tab
         , label = text str
@@ -172,162 +279,184 @@ selectTabButtonBgdColor model tab =
 
 connectTabButton : Model -> Element Msg
 connectTabButton model =
-    newSelectTabButton model "Connect" ConnectMenu
-
-
-importRegisterTabButton : Model -> Element Msg
-importRegisterTabButton model =
-    newSelectTabButton model "Import" ImportMenu
+    newNavigationButton model "Connect" ConnectMenu
 
 
 registersTabButton : Model -> Element Msg
 registersTabButton model =
-    newSelectTabButton model "Registers" RegistersTab
+    newNavigationButton model "Registers" RegistersTab
 
 
 registerTableTabButton : Model -> Element Msg
 registerTableTabButton model =
-    newSelectTabButton model "Register Table" ModDataTab
+    newNavigationButton model "Table" ModDataTab
 
 
 heartbeatTabButton : Model -> Element Msg
 heartbeatTabButton model =
-    newSelectTabButton model "Heartbeat Signals" HeartbeatTab
+    newNavigationButton model "Heartbeat" HeartbeatTab
 
 
 settingsTabButton : Model -> Element Msg
 settingsTabButton model =
-    newSelectTabButton model "Settings" SettingsTab
+    newNavigationButton model "Settings" SettingsTab
 
 
-mainTab : Model -> Element Msg
-mainTab model =
-    row
-        [ width fill
+emptyTabButton : Model -> Element Msg
+emptyTabButton model =
+    el
+        [ Border.width 0
         , height fill
+        , width <| fillPortion 1
+        , paddingXY 10 0
         ]
-        [ infoArea model
-        , commandArea model
-        ]
-
-
-infoArea : Model -> Element Msg
-infoArea model =
-    case model.activeTab of
-        ConnectMenu ->
-            connectTab model
-
-        ImportMenu ->
-            importTab model
-
-        RegistersTab ->
-            registersTab model
-
-        ModDataTab ->
-            modDataTab model
-
-        HeartbeatTab ->
-            heartbeatTab model
-
-        SettingsTab ->
-            settingsTab model
+        none
 
 
 
 ------------------------------------------------------------------------------------------------------------------
--- Connect Menu
+-- Manipulation Module
+------------------------------------------------------------------------------------------------------------------
 
 
-connectTab : Model -> Element Msg
-connectTab model =
-    el
-        [ Background.color grey
-        , width fill
-        , height fill
-        ]
-    <|
-        connectIsland model
+renderManModule : Model -> Element Msg
+renderManModule model =
+    case model.activeTab of
+        ConnectMenu ->
+            connectNavModule model
+
+        RegistersTab ->
+            registersNavModule model
+
+        ModDataTab ->
+            tableNavModule model
+
+        HeartbeatTab ->
+            heartbeatNavModule model
+
+        SettingsTab ->
+            settingsNavModule model
 
 
-connectIsland : Model -> Element Msg
-connectIsland model =
+connectNavModule : Model -> Element Msg
+connectNavModule model =
     column
-        [ Background.color grey
-        , centerX
-        , centerY
-        , width <| px 500
-        , height <| px 500
-        , spacing 20
-        , paddingXY 10 20
+        [ spacing 10
+        , width fill
         ]
-        [ ipaddress model
-        , portNum model
-        , timeout model
+        [ connActiveTabButton model TCPTab
+        , connActiveTabButton model RTUTab
         , connectButton model
         , disconnectButton model
         ]
 
 
-ipaddress : Model -> Element Msg
-ipaddress model =
-    row
-        [ spacing 5
-        , Font.color white
+registersNavModule : Model -> Element Msg
+registersNavModule model =
+    el
+        [ width fill ]
+    <|
+        regNav model
+
+
+tableNavModule : Model -> Element Msg
+tableNavModule model =
+    column
+        [ spacing 10
+        , width fill
         ]
-        [ el [ width <| px 100 ] <| text "IP Address"
-        , ipAddressInput Byte0 model.ipAddress
-        , ipAddressInput Byte1 model.ipAddress
-        , ipAddressInput Byte2 model.ipAddress
-        , ipAddressInput Byte3 model.ipAddress
+        [ updateSelectedButton model
+        , loadCSVButton
+        , loadRegisterTableButton model
         ]
 
 
-ipAddressInput : IpAddressByte -> IpAddress -> Element Msg
-ipAddressInput byte ip =
-    Input.text
-        [ width <| px 70
-        , Background.color lightGrey
-        , htmlAttribute <| Html.Attributes.maxlength 3
-        , Font.color white
-        , focused [ Border.glow white 1 ]
+heartbeatNavModule : Model -> Element Msg
+heartbeatNavModule model =
+    none
+
+
+settingsNavModule : Model -> Element Msg
+settingsNavModule model =
+    none
+
+
+emptySpace : Element Msg
+emptySpace =
+    el
+        [ Background.color background
+        , height <| px 38
+        , width fill
+        , paddingXY 0 0
         ]
-        { onChange = ChangeIpAddress byte
-        , text = showIpAddressByte byte ip
-        , placeholder = Nothing
-        , label = Input.labelHidden "Byte"
-        }
+        none
 
 
-portNum : Model -> Element Msg
-portNum model =
-    Input.text
-        [ width <| px 70
-        , Background.color lightGrey
-        , htmlAttribute <| Html.Attributes.maxlength 5
-        , Font.color white
-        , focused [ Border.glow white 1 ]
+
+------------------------------------------------------------------------------------------------------------------
+-- Logo Module
+------------------------------------------------------------------------------------------------------------------
+
+
+renderLogoModule : Model -> Element Msg
+renderLogoModule model =
+    case model.activeTab of
+        _ ->
+            simpleLogo
+
+
+simpleLogo : Element Msg
+simpleLogo =
+    el
+        [ Background.color background
+        , Font.size 20
+        , Font.color lightGrey
+        , alignLeft
+        , alignBottom
         ]
-        { onChange = ChangePort
-        , text = Maybe.withDefault "" <| Maybe.map String.fromInt model.socketPort
-        , placeholder = Nothing
-        , label = Input.labelLeft [ Font.color white ] <| el [ width <| px 100 ] (text "Port")
-        }
+    <|
+        text "Modbus Serve"
 
 
-timeout : Model -> Element Msg
-timeout model =
-    Input.text
-        [ width <| px 70
-        , Background.color lightGrey
-        , htmlAttribute <| Html.Attributes.maxlength 5
-        , Font.color white
-        , focused [ Border.glow white 1 ]
-        ]
-        { onChange = ChangeTimeout
-        , text = Maybe.withDefault "" <| Maybe.map String.fromInt model.timeout
-        , placeholder = Nothing
-        , label = Input.labelLeft [ Font.color white ] <| el [ width <| px 100 ] (text "Timeout in seconds")
-        }
+
+------------------------------------------------------------------------------------------------------------------
+-- Info Module
+------------------------------------------------------------------------------------------------------------------
+
+
+renderInfoModule : Model -> Element Msg
+renderInfoModule model =
+    case model.activeTab of
+        ConnectMenu ->
+            connectIsland model
+
+        RegistersTab ->
+            renderOutput model.regResponse
+
+        ModDataTab ->
+            newRegisterTab model.modDataUpdate <| modDataColumns model
+
+        SettingsTab ->
+            settingsTab model
+
+        _ ->
+            none
+
+
+
+------------------------------------------------------------------------------------------------------------------
+-- Connect
+------------------------------------------------------------------------------------------------------------------
+
+
+connectIsland : Model -> Element Msg
+connectIsland model =
+    case model.connActiveTab of
+        TCPTab ->
+            tcpConnectIsland model
+
+        RTUTab ->
+            rtuConnectIsland model
 
 
 connectButton : Model -> Element Msg
@@ -402,9 +531,320 @@ disconnectButtonBgd model =
             grey
 
 
+connActiveTabButton : Model -> ConnectActiveTab -> Element Msg
+connActiveTabButton model connTab =
+    Input.button
+        [ Background.color <| connActiveTabClr model connTab
+        , mouseOver [ Font.color white ]
+        , height <| px 38
+        , width fill
+        , paddingXY 0 0
+        , Font.color greyWhite
+        , Font.center
+        , focused []
+        ]
+        { onPress =
+            if model.connActiveTab == connTab then
+                Nothing
+
+            else
+                Just <| ChangeActiveConnectTab connTab
+        , label = text <| connActiveTabText connTab
+        }
+
+
+connActiveTabText : ConnectActiveTab -> String
+connActiveTabText connTab =
+    case connTab of
+        TCPTab ->
+            "Modbus TCP"
+
+        RTUTab ->
+            "Modbus RTU"
+
+
+connActiveTabClr : Model -> ConnectActiveTab -> Color
+connActiveTabClr model connTab =
+    if model.connActiveTab == connTab then
+        blueSapphire
+
+    else
+        lightGrey
+
+
 
 ------------------------------------------------------------------------------------------------------------------
--- Import Menu
+-- Connect Rows
+------------------------------------------------------------------------------------------------------------------
+-- Row structure for single inputs
+-- [ spacing 5]
+-- [ Main Label , 150 px] [Left label, 50 px] [Input, 70 px] [ Right label, 50 px]
+
+
+mainLabel : String -> Element Msg
+mainLabel str =
+    el
+        [ width <| px 150
+        , Font.color white
+        ]
+    <|
+        text str
+
+
+leftLabel : String -> Element Msg
+leftLabel str =
+    el
+        [ width <| px 50
+        , Font.color white
+        , Font.alignRight
+        ]
+    <|
+        text str
+
+
+connInput :
+    Int -- Input max length
+    ->
+        { onChange : String -> Msg
+        , text : String
+        , placeholder : Maybe (Input.Placeholder Msg)
+        , label : Input.Label Msg
+        }
+    -> Element Msg
+connInput maxLen inputRecord =
+    Input.text
+        [ width <| px 100
+        , Background.color lightGrey
+        , htmlAttribute <| Html.Attributes.maxlength maxLen
+        , Font.color white
+        , focused [ Border.glow white 1 ]
+        ]
+        inputRecord
+
+
+rigthLabel : String -> Element Msg
+rigthLabel str =
+    el
+        [ width <| px 50
+        , Font.color white
+        ]
+    <|
+        text str
+
+
+
+------------------------------------------------------------------------------------------------------------------
+-- TCP Connect
+------------------------------------------------------------------------------------------------------------------
+
+
+tcpConnectIsland : Model -> Element Msg
+tcpConnectIsland model =
+    column
+        [ Background.color grey
+        , centerX
+        , centerY
+        , width <| px 500
+        , height <| px 500
+        , spacing 20
+        , paddingXY 10 20
+        ]
+        [ ipaddress model
+        , portNum model
+        , timeout model
+        ]
+
+
+ipaddress : Model -> Element Msg
+ipaddress model =
+    row
+        [ spacing 5
+        , Font.color white
+        ]
+        [ mainLabel "IP Address"
+        , leftLabel ""
+        , ipAddressInput Byte0 model.ipAddress
+        , ipAddressInput Byte1 model.ipAddress
+        , ipAddressInput Byte2 model.ipAddress
+        , ipAddressInput Byte3 model.ipAddress
+        , rigthLabel ""
+        ]
+
+
+ipAddressInput : IpAddressByte -> IpAddress -> Element Msg
+ipAddressInput byte ip =
+    connInput 3
+        { onChange = ChangeIpAddress byte
+        , text = showIpAddressByte byte ip
+        , placeholder = Nothing
+        , label = Input.labelHidden "Byte"
+        }
+
+
+portNum : Model -> Element Msg
+portNum model =
+    row
+        [ spacing 5 ]
+        [ mainLabel "Port"
+        , leftLabel ""
+        , connInput 5
+            { onChange = ChangePort
+            , text = Maybe.withDefault "" <| Maybe.map String.fromInt model.socketPort
+            , placeholder = Nothing
+            , label = Input.labelHidden "Port"
+            }
+        , rigthLabel ""
+        ]
+
+
+timeout : Model -> Element Msg
+timeout model =
+    row
+        [ spacing 5 ]
+        [ mainLabel "Timeout"
+        , leftLabel ""
+        , connInput 5
+            { onChange = ChangeTimeout
+            , text = Maybe.withDefault "" <| Maybe.map String.fromInt model.timeout
+            , placeholder = Nothing
+            , label = Input.labelHidden "timeout"
+            }
+        , rigthLabel "(s)"
+        ]
+
+
+
+------------------------------------------------------------------------------------------------------------------
+-- RTU Connect
+------------------------------------------------------------------------------------------------------------------
+
+
+rtuConnectIsland : Model -> Element Msg
+rtuConnectIsland model =
+    column
+        [ Background.color grey
+        , centerX
+        , centerY
+        , width <| px 500
+        , height <| px 500
+        , spacing 20
+        , paddingXY 10 20
+        ]
+        [ serialPort model
+        , baudrate model
+        , stopbits model
+        , parity model
+        , timeout model
+        ]
+
+
+serialPort : Model -> Element Msg
+serialPort model =
+    row
+        [ spacing 5 ]
+        [ mainLabel "Serial Port"
+        , leftLabel <| serialPortLabel model.os
+        , connInput 20
+            { onChange = ChangeSerialPort
+            , text = serialPortText model.os model.serialPort
+            , placeholder = Nothing
+            , label = Input.labelHidden "serial port"
+            }
+        , rigthLabel ""
+        ]
+
+
+serialPortLabel : OS -> String
+serialPortLabel os =
+    case os of
+        Linux ->
+            "ttyS"
+
+        Windows ->
+            "COM"
+
+        Other ->
+            "Serial Port"
+
+
+serialPortText : OS -> Maybe String -> String
+serialPortText os serialport =
+    case os of
+        Windows ->
+            -- COM port should only be numerical,
+            -- so we convert the string to a Maybe Int and back again
+            let
+                maybeInt =
+                    Maybe.andThen String.toInt serialport
+            in
+            Maybe.withDefault "" <| Maybe.map String.fromInt maybeInt
+
+        _ ->
+            -- A linux ttyS can be non numerical,
+            -- eg ttySUSB0 for USB-Serial converters
+            Maybe.withDefault "" serialport
+
+
+baudrate : Model -> Element Msg
+baudrate model =
+    row
+        [ spacing 5 ]
+        [ mainLabel "Baud Rate"
+        , leftLabel ""
+        , dropdown
+            [ Background.color blueSapphire
+            , width <| px 100
+            , padding 11
+            , height <| px 38
+            , Font.center
+            , Font.color greyWhite
+            , spacing 0
+            ]
+            model.baudrateDd
+        , rigthLabel ""
+        ]
+
+stopbits : Model -> Element Msg
+stopbits model =
+    row
+        [ spacing 5 ]
+        [ mainLabel "Stop Bits"
+        , leftLabel ""
+        , dropdown
+            [ Background.color blueSapphire
+            , width <| px 100
+            , padding 11
+            , height <| px 38
+            , Font.center
+            , Font.color greyWhite
+            , spacing 0
+            ]
+            model.stopBitsDd
+        , rigthLabel ""
+        ]
+
+parity : Model -> Element Msg
+parity model =
+    row
+        [ spacing 5]
+        [ mainLabel "Parity"
+        , leftLabel ""
+        , dropdown
+            [ Background.color blueSapphire
+            , width <| px 100
+            , padding 11
+            , height <| px 38
+            , Font.center
+            , Font.color greyWhite
+            , spacing 0
+            ]
+            model.parityDd
+        , rigthLabel ""
+        ]
+
+------------------------------------------------------------------------------------------------------------------
+-- Import
+------------------------------------------------------------------------------------------------------------------
 
 
 importTab : Model -> Element Msg
@@ -420,18 +860,12 @@ importTab model =
 
 importActiveTab : Model -> Element Msg
 importActiveTab model =
-    column
-        [ Background.color grey
-        , width <| px 500
-        , height <| px 500
-        , spacing 20
-        , paddingXY 10 20
-        , centerX
-        , centerY
-        ]
-        [ loadCSVButton
-        , loadRegisterTableButton model
-        ]
+    indexedTable
+        []
+        { data = model.modDataUpdate
+        , columns =
+            []
+        }
 
 
 loadCSVButton : Element Msg
@@ -451,42 +885,35 @@ loadCSVButton =
         }
 
 
-showCSVFile : Model -> Element Msg
-showCSVFile model =
-    case model.csvFileName of
+loadRegisterTableButton : Model -> Element Msg
+loadRegisterTableButton model =
+    case model.csvContent of
+        Just _ ->
+            Input.button
+                [ Background.color <| loadRegsButtonClr model
+                , mouseOver [ Font.color white ]
+                , height <| px 38
+                , width fill
+                , paddingXY 0 0
+                , Font.color greyWhite
+                , Font.center
+                , focused []
+                ]
+                { onPress = Just ModDataRequest
+                , label = text <| csvLoadButtonText model.csvLoaded
+                }
+
         Nothing ->
             none
 
-        Just filename ->
-            el
-                [ Font.color white, centerX ]
-                (text <| csvLoadButtonText model.csvLoaded filename)
 
-
-csvLoadButtonText : Bool -> String -> String
-csvLoadButtonText flag str =
+csvLoadButtonText : Bool -> String
+csvLoadButtonText flag =
     if flag then
-        str ++ " registers imported!"
+        "Registers Imported"
 
     else
-        "Import registers from " ++ str
-
-
-loadRegisterTableButton : Model -> Element Msg
-loadRegisterTableButton model =
-    Input.button
-        [ Background.color <| loadRegsButtonClr model
-        , mouseOver [ Font.color white ]
-        , height <| px 38
-        , width fill
-        , paddingXY 0 0
-        , Font.color greyWhite
-        , Font.center
-        , focused []
-        ]
-        { onPress = Just ModDataRequest
-        , label = showCSVFile model
-        }
+        "Import Registers"
 
 
 loadRegsButtonClr : Model -> Color
@@ -500,12 +927,13 @@ loadRegsButtonClr model =
                 lightGrey
 
         Nothing ->
-            grey
+            background
 
 
 
 ------------------------------------------------------------------------------------------------------------------
 -- Registers Menu
+------------------------------------------------------------------------------------------------------------------
 
 
 newRegisterTab : List records -> List (IndexedColumn records Msg) -> Element Msg
@@ -523,7 +951,8 @@ newRegisterTab dt cl =
 
 modDataColumns : Model -> List (IndexedColumn ModDataUpdate Msg)
 modDataColumns model =
-    [ modNameColumn
+    [ selectColumn model
+    , modNameColumn
     , modRegTypeColumn
     , modAddressColumn
     , modValueTypeColumn
@@ -531,7 +960,6 @@ modDataColumns model =
     , modUidColumn
     , modDescriptionColumn
     , readWriteColumn model
-    , selectColumn model
     ]
 
 
@@ -560,7 +988,9 @@ selectColumn : Model -> IndexedColumn ModDataUpdate Msg
 selectColumn model =
     { header =
         el
-            [ height <| px 38 ]
+            [ height <| px 38
+            , paddingXY 10 0
+            ]
         <|
             selectCheckbox SelectAllChecked model.selectAllCheckbox
     , width = px 30
@@ -588,6 +1018,7 @@ viewCheckedCell idx selected =
         , Font.color greyWhite
         , height <| px 38
         , Font.center
+        , paddingXY 10 0
         ]
     <|
         selectCheckbox (ModDataChecked idx) selected
@@ -627,7 +1058,7 @@ viewReadWriteModDataCell idx md =
 
 registersTab : Model -> Element Msg
 registersTab model =
-    renderRegistersTab model
+    none
 
 
 holdingRegistersTab : Element Msg
@@ -645,9 +1076,26 @@ heartbeatTab model =
     none
 
 
+updateSelectedButton : Model -> Element Msg
+updateSelectedButton model =
+    Input.button
+        [ Background.color lightGrey
+        , width fill
+        , height <| px 38
+        , Font.center
+        , Font.color greyWhite
+        , paddingXY 0 10
+        , focused []
+        ]
+        { onPress = Just <| RefreshRequest model.modDataUpdate
+        , label = text "Update Selected"
+        }
+
+
 
 ------------------------------------------------------------------------------------------------------------------
 -- Settings Tab
+------------------------------------------------------------------------------------------------------------------
 
 
 settingsTab : Model -> Element Msg
@@ -665,66 +1113,8 @@ settingsTab model =
 
 
 ------------------------------------------------------------------------------------------------------------------
--- Command Area
-
-
-commandArea : Model -> Element Msg
-commandArea model =
-    case model.activeTab of
-        ConnectMenu ->
-            none
-
-        ImportMenu ->
-            none
-
-        RegistersTab ->
-            none
-
-        ModDataTab ->
-            modDataCommand model
-
-        HeartbeatTab ->
-            none
-
-        SettingsTab ->
-            none
-
-
-modDataCommand : Model -> Element Msg
-modDataCommand model =
-    if model.selectSome then
-        column
-            [ Background.color grey
-            , width <| px 300
-            , height fill
-            , Border.widthXY 1 0
-            , Border.color lightGrey
-            , padding 10
-            ]
-            [ updateSelectedButton model ]
-
-    else
-        none
-
-
-updateSelectedButton : Model -> Element Msg
-updateSelectedButton model =
-    Input.button
-        [ Background.color lightGrey
-        , width fill
-        , Font.center
-        , Font.color greyWhite
-        , paddingXY 0 10
-        ]
-        { onPress = Just <| RefreshRequest model.modDataUpdate
-        , label = text "Update Selected"
-        }
-
-
-
+-- Notifications
 ------------------------------------------------------------------------------------------------------------------
--- Status Bar
--- An expandable status bar at the bottom of the page
 
 
 notifications : Model -> Element Msg

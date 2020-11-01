@@ -8,13 +8,20 @@ import Element
         , below
         , column
         , el
+        , fill
+        , height
         , mouseOver
         , none
+        , padding
         , pointer
+        , px
+        , spacing
+        , width
         )
 import Element.Background as Background
 import Element.Border as Border
 import Element.Events as Events
+import Element.Font as Font
 import Element.Input exposing (Label)
 import Html.Attributes exposing (selected)
 import Palette
@@ -44,17 +51,21 @@ dropdown :
     -> Dropdown value msg
     -> Element msg
 dropdown attributes drop =
-    let
-        whatToRender =
-            if drop.expanded then
-                renderExpandedDropdown drop
+    if drop.expanded then
+        renderExpandedDropdown attributes drop
 
-            else
-                renderOption drop drop.selected
-    in
-    el
-        []
-        whatToRender
+    else
+        renderOption attributes drop drop.selected
+
+
+expand : Dropdown value msg -> Dropdown value msg
+expand dd =
+    { dd | expanded = True }
+
+
+retract : Dropdown value msg -> Dropdown value msg
+retract dd =
+    { dd | expanded = False }
 
 
 getOption : value -> Element msg -> Option value msg
@@ -63,41 +74,50 @@ getOption value element =
 
 
 renderExpandedDropdown :
-    Dropdown value msg
+    List (Attribute msg)
+    -> Dropdown value msg
     -> Element msg
-renderExpandedDropdown drop =
+renderExpandedDropdown attributes drop =
     el
         [ below <|
             column
-                []
+                (attributes ++ [ padding 0, height <| px 38, width fill, Font.center])
             <|
-                renderRemainingOptions drop
+                renderRemainingOptions attributes drop
+        , width fill
+        , spacing 10
         ]
     <|
-        renderOption drop drop.selected
+        renderOption attributes drop drop.selected
 
 
-renderOption : Dropdown value msg -> Option value msg -> Element msg
-renderOption drop value =
+renderOption :
+    List (Attribute msg)
+    -> Dropdown value msg
+    -> Option value msg
+    -> Element msg
+renderOption attributes drop value =
     el
-        [ Border.width 1
-        , Background.color dClrNotExpanded
-        , mouseOver [ setHoverColor drop.selected value ]
-        , Events.onClick (drop.onClick value)
-        , pointer
-        ]
+        ([ Background.color dClrNotExpanded
+         , Border.width 1
+         , mouseOver [ setHoverColor drop.selected value ]
+         , Events.onClick (drop.onClick value)
+         , pointer
+         ]
+            ++ attributes
+        )
         value.element
 
 
-renderRemainingOptions : Dropdown value msg -> List (Element msg)
-renderRemainingOptions drop =
+renderRemainingOptions : List (Attribute msg) -> Dropdown value msg -> List (Element msg)
+renderRemainingOptions attributes drop =
     List.map
         (\opt ->
             if opt == drop.selected then
                 none
 
             else
-                renderOption drop opt
+                renderOption attributes drop opt
         )
         drop.options
 
@@ -122,3 +142,33 @@ setDropdown drop value =
         | selected = value
         , expanded = not drop.expanded
     }
+
+
+setDropdownSelected : Dropdown value msg -> value -> Dropdown value msg
+setDropdownSelected drop value =
+    let
+        mopt =
+            pickFirst drop.options value
+    in
+    case mopt of
+        Just opt ->
+            { drop
+                | selected = opt
+            }
+
+        Nothing ->
+            drop
+
+
+pickFirst : List (Option value msg) -> value -> Maybe (Option value msg)
+pickFirst opts value =
+    case List.head opts of
+        Just opt ->
+            if opt.value == value then
+                Just opt
+
+            else
+                pickFirst (Maybe.withDefault [] <| List.tail opts) value
+
+        Nothing ->
+            Nothing

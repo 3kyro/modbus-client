@@ -45,7 +45,6 @@ dependencies:
 - wai
 - warp
 - stm
-- system-info
 - tagged
 - hspec-golden-aeson  >= 0.7.0.0 && < 0.8
 - bytestring
@@ -65,6 +64,9 @@ executables:
     - -with-rtsopts=-N
     - -fwarn-unused-imports
     - -Wall
+    - -Werror
+
+
     dependencies:
     - modbus-serve
     - modbus-tcp
@@ -82,4 +84,5 @@ tests:
     - modbus-serve
     - hspec
     - hspec-golden-aeson  >= 0.7.0.0 && < 0.8
+    - async >= 2.1 && < 2.2
 

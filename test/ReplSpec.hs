@@ -1,13 +1,11 @@
-module ReplSpec (replSpec)
-    where
+module ReplSpec (replSpec) where
 
-import Test.Hspec ( hspec, describe, it, shouldBe, Spec )
-
-import Repl.Commands
-    ( commandsCompl
-      , getCommand )
+import Repl.Commands (
+    commandsCompl,
+    getCommand,
+ )
 import Repl.Help (getHelpCmd, helpOutputs)
-
+import Test.Hspec (Spec, describe, hspec, it, shouldBe)
 import Types (Command (..))
 
 replSpec :: IO ()
@@ -20,7 +18,7 @@ autocompleteSpec =
     describe "All commands are correctly autocompleted" $
         it "checks that all commands are valid" $
             map getCommand commandsCompl
-            `shouldBe` commands
+                `shouldBe` commands
 
 commands :: [Command]
 commands =
@@ -44,4 +42,4 @@ helpSpec :: Spec
 helpSpec =
     describe "All commands have help output" $
         it "checks all commands" $
-             map getHelpCmd commandsCompl `shouldBe` helpOutputs
+            map getHelpCmd commandsCompl `shouldBe` helpOutputs

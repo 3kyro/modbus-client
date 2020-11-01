@@ -22,7 +22,6 @@ import           Types
 -- Read and parse a CSV file from the disk
 parseCSVFile :: FilePath -> IO (Either AppError [ModData])
 parseCSVFile path = do
-        putStrLn "Parsing Modbus register table..."
         ioContents <- E.try $ T.readFile path
         let result = do
                 contents <- mapLeft AppIOError ioContents
@@ -31,9 +30,6 @@ parseCSVFile path = do
 
 -- Serialize ModData on the disk
 serializeCSVFile :: FilePath -> [ModData] -> IO (Either AppError ())
-serializeCSVFile _ [] = do
-    ppStrWarning "Empty Modbus register table\nTable not exported"
-    return $ Right ()
 serializeCSVFile filename mdata = do
     dir <- doesDirectoryExist filename
     if dir
@@ -59,7 +55,6 @@ serializeCSVFile filename mdata = do
 -- if it already exists
 overwriteCSVFile :: FilePath -> [ModData] -> IO (Either AppError ())
 overwriteCSVFile filename mdata = do
-    putStrLn "Serializing Modbus register table"
     let text = serializeModData mdata
     ioresult <- E.try $ T.writeFile filename text
     return $ mapLeft AppIOError ioresult
@@ -165,7 +160,7 @@ pInt = read <$> ((:) <$> option ' ' (char '-') <*> many1 digit)
 pFloatLeadingDot :: Parser Float
 pFloatLeadingDot = read <$> (char '.' *> addLeadingZero)
   where
-    addLeadingZero = (++) <$> return "0." <*> many1 digit
+    addLeadingZero = (++) "0." <$> many1 digit
 
 -- Parses a float when no fractional is given
 pFloatNoFractional :: Parser Float

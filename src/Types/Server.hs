@@ -9,11 +9,12 @@ module Types.Server
     , ConnectionInfo (..)
     , ConnectionRequest (..)
     , getActors
-    , getTCPActors
-    , getRTUActors
+    , setActors
     , KeepAliveServ (..)
     , KeepAliveResponse (..)
     , toKeepAlive
+    , OS (..)
+    , InitRequest (..)
     ) where
 
 import qualified Network.Socket             as S
@@ -27,9 +28,8 @@ import           Servant
 import           Control.Concurrent         (MVar)
 import           Control.Concurrent.STM     (TVar)
 import qualified Data.Text                  as T
-import           Modbus                     (ByteOrder, Client, HeartBeat,
-                                             ModbusProtocol, TID, Worker,
-                                             rtuBatchWorker, rtuDirectWorker,
+import           Modbus                     (SerialSettings, rtuBatchWorker, rtuDirectWorker, RTUWorker, ByteOrder, Client, HeartBeat,
+                                             ModbusProtocol, TID, TCPWorker(..),
                                              tcpBatchWorker, tcpDirectWorker)
 import           Network.Socket.KeepAlive   (KeepAlive (..))
 import qualified System.Hardware.Serialport as SP
@@ -42,11 +42,6 @@ data ServState = ServState
     , servPool        :: ![HeartBeat]
     }
 
-data ServerActors = ServerActors
-    { sclClient       :: !(MVar Client)
-    , sclDirectWorker :: !(Worker IO)
-    , sclBatchWorker  :: !(Worker IO)
-    }
 
 data Connection = TCPConnection
     { tcpSocket         :: !S.Socket
@@ -60,24 +55,28 @@ data Connection = TCPConnection
     }
     | NotConnected
 
+data ServerActors = ServerActors
+    { sclClient             :: !(MVar Client)
+    , sclTCPDirectWorker    :: !(TCPWorker IO)
+    , sclTCPBatchWorker     :: !(TCPWorker IO)
+    , sclRTUDirectWorker    :: !(RTUWorker IO)
+    , sclRTUBatchWorker     :: !(RTUWorker IO)
+    }
+
 getActors :: Connection -> Maybe ServerActors
 getActors (TCPConnection _ _ actors) = Just actors
 getActors (RTUConnection _ _ actors) = Just actors
 getActors NotConnected               = Nothing
 
-getTCPActors :: MVar Client -> ServerActors
-getTCPActors client =
+setActors :: MVar Client -> ServerActors
+setActors client =
     ServerActors
         client
         tcpDirectWorker
         tcpBatchWorker
-
-getRTUActors :: MVar Client -> ServerActors
-getRTUActors client =
-    ServerActors
-        client
         rtuDirectWorker
         rtuBatchWorker
+
 
 data ConnectionInfo = TCPConnectionInfo
     { tcpIpAddress :: !IPv4
@@ -87,8 +86,7 @@ data ConnectionInfo = TCPConnectionInfo
     }
     | RTUConnectionInfo
     { rtuAddress :: !String
-    -- in seconds
-    , rtuTimeout :: !Int -- in seconds
+    , serialSettings :: !SerialSettings
     }
 
 instance FromJSON ConnectionInfo where
@@ -102,8 +100,8 @@ instance FromJSON ConnectionInfo where
                 return $ TCPConnectionInfo (read ip) port tm
             "rtu" -> do
                 serial <- o .: "serial port"
-                tm <- o .: "timeout"
-                return $ RTUConnectionInfo serial tm
+                settings <- o .: "settings"
+                return $ RTUConnectionInfo serial settings
     parseJSON _ = fail "Not a valid Connection Info"
 
 instance ToJSON ConnectionInfo where
@@ -115,10 +113,10 @@ instance ToJSON ConnectionInfo where
                 , "port" .= port
                 , "timeout" .= tm
                 ]
-            RTUConnectionInfo address tm -> object
+            RTUConnectionInfo address settings -> object
                 [ "connection type" .= String "rtu"
                 , "serial port" .= address
-                , "timeout" .= tm
+                , "settings" .= settings
                 ]
 
 data ConnectionRequest = ConnectionRequest
@@ -133,6 +131,18 @@ instance FromJSON ConnectionRequest where
         return $ ConnectionRequest jsonInfo jsonKeepAlive
     parseJSON _ = fail "Not a valid ConnectionRequest"
 
+data InitRequest = InitRequest
+    { initConnInfo  :: !(Maybe ConnectionInfo)
+    , initOs      :: !OS
+    }
+
+instance ToJSON InitRequest where
+    toJSON ir = object
+        [ "connection info" .= initConnInfo ir
+        , "os" .= initOs ir
+        ]
+
+        
 data KeepAliveServ = KeepAliveServ
     { flag     :: Bool
     , idle     :: Int
@@ -158,3 +168,14 @@ instance ToJSON KeepAliveResponse where
 toKeepAlive :: KeepAliveServ -> KeepAlive
 toKeepAlive (KeepAliveServ flag tidle tintv) =
     KeepAlive flag (fromIntegral tidle) (fromIntegral tintv)
+
+
+data OS
+    = Linux
+    | Windows
+    | Other
+
+instance ToJSON OS where
+    toJSON Linux = String "linux"
+    toJSON Windows = String "windows"
+    toJSON Other = String "other"

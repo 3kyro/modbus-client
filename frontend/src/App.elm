@@ -10,7 +10,6 @@ import ModData
         , ModDataUpdate
         , ModValue(..)
         , RegType(..)
-        , ValueType(..)
         , fromFloat
         , newModDataUpdate
         )
@@ -21,11 +20,16 @@ import Time
 import Types
     exposing
         ( ActiveTab(..)
+        , BaudRate(..)
         , ByteOrder(..)
+        , ConnectActiveTab(..)
         , ConnectStatus(..)
         , Model
         , Msg(..)
+        , OS(..)
+        , Parity(..)
         , SettingsOptions(..)
+        , StopBits(..)
         )
 import Types.IpAddress exposing (defaultIpAddr)
 import Update exposing (initCmd, update)
@@ -44,36 +48,69 @@ main =
 
 initModel : Model
 initModel =
-    { modDataUpdate = newModDataUpdate initModData
-    , notifications = []
-    , statusBarState = Retracted
-    , connectStatus = Connect
-    , ipAddress = defaultIpAddr
-    , socketPort = Just 502
-    , serialPort = Nothing
-    , timeout = Just 60
-    , byteOrder = LE
-    , activeTab = ConnectMenu
-    , csvFileName = Nothing
-    , csvContent = Nothing
-    , csvLoaded = False
+    { -- register table
+      modDataUpdate = []
     , selectAllCheckbox = False
     , selectSome = False
     , readWriteAll = Read
-    , timePosix = Time.millisToPosix 0
-    , timeZone = Time.utc
-    , settings = [ keepAliveSetting, byteOrderSetting ]
-    , keepAlive = False
-    , keepAliveIdle = Nothing
-    , keepAliveInterval = Nothing
+
+    -- register tab
     , regTypeDd = regDropdown
-    , valueTypeDd = valueTypeDropdown
+    , regModValueDd = valueTypeDropdown
     , regAddress = Just 0
     , regUid = Just 1
     , regNumReg = Nothing
     , regMdu = initRegMdu
     , regResponse = []
+
+    -- notifications
+    , statusBarState = Retracted
+    , notifications = []
+    , connectStatus = Connect
+
+    -- tabs
+    , activeTab = ConnectMenu
+
+    -- connect tab
+    , connActiveTab = TCPTab
+    , timeout = Just 10
+
+    -- TCP connections
+    , ipAddress = defaultIpAddr
+    , socketPort = Just 502
+
+    -- RTU Connections
+    , serialPort = Nothing
+    , os = Linux
+    , baudrate = BR9600
+    , baudrateDd = baudrateDd
+    , stopBits = OneStopBit
+    , stopBitsDd = stopbitsDd
+    , parity = OddParity
+    , parityDd = parityDd
+
+    -- csv
+    , csvFileName = Nothing
+    , csvContent = Nothing
+    , csvLoaded = False
+
+    -- time
+    , timePosix = Time.millisToPosix 0
+    , timeZone = Time.utc
+
+    -- settings
+    , settings = [ keepAliveSetting, byteOrderSetting ]
+    , keepAlive = False
+    , keepAliveIdle = Nothing
+    , keepAliveInterval = Nothing
+    , byteOrder = LE
     }
+
+
+
+----------------------------------------------------------------------------------------------------------------------------------
+-- Register dropdowns
+----------------------------------------------------------------------------------------------------------------------------------
 
 
 regDropdown : Dropdown RegType Msg
@@ -98,15 +135,15 @@ getRegTypeOption rg =
 
 inputRegisterOption : Option RegType Msg
 inputRegisterOption =
-    getOption InputRegister (text "Input Register")
+    getOption InputRegister (text "Input")
 
 
 holdingRegisterOption : Option RegType Msg
 holdingRegisterOption =
-    getOption HoldingRegister (text "Holding Register")
+    getOption HoldingRegister (text "Holding")
 
 
-valueTypeDropdown : Dropdown ValueType Msg
+valueTypeDropdown : Dropdown ModValue Msg
 valueTypeDropdown =
     { onClick = RegValueTypeDrop
     , options = [ wordOption, floatOption ]
@@ -116,14 +153,14 @@ valueTypeDropdown =
     }
 
 
-wordOption : Option ValueType Msg
+wordOption : Option ModValue Msg
 wordOption =
-    getOption VWord (text "Word")
+    getOption (ModWord Nothing) (text "Word")
 
 
-floatOption : Option ValueType Msg
+floatOption : Option ModValue Msg
 floatOption =
-    getOption VFloat (text "Float")
+    getOption (ModFloat Nothing) (text "Float")
 
 
 initRegMdu : ModDataUpdate
@@ -139,6 +176,84 @@ initRegMdu =
     , mduSelected = True
     , mduRW = Read
     }
+
+
+
+----------------------------------------------------------------------------------------------------------------------------------
+-- Connection Dropdowns
+----------------------------------------------------------------------------------------------------------------------------------
+
+
+baudrateDd : Dropdown BaudRate Msg
+baudrateDd =
+    { onClick = BaudRateDrop
+    , options = baudrateOptions
+    , selected = getOption BR9600 (text "9600")
+    , expanded = False
+    , label = ""
+    }
+
+
+baudrateOptions : List (Option BaudRate Msg)
+baudrateOptions =
+    [ getOption BR110 (text "110")
+    , getOption BR300 (text "300")
+    , getOption BR600 (text "600")
+    , getOption BR1200 (text "1200")
+    , getOption BR2400 (text "2400")
+    , getOption BR4800 (text "4800")
+    , getOption BR9600 (text "9600")
+    , getOption BR19200 (text "19200")
+    , getOption BR38400 (text "38400")
+    , getOption BR57600 (text "57600")
+    , getOption BR115200 (text "115200")
+    ]
+
+
+stopbitsDd : Dropdown StopBits Msg
+stopbitsDd =
+    { onClick = StopBitsDrop
+    , options = [ oneSBOpt, twoSBOpt ]
+    , selected = oneSBOpt
+    , expanded = False
+    , label = ""
+    }
+
+
+oneSBOpt : Option StopBits Msg
+oneSBOpt =
+    getOption OneStopBit (text "One")
+
+
+twoSBOpt : Option StopBits Msg
+twoSBOpt =
+    getOption TwoStopBits (text "Two")
+
+
+parityDd : Dropdown Parity Msg
+parityDd =
+    { onClick = ParityDrop
+    , options = [ odd, even ]
+    , selected = odd
+    , expanded = False
+    , label = ""
+    }
+
+
+odd : Option Parity Msg
+odd =
+    getOption OddParity (text "Odd")
+
+
+even : Option Parity Msg
+even =
+    getOption EvenParity (text "Even")
+
+
+
+----------------------------------------------------------------------------------------------------------------------------------
+-- Settings
+----------------------------------------------------------------------------------------------------------------------------------
 
 
 keepAliveSetting : Setting SettingsOptions Msg
@@ -179,36 +294,3 @@ byteOrderSetting =
             , message = ChangeByteOrderMsg
             }
         ]
-
-
-initModData : List ModData
-initModData =
-    [ { modName = "first"
-      , modRegType = HoldingRegister
-      , modAddress = 1
-      , modValue = ModFloat (Just <| fromFloat 1)
-      , modUid = 1
-      , modDescription = "A register for testing purposes"
-      }
-    , { modName = "second"
-      , modRegType = HoldingRegister
-      , modAddress = 2
-      , modValue = ModWord (Just 2)
-      , modUid = 1
-      , modDescription = "A register for testing purposes"
-      }
-    , { modName = "1500"
-      , modRegType = InputRegister
-      , modAddress = 10
-      , modValue = ModWord Nothing
-      , modUid = 1
-      , modDescription = "A register for testing purposes"
-      }
-    , { modName = "1700"
-      , modRegType = HoldingRegister
-      , modAddress = 15
-      , modValue = ModWord Nothing
-      , modUid = 1
-      , modDescription = "A register for testing purposes"
-      }
-    ]

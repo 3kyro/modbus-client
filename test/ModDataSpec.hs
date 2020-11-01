@@ -1,14 +1,15 @@
-{-# LANGUAGE OverloadedStrings   #-}
+{-# LANGUAGE OverloadedStrings #-}
+
 module ModDataSpec (modDataSpec) where
 
 import Test.Hspec
 
 import Test.Aeson.GenericSpecs
 
-import Types.ModData
 import CsvParser (pModData, testCSVParser)
 import qualified Data.Text as T
 import Test.QuickCheck (property)
+import Types.ModData
 
 modDataSpec :: IO ()
 modDataSpec = hspec $ do

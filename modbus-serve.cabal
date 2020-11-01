@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: ee3617f3f9f3a7855d4764baf2e23f38a5720dcda5cb8a50f6669c96d885b2af
+-- hash: f3dc7c1aad23be1c09fc99348d7395b515ff85028cd2408502997aec9ea7213a
 
 name:           modbus-serve
 version:        0.1.0.0
@@ -72,7 +72,6 @@ library
     , serialport
     , servant-server
     , stm
-    , system-info
     , tagged
     , text
     , transformers
@@ -86,7 +85,7 @@ executable modbus-serve-exe
       Paths_modbus_serve
   hs-source-dirs:
       app
-  ghc-options: -threaded -rtsopts -with-rtsopts=-N -fwarn-unused-imports -Wall
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N -fwarn-unused-imports -Wall -Werror
   build-depends:
       Cabal
     , QuickCheck
@@ -115,7 +114,6 @@ executable modbus-serve-exe
     , serialport
     , servant-server
     , stm
-    , system-info
     , tagged
     , text
     , transformers
@@ -141,6 +139,7 @@ test-suite modbus-serve-test
     , QuickCheck
     , aeson
     , ansi-terminal
+    , async >=2.1 && <2.2
     , base >=4.7 && <5
     , binary
     , bytestring
@@ -164,7 +163,6 @@ test-suite modbus-serve-test
     , serialport
     , servant-server
     , stm
-    , system-info
     , tagged
     , text
     , transformers

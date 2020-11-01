@@ -1,0 +1,1 @@
+{ roots = [ "^Main.main$", "^Paths_.*", "^Spec.*", "CsvParser.testCSVParser" ], type-class-roots = True }k
