@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: f3dc7c1aad23be1c09fc99348d7395b515ff85028cd2408502997aec9ea7213a
+-- hash: 0bbe1f44d17397ea13365daa256c518706ddff7dd52ee4067d8d0f32919e904f
 
 name:           modbus-serve
 version:        0.1.0.0
@@ -139,7 +139,7 @@ test-suite modbus-serve-test
     , QuickCheck
     , aeson
     , ansi-terminal
-    , async >=2.1 && <2.2
+    , async >=2.2 && <2.3
     , base >=4.7 && <5
     , binary
     , bytestring

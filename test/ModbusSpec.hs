@@ -46,3 +46,4 @@ propIncrementTID = monadicIO $ do
     run $ mapConcurrently (\_ -> forkIO $ void $ getNewTID tid) (replicate (fromIntegral repeats) 0)
     incremented <- run $ getNewTID tid
     assert $ unTID incremented == repeats + 1
+

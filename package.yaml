@@ -84,5 +84,5 @@ tests:
     - modbus-serve
     - hspec
     - hspec-golden-aeson  >= 0.7.0.0 && < 0.8
-    - async >= 2.1 && < 2.2
+    - async >= 2.2 && < 2.3
 
