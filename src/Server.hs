@@ -25,6 +25,7 @@ import qualified System.Process as PS
 
 import Control.Exception (try)
 import Control.Exception.Safe (SomeException)
+import Control.Monad (void)
 import CsvParser (runpCSV)
 import Modbus (
     ByteOrder,
@@ -134,8 +135,7 @@ connect state (ConnectionRequest connectionInfo kaValue) = do
                                 { servConnection = TCPConnection socket connectionInfo $ setActors client
                                 , servProtocol = ModBusTCP
                                 }
-                        keepAlive state kaValue
-                        return ()
+                        void $ keepAlive state kaValue
             RTUConnectionInfo serial settings -> do
                 let tms = SP.timeout (unSR settings) * 1000000 -- in microseconds
                 mPort <- liftIO $ getRTUSerialPort serial settings
@@ -226,15 +226,15 @@ updateModData state mdus = do
     let actors = getActors $ servConnection state'
     case actors of
         Nothing -> throwError err400
-        Just actors ->
-            let client = sclClient actors
+        Just actors' ->
+            let client = sclClient actors'
              in case servProtocol state' of
                     ModBusTCP ->
-                        let worker = sclTCPBatchWorker actors
+                        let worker = sclTCPBatchWorker actors'
                             sessions = traverse (tcpModUpdateSession tid order) mdus
                          in liftIO $ tcpRunClient worker client sessions
                     ModBusRTU ->
-                        let worker = sclRTUBatchWorker actors
+                        let worker = sclRTUBatchWorker actors'
                             sessions = traverse (rtuModUpdateSession order) mdus
                          in liftIO $ rtuRunClient worker client sessions
 

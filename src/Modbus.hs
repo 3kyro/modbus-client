@@ -150,6 +150,7 @@ instance FromJSON ModbusProtocol where
             "TCP" -> return ModBusTCP
             "RTU" -> return ModBusRTU
             _ -> fail "Not a ModBusProtocol"
+    parseJSON _ = fail "Not a ModBusProtocol"
 
 instance ToJSON ModbusProtocol where
     toJSON mp =
@@ -159,6 +160,7 @@ instance ToJSON ModbusProtocol where
 
 instance Arbitrary ModbusProtocol where
     arbitrary = elements [ModBusTCP, ModBusRTU]
+
 ---------------------------------------------------------------------------------------------------------------
 -- Client
 ---------------------------------------------------------------------------------------------------------------
@@ -435,34 +437,26 @@ getRegisterTPU uid tid =
 -- Input Register, 16-bit word, read only
 -- Holding Register, 16-bit word, read / write
 data RegType
-    = DiscreteInput
-    | Coil
-    | InputRegister
+    = InputRegister
     | HoldingRegister
     deriving (Eq)
 
 instance Show RegType where
-    show DiscreteInput = "Discrete Input"
-    show Coil = "Coil"
     show InputRegister = "Input Register"
     show HoldingRegister = "Holding Register"
 
 instance Arbitrary RegType where
-    arbitrary = elements [DiscreteInput, Coil, InputRegister, HoldingRegister]
+    arbitrary = elements [InputRegister, HoldingRegister]
 
 instance ToJSON RegType where
     toJSON rt =
         case rt of
-            DiscreteInput -> String "discrete input"
-            Coil -> String "coil"
             InputRegister -> String "input register"
             HoldingRegister -> String "holding register"
 
 instance FromJSON RegType where
     parseJSON (String s) =
         case s of
-            "discrete input" -> return DiscreteInput
-            "coil" -> return Coil
             "input register" -> return InputRegister
             "holding register" -> return HoldingRegister
             _ -> fail "Not a RegType"
@@ -471,8 +465,6 @@ instance FromJSON RegType where
 serializeRegType :: RegType -> String
 serializeRegType rt =
     case rt of
-        DiscreteInput -> "discrete input"
-        Coil -> "coil"
         InputRegister -> "input register"
         HoldingRegister -> "holding register"
 
@@ -506,6 +498,7 @@ instance FromJSON ByteOrder where
             "le" -> return LE
             "be" -> return BE
             _ -> fail "Not a ByteOrder"
+    parseJSON _ = fail "Not a ByteOrder"
 
 -- Converts a Float to a list of Word16s
 float2Word16 :: ByteOrder -> Float -> [Word16]
@@ -668,6 +661,7 @@ instance FromJSON SerialSettings where
                     (unParity parity)
                     SP.NoFlowControl
                     (timeout `div` 10) -- from seconds to tenths of second
+    parseJSON _ = fail "Not a SerialSetting"
 
 instance ToJSON SerialSettings where
     toJSON sr =
@@ -682,10 +676,10 @@ instance ToJSON SerialSettings where
 instance Arbitrary SerialSettings where
     arbitrary =
         buildSerialSettings
-                    <$> arbitrary
-                    <*> arbitrary
-                    <*> arbitrary
-                    <*> arbitrary
+            <$> arbitrary
+            <*> arbitrary
+            <*> arbitrary
+            <*> arbitrary
 
 newtype BaudRate = BR {unBR :: SP.CommSpeed}
 
@@ -764,6 +758,7 @@ instance FromJSON Parity where
         case s of
             "odd" -> pure $ Parity SP.Odd
             "even" -> pure $ Parity SP.Even
+            "none" -> pure $ Parity SP.NoParity
             _ -> fail "Not a Parity"
     parseJSON _ = fail "Not a Parity"
 
@@ -772,6 +767,7 @@ instance ToJSON Parity where
         case unParity parity of
             SP.Odd -> "odd"
             SP.Even -> "even"
+            SP.NoParity -> "none"
 
 instance Arbitrary Parity where
     arbitrary =

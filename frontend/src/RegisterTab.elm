@@ -104,7 +104,7 @@ navRW model =
         , spacing 10
         ]
         [ el
-            [ width <| fillPortion 1
+            [ width <| fillPortion 2
             , Background.color lightGrey
             , padding 11
             , height fill
@@ -119,7 +119,7 @@ navNumInput : Model -> Element Msg
 navNumInput model =
     case model.regMdu.mduRW of
         Read ->
-            navInput "Number of Registers" RegNumber <| Maybe.map String.fromInt model.regNumReg
+            navInput "Number" RegNumber <| Maybe.map String.fromInt model.regNumReg
 
         Write ->
             navInput "Value" RegModValue <| getModValueUpdate model.regMdu
@@ -145,7 +145,7 @@ navRWButton : Model -> Element Msg
 navRWButton model =
     Input.button
         [ Background.color <| rwButtonClr model.regMdu.mduRW
-        , width fill
+        , width <| fillPortion 3
         , height <| px 38
         , Font.center
         , Font.color greyWhite
@@ -185,7 +185,7 @@ navDd label db =
         , spacing 10
         ]
         [ el
-            [ width <| fillPortion 1
+            [ width <| fillPortion 2
             , Background.color lightGrey
             , padding 11
             , height fill
@@ -193,8 +193,8 @@ navDd label db =
           <|
             text label
         , el
-            [ Background.color lightGrey
-            , width fill
+            [ width <| fillPortion 3
+            , Background.color lightGrey
             , height <| px 38
             ]
           <|
@@ -218,7 +218,7 @@ navInput label msg mvalue =
         , spacing 10
         ]
         [ el
-            [ width <| fillPortion 1
+            [ width <| fillPortion 2
             , Background.color lightGrey
             , padding 11
             , height fill
@@ -226,8 +226,8 @@ navInput label msg mvalue =
           <|
             text label
         , el
-            [ Background.color lightGrey
-            , width fill
+            [ width <| fillPortion 3
+            , Background.color lightGrey
             , height <| px 38
             ]
           <|

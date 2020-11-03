@@ -6,7 +6,7 @@ module Repl.Parser
     , pReplDesc
     , pReplArg
     , pReplInt
-    )
+    ,pReplWordBit)
     where
 
 import           Control.Monad.IO.Class  ()
@@ -17,9 +17,9 @@ import           Text.Parsec.Text        (Parser)
 
 import qualified Data.Text               as T
 
-import           CsvParser               (only, pFloat, pInt, pName, pWord)
+import           CsvParser               (only, pFloat, pInt, pName, pWord, pBit)
 
-import           Types                   (AppError(..), ReplArg (..))
+import           Types                   (WordBit, AppError(..), ReplArg (..))
 
 
 -- Parse address and number of register strings
@@ -34,6 +34,9 @@ pReplWord = replConvParser pWord
 
 pReplInt :: String -> Either AppError Int
 pReplInt = replConvParser pInt
+
+pReplWordBit :: String -> Either AppError WordBit
+pReplWordBit = replConvParser pBit
 
 pReplDesc :: String -> Either AppError String
 pReplDesc = replConvParser (only pName)

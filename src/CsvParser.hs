@@ -100,8 +100,8 @@ pRegType :: Parser RegType
 pRegType = do
   rt <- T.map toLower <$> field pText
   case T.unpack rt of
-    "discrete input"   -> return DiscreteInput
-    "coil"             -> return Coil
+    -- "discrete input"   -> return DiscreteInput
+    -- "coil"             -> return Coil
     "input register"   -> return InputRegister
     "holding register" -> return HoldingRegister
     _                  -> fail ""
@@ -118,6 +118,7 @@ pValue = do
   case T.unpack dataType of
     "float" -> ModFloat <$> pMaybeFloat
     "word"  -> ModWord <$> pMaybeWord
+    "bits"  -> ModWordBit <$> pMaybeWordBit
     _       -> fail ""
 
 -- Parses a float field, returns Nothing if field is empty
@@ -152,7 +153,21 @@ pMaybeWord = Just <$> field pWord <|> nothing
   where
     nothing = char ';' >> return Nothing
 
--- PArses an Int
+-- Parses a WordBit. The parser expects:
+-- A textual reresentation of 16 bits, starting with LSB from left to right
+pMaybeWordBit :: Parser (Maybe WordBit)
+pMaybeWordBit = Just <$> field pBit <|> nothing
+  where
+    nothing = char ';' >> return Nothing
+
+pBit :: Parser WordBit
+pBit = bitsFromBools <$> count 16 (pZero <|> pOne)
+  where
+    pZero = char '0' $> False
+    pOne = char '1' $> True
+
+
+-- Parses an Int
 pInt :: Parser Int
 pInt = read <$> ((:) <$> option ' ' (char '-') <*> many1 digit)
 

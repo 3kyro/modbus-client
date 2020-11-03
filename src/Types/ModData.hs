@@ -1,29 +1,46 @@
-{-# LANGUAGE FlexibleInstances   #-}
-{-# LANGUAGE OverloadedStrings   #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-module Types.ModData
-    ( ModData (..)
-    , RegType (..)
-    , ModValue (..)
-    , NameArb (..)
-    , getModValueMult
-    , serializeModData
-    , serializeModDatum
-    , ModDataUpdate (..)
-    , ReadWrite (..)
-    ,setMDUModValue,createModData)
-    where
 
-import           Data.Aeson
-import           Data.List       (foldl')
-import           Data.Word       (Word16, Word8)
-import           Test.QuickCheck (Arbitrary, arbitrary, elements, frequency,
-                                  oneof)
-import           Modbus    (Address (..), MBRegister (..), RegType (..),
-                                  float2Word16, serializeRegType, word16ToFloat)
+module Types.ModData (
+    ModData (..),
+    RegType (..),
+    ModValue (..),
+    NameArb (..),
+    getModValueMult,
+    serializeModData,
+    serializeModDatum,
+    ModDataUpdate (..),
+    ReadWrite (..),
+    setMDUModValue,
+    createModData,
+    WordBit,
+    bitsFromBools,
+bitsFromString) where
 
-import           Data.Range      (fromSize)
-import qualified Data.Text       as T
+import Data.Aeson
+import Data.List (foldl')
+import Data.Word (Word16, Word8)
+import Modbus (
+    Address (..),
+    MBRegister (..),
+    RegType (..),
+    float2Word16,
+    serializeRegType,
+    word16ToFloat,
+ )
+import Test.QuickCheck (
+    Arbitrary,
+    arbitrary,
+    elements,
+    frequency,
+    oneof,
+ )
+
+import Data.Bits ((.|.), Bits, setBit, testBit, zeroBits)
+import Data.Range (fromSize)
+import qualified Data.Text as T
 
 ---------------------------------------------------------------------------------------------------------------
 -- ModData
@@ -32,34 +49,34 @@ import qualified Data.Text       as T
 -- The principal modbus register data struture
 -- TODO #6 :: use opaque type for modName
 data ModData = ModData
-    { modName        :: !String
-    -- Register Type
-    , modRegType     :: !RegType
-    -- Address
-    , modAddress     :: !Word16
-    -- Value
-    , modValue       :: !ModValue
-    -- Unit Id
-    , modUid         :: !Word8
-    -- Description
-    , modDescription :: !T.Text
+    { modName :: !String
+    , -- Register Type
+      modRegType :: !RegType
+    , -- Address
+      modAddress :: !Word16
+    , -- Value
+      modValue :: !ModValue
+    , -- Unit Id
+      modUid :: !Word8
+    , -- Description
+      modDescription :: !T.Text
     }
     deriving (Show, Eq)
 
 instance Arbitrary ModData where
-    arbitrary
-        = ModData
-        <$> (unNA <$> arbitrary)    -- Arbitrary modName
-        <*> arbitrary               -- Arbitrary RegType
-        <*> arbitrary               -- Arbitrary Address
-        <*> arbitrary               -- Arbitrary ModValue
-        <*> arbitrary               -- Arbitrary Unit Id
-        <*> arbText                 -- Arbitrary Description
+    arbitrary =
+        ModData
+            <$> (unNA <$> arbitrary) -- Arbitrary modName
+            <*> arbitrary -- Arbitrary RegType
+            <*> arbitrary -- Arbitrary Address
+            <*> arbitrary -- Arbitrary ModValue
+            <*> arbitrary -- Arbitrary Unit Id
+            <*> arbText -- Arbitrary Description
       where
-        arbText = frequency [end,rest]
+        arbText = frequency [end, rest]
         end = (1, return "")
         rest = (10, T.cons <$> descValidChar <*> arbText)
-        descValidChar = elements $ ['a'..'z'] ++ ['A'..'Z'] ++ " &éèçà$=:"
+        descValidChar = elements $ ['a' .. 'z'] ++ ['A' .. 'Z'] ++ " &éèçà$=:"
 
 instance FromJSON ModData where
     parseJSON (Object o) = do
@@ -72,32 +89,36 @@ instance FromJSON ModData where
         return $ ModData name regType addr value uid desc
     parseJSON _ = fail "Not a ModData"
 
-
 instance ToJSON ModData where
-    toJSON md = object
-        [ "name" .= modName md
-        , "register type" .= modRegType md
-        , "address" .= modAddress md
-        , "register value" .= modValue md
-        , "uid" .= modUid md
-        , "description" .= modDescription md
-        ]
+    toJSON md =
+        object
+            [ "name" .= modName md
+            , "register type" .= modRegType md
+            , "address" .= modAddress md
+            , "register value" .= modValue md
+            , "uid" .= modUid md
+            , "description" .= modDescription md
+            ]
 
 instance MBRegister ModData where
     registerType = modRegType
-    registerAddress md = fromSize (Address (modAddress md))  (Address $ getModValueMult $ modValue md)
+    registerAddress md = fromSize (Address (modAddress md)) (Address $ getModValueMult $ modValue md)
     registerUID = modUid
     registerToWord16 bo md =
         case modValue md of
-            ModWord Nothing   -> []
-            ModWord (Just v)  -> [v]
-            ModFloat Nothing  -> []
+            ModWord Nothing -> []
+            ModWord (Just v) -> [v]
+            ModWordBit Nothing -> []
+            ModWordBit (Just wb) -> [fromIntegral wb]
+            ModFloat Nothing -> []
             ModFloat (Just v) -> float2Word16 bo v
-    registerFromWord16 bo md vs@(x:_) =
-        case modValue md of
-            ModWord _ -> md { modValue = ModWord (Just x) }
-            ModFloat _ -> md { modValue = ModFloat (word16ToFloat bo vs)}
 
+    registerFromWord16 bo md vs@(x : _) =
+        case modValue md of
+            ModWord _ -> md{modValue = ModWord (Just x)}
+            ModWordBit _ -> md{modValue = ModWordBit (Just $ fromIntegral x)}
+            ModFloat _ -> md{modValue = ModFloat (word16ToFloat bo vs)}
+    registerFromWord16 _ md [] = md
 
 ---------------------------------------------------------------------------------------------------------------
 -- ModValue
@@ -108,41 +129,63 @@ instance MBRegister ModData where
 -- transmitted, th most significant byte is sent first.
 -- In order to transmit a 32 bit float value, two consecutive registers
 -- will be used.
-data ModValue = ModWord (Maybe Word16)
+data ModValue
+    = ModWord (Maybe Word16)
+    | ModWordBit (Maybe WordBit)
     | ModFloat (Maybe Float)
     deriving (Eq)
 
 instance Show ModValue where
     show mv =
         case mv of
-            ModWord value  -> showM value ++ " (Word)"
+            ModWord value -> showM value ++ " (Word)"
+            ModWordBit value -> showM value ++ " (Word Bits)"
             ModFloat value -> showM value ++ " (Float)"
       where
-          showM (Just x) = show x
-          showM Nothing  = "No current value"
+        showM (Just x) = show x
+        showM Nothing = "No current value"
 
 instance Arbitrary ModValue where
-    arbitrary = oneof [ModWord <$> arbitrary, ModFloat <$> arbitrary]
+    arbitrary =
+        oneof
+            [ ModWord <$> arbitrary
+            , ModWordBit <$> (fmap WB <$> arbitrary)
+            , ModFloat <$> arbitrary
+            ]
 
 instance ToJSON ModValue where
     toJSON mv =
         case mv of
-            ModWord (Just x) -> object
-                [ "type" .= String "word"
-                , "value" .= x
-                ]
-            ModWord Nothing -> object
-                ["type" .= String "word"
-                , "value" .= Null
-                ]
-            ModFloat (Just x) -> object
-                [ "type" .= String "float"
-                , "value" .= x
-                ]
-            ModFloat Nothing -> object
-                ["type" .= String "float"
-                , "value" .= Null
-                ]
+            ModWord (Just x) ->
+                object
+                    [ "type" .= String "word"
+                    , "value" .= x
+                    ]
+            ModWord Nothing ->
+                object
+                    [ "type" .= String "word"
+                    , "value" .= Null
+                    ]
+            ModWordBit (Just x) ->
+                object
+                    [ "type" .= String "bits"
+                    , "value" .= show x
+                    ]
+            ModWordBit Nothing ->
+                object
+                    [ "type" .= String "bits"
+                    , "value" .= Null
+                    ]
+            ModFloat (Just x) ->
+                object
+                    [ "type" .= String "float"
+                    , "value" .= x
+                    ]
+            ModFloat Nothing ->
+                object
+                    [ "type" .= String "float"
+                    , "value" .= Null
+                    ]
 
 instance FromJSON ModValue where
     parseJSON (Object o) = do
@@ -151,9 +194,13 @@ instance FromJSON ModValue where
             "word" -> do
                 v <- o .:? "value"
                 return $ ModWord v
+            "bits" -> do
+                v <- o .:? "value"
+                return $ ModWordBit (v >>= bitsFromString)
             "float" -> do
                 v <- o .:? "value"
                 return $ ModFloat v
+            _ -> fail "Not a ModValue"
     parseJSON _ = fail "Not a ModValue"
 
 ---------------------------------------------------------------------------------------------------------------
@@ -161,9 +208,9 @@ instance FromJSON ModValue where
 ---------------------------------------------------------------------------------------------------------------
 
 data ModDataUpdate = MDU
-    { mduModData  :: ModData
+    { mduModData :: ModData
     , mduSelected :: Bool
-    , mduRW       :: ReadWrite
+    , mduRW :: ReadWrite
     }
     deriving (Show)
 
@@ -173,7 +220,7 @@ instance MBRegister ModDataUpdate where
     registerAddress = registerAddress . mduModData
     registerToWord16 order = registerToWord16 order . mduModData
     registerFromWord16 order mdu values =
-        mdu { mduModData = registerFromWord16 order (mduModData mdu) values }
+        mdu{mduModData = registerFromWord16 order (mduModData mdu) values}
 
 instance FromJSON ModDataUpdate where
     parseJSON (Object o) = do
@@ -181,52 +228,93 @@ instance FromJSON ModDataUpdate where
         sl <- o .: "selected"
         rw <- o .: "rw"
         return $ MDU md sl rw
+    parseJSON _ = fail "Not a ModDataUpdate"
 
 instance ToJSON ModDataUpdate where
-    toJSON mdu = object
-        [ "modData" .= mduModData mdu
-        , "selected" .= mduSelected mdu
-        , "rw" .= mduRW mdu
-        ]
+    toJSON mdu =
+        object
+            [ "modData" .= mduModData mdu
+            , "selected" .= mduSelected mdu
+            , "rw" .= mduRW mdu
+            ]
 
 instance Arbitrary ModDataUpdate where
     arbitrary = MDU <$> arbitrary <*> arbitrary <*> arbitrary
 
-data ReadWrite = MDURead
+data ReadWrite
+    = MDURead
     | MDUWrite
     deriving (Show)
 
 instance FromJSON ReadWrite where
     parseJSON (String s) =
         case s of
-            "read"  -> return MDURead
+            "read" -> return MDURead
             "write" -> return MDUWrite
-            _       -> fail "Not a ReadWrite"
+            _ -> fail "Not a ReadWrite"
     parseJSON _ = fail "Not a ReadWrite"
 
 instance ToJSON ReadWrite where
     toJSON rw =
         case rw of
-            MDURead  -> String "read"
+            MDURead -> String "read"
             MDUWrite -> String "write"
 
 instance Arbitrary ReadWrite where
-    arbitrary = elements [MDURead , MDUWrite]
+    arbitrary = elements [MDURead, MDUWrite]
 
 setMDUModValue :: ModDataUpdate -> ModValue -> ModDataUpdate
 setMDUModValue mdu mv =
-    mdu { mduModData = (mduModData mdu) { modValue = mv}}
+    mdu{mduModData = (mduModData mdu){modValue = mv}}
 
+---------------------------------------------------------------------------------------------------------------
+-- WordBit
+---------------------------------------------------------------------------------------------------------------
 
+-- A representation of a Word16 in bits
+newtype WordBit = WB Word16
+    deriving (Eq, Num, Enum, Ord, Real, Integral, Bits)
+
+instance Show WordBit where
+    show = map showB . toBits 0 . replicate 16
+      where
+        toBits :: Int -> [WordBit] -> [Bool]
+        toBits _ [] = []
+        toBits counter (x : xs) = testBit x counter : toBits (counter + 1) xs
+        showB b = if b then '1' else '0'
+
+bitsFromString :: String -> Maybe WordBit
+bitsFromString str = go str zeroBits 0
+  where
+    go "" bit _ = Just bit
+    go (c:cs) bit n
+        | n > 15 = Nothing
+        | c == '0'= go cs bit (n+1)
+        | c == '1'= go cs bit' (n + 1)
+        | otherwise = Nothing
+      where
+        bit' = setBit bit n .|. bit
+
+-- Used for CSV parsing
+bitsFromBools :: [Bool] -> WordBit
+bitsFromBools bs = go bs zeroBits 0
+  where
+    go [] bit _= bit
+    go (x : xs) bit n = bit' .|. go xs bit' (n + 1)
+      where
+        bit' = if x then setBit bit n else bit
+
+instance Arbitrary WordBit where
+    arbitrary = WB <$> arbitrary
 
 ---------------------------------------------------------------------------------------------------------------
 -- Utils
 ---------------------------------------------------------------------------------------------------------------
 
 -- Helper type to better produce arbitrary name values
-newtype NameArb = NA  {
-    unNA :: String
-}
+newtype NameArb = NA
+    { unNA :: String
+    }
 
 instance Show NameArb where
     show (NA str) = str
@@ -237,11 +325,11 @@ instance Arbitrary NameArb where
     arbitrary = go
       where
         go = NA <$> ((:) <$> validStartChars <*> tailArb)
-        validStartChars = elements $ ['A'..'Z'] ++ ['a'..'z'] ++ "_"
+        validStartChars = elements $ ['A' .. 'Z'] ++ ['a' .. 'z'] ++ "_"
         tailArb = frequency [end, rest]
         end = (1, return "")
         rest = (7, (:) <$> nameValidChars <*> (unNA <$> go))
-        nameValidChars = elements $ ['a'..'z'] ++ ['A'..'Z'] ++ ['0'..'9'] ++ "_"
+        nameValidChars = elements $ ['a' .. 'z'] ++ ['A' .. 'Z'] ++ ['0' .. '9'] ++ "_"
 
 createModData :: RegType -> Word16 -> ModValue -> Word8 -> ModData
 createModData regtype address mv uid =
@@ -254,7 +342,8 @@ createModData regtype address mv uid =
         (T.pack "placeholder description")
 
 getModValueMult :: ModValue -> Word16
-getModValueMult (ModWord _)  = 1
+getModValueMult (ModWord _) = 1
+getModValueMult (ModWordBit _) = 1
 getModValueMult (ModFloat _) = 2
 
 -- Serialize ModData, including the necessary header for
@@ -270,23 +359,23 @@ serializeModData md = header `T.append` packed
 serializeModDatum :: ModData -> T.Text
 serializeModDatum md =
     T.pack
-        (  modName md ++ ";"
-        ++ serializeRegType (modRegType md) ++ ";"
-        ++ show (modAddress md) ++ ";"
-        ++ serializeModValue (modValue md)
-        ++ show (modUid md) ++ ";"
+        ( modName md ++ ";"
+            ++ serializeRegType (modRegType md)
+            ++ ";"
+            ++ show (modAddress md)
+            ++ ";"
+            ++ serializeModValue (modValue md)
+            ++ show (modUid md)
+            ++ ";"
         )
-    `T.append` modDescription md
-
+        `T.append` modDescription md
 
 serializeModValue :: ModValue -> String
 serializeModValue mt =
     case mt of
-        ModWord mv  -> "word;" ++ serMaybe mv ++ ";"
+        ModWord mv -> "word;" ++ serMaybe mv ++ ";"
+        ModWordBit mv -> "bits;" ++ serMaybe mv ++ ";"
         ModFloat fl -> "float;" ++ serMaybe fl ++ ";"
   where
     serMaybe (Just x) = show x
-    serMaybe Nothing  = ""
-
-
-
+    serMaybe Nothing = ""

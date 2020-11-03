@@ -1,29 +1,27 @@
-module PrettyPrint
-    (
-      ppError
-    , ppWarning
-    , ppStrError
-    , ppStrWarning
-    , ppAndReset
-    , ppAndResetLn
-    , ppSingleModData
-    , ppMultModData
-    , ppRegisters
-    , ppUid
-    , ppMultThreadState
-    , ppThreadError
-    ,ppPlaceholderModData)
-    where
+module PrettyPrint (
+    ppError,
+    ppWarning,
+    ppStrError,
+    ppStrWarning,
+    ppAndReset,
+    ppAndResetLn,
+    ppMultModData,
+    ppRegisters,
+    ppUid,
+    ppMultThreadState,
+    ppThreadError,
+    ppPlaceholderModData,
+) where
 
-import           Control.Exception   (SomeException)
-import           Data.Maybe          (fromMaybe)
-import           Data.Word           (Word16, Word8)
-import           System.Console.ANSI
+import Control.Exception (SomeException)
+import Data.Maybe (fromMaybe)
+import Data.Word (Word16, Word8)
+import System.Console.ANSI
 
-import qualified Data.Text           as T
+import qualified Data.Text as T
 
-import           Types
 import Modbus (HeartBeat (..))
+import Types
 
 ppErrReset :: IO ()
 ppErrReset = do
@@ -57,49 +55,34 @@ ppStrWarning wrn = do
     ppWarnReset
     putStrLn wrn
 
-ppModData :: Int -> ModData ->  IO ()
-ppModData width md = do
-    let dashes = replicate width '-'
-    ppAndResetLn dashes Magenta
-    ppAndReset "Name: " Blue
-    putStrLn $ modName md
-    ppAndReset "Register type: " Blue
-    putStr $ show (modRegType md) ++ " "
-    ppAndReset "@address: " Blue
-    print (modAddress md)
-    ppAndReset "Value: " Blue
-    print (modValue md)
-    ppAndReset "Description: " Blue
-    putStrLn $ T.unpack (modDescription md)
-    ppAndResetLn dashes Magenta
+ppModData :: ModData -> IO ()
+ppModData md =
+    insideMagentaDashes Nothing $ do
+        ppAndReset "Name: " Blue
+        putStrLn $ modName md
+        ppAndReset "Register type: " Blue
+        putStr $ show (modRegType md) ++ " "
+        ppAndReset "@address: " Blue
+        print (modAddress md)
+        ppAndReset "Value: " Blue
+        print (modValue md)
+        ppAndReset "Description: " Blue
+        putStrLn $ T.unpack (modDescription md)
 
 ppGetTerminalWidth :: IO Int
 ppGetTerminalWidth = do
     size <- getTerminalSize
-    let width = snd $ fromMaybe (10,10) size
+    let width = snd $ fromMaybe (10, 10) size
     pure width
 
-ppSingleModData :: ModData -> IO ()
-ppSingleModData md = do
-    width <- ppGetTerminalWidth
-    ppModData width md
-
--- So that we don't calculate terminal width for each ModData
 ppMultModData :: [ModData] -> IO ()
-ppMultModData mds = do
-    width <- ppGetTerminalWidth
-    mapM_ (ppModData width) mds
+ppMultModData = mapM_ ppModData
 
 ppRegisters :: RegType -> [(Word16, ModValue)] -> IO ()
-ppRegisters rt mvs = do
-    width <- ppGetTerminalWidth
-    let dashes = replicate width '-'
-    ppAndResetLn dashes Magenta
-    ppAndReset "Register type: " Blue
-    print rt
-    ppAndResetLn dashes Magenta
-    mapM_ ppRegister mvs
-    ppAndResetLn dashes Magenta
+ppRegisters rt mvs =
+    insideMagentaDashes
+        ( Just ("Register type", show rt))
+        $ mapM_ ppRegister mvs
 
 ppRegister :: (Word16, ModValue) -> IO ()
 ppRegister (address, mv) = do
@@ -109,12 +92,11 @@ ppRegister (address, mv) = do
     print mv
 
 ppPlaceholderModData :: [ModData] -> IO ()
-ppPlaceholderModData mds = do
-    width <- ppGetTerminalWidth
-    let dashes = replicate width '-'
-    ppAndResetLn dashes Magenta
-    mapM_ ppPlaceholderModDatum mds
-    ppAndResetLn dashes Magenta
+ppPlaceholderModData mds =
+    insideMagentaDashes
+        Nothing
+        $ mapM_ ppPlaceholderModDatum mds
+
 
 ppPlaceholderModDatum :: ModData -> IO ()
 ppPlaceholderModDatum md = do
@@ -140,7 +122,6 @@ ppAndReset = ppAndResetFun putStr
 ppAndResetLn :: String -> Color -> IO ()
 ppAndResetLn = ppAndResetFun putStrLn
 
-
 ppThreadState :: HeartBeat -> IO ()
 ppThreadState state = do
     ppAndReset "@address: " Blue
@@ -150,17 +131,33 @@ ppThreadState state = do
 
 ppMultThreadState :: [HeartBeat] -> IO ()
 ppMultThreadState [] = putStrLn "No active heartbeat signals"
-ppMultThreadState xs = do
-    width <- ppGetTerminalWidth
-    let dashes = replicate width '-'
-    ppAndResetLn dashes Magenta
-    mapM_ ppThreadState xs
-    ppAndResetLn dashes Magenta
+ppMultThreadState xs =
+    insideMagentaDashes
+        Nothing
+        $ mapM_ ppThreadState xs
 
 ppThreadError :: HeartBeat -> SomeException -> IO ()
-ppThreadError thread exc = ppStrError $
-    "A heartbeat signal was previously running at address "
-    ++  show (hbAddress thread)
-    ++ ", but it has stopped after the following exception occured:\n"
-    ++ show exc
-    ++ "\nThe signal has been removed from the active list"
+ppThreadError thread exc =
+    ppStrError $
+        "A heartbeat signal was previously running at address "
+            ++ show (hbAddress thread)
+            ++ ", but it has stopped after the following exception occured:\n"
+            ++ show exc
+            ++ "\nThe signal has been removed from the active list"
+
+-- Encloses an action inside magenta dashes that take up the entire width of the terminal
+-- An optional header of type (header, value) can be provided. The string will be printed with
+-- blue color while the value  will be printed in the default color
+insideMagentaDashes :: Maybe (String, String) -> IO () -> IO ()
+insideMagentaDashes maybeHeader action = do
+    width <- ppGetTerminalWidth
+    let dashes = replicate width '-'
+    case maybeHeader of
+        Nothing -> pure ()
+        Just (str, val)-> do
+                ppAndReset str Blue
+                print val
+    ppAndResetLn dashes Magenta
+    action
+    ppAndResetLn dashes Magenta
+

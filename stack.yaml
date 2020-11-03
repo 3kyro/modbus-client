@@ -73,4 +73,4 @@ extra-deps:
 # compiler-check: newer-minor
 ghc-options:
     "$everything": -haddock
-    "$locals": -fwrite-ide-info
+    # "$locals": -fwrite-ide-info

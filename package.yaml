@@ -53,6 +53,9 @@ dependencies:
 - keep-alive
 library:
   source-dirs: src
+  ghc-options:
+  - -fwarn-unused-imports
+  - -Wall
 
 executables:
   modbus-serve-exe:
@@ -64,9 +67,6 @@ executables:
     - -with-rtsopts=-N
     - -fwarn-unused-imports
     - -Wall
-    - -Werror
-
-
     dependencies:
     - modbus-serve
     - modbus-tcp

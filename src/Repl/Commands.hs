@@ -2,6 +2,7 @@ module Repl.Commands (commandsCompl, getCommand, cmd, list) where
 
 import Control.Concurrent (killThread, tryReadMVar)
 import Control.Exception.Safe (try)
+import Control.Monad (void)
 import Control.Monad.Trans (lift, liftIO)
 import Control.Monad.Trans.Except (ExceptT, except, runExceptT)
 import Control.Monad.Trans.State.Strict (get, put)
@@ -43,7 +44,7 @@ import Repl.HelpFun (
     getPairs,
     invalidCmd,
  )
-import Repl.Parser (
+import Repl.Parser (pReplWordBit, 
     pReplAddrNum,
     pReplArg,
     pReplFloat,
@@ -55,10 +56,13 @@ import Types
 getCommand :: String -> Command
 getCommand s = case s of
     "readInputRegistersWord" -> ReadInputRegistersWord
+    "readInputRegistersBits" -> ReadInputRegistersBits
     "readInputRegistersFloat" -> ReadInputRegistersFloat
-    "readHoldingRegistersFloat" -> ReadHoldingRegistersFloat
     "readHoldingRegistersWord" -> ReadHoldingRegistersWord
+    "readHoldingRegistersBits" -> ReadHoldingRegistersBits
+    "readHoldingRegistersFloat" -> ReadHoldingRegistersFloat
     "writeRegistersWord" -> WriteRegistersWord
+    "writeRegistersBits" -> WriteRegistersBits
     "writeRegistersFloat" -> WriteRegistersFloat
     "read" -> Read
     "write" -> Write
@@ -81,14 +85,20 @@ runReplCommand input =
      in case getCommand str of
             ReadInputRegistersWord ->
                 readRegisters args InputRegister (ModWord Nothing)
+            ReadInputRegistersBits ->
+                readRegisters args InputRegister (ModWordBit Nothing)
             ReadInputRegistersFloat ->
                 readRegisters args InputRegister (ModFloat Nothing)
             ReadHoldingRegistersWord ->
                 readRegisters args HoldingRegister (ModWord Nothing)
+            ReadHoldingRegistersBits ->
+                readRegisters args HoldingRegister (ModWordBit Nothing)
             ReadHoldingRegistersFloat ->
                 readRegisters args HoldingRegister (ModFloat Nothing)
             WriteRegistersWord ->
                 writeRegisters args HoldingRegister (ModWord Nothing)
+            WriteRegistersBits ->
+                writeRegisters args HoldingRegister (ModWordBit Nothing)
             WriteRegistersFloat ->
                 writeRegisters args HoldingRegister (ModFloat Nothing)
             Read -> readModData args
@@ -104,10 +114,13 @@ runReplCommand input =
 commandsCompl :: [String]
 commandsCompl =
     [ "readInputRegistersWord"
+    , "readInputRegistersBits"
     , "readInputRegistersFloat"
     , "readHoldingRegistersWord"
+    , "readHoldingRegistersBits"
     , "readHoldingRegistersFloat"
     , "writeRegistersWord"
+    , "writeRegistersBits"
     , "writeRegistersFloat"
     , "read"
     , "write"
@@ -216,6 +229,7 @@ getAddressModValue mv (addr, value) = do
     address <- pReplWord addr
     modvalue <- case mv of
         ModWord _ -> ModWord . Just <$> pReplWord value
+        ModWordBit _ -> ModWordBit . Just <$> pReplWordBit value
         ModFloat _ -> ModFloat . Just <$> pReplFloat value
     return (address, modvalue)
 
@@ -231,8 +245,7 @@ writeModData args = do
             mds <- replRunExceptT wrapped []
             replWriteModData mds
 
--- Write a ModData to the server
--- Return the number of ModData written
+-- Write a ModData to the client
 replWriteModData :: [ModData] -> Repl ()
 replWriteModData mds = do
     state <- replGet
@@ -249,8 +262,7 @@ replWriteModData mds = do
             let sessions = traverse (rtuWriteMBRegister order) mds
             let worker = replRTUBatchWorker state
             runReplClient $ rtuRunClient worker client sessions
-    replRunExceptT (except maybemdata) []
-    return ()
+    void $ replRunExceptT (except maybemdata) []
 
 ------------------------------------------------------------------------------------------
 -- HeartBeat
@@ -434,8 +446,10 @@ replExport [filename] = do
     state <- replGet
     let mdata = replModData state
     mdata' <- replReadModData mdata
-    liftIO $ serializeCSVFile filename mdata'
-    return ()
+    rlt <- liftIO $ serializeCSVFile filename mdata'
+    case rlt of
+        Left err -> liftIO $ ppError err
+        Right () -> return ()
 replExport _ = invalidCmd
 
 ------------------------------------------------------------------------------------------

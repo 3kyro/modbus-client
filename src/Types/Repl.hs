@@ -47,10 +47,13 @@ data ReplArg = ReplName String
     deriving Show
 
 data Command = ReadInputRegistersWord
+    | ReadInputRegistersBits
     | ReadInputRegistersFloat
     | ReadHoldingRegistersWord
+    | ReadHoldingRegistersBits
     | ReadHoldingRegistersFloat
     | WriteRegistersWord
+    | WriteRegistersBits
     | WriteRegistersFloat
     | Read
     | Write

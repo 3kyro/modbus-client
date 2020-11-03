@@ -118,6 +118,10 @@ pValueSpec = describe "Parse a modbus value" $ do
         property $ \x ->
             Right (ModWord (Just x))
                 == testCSVParser pValue ("word;" ++ show x ++ ";")
+    it "parses wordBits" $
+        property $ \x ->
+            Right (ModWordBit (Just x))
+                == testCSVParser pValue ("bits;" ++ show x ++ ";")
     it "parses floats" $
         property $ \x ->
             Right (ModFloat (Just x))
@@ -147,6 +151,8 @@ pValueSpec = describe "Parse a modbus value" $ do
             isLeft $ testCSVParser pValue $ x ++ ";;"
     it "fails on non numeric inputs - word" $
         property prop_non_numeric_pvalue_word
+    it "fails on non numeric inputs - wordBit" $
+        property prop_non_valid_pvalue_WordBit
     it "fails on non numeric inputs - float" $
         property prop_non_numeric_pvalue_float
 
@@ -259,6 +265,16 @@ prop_non_numeric_pvalue_float s =
         ==> isLeft
         $ testCSVParser pValue $
             "float;"
+                ++ s
+                ++ ";"
+
+prop_non_valid_pvalue_WordBit :: String -> Property
+prop_non_valid_pvalue_WordBit s =
+    not (all isDigit s)
+        && notElem ';' s
+        ==> isLeft
+        $ testCSVParser pValue $
+            "bits;"
                 ++ s
                 ++ ";"
 

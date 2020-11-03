@@ -102,6 +102,7 @@ instance FromJSON ConnectionInfo where
                 serial <- o .: "serial port"
                 settings <- o .: "settings"
                 return $ RTUConnectionInfo serial settings
+            _ -> fail "Not a valid Connection Info"
     parseJSON _ = fail "Not a valid Connection Info"
 
 instance ToJSON ConnectionInfo where
@@ -166,8 +167,8 @@ instance ToJSON KeepAliveResponse where
     toJSON KeepAliveDisactivated = String "Keep alive disactivated"
 
 toKeepAlive :: KeepAliveServ -> KeepAlive
-toKeepAlive (KeepAliveServ flag tidle tintv) =
-    KeepAlive flag (fromIntegral tidle) (fromIntegral tintv)
+toKeepAlive (KeepAliveServ flag' tidle tintv) =
+    KeepAlive flag' (fromIntegral tidle) (fromIntegral tintv)
 
 
 data OS

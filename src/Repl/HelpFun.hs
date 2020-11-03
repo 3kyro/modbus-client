@@ -1,19 +1,26 @@
-module Repl.HelpFun
-    ( getModByName
-    , findModByName
-    , getModByPair
-    , insertModValue
-    , getPairs
-    , invalidCmd
-    ) where
+{-# LANGUAGE ScopedTypeVariables #-}
 
-import           Control.Monad.State.Strict (liftIO)
-import           Data.List                  (find)
+module Repl.HelpFun (
+    getModByName,
+    findModByName,
+    getModByPair,
+    insertModValue,
+    getPairs,
+    invalidCmd,
+) where
 
-import           PrettyPrint                (ppStrWarning)
-import           Repl.Parser                (pReplDesc, pReplFloat, pReplWord)
-import           Types                      (AppError (..), ModData (..),
-                                             ModValue (..), Repl)
+import Control.Monad.State.Strict (liftIO)
+import Data.List (find)
+
+import Data.Word (Word16)
+import PrettyPrint (ppStrWarning)
+import Repl.Parser (pReplDesc, pReplFloat, pReplWord)
+import Types (
+    AppError (..),
+    ModData (..),
+    ModValue (..),
+    Repl,
+ )
 
 -- Parse a ModData name and lookup in a list of ModData if it exists
 getModByName :: [ModData] -> String -> Either AppError ModData
@@ -32,10 +39,10 @@ findModByName mdata x = do
 -- Generate a list of Moddata from pairs of Description and values
 getModByPair :: [(String, String)] -> [ModData] -> Either AppError [ModData]
 getModByPair [] _ = Right []
-getModByPair ((desc,val):xs) mds = do
+getModByPair ((desc, val) : xs) mds = do
     validMd <- getModByName mds desc
     inserted <- insertModValue validMd val
-    (:) <$> return inserted <*> getModByPair xs mds
+    (:) inserted <$> getModByPair xs mds
 
 -- Parses and inserts a ModValue to a ModData
 insertModValue :: ModData -> String -> Either AppError ModData
@@ -43,19 +50,20 @@ insertModValue md val =
     case modValue md of
         ModWord _ -> do
             parsed <- pReplWord val
-            return $ md {modValue = ModWord (Just parsed)}
+            return $ md{modValue = ModWord (Just parsed)}
+        ModWordBit _ -> do
+            (parsed :: Word16) <- pReplWord val
+            return $ md{modValue = ModWordBit (Just (fromIntegral parsed))}
         ModFloat _ -> do
             parsed <- pReplFloat val
-            return $ md {modValue = ModFloat (Just parsed)}
+            return $ md{modValue = ModFloat (Just parsed)}
 
 -- Returns a pair of successive values
 -- Returns Nothing if the list size is odd
-getPairs :: [a] -> Maybe [(a,a)]
-getPairs []       = Just []
-getPairs [_]      = Nothing
-getPairs (x:y:zs) = (:) <$> Just (x,y) <*> getPairs zs
+getPairs :: [a] -> Maybe [(a, a)]
+getPairs [] = Just []
+getPairs [_] = Nothing
+getPairs (x : y : zs) = (:) <$> Just (x, y) <*> getPairs zs
 
 invalidCmd :: Repl ()
 invalidCmd = liftIO $ ppStrWarning "Invalid Command argument"
-
-

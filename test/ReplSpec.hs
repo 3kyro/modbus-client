@@ -23,10 +23,13 @@ autocompleteSpec =
 commands :: [Command]
 commands =
     [ ReadInputRegistersWord
+    , ReadInputRegistersBits
     , ReadInputRegistersFloat
     , ReadHoldingRegistersWord
+    , ReadHoldingRegistersBits
     , ReadHoldingRegistersFloat
     , WriteRegistersWord
+    , WriteRegistersBits
     , WriteRegistersFloat
     , Read
     , Write

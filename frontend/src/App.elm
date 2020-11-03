@@ -146,7 +146,7 @@ holdingRegisterOption =
 valueTypeDropdown : Dropdown ModValue Msg
 valueTypeDropdown =
     { onClick = RegValueTypeDrop
-    , options = [ wordOption, floatOption ]
+    , options = [ wordOption, bitsOption, floatOption ]
     , selected = wordOption
     , expanded = False
     , label = ""
@@ -156,6 +156,10 @@ valueTypeDropdown =
 wordOption : Option ModValue Msg
 wordOption =
     getOption (ModWord Nothing) (text "Word")
+
+bitsOption : Option ModValue Msg
+bitsOption =
+    getOption (ModBits Nothing) (text "Bits")
 
 
 floatOption : Option ModValue Msg

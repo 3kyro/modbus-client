@@ -3,12 +3,14 @@ module ModData exposing
     , ModDataUpdate
     , ModValue(..)
     , RegType(..)
+    , bitsFromString
     , decodeModData
     , decodeModDataUpdate
     , encodeModDataUpdate
     , fromFloat
     , fromModValueInput
     , fromModValueInputUpdate
+    , fuzzModData
     , getModValue
     , getModValueType
     , getModValueUpdate
@@ -43,17 +45,20 @@ import Element
         , centerX
         , centerY
         , el
+        , fill
         , fillPortion
         , focused
         , height
         , paddingXY
         , px
         , text
+        , width
         )
 import Element.Background as Background
 import Element.Border as Border
 import Element.Font as Font
 import Element.Input as Input
+import Fuzz as Fuzz exposing (Fuzzer)
 import Json.Decode as D
 import Json.Encode as E
 import Palette
@@ -86,6 +91,16 @@ type alias ModData =
     }
 
 
+fuzzModData : Fuzzer ModData
+fuzzModData =
+    Fuzz.map ModData Fuzz.string
+        |> Fuzz.andMap regTypeFuzz
+        |> Fuzz.andMap Fuzz.int
+        |> Fuzz.andMap modValueFuzzer
+        |> Fuzz.andMap Fuzz.int
+        |> Fuzz.andMap Fuzz.string
+
+
 encodeModData : ModData -> E.Value
 encodeModData md =
     E.object
@@ -115,6 +130,17 @@ fromModValueInput md str =
         ModWord _ ->
             { md | modValue = ModWord <| String.toInt str }
 
+        ModBits _ ->
+            if bitsValidString str then
+                { md
+                    | modValue =
+                        ModBits <|
+                            bitsFromString str
+                }
+
+            else
+                md
+
         ModFloat _ ->
             { md | modValue = ModFloat <| toMFloat str }
 
@@ -142,16 +168,6 @@ setModValue md mv =
 incrementModDataAddr : ModData -> Int -> ModData
 incrementModDataAddr md i =
     { md | modAddress = md.modAddress + i * getModValueMult md.modValue }
-
-
-getModValueMult : ModValue -> Int
-getModValueMult mv =
-    case mv of
-        ModWord _ ->
-            1
-
-        ModFloat _ ->
-            2
 
 
 
@@ -298,7 +314,7 @@ modValueTypeColumn =
 modValueColumn : Maybe (Int -> String -> msg) -> IndexedColumn ModDataUpdate msg
 modValueColumn cmd =
     { header = el [ height <| px 38 ] <| el headerTextAttr <| text "Value"
-    , width = fillPortion 1
+    , width = fillPortion 2
     , view = \idx md -> viewModValueColumn cmd idx md
     }
 
@@ -315,26 +331,9 @@ viewModValueColumn cmd idx md =
 
 viewWriteModValue : Maybe (Int -> String -> msg) -> Int -> ModData -> Element msg
 viewWriteModValue mcmd idx md =
-    let
-        attr =
-            [ Background.color <| tableCellColor idx
-            , Font.color greyWhite
-            , Border.width 1
-            , height <| px 38
-
-            -- 11 is a magic number here :(
-            , paddingXY 0 11
-            , focused []
-            ]
-    in
     case mcmd of
         Nothing ->
-            el
-                [ Background.color <| tableCellColor idx
-                , Font.center
-                ]
-            <|
-                viewReadModValue idx md
+            viewReadModValue idx md
 
         Just cmd ->
             el
@@ -347,6 +346,7 @@ viewWriteModValue mcmd idx md =
                     , Font.color greyWhite
                     , Border.width 1
                     , height <| px 38
+                    , width fill
 
                     -- 11 is a magic number here :(
                     , paddingXY 0 11
@@ -476,6 +476,14 @@ decodeRegType =
             )
 
 
+regTypeFuzz : Fuzzer RegType
+regTypeFuzz =
+    Fuzz.oneOf
+        [ Fuzz.constant InputRegister
+        , Fuzz.constant HoldingRegister
+        ]
+
+
 
 --------------------------------------------------------------------------------------------------
 -- ModValue
@@ -484,6 +492,7 @@ decodeRegType =
 
 type ModValue
     = ModWord (Maybe Int)
+    | ModBits (Maybe Bits)
     | ModFloat (Maybe MFloat)
 
 
@@ -492,6 +501,9 @@ getModValueType mv =
     case mv of
         ModWord _ ->
             "Word"
+
+        ModBits _ ->
+            "Bits"
 
         ModFloat _ ->
             "Float"
@@ -502,6 +514,9 @@ getModValue mv =
     case mv of
         ModWord v ->
             Maybe.map String.fromInt v
+
+        ModBits v ->
+            Maybe.map .value v
 
         ModFloat v ->
             Maybe.map showMFloat v
@@ -519,6 +534,17 @@ encodeModValue mv =
         ModWord Nothing ->
             E.object
                 [ ( "type", E.string "word" )
+                ]
+
+        ModBits (Just x) ->
+            E.object
+                [ ( "type", E.string "bits" )
+                , ( "value", E.string x.value )
+                ]
+
+        ModBits Nothing ->
+            E.object
+                [ ( "type", E.string "bits" )
                 ]
 
         ModFloat (Just x) ->
@@ -542,12 +568,39 @@ decodeModValue =
                     "word" ->
                         D.map ModWord <| D.field "value" (D.nullable D.int)
 
+                    "bits" ->
+                        D.map ModBits <|
+                            D.field "value" <|
+                                D.map bitsFromString D.string
+
                     "float" ->
                         D.map ModFloat <| D.field "value" (D.nullable decodeMFloat)
 
                     _ ->
                         D.fail "Not a valid ModValue"
             )
+
+
+getModValueMult : ModValue -> Int
+getModValueMult mv =
+    case mv of
+        ModWord _ ->
+            1
+
+        ModBits _ ->
+            1
+
+        ModFloat _ ->
+            2
+
+
+modValueFuzzer : Fuzzer ModValue
+modValueFuzzer =
+    Fuzz.oneOf
+        [ Fuzz.map ModWord <| Fuzz.maybe Fuzz.int
+        , Fuzz.map ModBits <| bitsFuzz
+        , Fuzz.map ModFloat <| Fuzz.maybe <| Fuzz.map fromFloat Fuzz.float
+        ]
 
 
 
@@ -591,3 +644,55 @@ fromFloat f =
 decodeMFloat : D.Decoder MFloat
 decodeMFloat =
     D.map fromFloat D.float
+
+
+
+--------------------------------------------------------------------------------------------------
+-- Bits
+--------------------------------------------------------------------------------------------------
+
+
+type alias Bits =
+    { value : String
+    }
+
+
+bitsFromString : String -> Maybe Bits
+bitsFromString str =
+    let
+        filtered =
+                String.filter
+                    (\c -> c == '0' || c == '1')
+                    str
+    in
+
+    if String.isEmpty filtered then
+        Nothing
+
+    else
+        Just <|
+            Bits <| filtered
+
+
+bitsValidString : String -> Bool
+bitsValidString str =
+    let
+        len =
+            String.length str
+    in
+    len > 0 && len <= 16
+
+
+bitsFuzz : Fuzzer (Maybe Bits)
+bitsFuzz =
+    let
+        bit =
+            Fuzz.oneOf [ Fuzz.constant '0', Fuzz.constant '1' ]
+
+        list =
+            Fuzz.map (List.repeat 16) bit
+
+        str =
+            Fuzz.map String.fromList list
+    in
+    Fuzz.map bitsFromString str

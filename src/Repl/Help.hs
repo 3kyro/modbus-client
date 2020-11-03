@@ -18,10 +18,13 @@ getHelpCmd :: String -> String
 getHelpCmd str =
     case getCommand str of
         ReadInputRegistersWord    -> hReadInputRegistersWord
+        ReadInputRegistersBits    -> hReadInputRegistersBits
         ReadInputRegistersFloat   -> hReadInputRegistersFloat
         ReadHoldingRegistersWord  -> hReadHoldingRegistersWord
+        ReadHoldingRegistersBits  -> hReadHoldingRegistersBits
         ReadHoldingRegistersFloat -> hReadHoldingRegistersFloat
         WriteRegistersWord        -> hWriteRegistersWord
+        WriteRegistersBits        -> hWriteRegistersBits
         WriteRegistersFloat       -> hWriteRegistersFloat
         Read                      -> hRead
         Write                     -> hWrite
@@ -42,10 +45,13 @@ helpCmd arg = putStrLn $ getHelpCmd arg
 helpOutputs :: [String]
 helpOutputs =
     [ hReadInputRegistersWord
+    , hReadInputRegistersBits
     , hReadInputRegistersFloat
     , hReadHoldingRegistersWord
+    , hReadHoldingRegistersBits
     , hReadHoldingRegistersFloat
     , hWriteRegistersWord
+    , hWriteRegistersBits
     , hWriteRegistersFloat
     , hRead
     , hWrite
@@ -69,6 +75,14 @@ hReadInputRegistersWord =
     ++ "Usage: readInputRegistersWord [Starting address] [Number of registers]\n"
     ++ "e.g. readInputRegistersWord 3001 10\n"
 
+hReadInputRegistersBits :: String
+hReadInputRegistersBits =
+    "readInputRegistersBits:\n"
+    ++ "Read values of word type from the provided input registers\n"
+    ++ "The bits of the values will be printed, starting with the least significant bit\n"
+    ++ "Usage: readInputRegistersBits [Starting address] [Number of registers]\n"
+    ++ "e.g. readInputRegistersWord 3001 10\n"
+
 hReadInputRegistersFloat :: String
 hReadInputRegistersFloat =
     "readInputRegistersFloat:\n"
@@ -83,6 +97,14 @@ hReadHoldingRegistersWord =
     ++ "Usage: readHoldingRegistersWord [Starting address] [Number of registers]\n"
     ++ "e.g. readHoldingRegistersWord 3001 10\n"
 
+hReadHoldingRegistersBits :: String
+hReadHoldingRegistersBits =
+    "readHoldingRegistersBits:\n"
+    ++ "Read values of word type from the provided holding registers\n"
+    ++ "The bits of the values will be printed, starting with the least significant bit\n"
+    ++ "Usage: readHoldingRegistersBits [Starting address] [Number of registers]\n"
+    ++ "e.g. readHoldingRegistersBits 3001 10\n"
+
 hReadHoldingRegistersFloat :: String
 hReadHoldingRegistersFloat =
     "readHoldingRegistersFloat:\n"
@@ -96,6 +118,15 @@ hWriteRegistersWord =
     ++ "Write multiple values of word type, starting from the provided address\n"
     ++ "Usage: writeSingleRegisterWord [starting address] [word values ..]\n"
     ++ "e.g. writeRegistersWord 1001 1 2 3\n"
+
+hWriteRegistersBits :: String
+hWriteRegistersBits =
+    "writeRegistersBits:\n"
+    ++ "Write multiple values of word type, starting from the provided address\n"
+    ++ "The values should be provided in raw bit form, starting with the least significant bit\n"
+    ++ "All 16 bits must be provided for a valid input\n"
+    ++ "Usage: writeSingleRegisterBits [starting address] [word values ..]\n"
+    ++ "e.g. writeRegistersWord 10 1000000000000000 0100000000000000 1100000000000000  \n"
 
 hWriteRegistersFloat :: String
 hWriteRegistersFloat =

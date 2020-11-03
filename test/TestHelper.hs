@@ -9,12 +9,14 @@ class TestShow a where
 instance TestShow ModValue where
   tShow (ModWord (Just x)) = "word;" ++ show x
   tShow (ModWord Nothing) = "word;"
+  tShow (ModWordBit (Just x)) = "bits;" ++ show x
+  tShow (ModWordBit Nothing) = "bits;"
   tShow (ModFloat (Just x)) = "float;" ++ show x
   tShow (ModFloat Nothing) = "float;"
 
 instance TestShow RegType where
-  tShow DiscreteInput = "Discrete Input"
-  tShow Coil = "Coil"
+--   tShow DiscreteInput = "Discrete Input"
+--   tShow Coil = "Coil"
   tShow InputRegister = "Input Register"
   tShow HoldingRegister = "Holding Register"
 

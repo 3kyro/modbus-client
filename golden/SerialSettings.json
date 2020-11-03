@@ -1,35 +1,35 @@
 {
-    "seed": -4917403355526497471,
+    "seed": 3525299506093510184,
     "samples": [
         {
-            "parity": "even",
-            "stopbits": "one",
-            "baudrate": "BR19200",
-            "timeout": 0
+            "parity": "odd",
+            "stopbits": "two",
+            "baudrate": "BR4800",
+            "timeout": 300
         },
         {
             "parity": "odd",
-            "stopbits": "one",
-            "baudrate": "BR110",
-            "timeout": -290
+            "stopbits": "two",
+            "baudrate": "BR4800",
+            "timeout": -90
         },
         {
             "parity": "even",
-            "stopbits": "two",
-            "baudrate": "BR19200",
+            "stopbits": "one",
+            "baudrate": "BR2400",
             "timeout": 110
         },
         {
-            "parity": "even",
-            "stopbits": "one",
+            "parity": "odd",
+            "stopbits": "two",
             "baudrate": "BR9600",
-            "timeout": -300
+            "timeout": -40
         },
         {
-            "parity": "odd",
+            "parity": "even",
             "stopbits": "one",
-            "baudrate": "BR38400",
-            "timeout": -280
+            "baudrate": "BR57600",
+            "timeout": 210
         }
     ]
 }

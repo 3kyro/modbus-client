@@ -1,60 +1,60 @@
 {
-    "seed": 3490316254027810949,
+    "seed": -313981897834828301,
     "samples": [
         {
             "register value": {
-                "value": 17134,
+                "value": 32105,
                 "type": "word"
             },
-            "uid": 186,
-            "address": 21001,
+            "uid": 208,
+            "address": 30336,
             "register type": "input register",
-            "name": "b4KXVvv1FVuLtZI9AExgL",
-            "description": "xucXkE"
+            "name": "KYR",
+            "description": "GA"
+        },
+        {
+            "register value": {
+                "value": 28069,
+                "type": "word"
+            },
+            "uid": 116,
+            "address": 3590,
+            "register type": "input register",
+            "name": "jhlmHNwmymIvTFLScLxjZLltvwxwyrZgSXYFyFFyOoQ",
+            "description": "AxB FuxqNd"
         },
         {
             "register value": {
                 "value": null,
-                "type": "word"
-            },
-            "uid": 136,
-            "address": 17184,
-            "register type": "holding register",
-            "name": "CXfnQBaAVmCUN",
-            "description": "BceQXp"
-        },
-        {
-            "register value": {
-                "value": -16.67896,
                 "type": "float"
             },
-            "uid": 194,
-            "address": 22779,
-            "register type": "discrete input",
-            "name": "pUmgMSpF_7MtMi_",
-            "description": "CPBlVvubwL"
+            "uid": 208,
+            "address": 31724,
+            "register type": "input register",
+            "name": "A_tofeO",
+            "description": "YvStsZW:qo&WlJoeXxa=qdeousFVk=kefTB"
         },
         {
             "register value": {
-                "value": 4969,
-                "type": "word"
+                "value": null,
+                "type": "float"
             },
-            "uid": 241,
-            "address": 10642,
-            "register type": "coil",
-            "name": "xTAiI",
-            "description": "mu=DBweJqAv $iDtbuGSwO"
-        },
-        {
-            "register value": {
-                "value": 12052,
-                "type": "word"
-            },
-            "uid": 142,
-            "address": 32209,
+            "uid": 255,
+            "address": 26139,
             "register type": "holding register",
-            "name": "dIu",
-            "description": "uOgMGwWmGm"
+            "name": "Q",
+            "description": "GLirnM"
+        },
+        {
+            "register value": {
+                "value": 1.5643481,
+                "type": "float"
+            },
+            "uid": 144,
+            "address": 27790,
+            "register type": "input register",
+            "name": "t",
+            "description": "OHN"
         }
     ]
 }
