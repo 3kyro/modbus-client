@@ -407,15 +407,16 @@ renderLogoModule model =
 
 simpleLogo : Element Msg
 simpleLogo =
-    el
+    column
         [ Background.color background
-        , Font.size 20
         , Font.color lightGrey
         , alignLeft
         , alignBottom
+        , spacing 10
         ]
-    <|
-        text "Modbus Serve"
+        [ el [ Font.size 15 ] <| text "version : 0.1"
+        , el [ Font.size 30 ] <|text "Modbus Serve"
+        ]
 
 
 
