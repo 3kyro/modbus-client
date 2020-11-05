@@ -1,4 +1,4 @@
-module HeartBeat exposing (..)
+module HeartBeat exposing (heartBeatNav, heartBeatInfoModule)
 
 import Element
     exposing

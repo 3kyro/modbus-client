@@ -3,65 +3,66 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
-module Modbus (
-    ModbusClient (..),
-    Config,
-    Address (..),
-    Application,
-    execApp,
-    MBRegister (..),
-    TCPWorker (..),
-    RTUWorker (..),
-    tcpDirectWorker,
-    tcpBatchWorker,
-    rtuDirectWorker,
-    rtuBatchWorker,
-    TCPSession (..),
-    RTUSession (..),
-    TransactionInfo (..),
-    UID,
-    getUID,
-    TPU,
-    setTPU,
-    TID (..),
-    initTID,
-    getNewTID,
-    RegType (..),
-    serializeRegType,
-    Client (..),
-    ModbusProtocol (..),
-    ByteOrder (..),
-    float2Word16,
-    word16ToFloat,
-    HeartBeat (..),
-    heartBeatSignal,
-    getTCPClient,
-    getRTUClient,
-    getTCPConfig,
-    getRTUConfig,
-    getAddr,
-    getTCPSocket,
-    getRTUSerialPort,
-    tcpReadInputRegisters,
-    rtuReadInputRegisters,
-    tcpReadHoldingRegisters,
-    rtuReadHoldingRegisters,
-    tcpWriteSingleRegister,
-    rtuWriteSingleRegister,
-    tcpWriteMultipleRegisters,
-    rtuWriteMultipleRegisters,
-    tcpReadMBRegister,
-    rtuReadMBRegister,
-    tcpWriteMBRegister,
-    rtuWriteMBRegister,
-    tcpUpdateMBRegister,
-    rtuUpdateMBRegister,
-    SerialSettings (..),
-    buildSerialSettings,
-    BaudRate (..),
-    StopBits (..),
-    Parity (..),
-) where
+module Modbus
+    ( ModbusClient (..)
+    , Config (..)
+    , Address (..)
+    , Application
+    , execApp
+    , MBRegister (..)
+    , TCPWorker (..)
+    , RTUWorker (..)
+    , tcpDirectWorker
+    , tcpBatchWorker
+    , rtuDirectWorker
+    , rtuBatchWorker
+    , TCPSession (..)
+    , RTUSession (..)
+    , TransactionInfo (..)
+    , UID
+    , getUID
+    , TPU
+    , setTPU
+    , TID (..)
+    , initTID
+    , getNewTID
+    , RegType (..)
+    , serializeRegType
+    , Client (..)
+    , ModbusProtocol (..)
+    , ByteOrder (..)
+    , float2Word16
+    , word16ToFloat
+    , HeartBeat (..)
+    , heartBeatSignal
+    , getTCPClient
+    , getRTUClient
+    , getTCPConfig
+    , getRTUConfig
+    , getAddr
+    , getTCPSocket
+    , getRTUSerialPort
+    , tcpReadInputRegisters
+    , rtuReadInputRegisters
+    , tcpReadHoldingRegisters
+    , rtuReadHoldingRegisters
+    , tcpWriteSingleRegister
+    , rtuWriteSingleRegister
+    , tcpWriteMultipleRegisters
+    , rtuWriteMultipleRegisters
+    , tcpReadMBRegister
+    , rtuReadMBRegister
+    , tcpWriteMBRegister
+    , rtuWriteMBRegister
+    , tcpUpdateMBRegister
+    , rtuUpdateMBRegister
+    , SerialSettings (..)
+    , buildSerialSettings
+    , BaudRate (..)
+    , StopBits (..)
+    , Parity (..)
+    , newHeartBeat
+, ) where
 
 import Control.Concurrent (
     MVar,
@@ -533,32 +534,38 @@ word16ToFloat _ _ = Nothing
 -- A HeartBeat signal
 data HeartBeat = HeartBeat
     { hbAddress :: !MB.Address -- Address
-    -- Interval
-    , hbInterval :: !Int -- Interval
-    -- ThreadId
-    , hbThreadId :: !ThreadId -- ThreadId
-    -- Status : Empty = Ok , SomeException = thread has panicked
-    , hbStatus :: MVar SomeException -- Status : Empty = Ok , SomeException = thread has panicked
+    -- Unit id
+    , hbUid :: !Word8
+    , -- Interval in seconds
+      hbInterval :: !Int
+    , -- ThreadId
+      hbThreadId :: !(Maybe ThreadId)
+    , -- Status : Empty = Ok , SomeException = thread has panicked
+      hbStatus :: MVar SomeException -- Status : Empty = Ok , SomeException = thread has panicked
     }
     deriving (Eq)
 
 -- Spawns a heartbeat signal thread
 heartBeatSignal ::
     (MonadIO m, Application m, ModbusClient a, MonadThrow m, MonadMask m) =>
-    Int -> -- HeartBeat signal period in ms
+    HeartBeat ->
     Either (TCPWorker m) (RTUWorker m) -> -- Worker to execute the session
     MVar a -> -- Client configuration
-    Word8 ->
     TVar TID ->
-    Address -> -- HeartBeat signal register address
     m HeartBeat
-heartBeatSignal interval worker clientMVar uid tid address = do
-    status <- liftIO newEmptyMVar
-    threadid <- liftIO $ forkFinally (execApp $ thread address 0) (finally status)
-    return $ HeartBeat address interval threadid status
+heartBeatSignal hb worker clientMVar tid =
+    case hbThreadId hb of
+        Just _ -> return hb
+        Nothing -> do
+            let status = hbStatus hb
+            let address = hbAddress hb
+            let uid = hbUid hb
+            let interval = hbInterval hb
+            threadid <- liftIO $ forkFinally (execApp $ thread address uid interval 0) (finally status)
+            return $ HeartBeat address uid interval (Just threadid) status
   where
-    thread address' acc = do
-        liftIO $ threadDelay interval
+    thread address uid interval acc = do
+        liftIO $ threadDelay (interval * 1000000) -- in microseconds
         tid' <- liftIO $ getNewTID tid
         let tpu' = setTPU uid tid'
         case worker of
@@ -568,13 +575,18 @@ heartBeatSignal interval worker clientMVar uid tid address = do
             Right rtuworker ->
                 let session = RTUSession (RTU.writeSingleRegister (RTU.UnitId uid) address acc)
                  in rtuRunClient rtuworker clientMVar session
-        thread address' (acc + 1)
+        thread address uid interval (acc + 1)
     finally status terminationStatus =
         case terminationStatus of
             Left someExcept ->
                 putMVar status someExcept
             Right () ->
                 return ()
+
+newHeartBeat :: Word16 -> Word8 -> Int -> IO HeartBeat
+newHeartBeat addr uid tm = do
+    status <- liftIO newEmptyMVar
+    return $ HeartBeat (MB.Address addr) uid tm Nothing status
 
 ---------------------------------------------------------------------------------------------------------------
 -- Config

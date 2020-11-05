@@ -101,10 +101,11 @@ initModel =
 
     -- heartbeats
     , heartbeats = []
-    , navHeartbeat = HeartBeat 0 0 0
+    , navHeartbeat = HeartBeat 0 0 0 False
     , heartUid = Nothing
     , heartAddr = Nothing
     , heartIntv = Nothing
+    , heartSelected = Just True
 
     -- settings
     , settings = [ keepAliveSetting, byteOrderSetting ]

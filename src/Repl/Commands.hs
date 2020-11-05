@@ -14,7 +14,7 @@ import Data.Either.Combinators (mapLeft)
 import Data.List (delete, find, uncons)
 import Data.Maybe (fromJust)
 import Data.Word (Word16, Word8)
-import Modbus (
+import Modbus (newHeartBeat, 
     Address (..),
     HeartBeat (..),
     ModbusProtocol (..),
@@ -296,16 +296,15 @@ startHeartbeat (addr, timer)
             let client = replClient state
             let uid = replUId state
             let tid = replTransactionId state
-            let tm = timer * 1000000 -- in microseconds
-            let address = Address addr
             let protocol = replProtocol state
+            hb <- liftIO $  newHeartBeat addr uid timer
             heart <- case protocol of
                 ModBusTCP -> do
                     let worker = Left $ replTCPDirectWorker state
-                    liftIO $ heartBeatSignal tm worker client uid tid address
+                    liftIO $ heartBeatSignal hb worker client  tid
                 ModBusRTU -> do
                     let worker = Right $ replRTUDirectWorker state
-                    liftIO $ heartBeatSignal tm worker client uid tid address
+                    liftIO $ heartBeatSignal hb worker client tid
             putHeartBeat heart
 
 -- Parse the argument list and call stopHeartbeatThread on
@@ -321,7 +320,10 @@ stopHeartbeatThread :: Word16 -> Repl ()
 stopHeartbeatThread addr = do
     checkActiveHeartbeat
     state <- lift get
-    let mthread = find (\x -> hbAddress x == Address addr) $ replPool state
+    let mthread = do
+            heartbeat' <- find (\x -> hbAddress x == Address addr) $ replPool state
+            thread <- hbThreadId heartbeat'
+            return (heartbeat' , thread)
     case mthread of
         Nothing ->
             liftIO $
@@ -330,9 +332,9 @@ stopHeartbeatThread addr = do
                         ++ show addr
                         ++ " was not found in the signal list.\n"
                         ++ "Most probably it encoutered an error and has been terminated"
-        Just thread' -> do
-            liftIO $ killThread $ hbThreadId thread'
-            removeThread thread'
+        Just (heartbeat', thread') -> do
+            liftIO $ killThread thread'
+            removeThread heartbeat'
             liftIO $
                 putStrLn $
                     "The heartbeat signal at address "

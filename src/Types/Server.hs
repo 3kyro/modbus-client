@@ -1,21 +1,22 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
-module Types.Server (
-    Server,
-    ServState (..),
-    ServerActors (..),
-    Connection (..),
-    ConnectionInfo (..),
-    ConnectionRequest (..),
-    getActors,
-    setActors,
-    KeepAliveServ (..),
-    KeepAliveResponse (..),
-    toKeepAlive,
-    OS (..),
-    InitRequest (..),
-) where
+module Types.Server
+    ( Server
+    , ServState (..)
+    , ServerActors (..)
+    , Connection (..)
+    , ConnectionInfo (..)
+    , ConnectionRequest (..)
+    , getActors
+    , setActors
+    , KeepAliveServ (..)
+    , KeepAliveResponse (..)
+    , toKeepAlive
+    , OS (..)
+    , InitRequest (..)
+    , ServHeartBeat (..)
+    ,newServHeartBeat) where
 
 import qualified Network.Socket as S
 
@@ -35,7 +36,8 @@ import Servant
 import Control.Concurrent (MVar)
 import Control.Concurrent.STM (TVar)
 import qualified Data.Text as T
-import Modbus (
+import Data.Word (Word16, Word8)
+import Modbus (newHeartBeat, 
     ByteOrder,
     Client,
     HeartBeat,
@@ -52,24 +54,21 @@ import Modbus (
 import Network.Socket.KeepAlive (KeepAlive (..))
 import qualified System.Hardware.Serialport as SP
 
-
 ---------------------------------------------------------------------------------------------------------------
 -- ServState
 ---------------------------------------------------------------------------------------------------------------
-
 
 data ServState = ServState
     { servConnection :: !Connection
     , servProtocol :: !ModbusProtocol
     , servOrd :: !ByteOrder
     , servTID :: !(TVar TID)
-    , servPool :: ![HeartBeat]
+    , servPool :: ![ServHeartBeat]
     }
 
 ---------------------------------------------------------------------------------------------------------------
 -- Connection
 ---------------------------------------------------------------------------------------------------------------
-
 
 data Connection
     = TCPConnection
@@ -235,3 +234,37 @@ instance ToJSON OS where
     toJSON Linux = String "linux"
     toJSON Windows = String "windows"
     toJSON Other = String "other"
+
+---------------------------------------------------------------------------------------------------------------
+-- HeartBeat
+---------------------------------------------------------------------------------------------------------------
+
+data ServHeartBeat = ServHeartBeat
+    { servHB :: Maybe HeartBeat
+    , servHbAddress :: Word16
+    , servHbUid :: Word8
+    , servHbInterval :: Int
+    , servHBSelected :: Bool
+    }
+
+instance ToJSON ServHeartBeat where
+    toJSON hb =
+        object
+            [ "uid" .= servHbUid hb
+            , "address" .= servHbAddress hb
+            , "interval" .= servHbInterval hb
+            , "selected" .= servHBSelected hb
+            ]
+
+instance FromJSON ServHeartBeat where
+    parseJSON (Object o) = do
+        pUid <- o .: "uid"
+        pAddr <- o .: "address"
+        pIntv <- o .: "interval"
+        pSelected <- o .: "selected"
+        return $ ServHeartBeat Nothing pAddr pUid pIntv pSelected
+    parseJSON _ = fail "Not a ServHeartBeat"
+
+newServHeartBeat :: ServHeartBeat -> IO HeartBeat
+newServHeartBeat servHb =
+    newHeartBeat (servHbAddress servHb) (servHbUid servHb)  (servHbInterval servHb)

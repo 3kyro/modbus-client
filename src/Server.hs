@@ -25,9 +25,9 @@ import qualified System.Process as PS
 
 import Control.Exception (try)
 import Control.Exception.Safe (SomeException)
-import Control.Monad (void)
+import Control.Monad (filterM, void)
 import CsvParser (runpCSV)
-import Modbus (
+import Modbus (hbStatus, 
     ByteOrder,
     ModbusClient (..),
     ModbusProtocol (..),
@@ -46,11 +46,13 @@ import Modbus (
     tcpReadMBRegister,
     tcpUpdateMBRegister,
     unSR,
+    heartBeatSignal
  )
 import Network.Socket.KeepAlive
 import qualified System.Hardware.Serialport as SP
 import Types.ModData
 import Types.Server
+import Control.Concurrent (tryTakeMVar)
 
 ---------------------------------------------------------------------------------------------------------------
 -- API
@@ -64,6 +66,7 @@ type ServerAPI =
         :<|> "parseModData" :> ReqBody '[JSON] String :> Post '[JSON] [ModData]
         :<|> "keepAlive" :> ReqBody '[JSON] KeepAliveServ :> Post '[JSON] KeepAliveResponse
         :<|> "byteOrder" :> ReqBody '[JSON] ByteOrder :> Post '[JSON] ByteOrder
+        :<|> "heartbeat" :> ReqBody '[JSON] ServHeartBeat :> Post '[JSON] [ServHeartBeat]
         :<|> "init" :> Get '[JSON] InitRequest
         :<|> Raw --FIX ME :: fix for path traversal attacks
 
@@ -76,6 +79,7 @@ serverAPI state =
         :<|> parseAndSend
         :<|> keepAlive state
         :<|> byteOrder state
+        :<|> heartbeat state
         :<|> initRequest state
         :<|> serveDirectoryWebApp "frontend"
 
@@ -297,6 +301,55 @@ byteOrder state order = do
                     { servOrd = order
                     }
     return order
+
+heartbeat :: TVar ServState -> ServHeartBeat -> Handler [ServHeartBeat]
+heartbeat state requestHeartbeat = do
+    currentState <- liftIO $ readTVarIO state
+    let pool = servPool currentState
+    let actors = getActors $ servConnection currentState
+    runningPool <- liftIO $ checkServerPool pool
+    let tid = servTID currentState
+    case servHB requestHeartbeat of
+        Just _ ->
+            -- Already initialized heartbeat
+            throwError err400
+        Nothing -> do
+            hb <- liftIO $ newServHeartBeat requestHeartbeat
+            activated <- case actors of
+                Nothing -> throwError err400
+                Just actors' ->
+                    let client = sclClient actors'
+                    in case servProtocol currentState of
+                            ModBusTCP ->
+                                let worker = sclTCPBatchWorker actors'
+                                in liftIO $ heartBeatSignal hb (Left worker) client tid
+                            ModBusRTU ->
+                                let worker = sclRTUBatchWorker actors'
+                                in liftIO $ heartBeatSignal hb (Right worker) client tid
+            let servActivated = requestHeartbeat { servHB = Just activated}
+            let newPool = servActivated : runningPool
+            liftIO $
+                atomically $
+                    writeTVar state $
+                        currentState
+                            { servPool = newPool
+                            }
+            return newPool
+
+-- Checks the pool of heartbeat signals to see if any has panicked
+-- and remove them from the pool
+checkServerPool :: [ServHeartBeat] -> IO [ServHeartBeat]
+checkServerPool =
+    filterM checkStatus
+  where
+    checkStatus hb =
+        case servHB hb of
+            Nothing -> pure False
+            Just hb' -> do
+                mvar <- tryTakeMVar $ hbStatus hb'
+                case mvar of
+                    Nothing -> pure True
+                    Just _ -> pure False
 
 initRequest :: TVar ServState -> Handler InitRequest
 initRequest state =

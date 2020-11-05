@@ -201,6 +201,7 @@ type alias Model =
     , heartUid : Maybe Int
     , heartAddr : Maybe Int
     , heartIntv : Maybe Int
+    , heartSelected : Maybe Bool
 
     -- settings
     , settings : List (Setting SettingsOptions Msg)
@@ -795,7 +796,7 @@ showFailedHeartBeat : HeartBeat -> String -> String
 showFailedHeartBeat hb str =
     str
         ++ "Heartbeat: Address: "
-        ++ String.fromInt hb.uid
+        ++ String.fromInt hb.address
         ++ ", unit id: "
         ++ String.fromInt hb.uid
         ++ ", interval: "

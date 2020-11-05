@@ -578,11 +578,11 @@ getRegMduList model =
                     offsetMdu model.regMdu num
 
 
-sendHeartBeats : Model -> Cmd Msg
-sendHeartBeats model =
+sendHeartBeats : HeartBeat -> Cmd Msg
+sendHeartBeats hb =
     Http.post
         { url = "http://localhost:4000/heartbeat"
-        , body = Http.jsonBody <| E.list encodeHeartBeat <| model.heartbeats
+        , body = Http.jsonBody <| encodeHeartBeat <| hb
         , expect = Http.expectJson UpdateActiveHeartBeats <| D.list decodeHeartBeat
         }
 
@@ -1177,18 +1177,19 @@ startHeartBeat : Model -> ( Model, Cmd Msg )
 startHeartBeat model =
     let
         mheartbeat =
-            Maybe.map3 HeartBeat
+            Maybe.map4 HeartBeat
                 model.heartUid
                 model.heartAddr
                 model.heartIntv
+                model.heartSelected
     in
     case mheartbeat of
         Nothing ->
             ( model, Cmd.none )
 
-        Just heartbeat ->
-            ( { model | heartbeats = model.heartbeats ++ [ heartbeat ] }
-            , sendHeartBeats model
+        Just hb ->
+            ( { model | heartbeats = model.heartbeats ++ [ hb ] }
+            , sendHeartBeats hb
             )
 
 

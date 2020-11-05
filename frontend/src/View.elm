@@ -106,6 +106,7 @@ import Types.IpAddress
         , IpAddressByte(..)
         , showIpAddressByte
         )
+import HeartBeat exposing (heartBeatInfoModule)
 
 
 view : Model -> Html Msg
@@ -444,8 +445,9 @@ renderInfoModule model =
         SettingsTab ->
             settingsTab model
 
-        _ ->
-            none
+        HeartbeatTab ->
+            heartBeatInfoModule model
+
 
 
 
