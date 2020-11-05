@@ -203,7 +203,6 @@ type alias Model =
     , heartUid : Maybe Int
     , heartAddr : Maybe Int
     , heartIntv : Maybe Int
-    , heartSelected : Maybe Bool
     , heartSelectAll : Bool
     , heartSelectSome : Bool
 

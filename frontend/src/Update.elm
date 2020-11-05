@@ -1202,7 +1202,8 @@ startHeartBeat model =
                 model.heartUid
                 model.heartAddr
                 model.heartIntv
-                model.heartSelected
+            <|
+                Just False
     in
     case mheartbeat of
         Nothing ->

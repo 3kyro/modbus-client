@@ -105,7 +105,6 @@ initModel =
     , heartUid = Nothing
     , heartAddr = Nothing
     , heartIntv = Nothing
-    , heartSelected = Just False
     , heartSelectAll = False
     , heartSelectSome = False
 
