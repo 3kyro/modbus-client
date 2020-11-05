@@ -23,11 +23,12 @@ import qualified Network.Socket as S
 import qualified System.Info
 import qualified System.Process as PS
 
+import Control.Concurrent (tryTakeMVar)
 import Control.Exception (try)
 import Control.Exception.Safe (SomeException)
 import Control.Monad (filterM, void)
 import CsvParser (runpCSV)
-import Modbus (hbStatus, 
+import Modbus (
     ByteOrder,
     ModbusClient (..),
     ModbusProtocol (..),
@@ -40,19 +41,19 @@ import Modbus (hbStatus,
     getRTUSerialPort,
     getTCPClient,
     getTCPSocket,
+    hbStatus,
+    heartBeatSignal,
     initTID,
     rtuReadMBRegister,
     rtuUpdateMBRegister,
     tcpReadMBRegister,
     tcpUpdateMBRegister,
     unSR,
-    heartBeatSignal
  )
 import Network.Socket.KeepAlive
 import qualified System.Hardware.Serialport as SP
 import Types.ModData
 import Types.Server
-import Control.Concurrent (tryTakeMVar)
 
 ---------------------------------------------------------------------------------------------------------------
 -- API
@@ -319,14 +320,14 @@ heartbeat state requestHeartbeat = do
                 Nothing -> throwError err400
                 Just actors' ->
                     let client = sclClient actors'
-                    in case servProtocol currentState of
+                     in case servProtocol currentState of
                             ModBusTCP ->
                                 let worker = sclTCPBatchWorker actors'
-                                in liftIO $ heartBeatSignal hb (Left worker) client tid
+                                 in liftIO $ heartBeatSignal hb (Left worker) client tid
                             ModBusRTU ->
                                 let worker = sclRTUBatchWorker actors'
-                                in liftIO $ heartBeatSignal hb (Right worker) client tid
-            let servActivated = requestHeartbeat { servHB = Just activated}
+                                 in liftIO $ heartBeatSignal hb (Right worker) client tid
+            let servActivated = requestHeartbeat{servHB = Just activated}
             let newPool = servActivated : runningPool
             liftIO $
                 atomically $

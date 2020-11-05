@@ -3,66 +3,66 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
-module Modbus
-    ( ModbusClient (..)
-    , Config (..)
-    , Address (..)
-    , Application
-    , execApp
-    , MBRegister (..)
-    , TCPWorker (..)
-    , RTUWorker (..)
-    , tcpDirectWorker
-    , tcpBatchWorker
-    , rtuDirectWorker
-    , rtuBatchWorker
-    , TCPSession (..)
-    , RTUSession (..)
-    , TransactionInfo (..)
-    , UID
-    , getUID
-    , TPU
-    , setTPU
-    , TID (..)
-    , initTID
-    , getNewTID
-    , RegType (..)
-    , serializeRegType
-    , Client (..)
-    , ModbusProtocol (..)
-    , ByteOrder (..)
-    , float2Word16
-    , word16ToFloat
-    , HeartBeat (..)
-    , heartBeatSignal
-    , getTCPClient
-    , getRTUClient
-    , getTCPConfig
-    , getRTUConfig
-    , getAddr
-    , getTCPSocket
-    , getRTUSerialPort
-    , tcpReadInputRegisters
-    , rtuReadInputRegisters
-    , tcpReadHoldingRegisters
-    , rtuReadHoldingRegisters
-    , tcpWriteSingleRegister
-    , rtuWriteSingleRegister
-    , tcpWriteMultipleRegisters
-    , rtuWriteMultipleRegisters
-    , tcpReadMBRegister
-    , rtuReadMBRegister
-    , tcpWriteMBRegister
-    , rtuWriteMBRegister
-    , tcpUpdateMBRegister
-    , rtuUpdateMBRegister
-    , SerialSettings (..)
-    , buildSerialSettings
-    , BaudRate (..)
-    , StopBits (..)
-    , Parity (..)
-    , newHeartBeat
-, ) where
+module Modbus (
+    ModbusClient (..),
+    Config (..),
+    Address (..),
+    Application,
+    execApp,
+    MBRegister (..),
+    TCPWorker (..),
+    RTUWorker (..),
+    tcpDirectWorker,
+    tcpBatchWorker,
+    rtuDirectWorker,
+    rtuBatchWorker,
+    TCPSession (..),
+    RTUSession (..),
+    TransactionInfo (..),
+    UID,
+    getUID,
+    TPU,
+    setTPU,
+    TID (..),
+    initTID,
+    getNewTID,
+    RegType (..),
+    serializeRegType,
+    Client (..),
+    ModbusProtocol (..),
+    ByteOrder (..),
+    float2Word16,
+    word16ToFloat,
+    HeartBeat (..),
+    heartBeatSignal,
+    getTCPClient,
+    getRTUClient,
+    getTCPConfig,
+    getRTUConfig,
+    getAddr,
+    getTCPSocket,
+    getRTUSerialPort,
+    tcpReadInputRegisters,
+    rtuReadInputRegisters,
+    tcpReadHoldingRegisters,
+    rtuReadHoldingRegisters,
+    tcpWriteSingleRegister,
+    rtuWriteSingleRegister,
+    tcpWriteMultipleRegisters,
+    rtuWriteMultipleRegisters,
+    tcpReadMBRegister,
+    rtuReadMBRegister,
+    tcpWriteMBRegister,
+    rtuWriteMBRegister,
+    tcpUpdateMBRegister,
+    rtuUpdateMBRegister,
+    SerialSettings (..),
+    buildSerialSettings,
+    BaudRate (..),
+    StopBits (..),
+    Parity (..),
+    newHeartBeat,
+) where
 
 import Control.Concurrent (
     MVar,

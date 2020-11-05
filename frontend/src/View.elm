@@ -38,7 +38,7 @@ import Element.Background as Background
 import Element.Border as Border
 import Element.Font as Font
 import Element.Input as Input
-import HeartBeat exposing (heartBeatNav)
+import HeartBeat exposing (heartBeatInfoModule, heartBeatNav)
 import Html exposing (Html)
 import Html.Attributes
 import ModData
@@ -106,7 +106,6 @@ import Types.IpAddress
         , IpAddressByte(..)
         , showIpAddressByte
         )
-import HeartBeat exposing (heartBeatInfoModule)
 
 
 view : Model -> Html Msg
@@ -447,7 +446,6 @@ renderInfoModule model =
 
         HeartbeatTab ->
             heartBeatInfoModule model
-
 
 
 

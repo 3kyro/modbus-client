@@ -1,22 +1,23 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
-module Types.Server
-    ( Server
-    , ServState (..)
-    , ServerActors (..)
-    , Connection (..)
-    , ConnectionInfo (..)
-    , ConnectionRequest (..)
-    , getActors
-    , setActors
-    , KeepAliveServ (..)
-    , KeepAliveResponse (..)
-    , toKeepAlive
-    , OS (..)
-    , InitRequest (..)
-    , ServHeartBeat (..)
-    ,newServHeartBeat) where
+module Types.Server (
+    Server,
+    ServState (..),
+    ServerActors (..),
+    Connection (..),
+    ConnectionInfo (..),
+    ConnectionRequest (..),
+    getActors,
+    setActors,
+    KeepAliveServ (..),
+    KeepAliveResponse (..),
+    toKeepAlive,
+    OS (..),
+    InitRequest (..),
+    ServHeartBeat (..),
+    newServHeartBeat,
+) where
 
 import qualified Network.Socket as S
 
@@ -37,7 +38,7 @@ import Control.Concurrent (MVar)
 import Control.Concurrent.STM (TVar)
 import qualified Data.Text as T
 import Data.Word (Word16, Word8)
-import Modbus (newHeartBeat, 
+import Modbus (
     ByteOrder,
     Client,
     HeartBeat,
@@ -46,6 +47,7 @@ import Modbus (newHeartBeat,
     SerialSettings,
     TCPWorker (..),
     TID,
+    newHeartBeat,
     rtuBatchWorker,
     rtuDirectWorker,
     tcpBatchWorker,
@@ -267,4 +269,4 @@ instance FromJSON ServHeartBeat where
 
 newServHeartBeat :: ServHeartBeat -> IO HeartBeat
 newServHeartBeat servHb =
-    newHeartBeat (servHbAddress servHb) (servHbUid servHb)  (servHbInterval servHb)
+    newHeartBeat (servHbAddress servHb) (servHbUid servHb) (servHbInterval servHb)

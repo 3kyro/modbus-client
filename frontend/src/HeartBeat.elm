@@ -1,4 +1,4 @@
-module HeartBeat exposing (heartBeatNav, heartBeatInfoModule)
+module HeartBeat exposing (heartBeatInfoModule, heartBeatNav)
 
 import Element
     exposing
@@ -26,7 +26,7 @@ import NavigationModule
         ( navButton
         , navInput
         )
-import Palette exposing (background, lightGrey, grey, greyWhite)
+import Palette exposing (background, grey, greyWhite, lightGrey)
 import Types
     exposing
         ( HeartBeat
@@ -99,12 +99,16 @@ uidColumn =
     , width = fillPortion 1
     , view = \i md -> viewCell i <| String.fromInt md.uid
     }
+
+
 addressColumn : IndexedColumn HeartBeat Msg
 addressColumn =
     { header = el [ height <| px 38 ] <| el headerTextAttr <| text "Address"
     , width = fillPortion 1
     , view = \i md -> viewCell i <| String.fromInt md.address
     }
+
+
 intervalColumn : IndexedColumn HeartBeat Msg
 intervalColumn =
     { header = el [ height <| px 38 ] <| el headerTextAttr <| text "Interval"

@@ -13,7 +13,7 @@ module Types exposing
     , OS(..)
     , Parity(..)
     , SettingsOptions(..)
-    , StopBits(..), showFailedHeartBeat
+    , StopBits(..)
     , decodeByteOrder
     , decodeConnInfo
     , decodeHeartBeat
@@ -31,6 +31,7 @@ module Types exposing
     , showByteOrderResponse
     , showConnInfo
     , showConnectStatus
+    , showFailedHeartBeat
     , showKeepAliveResponse
     , showOs
     , toByteOrder

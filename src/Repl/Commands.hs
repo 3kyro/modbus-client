@@ -14,13 +14,14 @@ import Data.Either.Combinators (mapLeft)
 import Data.List (delete, find, uncons)
 import Data.Maybe (fromJust)
 import Data.Word (Word16, Word8)
-import Modbus (newHeartBeat, 
+import Modbus (
     Address (..),
     HeartBeat (..),
     ModbusProtocol (..),
     TID,
     getNewTID,
     heartBeatSignal,
+    newHeartBeat,
     rtuReadMBRegister,
     rtuRunClient,
     rtuWriteMBRegister,
@@ -44,12 +45,13 @@ import Repl.HelpFun (
     getPairs,
     invalidCmd,
  )
-import Repl.Parser (pReplWordBit, 
+import Repl.Parser (
     pReplAddrNum,
     pReplArg,
     pReplFloat,
     pReplInt,
     pReplWord,
+    pReplWordBit,
  )
 import Types
 
@@ -297,11 +299,11 @@ startHeartbeat (addr, timer)
             let uid = replUId state
             let tid = replTransactionId state
             let protocol = replProtocol state
-            hb <- liftIO $  newHeartBeat addr uid timer
+            hb <- liftIO $ newHeartBeat addr uid timer
             heart <- case protocol of
                 ModBusTCP -> do
                     let worker = Left $ replTCPDirectWorker state
-                    liftIO $ heartBeatSignal hb worker client  tid
+                    liftIO $ heartBeatSignal hb worker client tid
                 ModBusRTU -> do
                     let worker = Right $ replRTUDirectWorker state
                     liftIO $ heartBeatSignal hb worker client tid
@@ -323,7 +325,7 @@ stopHeartbeatThread addr = do
     let mthread = do
             heartbeat' <- find (\x -> hbAddress x == Address addr) $ replPool state
             thread <- hbThreadId heartbeat'
-            return (heartbeat' , thread)
+            return (heartbeat', thread)
     case mthread of
         Nothing ->
             liftIO $
