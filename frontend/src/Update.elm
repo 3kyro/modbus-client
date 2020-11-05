@@ -56,33 +56,38 @@ import Types
         ( ActiveTab(..)
         , BaudRate
         , ByteOrder(..)
+        , ConnectActiveTab(..)
         , ConnectStatus(..)
         , ConnectionInfo(..)
+        , HeartBeat
         , InitInfo
         , KeepAliveResponse(..)
         , Model
         , Msg(..)
+        , Parity
         , SettingsOptions(..)
         , StopBits
         , decodeByteOrder
         , decodeConnInfo
+        , decodeHeartBeat
         , decodeInitInfo
         , decodeKeepAliveResponse
+        , diffList
         , encodeByteOrder
+        , encodeHeartBeat
         , encodeKeepAlive
+        , encodeRTUConnectionRequest
         , encodeTCPConnectionInfo
         , encodeTCPConnectionRequest
         , retractDropdowns
         , showByteOrderResponse
         , showConnInfo
+        , showFailedHeartBeat
         , showKeepAliveResponse
         , showOs
         , toByteOrder
-        , ConnectActiveTab(..)
-        , encodeRTUConnectionRequest
         )
 import Types.IpAddress exposing (IpAddressByte, setIpAddressByte)
-import Types exposing (Parity)
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -348,6 +353,34 @@ update msg model =
             , Cmd.none
             )
 
+        -- HeartBeat
+        HeartUid uid ->
+            ( heartUidModelUpdate model uid
+            , Cmd.none
+            )
+
+        HeartAddress addr ->
+            ( heartAddrModelUpdate model addr
+            , Cmd.none
+            )
+
+        HeartInterval intv ->
+            ( heartIntvModelUpdate model intv
+            , Cmd.none
+            )
+
+        StartHeartBeat ->
+            startHeartBeat model
+
+        StopHeartBeat ->
+            ( model
+            , Cmd.none
+            )
+
+        UpdateActiveHeartBeats result ->
+            updateActiveHeartBeats model result
+
+        -- Noop
         NoOp ->
             ( model
             , Cmd.none
@@ -387,15 +420,19 @@ connectionInfoRequest =
 connectRequest : Model -> Cmd Msg
 connectRequest model =
     let
-        encodeRequest = case model.connActiveTab of
-            TCPTab -> encodeTCPConnectionRequest model
-            RTUTab -> encodeRTUConnectionRequest model
+        encodeRequest =
+            case model.connActiveTab of
+                TCPTab ->
+                    encodeTCPConnectionRequest model
+
+                RTUTab ->
+                    encodeRTUConnectionRequest model
     in
-        Http.post
-            { url = "http://localhost:4000/connect"
-            , body = Http.jsonBody <| encodeRequest
-            , expect = Http.expectWhatever ConnectedResponse
-            }
+    Http.post
+        { url = "http://localhost:4000/connect"
+        , body = Http.jsonBody <| encodeRequest
+        , expect = Http.expectWhatever ConnectedResponse
+        }
 
 
 disconnectRequest : Cmd Msg
@@ -539,6 +576,15 @@ getRegMduList model =
 
                 Just num ->
                     offsetMdu model.regMdu num
+
+
+sendHeartBeats : Model -> Cmd Msg
+sendHeartBeats model =
+    Http.post
+        { url = "http://localhost:4000/heartbeat"
+        , body = Http.jsonBody <| E.list encodeHeartBeat <| model.heartbeats
+        , expect = Http.expectJson UpdateActiveHeartBeats <| D.list decodeHeartBeat
+        }
 
 
 
@@ -972,13 +1018,6 @@ regModValueModelUpdate model str =
     { model | regMdu = fromModValueInputUpdate model.regMdu str }
 
 
-
--- let
---     mdu = setModValueUpdate model.regMdu model.reg
---     newMdu = { mdu | }
--- in
-
-
 updateRegMduModelUpdate : Model -> Result Http.Error (List ModDataUpdate) -> Model
 updateRegMduModelUpdate model result =
     case result of
@@ -1100,6 +1139,7 @@ stopBitsModelUpdate model opt =
         , stopBits = opt.value
     }
 
+
 parityModelUpdate : Model -> Option Parity Msg -> Model
 parityModelUpdate model opt =
     let
@@ -1110,3 +1150,85 @@ parityModelUpdate model opt =
         | parityDd = setDropdown model.parityDd opt
         , parity = opt.value
     }
+
+
+heartUidModelUpdate : Model -> String -> Model
+heartUidModelUpdate model str =
+    { model
+        | heartUid = String.toInt str
+    }
+
+
+heartAddrModelUpdate : Model -> String -> Model
+heartAddrModelUpdate model str =
+    { model
+        | heartAddr = String.toInt str
+    }
+
+
+heartIntvModelUpdate : Model -> String -> Model
+heartIntvModelUpdate model str =
+    { model
+        | heartIntv = String.toInt str
+    }
+
+
+startHeartBeat : Model -> ( Model, Cmd Msg )
+startHeartBeat model =
+    let
+        mheartbeat =
+            Maybe.map3 HeartBeat
+                model.heartUid
+                model.heartAddr
+                model.heartIntv
+    in
+    case mheartbeat of
+        Nothing ->
+            ( model, Cmd.none )
+
+        Just heartbeat ->
+            ( { model | heartbeats = model.heartbeats ++ [ heartbeat ] }
+            , sendHeartBeats model
+            )
+
+
+updateActiveHeartBeats : Model -> Result Http.Error (List HeartBeat) -> ( Model, Cmd Msg )
+updateActiveHeartBeats model result =
+    case result of
+        Err err ->
+            ( { model
+                | notifications =
+                    detailedNot
+                        model
+                        "Error updating heartbeat list"
+                        (showHttpError err)
+              }
+            , jumpToBottom "status"
+            )
+
+        Ok hbs ->
+            let
+                diffs =
+                    diffList model.heartbeats hbs
+            in
+            if
+                List.isEmpty diffs
+                -- All heartbeats are running
+            then
+                ( { model
+                    | heartbeats = hbs
+                    , notifications = simpleNot model "Heartbeat started successfully"
+                  }
+                , jumpToBottom "status"
+                )
+                -- Some heartbeats failed
+
+            else
+                ( { model
+                    | heartbeats = hbs
+                    , notifications =
+                        detailedNot model "Some heartbeats have failed" <|
+                            List.foldl showFailedHeartBeat "Failed heartbeat signals:\n" diffs
+                  }
+                , jumpToBottom "status"
+                )

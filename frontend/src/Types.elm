@@ -5,6 +5,7 @@ module Types exposing
     , ConnectActiveTab(..)
     , ConnectStatus(..)
     , ConnectionInfo(..)
+    , HeartBeat
     , InitInfo
     , KeepAliveResponse(..)
     , Model
@@ -12,12 +13,16 @@ module Types exposing
     , OS(..)
     , Parity(..)
     , SettingsOptions(..)
-    , StopBits(..)
+    , StopBits(..), showFailedHeartBeat
     , decodeByteOrder
     , decodeConnInfo
+    , decodeHeartBeat
     , decodeInitInfo
     , decodeKeepAliveResponse
+    , deleteListElem
+    , diffList
     , encodeByteOrder
+    , encodeHeartBeat
     , encodeKeepAlive
     , encodeRTUConnectionRequest
     , encodeTCPConnectionInfo
@@ -122,6 +127,14 @@ type Msg
     | BaudRateDrop (Option BaudRate Msg)
     | StopBitsDrop (Option StopBits Msg)
     | ParityDrop (Option Parity Msg)
+      -- HeartBeat
+    | HeartUid String
+    | HeartAddress String
+    | HeartInterval String
+    | StartHeartBeat
+    | StopHeartBeat
+    | UpdateActiveHeartBeats (Result Http.Error (List HeartBeat))
+      -- Noop
     | NoOp
 
 
@@ -181,6 +194,13 @@ type alias Model =
     -- time
     , timePosix : Time.Posix
     , timeZone : Time.Zone
+
+    -- heartbeats
+    , heartbeats : List HeartBeat
+    , navHeartbeat : HeartBeat
+    , heartUid : Maybe Int
+    , heartAddr : Maybe Int
+    , heartIntv : Maybe Int
 
     -- settings
     , settings : List (Setting SettingsOptions Msg)
@@ -355,7 +375,6 @@ showConnInfo connInfo =
 
 
 
--- ++ ("Timeout: " ++ String.fromInt conn.timeout)
 --------------------------------------------------------------------------------------------------
 -- InitInfo
 --------------------------------------------------------------------------------------------------
@@ -737,3 +756,88 @@ encodeParity pr =
 
         EvenParity ->
             E.string "even"
+
+
+
+--------------------------------------------------------------------------------------------------
+-- HeartBeat
+--------------------------------------------------------------------------------------------------
+
+
+type alias HeartBeat =
+    { uid : Int
+    , address : Int
+    , interval : Int
+    }
+
+
+encodeHeartBeat : HeartBeat -> E.Value
+encodeHeartBeat hb =
+    E.object
+        [ ( "uid", E.int hb.uid )
+        , ( "address", E.int hb.address )
+        , ( "interval", E.int hb.interval )
+        ]
+
+
+decodeHeartBeat : D.Decoder HeartBeat
+decodeHeartBeat =
+    D.map3 HeartBeat
+        (D.field "uid" D.int)
+        (D.field "address" D.int)
+        (D.field "interval" D.int)
+
+
+showFailedHeartBeat : HeartBeat -> String -> String
+showFailedHeartBeat hb str =
+    str
+        ++ "Heartbeat: Address: "
+        ++ String.fromInt hb.uid
+        ++ ", unit id: "
+        ++ String.fromInt hb.uid
+        ++ ", interval: "
+        ++ String.fromInt hb.interval
+        ++ "\n"
+
+
+
+--------------------------------------------------------------------------------------------------
+-- Utils
+--------------------------------------------------------------------------------------------------
+-- diffList listA listB returns the difference between the two lists, namely all
+-- items in listA that are not present in listB
+-- Note: Only the first occurence of an item is considered, so
+-- diffList [1,1] [1] will return [1]
+
+
+diffList : List a -> List a -> List a
+diffList =
+    List.foldl deleteListElem
+
+
+
+-- deleteListElem listA a deletes the first occurence of a in listA
+
+
+deleteListElem : a -> List a -> List a
+deleteListElem y xs =
+    case List.head xs of
+        Nothing ->
+            []
+
+        Just x ->
+            if x == y then
+                case List.tail xs of
+                    Nothing ->
+                        []
+
+                    Just tail ->
+                        tail
+
+            else
+                case List.tail xs of
+                    Nothing ->
+                        [ x ]
+
+                    Just tail ->
+                        x :: deleteListElem y tail

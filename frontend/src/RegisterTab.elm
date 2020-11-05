@@ -44,6 +44,12 @@ import ModData
         , modValueColumn
         , modValueTypeColumn
         )
+import NavigationModule
+    exposing
+        ( navButton
+        , navDd
+        , navInput
+        )
 import Palette exposing (background, blueSapphire, fireBrick, greyWhite, lightGrey)
 import ReadWrite
     exposing
@@ -127,18 +133,7 @@ navNumInput model =
 
 sendRegRequestButton : Element Msg
 sendRegRequestButton =
-    Input.button
-        [ Background.color lightGrey
-        , width fill
-        , height <| px 38
-        , Font.center
-        , Font.color greyWhite
-        , paddingXY 0 10
-        , focused []
-        ]
-        { onPress = Just UpdateRegMdu
-        , label = text "Update"
-        }
+    navButton "Update" (Just UpdateRegMdu)
 
 
 navRWButton : Model -> Element Msg
@@ -175,75 +170,6 @@ rwButtonText rw =
 
         Write ->
             "Write"
-
-
-navDd : String -> Dropdown value Msg -> Element Msg
-navDd label db =
-    row
-        [ width fill
-        , height <| px 38
-        , spacing 10
-        ]
-        [ el
-            [ width <| fillPortion 2
-            , Background.color lightGrey
-            , padding 11
-            , height fill
-            ]
-          <|
-            text label
-        , el
-            [ width <| fillPortion 3
-            , Background.color lightGrey
-            , height <| px 38
-            ]
-          <|
-            dropdown
-                [ Background.color blueSapphire
-                , width fill
-                , padding 11
-                , height <| px 38
-                , Font.center
-                , Font.color greyWhite
-                ]
-                db
-        ]
-
-
-navInput : String -> (String -> Msg) -> Maybe String -> Element Msg
-navInput label msg mvalue =
-    row
-        [ width fill
-        , height <| px 38
-        , spacing 10
-        ]
-        [ el
-            [ width <| fillPortion 2
-            , Background.color lightGrey
-            , padding 11
-            , height fill
-            ]
-          <|
-            text label
-        , el
-            [ width <| fillPortion 3
-            , Background.color lightGrey
-            , height <| px 38
-            ]
-          <|
-            Input.text
-                [ Background.color lightGrey
-                , width fill
-                , height fill
-                , Font.center
-                , Font.color greyWhite
-                ]
-                { onChange = msg
-                , text = Maybe.withDefault "" <| mvalue
-                , placeholder = Nothing
-                , label = Input.labelHidden "Unit Id"
-                }
-        ]
 
 
 renderOutput : List ModDataUpdate -> Element Msg

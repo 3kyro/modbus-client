@@ -24,6 +24,7 @@ import Types
         , ByteOrder(..)
         , ConnectActiveTab(..)
         , ConnectStatus(..)
+        , HeartBeat
         , Model
         , Msg(..)
         , OS(..)
@@ -98,6 +99,13 @@ initModel =
     , timePosix = Time.millisToPosix 0
     , timeZone = Time.utc
 
+    -- heartbeats
+    , heartbeats = []
+    , navHeartbeat = HeartBeat 0 0 0
+    , heartUid = Nothing
+    , heartAddr = Nothing
+    , heartIntv = Nothing
+
     -- settings
     , settings = [ keepAliveSetting, byteOrderSetting ]
     , keepAlive = False
@@ -156,6 +164,7 @@ valueTypeDropdown =
 wordOption : Option ModValue Msg
 wordOption =
     getOption (ModWord Nothing) (text "Word")
+
 
 bitsOption : Option ModValue Msg
 bitsOption =

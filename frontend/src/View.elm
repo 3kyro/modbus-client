@@ -38,6 +38,7 @@ import Element.Background as Background
 import Element.Border as Border
 import Element.Font as Font
 import Element.Input as Input
+import HeartBeat exposing (heartBeatNav)
 import Html exposing (Html)
 import Html.Attributes
 import ModData
@@ -373,7 +374,10 @@ tableNavModule model =
 
 heartbeatNavModule : Model -> Element Msg
 heartbeatNavModule model =
-    none
+    el
+        [ width fill ]
+    <|
+        heartBeatNav model
 
 
 settingsNavModule : Model -> Element Msg
@@ -415,7 +419,7 @@ simpleLogo =
         , spacing 10
         ]
         [ el [ Font.size 15 ] <| text "version : 0.1"
-        , el [ Font.size 30 ] <|text "Modbus Serve"
+        , el [ Font.size 30 ] <| text "Modbus Serve"
         ]
 
 
@@ -805,6 +809,7 @@ baudrate model =
         , rigthLabel ""
         ]
 
+
 stopbits : Model -> Element Msg
 stopbits model =
     row
@@ -824,10 +829,11 @@ stopbits model =
         , rigthLabel ""
         ]
 
+
 parity : Model -> Element Msg
 parity model =
     row
-        [ spacing 5]
+        [ spacing 5 ]
         [ mainLabel "Parity"
         , leftLabel ""
         , dropdown
@@ -842,6 +848,8 @@ parity model =
             model.parityDd
         , rigthLabel ""
         ]
+
+
 
 ------------------------------------------------------------------------------------------------------------------
 -- Import
