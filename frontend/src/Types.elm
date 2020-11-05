@@ -768,6 +768,7 @@ type alias HeartBeat =
     { uid : Int
     , address : Int
     , interval : Int
+    , selected : Bool
     }
 
 
@@ -777,15 +778,17 @@ encodeHeartBeat hb =
         [ ( "uid", E.int hb.uid )
         , ( "address", E.int hb.address )
         , ( "interval", E.int hb.interval )
+        , ( "selected", E.bool hb.selected )
         ]
 
 
 decodeHeartBeat : D.Decoder HeartBeat
 decodeHeartBeat =
-    D.map3 HeartBeat
+    D.map4 HeartBeat
         (D.field "uid" D.int)
         (D.field "address" D.int)
         (D.field "interval" D.int)
+        (D.field "selected" D.bool)
 
 
 showFailedHeartBeat : HeartBeat -> String -> String
