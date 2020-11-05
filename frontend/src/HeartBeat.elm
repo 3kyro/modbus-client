@@ -18,9 +18,12 @@ import Element
         , spacing
         , text
         , width
+        , paddingXY
+        , alignLeft
         )
 import Element.Background as Background
 import Element.Font as Font
+import Element.Input as Input
 import NavigationModule
     exposing
         ( navButton
@@ -87,7 +90,8 @@ heartBeatInfoModule model =
 
 heartbeatColumns : Model -> List (IndexedColumn HeartBeat Msg)
 heartbeatColumns model =
-    [ uidColumn
+    [ selectColumn model
+    , uidColumn
     , addressColumn
     , intervalColumn
     ]
@@ -140,3 +144,40 @@ tableCellColor idx =
 
     else
         grey
+
+selectColumn : Model -> IndexedColumn HeartBeat Msg
+selectColumn model =
+    { header =
+        el
+            [ height <| px 38
+            , paddingXY 10 0
+            ]
+        <|
+            selectCheckbox SelectAllChecked model.heartSelectAll
+    , width = px 30
+    , view = \i hb -> viewCheckedCell i hb.selected
+    }
+
+selectCheckbox : (Bool -> Msg) -> Bool -> Element Msg
+selectCheckbox msg flag =
+    Input.checkbox
+        [ alignLeft
+        , centerY
+        ]
+        { onChange = msg
+        , icon = Input.defaultCheckbox
+        , checked = flag
+        , label = Input.labelHidden "Select Checkbox"
+        }
+
+viewCheckedCell : Int -> Bool -> Element Msg
+viewCheckedCell idx selected =
+    el
+        [ Background.color <| tableCellColor idx
+        , Font.color greyWhite
+        , height <| px 38
+        , Font.center
+        , paddingXY 10 0
+        ]
+    <|
+        selectCheckbox (HeartBeatChecked idx) selected

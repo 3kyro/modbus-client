@@ -105,7 +105,9 @@ initModel =
     , heartUid = Nothing
     , heartAddr = Nothing
     , heartIntv = Nothing
-    , heartSelected = Just True
+    , heartSelected = Just False
+    , heartSelectAll = False
+    , heartSelectSome = False
 
     -- settings
     , settings = [ keepAliveSetting, byteOrderSetting ]

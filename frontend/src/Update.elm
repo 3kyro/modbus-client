@@ -86,6 +86,7 @@ import Types
         , showKeepAliveResponse
         , showOs
         , toByteOrder
+        , replaceHeartBeatSelected
         )
 import Types.IpAddress exposing (IpAddressByte, setIpAddressByte)
 
@@ -380,7 +381,12 @@ update msg model =
         UpdateActiveHeartBeats result ->
             updateActiveHeartBeats model result
 
-        -- Noop
+        HeartBeatChecked idx flag ->
+            ( hbCheckedModelUpdate model idx flag
+            , Cmd.none
+            )
+
+        -- Noop 
         NoOp ->
             ( model
             , Cmd.none
@@ -780,6 +786,13 @@ selectAllCheckedModelUpdate model b =
                 | selectAllCheckbox = b
                 , selectSome = b
                 , modDataUpdate = List.map (\mdu -> { mdu | mduSelected = b }) model.modDataUpdate
+            }
+
+        HeartbeatTab ->
+            { model
+                | heartSelectAll = b
+                , heartSelectSome = b
+                , heartbeats = List.map (\hb -> { hb | selected = b }) model.heartbeats
             }
 
         _ ->
@@ -1233,3 +1246,16 @@ updateActiveHeartBeats model result =
                   }
                 , jumpToBottom "status"
                 )
+
+
+hbCheckedModelUpdate : Model -> Int -> Bool -> Model
+hbCheckedModelUpdate model idx flag =
+    let
+        newHB =
+            List.indexedMap (replaceHeartBeatSelected idx flag) model.heartbeats
+    in
+    { model
+        | heartbeats = newHB
+        , heartSelectSome = List.any (\hb -> hb.selected) newHB
+    }
+

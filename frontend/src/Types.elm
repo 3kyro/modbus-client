@@ -13,7 +13,7 @@ module Types exposing
     , OS(..)
     , Parity(..)
     , SettingsOptions(..)
-    , StopBits(..)
+    , StopBits(..), replaceHeartBeatSelected
     , decodeByteOrder
     , decodeConnInfo
     , decodeHeartBeat
@@ -135,6 +135,7 @@ type Msg
     | StartHeartBeat
     | StopHeartBeat
     | UpdateActiveHeartBeats (Result Http.Error (List HeartBeat))
+    | HeartBeatChecked Int Bool
       -- Noop
     | NoOp
 
@@ -203,6 +204,8 @@ type alias Model =
     , heartAddr : Maybe Int
     , heartIntv : Maybe Int
     , heartSelected : Maybe Bool
+    , heartSelectAll : Bool
+    , heartSelectSome : Bool
 
     -- settings
     , settings : List (Setting SettingsOptions Msg)
@@ -804,6 +807,14 @@ showFailedHeartBeat hb str =
         ++ String.fromInt hb.interval
         ++ "\n"
 
+replaceHeartBeatSelected : Int -> Bool -> Int -> HeartBeat -> HeartBeat
+replaceHeartBeatSelected idx flag =
+    \i hb ->
+        if i == idx then
+            { hb | selected = flag }
+
+        else
+            hb
 
 
 --------------------------------------------------------------------------------------------------
