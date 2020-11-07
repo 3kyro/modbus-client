@@ -88,6 +88,8 @@ import Types
         , showKeepAliveResponse
         , showOs
         , toByteOrder
+        , fromIdList
+        , getSelectedIds
         )
 import Types.IpAddress exposing (IpAddressByte, setIpAddressByte)
 
@@ -385,6 +387,9 @@ update msg model =
             , Cmd.none
             )
 
+        InitHeartBeat result ->
+            initHeartBeat model result
+
         -- Noop
         NoOp ->
             ( model
@@ -403,6 +408,7 @@ initCmd =
     Cmd.batch
         [ getTimeZone
         , initRequest
+        , initHeartBeatRequest
         ]
 
 
@@ -586,9 +592,9 @@ getRegMduList model =
 sendHeartBeats : HeartBeat -> Cmd Msg
 sendHeartBeats hb =
     Http.post
-        { url = "http://localhost:4000/heartbeat"
+        { url = "http://localhost:4000/startHeartbeat"
         , body = Http.jsonBody <| encodeHeartBeat <| hb
-        , expect = Http.expectJson UpdateActiveHeartBeats <| D.list decodeHeartBeat
+        , expect = Http.expectJson UpdateActiveHeartBeats <| D.list D.int
         }
 
 
@@ -596,11 +602,19 @@ stopHeartBeatRequest : List HeartBeat -> Cmd Msg
 stopHeartBeatRequest hbs =
     Http.post
         { url = "http://localhost:4000/stopHeartbeat"
-        , body = Http.jsonBody <| E.list encodeHeartBeat <| hbs
-        , expect = Http.expectJson UpdateActiveHeartBeats <| D.list decodeHeartBeat
+        , body = Http.jsonBody <| E.list E.int <| getSelectedIds hbs
+        , expect = Http.expectJson UpdateActiveHeartBeats <| D.list D.int
         }
 
-
+-- Initial request to the server to provide any running heartbeat signals
+-- Nedded when the frontend is reloaded
+initHeartBeatRequest : Cmd Msg
+initHeartBeatRequest =
+    Http.post
+        { url = "http://localhost:4000/initHeartbeat"
+        , body = Http.emptyBody
+        , expect = Http.expectWhatever InitHeartBeat
+        }
 
 ------------------------------------------------------------------------------------------------------------------
 -- Model updates
@@ -1198,19 +1212,23 @@ startHeartBeat : Model -> ( Model, Cmd Msg )
 startHeartBeat model =
     let
         mheartbeat =
-            Maybe.map4 HeartBeat
+            Maybe.map5 HeartBeat
                 model.heartUid
                 model.heartAddr
                 model.heartIntv
-            <|
-                Just False
+                (Just False)
+                (Just model.heartId)
     in
     case mheartbeat of
         Nothing ->
             ( model, Cmd.none )
 
         Just hb ->
-            ( { model | heartbeats = model.heartbeats ++ [ hb ] }
+            ( { model
+                | heartbeats = model.heartbeats ++ [ hb ]
+                -- increment id counter
+                , heartId = model.heartId + 1
+                }
             , sendHeartBeats hb
             )
 
@@ -1230,7 +1248,7 @@ stopHeartBeat model =
     )
 
 
-updateActiveHeartBeats : Model -> Result Http.Error (List HeartBeat) -> ( Model, Cmd Msg )
+updateActiveHeartBeats : Model -> Result Http.Error (List Int) -> ( Model, Cmd Msg )
 updateActiveHeartBeats model result =
     case result of
         Err err ->
@@ -1244,8 +1262,10 @@ updateActiveHeartBeats model result =
             , jumpToBottom "status"
             )
 
-        Ok hbs ->
+        Ok ids ->
             let
+                -- compare the locally store list with the received ids
+                hbs = fromIdList model.heartbeats ids
                 diffs =
                     diffList model.heartbeats hbs
             in
@@ -1271,6 +1291,19 @@ updateActiveHeartBeats model result =
                 , jumpToBottom "status"
                 )
 
+initHeartBeat : Model -> Result Http.Error () -> (Model, Cmd Msg)
+initHeartBeat model result =
+    case result of
+        Err err ->
+            ( { model
+                | notifications =
+                    simpleNot
+                        model
+                        "Error initializing heartbeat signals"
+              }
+            , jumpToBottom "status"
+            )
+        Ok () -> (model, Cmd.none)
 
 hbCheckedModelUpdate : Model -> Int -> Bool -> Model
 hbCheckedModelUpdate model idx flag =

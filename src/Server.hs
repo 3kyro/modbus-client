@@ -54,6 +54,7 @@ import Network.Socket.KeepAlive
 import qualified System.Hardware.Serialport as SP
 import Types.ModData
 import Types.Server
+import Data.List (partition, foldl')
 
 ---------------------------------------------------------------------------------------------------------------
 -- API
@@ -67,7 +68,8 @@ type ServerAPI =
         :<|> "parseModData" :> ReqBody '[JSON] String :> Post '[JSON] [ModData]
         :<|> "keepAlive" :> ReqBody '[JSON] KeepAliveServ :> Post '[JSON] KeepAliveResponse
         :<|> "byteOrder" :> ReqBody '[JSON] ByteOrder :> Post '[JSON] ByteOrder
-        :<|> "heartbeat" :> ReqBody '[JSON] ServHeartBeat :> Post '[JSON] [ServHeartBeat]
+        :<|> "startHeartbeat" :> ReqBody '[JSON] ServHeartBeat :> Post '[JSON] [ServHeartBeat]
+        :<|> "stopHheartbeat" :> ReqBody '[JSON] ServHeartBeat :> Post '[JSON] [ServHeartBeat]
         :<|> "init" :> Get '[JSON] InitRequest
         :<|> Raw --FIX ME :: fix for path traversal attacks
 
@@ -79,8 +81,9 @@ serverAPI state =
         :<|> disconnect state
         :<|> parseAndSend
         :<|> keepAlive state
-        :<|> byteOrder state
-        :<|> heartbeat state
+        :<|> byteOrder state 
+        :<|> startHeartbeat state
+        :<|> stopHeartbeat state
         :<|> initRequest state
         :<|> serveDirectoryWebApp "frontend"
 
@@ -303,8 +306,8 @@ byteOrder state order = do
                     }
     return order
 
-heartbeat :: TVar ServState -> ServHeartBeat -> Handler [ServHeartBeat]
-heartbeat state requestHeartbeat = do
+startHeartbeat :: TVar ServState -> ServHeartBeat -> Handler [ServHeartBeat]
+startHeartbeat state requestHeartbeat = do
     currentState <- liftIO $ readTVarIO state
     let pool = servPool currentState
     let actors = getActors $ servConnection currentState
@@ -337,6 +340,35 @@ heartbeat state requestHeartbeat = do
                             }
             return newPool
 
+stopHeartbeat :: TVar ServState -> [ServHeartBeat] -> Handler [ServHeartBeat]
+stopHeartbeat state requestHeartbeats =
+    -- make sure all received heartbeats are selected for being stopped
+    if not (all servHBSelected requestHeartbeats)
+    then throwError err400
+    else do
+    currentState <- liftIO $ readTVarIO state
+    let pool = servPool currentState
+    runningPool <- liftIO $ checkServerPool pool
+    mapM_ stopServHeartBeat reque
+--     let toStop = filter (similarHB) runningPool
+--   where
+--     similarHB hb =
+--             servHbAddress hb
+
+-- filter incoming pool , filters the pool of servheartbeats, removing all
+-- heartbeats similar to incoming. Actuall heartbeat and status will vary as this
+-- informaton doesn't come from the frontend
+filterServHeartBeat :: [ServHeartBeat] -> [ServHeartBeat] -> ([ServHeartBeat] , [ServHeartBeat])
+filterServHeartBeat (x:xs) (y:ys) =
+    ()
+  where
+      similar hbs selected = filter (\hb -> not $
+        servHbAddress hb == servHbAddress selected
+        && servHbUid hb == servHbUid selected
+        && servHbInterval hb == servHbInterval selected
+        ) hbs
+
+    
 -- Checks the pool of heartbeat signals to see if any has panicked
 -- and remove them from the pool
 checkServerPool :: [ServHeartBeat] -> IO [ServHeartBeat]

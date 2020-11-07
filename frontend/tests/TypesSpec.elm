@@ -7,8 +7,18 @@ import Test exposing (..)
 import Types exposing (deleteListElem, diffList)
 
 
-suite : Test
-suite =
+heartbeatSpec : Test
+heartbeatSpec =
+    describe "HeartsBeat"
+        [ describe "Manipulation by id"
+            [
+
+            ]
+
+        ]
+    
+utilsSpec : Test
+utilsSpec =
     describe "Utils"
         [ describe "diffList"
             [ fuzz (tuple ( list int, list int )) "produces the fifference between two lists" <|
@@ -44,3 +54,4 @@ suite =
                         Expect.false "Expected x not a member" <| List.member x (deleteListElem x xs)
             ]
         ]
+

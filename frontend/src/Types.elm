@@ -13,7 +13,7 @@ module Types exposing
     , OS(..)
     , Parity(..)
     , SettingsOptions(..)
-    , StopBits(..), replaceHeartBeatSelected
+    , StopBits(..), fromIdList
     , decodeByteOrder
     , decodeConnInfo
     , decodeHeartBeat
@@ -27,6 +27,8 @@ module Types exposing
     , encodeRTUConnectionRequest
     , encodeTCPConnectionInfo
     , encodeTCPConnectionRequest
+    , getSelectedIds
+    , replaceHeartBeatSelected
     , retractDropdowns
     , showByteOrderResponse
     , showConnInfo
@@ -134,8 +136,9 @@ type Msg
     | HeartInterval String
     | StartHeartBeat
     | StopHeartBeat
-    | UpdateActiveHeartBeats (Result Http.Error (List HeartBeat))
+    | UpdateActiveHeartBeats (Result Http.Error (List Int))
     | HeartBeatChecked Int Bool
+    | InitHeartBeat (Result Http.Error ())
       -- Noop
     | NoOp
 
@@ -199,12 +202,12 @@ type alias Model =
 
     -- heartbeats
     , heartbeats : List HeartBeat
-    , navHeartbeat : HeartBeat
     , heartUid : Maybe Int
     , heartAddr : Maybe Int
     , heartIntv : Maybe Int
     , heartSelectAll : Bool
     , heartSelectSome : Bool
+    , heartId : Int
 
     -- settings
     , settings : List (Setting SettingsOptions Msg)
@@ -773,6 +776,7 @@ type alias HeartBeat =
     , address : Int
     , interval : Int
     , selected : Bool
+    , id : Int
     }
 
 
@@ -782,17 +786,18 @@ encodeHeartBeat hb =
         [ ( "uid", E.int hb.uid )
         , ( "address", E.int hb.address )
         , ( "interval", E.int hb.interval )
-        , ( "selected", E.bool hb.selected )
+        , ( "id", E.int hb.id )
         ]
 
 
 decodeHeartBeat : D.Decoder HeartBeat
 decodeHeartBeat =
-    D.map4 HeartBeat
+    D.map5 HeartBeat
         (D.field "uid" D.int)
         (D.field "address" D.int)
         (D.field "interval" D.int)
-        (D.field "selected" D.bool)
+        (D.succeed False)
+        (D.field "id" D.int)
 
 
 showFailedHeartBeat : HeartBeat -> String -> String
@@ -806,6 +811,7 @@ showFailedHeartBeat hb str =
         ++ String.fromInt hb.interval
         ++ "\n"
 
+
 replaceHeartBeatSelected : Int -> Bool -> Int -> HeartBeat -> HeartBeat
 replaceHeartBeatSelected idx flag =
     \i hb ->
@@ -814,6 +820,34 @@ replaceHeartBeatSelected idx flag =
 
         else
             hb
+
+
+
+-- Returns the list of heartbeat ids corresponding to those heartbeats that are
+-- selected
+
+
+getSelectedIds : List HeartBeat -> List Int
+getSelectedIds hbs =
+    let
+        getId hb ids =
+            hb.id :: ids
+    in
+    List.foldl getId [] hbs
+
+
+
+-- Filters a list of heartbeats based on their ids
+
+
+fromIdList : List HeartBeat -> List Int -> List HeartBeat
+fromIdList hbs ids =
+    let
+        f id heartbeats =
+            List.filter (\hb -> hb.id == id) heartbeats
+    in
+    List.foldl f hbs ids
+
 
 
 --------------------------------------------------------------------------------------------------
