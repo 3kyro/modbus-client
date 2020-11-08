@@ -23,13 +23,15 @@ import qualified Network.Socket as S
 import qualified System.Info
 import qualified System.Process as PS
 
-import Control.Concurrent (tryTakeMVar)
+import Control.Concurrent (killThread, tryTakeMVar)
 import Control.Exception (try)
 import Control.Exception.Safe (SomeException)
-import Control.Monad (filterM, void)
+import Control.Monad (foldM, void)
 import CsvParser (runpCSV)
+import Data.List (delete)
 import Modbus (
     ByteOrder,
+    HeartBeat,
     ModbusClient (..),
     ModbusProtocol (..),
     RTUSession,
@@ -42,6 +44,7 @@ import Modbus (
     getTCPClient,
     getTCPSocket,
     hbStatus,
+    hbThreadId,
     heartBeatSignal,
     initTID,
     rtuReadMBRegister,
@@ -54,7 +57,6 @@ import Network.Socket.KeepAlive
 import qualified System.Hardware.Serialport as SP
 import Types.ModData
 import Types.Server
-import Data.List (partition, foldl')
 
 ---------------------------------------------------------------------------------------------------------------
 -- API
@@ -68,8 +70,9 @@ type ServerAPI =
         :<|> "parseModData" :> ReqBody '[JSON] String :> Post '[JSON] [ModData]
         :<|> "keepAlive" :> ReqBody '[JSON] KeepAliveServ :> Post '[JSON] KeepAliveResponse
         :<|> "byteOrder" :> ReqBody '[JSON] ByteOrder :> Post '[JSON] ByteOrder
-        :<|> "startHeartbeat" :> ReqBody '[JSON] ServHeartBeat :> Post '[JSON] [ServHeartBeat]
-        :<|> "stopHheartbeat" :> ReqBody '[JSON] ServHeartBeat :> Post '[JSON] [ServHeartBeat]
+        :<|> "startHeartbeat" :> ReqBody '[JSON] HeartBeatRequest :> Post '[JSON] [Int]
+        :<|> "stopHeartbeat" :> ReqBody '[JSON] [Int] :> Post '[JSON] [Int]
+        :<|> "initHeartbeat" :> Post '[JSON] [HeartBeatRequest]
         :<|> "init" :> Get '[JSON] InitRequest
         :<|> Raw --FIX ME :: fix for path traversal attacks
 
@@ -81,9 +84,10 @@ serverAPI state =
         :<|> disconnect state
         :<|> parseAndSend
         :<|> keepAlive state
-        :<|> byteOrder state 
+        :<|> byteOrder state
         :<|> startHeartbeat state
         :<|> stopHeartbeat state
+        :<|> initHeartbeat state
         :<|> initRequest state
         :<|> serveDirectoryWebApp "frontend"
 
@@ -306,83 +310,102 @@ byteOrder state order = do
                     }
     return order
 
-startHeartbeat :: TVar ServState -> ServHeartBeat -> Handler [ServHeartBeat]
-startHeartbeat state requestHeartbeat = do
+-- Starts the provided heartbeat signal and returns theids of all currently running
+-- heartbeat signals
+startHeartbeat :: TVar ServState -> HeartBeatRequest -> Handler [Int]
+startHeartbeat state hbr = do
+    -- handle state
     currentState <- liftIO $ readTVarIO state
     let pool = servPool currentState
     let actors = getActors $ servConnection currentState
-    runningPool <- liftIO $ checkServerPool pool
     let tid = servTID currentState
-    case servHB requestHeartbeat of
-        Just _ ->
-            -- Already initialized heartbeat
-            throwError err400
-        Nothing -> do
-            hb <- liftIO $ newServHeartBeat requestHeartbeat
-            activated <- case actors of
-                Nothing -> throwError err400
-                Just actors' ->
-                    let client = sclClient actors'
-                     in case servProtocol currentState of
-                            ModBusTCP ->
-                                let worker = sclTCPBatchWorker actors'
-                                 in liftIO $ heartBeatSignal hb (Left worker) client tid
-                            ModBusRTU ->
-                                let worker = sclRTUBatchWorker actors'
-                                 in liftIO $ heartBeatSignal hb (Right worker) client tid
-            let servActivated = requestHeartbeat{servHB = Just activated}
-            let newPool = servActivated : runningPool
-            liftIO $
-                atomically $
-                    writeTVar state $
-                        currentState
-                            { servPool = newPool
-                            }
-            return newPool
 
-stopHeartbeat :: TVar ServState -> [ServHeartBeat] -> Handler [ServHeartBeat]
-stopHeartbeat state requestHeartbeats =
-    -- make sure all received heartbeats are selected for being stopped
-    if not (all servHBSelected requestHeartbeats)
-    then throwError err400
-    else do
+    -- Check active running signals
+    runningPool <- liftIO $ checkServerPool pool
+
+    -- get new heartbeat
+    (hbid, hb) <- liftIO $ fromHeartBeatRequest hbr
+
+    -- start heartbeat thread
+    activated <- case actors of
+        Nothing -> throwError err400
+        Just actors' ->
+            let client = sclClient actors'
+             in case servProtocol currentState of
+                    ModBusTCP ->
+                        let worker = sclTCPBatchWorker actors'
+                         in liftIO $ heartBeatSignal hb (Left worker) client tid
+                    ModBusRTU ->
+                        let worker = sclRTUBatchWorker actors'
+                         in liftIO $ heartBeatSignal hb (Right worker) client tid
+
+    -- update state
+    let newPool = runningPool ++ [(hbid, activated)]
+    liftIO $
+        atomically $
+            writeTVar state $
+                currentState
+                    { servPool = newPool
+                    }
+
+    pure $ fst <$> newPool
+
+stopHeartbeat :: TVar ServState -> [Int] -> Handler [Int]
+stopHeartbeat state ids = do
+    -- manage state
     currentState <- liftIO $ readTVarIO state
     let pool = servPool currentState
+
+    -- Check active running signals
     runningPool <- liftIO $ checkServerPool pool
-    mapM_ stopServHeartBeat reque
---     let toStop = filter (similarHB) runningPool
---   where
---     similarHB hb =
---             servHbAddress hb
 
--- filter incoming pool , filters the pool of servheartbeats, removing all
--- heartbeats similar to incoming. Actuall heartbeat and status will vary as this
--- informaton doesn't come from the frontend
-filterServHeartBeat :: [ServHeartBeat] -> [ServHeartBeat] -> ([ServHeartBeat] , [ServHeartBeat])
-filterServHeartBeat (x:xs) (y:ys) =
-    ()
-  where
-      similar hbs selected = filter (\hb -> not $
-        servHbAddress hb == servHbAddress selected
-        && servHbUid hb == servHbUid selected
-        && servHbInterval hb == servHbInterval selected
-        ) hbs
+    -- stop heartbeats
+    newPool <- liftIO $ stopHeartBeatsById ids runningPool
+    -- update state
+    liftIO $
+        atomically $
+            writeTVar state $
+                currentState
+                    { servPool = newPool
+                    }
+                    
+    pure $ fst <$> newPool
 
-    
+stopHeartBeatsById :: [Int] -> [(Int, HeartBeat)] -> IO [(Int, HeartBeat)]
+stopHeartBeatsById ids pool =
+    foldM stopHeartBeatProcess pool ids
+
+stopHeartBeatProcess :: [(Int, HeartBeat)] -> Int -> IO [(Int, HeartBeat)]
+stopHeartBeatProcess pool hbid = do
+    let mpair = do
+            hb <- lookup hbid pool
+            thread <- hbThreadId hb
+            pure (hb, thread)
+    case mpair of
+        Nothing -> pure pool
+        Just (hb, thread) -> do
+            killThread thread
+            pure $ delete (hbid, hb) pool
+
 -- Checks the pool of heartbeat signals to see if any has panicked
 -- and remove them from the pool
-checkServerPool :: [ServHeartBeat] -> IO [ServHeartBeat]
-checkServerPool =
-    filterM checkStatus
+checkServerPool :: [(Int, HeartBeat)] -> IO [(Int, HeartBeat)]
+checkServerPool xs =
+    foldM checkStatus [] (reverse xs)
   where
-    checkStatus hb =
-        case servHB hb of
-            Nothing -> pure False
-            Just hb' -> do
-                mvar <- tryTakeMVar $ hbStatus hb'
-                case mvar of
-                    Nothing -> pure True
-                    Just _ -> pure False
+    checkStatus previous assoc@(_, hb) = do
+        mvar <- tryTakeMVar $ hbStatus hb
+        case mvar of
+            Nothing -> pure $ assoc : previous
+            Just _ -> pure previous
+
+initHeartbeat :: TVar ServState -> Handler [HeartBeatRequest]
+initHeartbeat state = do
+    -- Check active running signals
+    runningPool <- getServPool state
+
+    pure $ toHeartBeatRequest <$> runningPool
+
 
 initRequest :: TVar ServState -> Handler InitRequest
 initRequest state =
@@ -391,3 +414,12 @@ initRequest state =
             "windows" -> pure Windows
             _ -> pure Other
      in InitRequest <$> getConnectionInfo state <*> os
+
+getServPool :: TVar ServState -> Handler [(Int, HeartBeat)]
+getServPool state = do
+    -- manage state
+    currentState <- liftIO $ readTVarIO state
+    let pool = servPool currentState
+
+    -- Check active running signals
+    liftIO $ checkServerPool pool

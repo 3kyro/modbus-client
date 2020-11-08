@@ -613,7 +613,7 @@ initHeartBeatRequest =
     Http.post
         { url = "http://localhost:4000/initHeartbeat"
         , body = Http.emptyBody
-        , expect = Http.expectWhatever InitHeartBeat
+        , expect = Http.expectJson InitHeartBeat <| D.list decodeHeartBeat
         }
 
 ------------------------------------------------------------------------------------------------------------------
@@ -1264,7 +1264,7 @@ updateActiveHeartBeats model result =
 
         Ok ids ->
             let
-                -- compare the locally store list with the received ids
+                -- compare the locally stored list with the received ids
                 hbs = fromIdList model.heartbeats ids
                 diffs =
                     diffList model.heartbeats hbs
@@ -1275,7 +1275,7 @@ updateActiveHeartBeats model result =
             then
                 ( { model
                     | heartbeats = hbs
-                    , notifications = simpleNot model "Heartbeat started successfully"
+                    , notifications = simpleNot model "Heartbeat signals updated"
                   }
                 , jumpToBottom "status"
                 )
@@ -1285,13 +1285,13 @@ updateActiveHeartBeats model result =
                 ( { model
                     | heartbeats = hbs
                     , notifications =
-                        detailedNot model "Some heartbeats have failed" <|
+                        detailedNot model "Some heartbeat signals have failed" <|
                             List.foldl showFailedHeartBeat "Failed heartbeat signals:\n" diffs
                   }
                 , jumpToBottom "status"
                 )
 
-initHeartBeat : Model -> Result Http.Error () -> (Model, Cmd Msg)
+initHeartBeat : Model -> Result Http.Error (List HeartBeat) -> (Model, Cmd Msg)
 initHeartBeat model result =
     case result of
         Err err ->
@@ -1303,7 +1303,16 @@ initHeartBeat model result =
               }
             , jumpToBottom "status"
             )
-        Ok () -> (model, Cmd.none)
+        Ok heartbeats ->
+            ( { model
+                | heartbeats = heartbeats
+                , heartId =
+                    case List.maximum <| List.map .id heartbeats of
+                        Nothing -> 0
+                        Just max -> max + 1
+              }
+            , Cmd.none
+            )
 
 hbCheckedModelUpdate : Model -> Int -> Bool -> Model
 hbCheckedModelUpdate model idx flag =

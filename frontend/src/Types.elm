@@ -138,7 +138,7 @@ type Msg
     | StopHeartBeat
     | UpdateActiveHeartBeats (Result Http.Error (List Int))
     | HeartBeatChecked Int Bool
-    | InitHeartBeat (Result Http.Error ())
+    | InitHeartBeat (Result Http.Error (List HeartBeat))
       -- Noop
     | NoOp
 
@@ -843,11 +843,11 @@ getSelectedIds hbs =
 fromIdList : List HeartBeat -> List Int -> List HeartBeat
 fromIdList hbs ids =
     let
-        f id heartbeats =
-            List.filter (\hb -> hb.id == id) heartbeats
-    in
-    List.foldl f hbs ids
 
+        f heartbeats id acc =
+            List.filter (\hb -> hb.id == id) heartbeats ++ acc
+    in
+    List.foldr (f hbs) [] ids
 
 
 --------------------------------------------------------------------------------------------------

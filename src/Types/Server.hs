@@ -15,8 +15,9 @@ module Types.Server (
     toKeepAlive,
     OS (..),
     InitRequest (..),
-    ServHeartBeat (..),
-    newServHeartBeat,
+    HeartBeatRequest (..),
+    fromHeartBeatRequest,
+    toHeartBeatRequest,
 ) where
 
 import qualified Network.Socket as S
@@ -34,25 +35,25 @@ import Data.Aeson.Types (Value (..))
 import Data.IP (IPv4)
 import Servant
 
-import Control.Concurrent (MVar)
+import Control.Concurrent (MVar, newEmptyMVar)
 import Control.Concurrent.STM (TVar)
 import qualified Data.Text as T
 import Data.Word (Word16, Word8)
 import Modbus (
     ByteOrder,
     Client,
-    HeartBeat,
+    HeartBeat (..),
     ModbusProtocol,
     RTUWorker,
     SerialSettings,
     TCPWorker (..),
     TID,
-    newHeartBeat,
     rtuBatchWorker,
     rtuDirectWorker,
     tcpBatchWorker,
     tcpDirectWorker,
  )
+import qualified Network.Modbus.Protocol as MB
 import Network.Socket.KeepAlive (KeepAlive (..))
 import qualified System.Hardware.Serialport as SP
 
@@ -65,7 +66,7 @@ data ServState = ServState
     , servProtocol :: !ModbusProtocol
     , servOrd :: !ByteOrder
     , servTID :: !(TVar TID)
-    , servPool :: ![ServHeartBeat]
+    , servPool :: [(Int, HeartBeat)]
     }
 
 ---------------------------------------------------------------------------------------------------------------
@@ -241,32 +242,35 @@ instance ToJSON OS where
 -- HeartBeat
 ---------------------------------------------------------------------------------------------------------------
 
-data ServHeartBeat = ServHeartBeat
-    { servHB :: Maybe HeartBeat
-    , servHbAddress :: Word16
-    , servHbUid :: Word8
-    , servHbInterval :: Int
-    , servHBSelected :: Bool
+data HeartBeatRequest = HeartBeatRequest
+    { hbrAddress :: Word16
+    , hbrUid :: Word8
+    , hbrInterval :: Int
+    , hbrId :: Int
     }
 
-instance ToJSON ServHeartBeat where
+instance ToJSON HeartBeatRequest where
     toJSON hb =
         object
-            [ "uid" .= servHbUid hb
-            , "address" .= servHbAddress hb
-            , "interval" .= servHbInterval hb
-            , "selected" .= servHBSelected hb
+            [ "uid" .= hbrUid hb
+            , "address" .= hbrAddress hb
+            , "interval" .= hbrInterval hb
+            , "id" .= hbrId hb
             ]
 
-instance FromJSON ServHeartBeat where
+instance FromJSON HeartBeatRequest where
     parseJSON (Object o) = do
         pUid <- o .: "uid"
         pAddr <- o .: "address"
         pIntv <- o .: "interval"
-        pSelected <- o .: "selected"
-        return $ ServHeartBeat Nothing pAddr pUid pIntv pSelected
-    parseJSON _ = fail "Not a ServHeartBeat"
+        pId <- o .: "id"
+        return $ HeartBeatRequest pAddr pUid pIntv pId
+    parseJSON _ = fail "Not a HeartBeatRequest"
 
-newServHeartBeat :: ServHeartBeat -> IO HeartBeat
-newServHeartBeat servHb =
-    newHeartBeat (servHbAddress servHb) (servHbUid servHb) (servHbInterval servHb)
+fromHeartBeatRequest :: HeartBeatRequest -> IO (Int, HeartBeat)
+fromHeartBeatRequest (HeartBeatRequest addr uid intv hbid) =
+    (,) <$> pure hbid <*> (HeartBeat (MB.Address addr) uid intv Nothing <$> newEmptyMVar)
+
+toHeartBeatRequest :: (Int, HeartBeat) -> HeartBeatRequest
+toHeartBeatRequest (hbid, hb) =
+    HeartBeatRequest (MB.unAddress $ hbAddress hb) (hbUid hb) (hbInterval hb) hbid
