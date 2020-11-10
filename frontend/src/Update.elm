@@ -80,6 +80,8 @@ import Types
         , encodeRTUConnectionRequest
         , encodeTCPConnectionInfo
         , encodeTCPConnectionRequest
+        , fromIdList
+        , getSelectedIds
         , replaceHeartBeatSelected
         , retractDropdowns
         , showByteOrderResponse
@@ -88,8 +90,6 @@ import Types
         , showKeepAliveResponse
         , showOs
         , toByteOrder
-        , fromIdList
-        , getSelectedIds
         )
 import Types.IpAddress exposing (IpAddressByte, setIpAddressByte)
 
@@ -606,8 +606,12 @@ stopHeartBeatRequest hbs =
         , expect = Http.expectJson UpdateActiveHeartBeats <| D.list D.int
         }
 
+
+
 -- Initial request to the server to provide any running heartbeat signals
 -- Nedded when the frontend is reloaded
+
+
 initHeartBeatRequest : Cmd Msg
 initHeartBeatRequest =
     Http.post
@@ -615,6 +619,8 @@ initHeartBeatRequest =
         , body = Http.emptyBody
         , expect = Http.expectJson InitHeartBeat <| D.list decodeHeartBeat
         }
+
+
 
 ------------------------------------------------------------------------------------------------------------------
 -- Model updates
@@ -1226,9 +1232,10 @@ startHeartBeat model =
         Just hb ->
             ( { model
                 | heartbeats = model.heartbeats ++ [ hb ]
+
                 -- increment id counter
                 , heartId = model.heartId + 1
-                }
+              }
             , sendHeartBeats hb
             )
 
@@ -1265,7 +1272,9 @@ updateActiveHeartBeats model result =
         Ok ids ->
             let
                 -- compare the locally stored list with the received ids
-                hbs = fromIdList model.heartbeats ids
+                hbs =
+                    fromIdList model.heartbeats ids
+
                 diffs =
                     diffList model.heartbeats hbs
             in
@@ -1291,7 +1300,8 @@ updateActiveHeartBeats model result =
                 , jumpToBottom "status"
                 )
 
-initHeartBeat : Model -> Result Http.Error (List HeartBeat) -> (Model, Cmd Msg)
+
+initHeartBeat : Model -> Result Http.Error (List HeartBeat) -> ( Model, Cmd Msg )
 initHeartBeat model result =
     case result of
         Err err ->
@@ -1303,16 +1313,21 @@ initHeartBeat model result =
               }
             , jumpToBottom "status"
             )
+
         Ok heartbeats ->
             ( { model
                 | heartbeats = heartbeats
                 , heartId =
                     case List.maximum <| List.map .id heartbeats of
-                        Nothing -> 0
-                        Just max -> max + 1
+                        Nothing ->
+                            0
+
+                        Just max ->
+                            max + 1
               }
             , Cmd.none
             )
+
 
 hbCheckedModelUpdate : Model -> Int -> Bool -> Model
 hbCheckedModelUpdate model idx flag =

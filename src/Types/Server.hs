@@ -56,6 +56,8 @@ import Modbus (
 import qualified Network.Modbus.Protocol as MB
 import Network.Socket.KeepAlive (KeepAlive (..))
 import qualified System.Hardware.Serialport as SP
+import Test.QuickCheck (elements, Gen, oneof, Arbitrary, arbitrary)
+import Data.List (intersperse)
 
 ---------------------------------------------------------------------------------------------------------------
 -- ServState
@@ -161,6 +163,17 @@ instance ToJSON ConnectionInfo where
                     , "settings" .= settings
                     ]
 
+instance Arbitrary ConnectionInfo where
+    arbitrary = oneof [arbTCP, arbRTU]
+      where
+        arbTCP = TCPConnectionInfo <$> ip4 <*> arbitrary <*>arbitrary
+        arbRTU = RTUConnectionInfo <$> arbitrary <*> arbitrary
+        ip4 :: Gen IPv4
+        ip4 = read <$> showIp
+        byte :: Gen Word8
+        byte = arbitrary
+        showIp = concat <$> sequenceA (intersperse (pure ".") (replicate 4 (show <$> byte)))
+
 ---------------------------------------------------------------------------------------------------------------
 -- Connection Request
 ---------------------------------------------------------------------------------------------------------------
@@ -177,6 +190,15 @@ instance FromJSON ConnectionRequest where
         return $ ConnectionRequest jsonInfo jsonKeepAlive
     parseJSON _ = fail "Not a valid ConnectionRequest"
 
+instance ToJSON ConnectionRequest where
+    toJSON cr = object
+        [ "connection info" .= requestInfo cr
+        , "keep alive" .= requestKeepAlive cr
+        ]
+
+instance Arbitrary ConnectionRequest where
+    arbitrary = ConnectionRequest <$> arbitrary <*> arbitrary
+
 ---------------------------------------------------------------------------------------------------------------
 -- InitRequest
 ---------------------------------------------------------------------------------------------------------------
@@ -186,12 +208,24 @@ data InitRequest = InitRequest
     , initOs :: !OS
     }
 
+instance FromJSON InitRequest where
+    parseJSON (Object o) = do
+        info <- o .: "connection info"
+        os <- o .: "os"
+        pure $ InitRequest info os
+    parseJSON _ = fail "Not a InitRequest"
+
 instance ToJSON InitRequest where
     toJSON ir =
         object
             [ "connection info" .= initConnInfo ir
             , "os" .= initOs ir
             ]
+
+
+
+instance Arbitrary InitRequest where
+    arbitrary = InitRequest <$> arbitrary <*> arbitrary
 
 ---------------------------------------------------------------------------------------------------------------
 -- Keep Alive
@@ -212,17 +246,40 @@ instance FromJSON KeepAliveServ where
         return $ KeepAliveServ pflag pidle pinterval
     parseJSON _ = fail "Not a valid KeepAlive"
 
+instance ToJSON KeepAliveServ where
+    toJSON kas = object
+        [ "flag" .= flag kas
+        , "idle" .= idle kas
+        , "interval" .= interval kas
+        ]
+
+instance Arbitrary KeepAliveServ where
+    arbitrary = KeepAliveServ <$> arbitrary <*> arbitrary <*> arbitrary
+
 data KeepAliveResponse
     = KeepAliveActivated
     | KeepAliveDisactivated
+
+instance FromJSON KeepAliveResponse where
+    parseJSON (String s) =
+        case s of
+            "Keep alive activated" -> pure KeepAliveActivated
+            "Keep alive disactivated" -> pure KeepAliveDisactivated
+            _ -> fail "Not a KeepAliveResponse"
+    parseJSON _ = fail "Not a KeepAliveResponse"
 
 instance ToJSON KeepAliveResponse where
     toJSON KeepAliveActivated = String "Keep alive activated"
     toJSON KeepAliveDisactivated = String "Keep alive disactivated"
 
+instance Arbitrary KeepAliveResponse where
+    arbitrary = elements [KeepAliveActivated, KeepAliveDisactivated]
+
 toKeepAlive :: KeepAliveServ -> KeepAlive
 toKeepAlive (KeepAliveServ flag' tidle tintv) =
     KeepAlive flag' (fromIntegral tidle) (fromIntegral tintv)
+
+
 
 ---------------------------------------------------------------------------------------------------------------
 -- OS
@@ -233,11 +290,22 @@ data OS
     | Windows
     | Other
 
+instance FromJSON OS where
+    parseJSON (String s) =
+        case s of
+            "linux" -> pure Linux
+            "windows" -> pure Windows
+            "other" -> pure Other
+            _ -> fail "Not an OS"
+    parseJSON _ = fail "Not an OS"
+
 instance ToJSON OS where
     toJSON Linux = String "linux"
     toJSON Windows = String "windows"
     toJSON Other = String "other"
 
+instance Arbitrary OS where
+    arbitrary = elements [Linux, Windows, Other]
 ---------------------------------------------------------------------------------------------------------------
 -- HeartBeat
 ---------------------------------------------------------------------------------------------------------------
@@ -266,6 +334,10 @@ instance FromJSON HeartBeatRequest where
         pId <- o .: "id"
         return $ HeartBeatRequest pAddr pUid pIntv pId
     parseJSON _ = fail "Not a HeartBeatRequest"
+
+instance Arbitrary HeartBeatRequest where
+    arbitrary =
+        HeartBeatRequest <$> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
 
 fromHeartBeatRequest :: HeartBeatRequest -> IO (Int, HeartBeat)
 fromHeartBeatRequest (HeartBeatRequest addr uid intv hbid) =

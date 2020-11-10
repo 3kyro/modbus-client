@@ -368,7 +368,7 @@ stopHeartbeat state ids = do
                 currentState
                     { servPool = newPool
                     }
-                    
+
     pure $ fst <$> newPool
 
 stopHeartBeatsById :: [Int] -> [(Int, HeartBeat)] -> IO [(Int, HeartBeat)]
@@ -405,7 +405,6 @@ initHeartbeat state = do
     runningPool <- getServPool state
 
     pure $ toHeartBeatRequest <$> runningPool
-
 
 initRequest :: TVar ServState -> Handler InitRequest
 initRequest state =

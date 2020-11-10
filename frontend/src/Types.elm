@@ -13,7 +13,7 @@ module Types exposing
     , OS(..)
     , Parity(..)
     , SettingsOptions(..)
-    , StopBits(..), fromIdList
+    , StopBits(..)
     , decodeByteOrder
     , decodeConnInfo
     , decodeHeartBeat
@@ -27,6 +27,7 @@ module Types exposing
     , encodeRTUConnectionRequest
     , encodeTCPConnectionInfo
     , encodeTCPConnectionRequest
+    , fromIdList
     , getSelectedIds
     , replaceHeartBeatSelected
     , retractDropdowns
@@ -843,11 +844,11 @@ getSelectedIds hbs =
 fromIdList : List HeartBeat -> List Int -> List HeartBeat
 fromIdList hbs ids =
     let
-
         f heartbeats id acc =
             List.filter (\hb -> hb.id == id) heartbeats ++ acc
     in
     List.foldr (f hbs) [] ids
+
 
 
 --------------------------------------------------------------------------------------------------
