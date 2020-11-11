@@ -51,8 +51,8 @@ dependencies:
 - serialport
 - exceptions
 - keep-alive
-- servant-client >= 0.18.1 && < 0.19
-- http-client >= 0.7.2 && < 0.8
+- servant-client >= 0.16 && < 0.17
+- http-client >= 0.6 && < 0.7
 library:
   source-dirs: src
   ghc-options:

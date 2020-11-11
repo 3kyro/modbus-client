@@ -212,7 +212,7 @@ data ModDataUpdate = MDU
     , mduSelected :: Bool
     , mduRW :: ReadWrite
     }
-    deriving (Show)
+    deriving (Show, Eq)
 
 instance MBRegister ModDataUpdate where
     registerType = registerType . mduModData
@@ -244,7 +244,7 @@ instance Arbitrary ModDataUpdate where
 data ReadWrite
     = MDURead
     | MDUWrite
-    deriving (Show)
+    deriving (Show, Eq)
 
 instance FromJSON ReadWrite where
     parseJSON (String s) =

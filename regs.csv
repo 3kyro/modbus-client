@@ -1,4 +1,4 @@
 input_register 10 1500
+input_register 11 1501
 holding_register 15 1700
-input_register 11 0xDEAD
-holding_register 16 0xBEEF
+holding_register 16 9999

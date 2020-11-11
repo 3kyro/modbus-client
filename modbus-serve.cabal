@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 4858a5200b2c38d61484cd6e88fa578641e7001202e910c1b5829339d1676a7e
+-- hash: 7f8bde8e21a269e0d695e13d08729f7db264eb8301b164cdf1a96c7031894435
 
 name:           modbus-serve
 version:        0.1.0.0
@@ -59,7 +59,7 @@ library
     , exceptions
     , hspec
     , hspec-golden-aeson >=0.7.0.0 && <0.8
-    , http-client >=0.7.2 && <0.8
+    , http-client >=0.6 && <0.7
     , http-types
     , iproute
     , keep-alive
@@ -72,7 +72,7 @@ library
     , repline
     , safe-exceptions
     , serialport
-    , servant-client >=0.18.1 && <0.19
+    , servant-client >=0.16 && <0.17
     , servant-server
     , stm
     , tagged
@@ -102,7 +102,7 @@ executable modbus-serve-exe
     , exceptions
     , hspec
     , hspec-golden-aeson >=0.7.0.0 && <0.8
-    , http-client >=0.7.2 && <0.8
+    , http-client >=0.6 && <0.7
     , http-types
     , iproute
     , keep-alive
@@ -116,7 +116,7 @@ executable modbus-serve-exe
     , repline
     , safe-exceptions
     , serialport
-    , servant-client >=0.18.1 && <0.19
+    , servant-client >=0.16 && <0.17
     , servant-server
     , stm
     , tagged
@@ -154,7 +154,7 @@ test-suite modbus-serve-test
     , exceptions
     , hspec
     , hspec-golden-aeson >=0.7.0.0 && <0.8
-    , http-client >=0.7.2 && <0.8
+    , http-client >=0.6 && <0.7
     , http-types
     , iproute
     , keep-alive
@@ -168,7 +168,7 @@ test-suite modbus-serve-test
     , repline
     , safe-exceptions
     , serialport
-    , servant-client >=0.18.1 && <0.19
+    , servant-client >=0.16 && <0.17
     , servant-server
     , stm
     , tagged
