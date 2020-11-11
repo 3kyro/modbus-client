@@ -37,6 +37,7 @@ import Servant
 
 import Control.Concurrent (MVar, newEmptyMVar)
 import Control.Concurrent.STM (TVar)
+import Data.List (intersperse)
 import qualified Data.Text as T
 import Data.Word (Word16, Word8)
 import Modbus (
@@ -56,8 +57,7 @@ import Modbus (
 import qualified Network.Modbus.Protocol as MB
 import Network.Socket.KeepAlive (KeepAlive (..))
 import qualified System.Hardware.Serialport as SP
-import Test.QuickCheck (elements, Gen, oneof, Arbitrary, arbitrary)
-import Data.List (intersperse)
+import Test.QuickCheck (Arbitrary, Gen, arbitrary, elements, oneof)
 
 ---------------------------------------------------------------------------------------------------------------
 -- ServState
@@ -166,7 +166,7 @@ instance ToJSON ConnectionInfo where
 instance Arbitrary ConnectionInfo where
     arbitrary = oneof [arbTCP, arbRTU]
       where
-        arbTCP = TCPConnectionInfo <$> ip4 <*> arbitrary <*>arbitrary
+        arbTCP = TCPConnectionInfo <$> ip4 <*> arbitrary <*> arbitrary
         arbRTU = RTUConnectionInfo <$> arbitrary <*> arbitrary
         ip4 :: Gen IPv4
         ip4 = read <$> showIp
@@ -191,10 +191,11 @@ instance FromJSON ConnectionRequest where
     parseJSON _ = fail "Not a valid ConnectionRequest"
 
 instance ToJSON ConnectionRequest where
-    toJSON cr = object
-        [ "connection info" .= requestInfo cr
-        , "keep alive" .= requestKeepAlive cr
-        ]
+    toJSON cr =
+        object
+            [ "connection info" .= requestInfo cr
+            , "keep alive" .= requestKeepAlive cr
+            ]
 
 instance Arbitrary ConnectionRequest where
     arbitrary = ConnectionRequest <$> arbitrary <*> arbitrary
@@ -222,8 +223,6 @@ instance ToJSON InitRequest where
             , "os" .= initOs ir
             ]
 
-
-
 instance Arbitrary InitRequest where
     arbitrary = InitRequest <$> arbitrary <*> arbitrary
 
@@ -247,11 +246,12 @@ instance FromJSON KeepAliveServ where
     parseJSON _ = fail "Not a valid KeepAlive"
 
 instance ToJSON KeepAliveServ where
-    toJSON kas = object
-        [ "flag" .= flag kas
-        , "idle" .= idle kas
-        , "interval" .= interval kas
-        ]
+    toJSON kas =
+        object
+            [ "flag" .= flag kas
+            , "idle" .= idle kas
+            , "interval" .= interval kas
+            ]
 
 instance Arbitrary KeepAliveServ where
     arbitrary = KeepAliveServ <$> arbitrary <*> arbitrary <*> arbitrary
@@ -279,8 +279,6 @@ toKeepAlive :: KeepAliveServ -> KeepAlive
 toKeepAlive (KeepAliveServ flag' tidle tintv) =
     KeepAlive flag' (fromIntegral tidle) (fromIntegral tintv)
 
-
-
 ---------------------------------------------------------------------------------------------------------------
 -- OS
 ---------------------------------------------------------------------------------------------------------------
@@ -306,6 +304,7 @@ instance ToJSON OS where
 
 instance Arbitrary OS where
     arbitrary = elements [Linux, Windows, Other]
+
 ---------------------------------------------------------------------------------------------------------------
 -- HeartBeat
 ---------------------------------------------------------------------------------------------------------------

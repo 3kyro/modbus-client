@@ -5,7 +5,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeOperators #-}
 
-module Server (runServer) where
+module Server (runServer, server, getInitState, ServerAPI) where
 
 import Control.Concurrent.STM (
     TVar,
@@ -131,30 +131,42 @@ connect :: TVar ServState -> ConnectionRequest -> Handler ()
 connect state (ConnectionRequest connectionInfo kaValue) = do
     state' <- liftIO $ readTVarIO state
     case servConnection state' of
-        -- Do nothing if alrady connected
+        -- Do nothing if already connected
         TCPConnection{} -> throwError err400
         RTUConnection{} -> throwError err400
         NotConnected -> case connectionInfo of
+            -- TCP
             TCPConnectionInfo ip portNum tm -> do
                 let tms = tm * 1000000 -- in microseconds
                 mSocket <- liftIO $ getTCPSocket ip portNum tms
+
+                -- check socket
                 case mSocket of
                     Nothing -> throwError err500
                     Just socket -> do
+                        -- get client
                         client <- liftIO $ getTCPClient socket tms
+
+                        -- update state
                         putState state $
                             state'
                                 { servConnection = TCPConnection socket connectionInfo $ setActors client
                                 , servProtocol = ModBusTCP
                                 }
                         void $ keepAlive state kaValue
+            -- RTU
             RTUConnectionInfo serial settings -> do
                 let tms = SP.timeout (unSR settings) * 1000000 -- in microseconds
                 mPort <- liftIO $ getRTUSerialPort serial settings
+
+                -- check port
                 case mPort of
                     Nothing -> throwError err500
                     Just port -> do
+                        -- get client
                         client <- liftIO $ getRTUClient port tms
+
+                        -- update state
                         putState state $
                             state'
                                 { servConnection = RTUConnection port connectionInfo $ setActors client
@@ -310,7 +322,7 @@ byteOrder state order = do
                     }
     return order
 
--- Starts the provided heartbeat signal and returns theids of all currently running
+-- Starts the provided heartbeat signal and returns the ids of all currently running
 -- heartbeat signals
 startHeartbeat :: TVar ServState -> HeartBeatRequest -> Handler [Int]
 startHeartbeat state hbr = do
@@ -375,6 +387,7 @@ stopHeartBeatsById :: [Int] -> [(Int, HeartBeat)] -> IO [(Int, HeartBeat)]
 stopHeartBeatsById ids pool =
     foldM stopHeartBeatProcess pool ids
 
+-- find a heartbeat in a pool and stop its process if its active
 stopHeartBeatProcess :: [(Int, HeartBeat)] -> Int -> IO [(Int, HeartBeat)]
 stopHeartBeatProcess pool hbid = do
     let mpair = do
