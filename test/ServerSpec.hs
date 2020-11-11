@@ -74,7 +74,7 @@ businessLogicSpec =
             -- testing scenarios start here
             let connectRequest =
                     ConnectionRequest
-                        (TCPConnectionInfo (read "127.0.0.1") 5502 100)
+                        (TCPConnectionInfo (read "127.0.0.1") 5502 10)
                         $ KeepAliveServ False 20 10
             describe "POST /Connect" $
 
@@ -116,5 +116,19 @@ businessLogicSpec =
                     void $ runClientM (connect connectRequest) (clientEnv port)
                     result <- runClientM (updateModData requestMDU) (clientEnv port)
                     result `shouldBe` Right responseMDU
+
+            describe "GET /connectInfo" $ do
+                let info = TCPConnectionInfo
+                        (read "127.0.0.1")
+                        5502
+                        10
+                it "returns Nothing when not connected" $ \port -> do
+                    result <- runClientM getConnectionInfo (clientEnv port)
+                    result `shouldBe` Right Nothing
+
+                it "returns valid info when connected" $ \port -> do
+                    void $ runClientM (connect connectRequest) (clientEnv port)
+                    result <- runClientM getConnectionInfo (clientEnv port)
+                    result `shouldBe` Right (Just info)
 
 

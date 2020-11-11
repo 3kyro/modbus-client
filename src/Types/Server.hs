@@ -128,7 +128,23 @@ data ConnectionInfo
     | RTUConnectionInfo
         { rtuAddress :: !String
         , serialSettings :: !SerialSettings
-        }
+        } deriving (Eq)
+
+instance Show ConnectionInfo where
+    show ci =
+        case ci of
+            TCPConnectionInfo addr port tm ->
+                "TCPConnectionInfo: "
+                ++ show addr
+                ++ ":"
+                ++ show port
+                ++ ", timeout:"
+                ++ show tm
+                ++ " sec"
+            RTUConnectionInfo port _ ->
+                "RTUConnectionInfo: "
+                ++ port
+
 
 instance FromJSON ConnectionInfo where
     parseJSON (Object o) = do

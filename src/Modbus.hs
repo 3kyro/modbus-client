@@ -647,6 +647,16 @@ getAddr ip portNum = S.SockAddrInet (fromIntegral portNum) (toHostAddress ip)
 
 newtype SerialSettings = SR {unSR :: SP.SerialPortSettings}
 
+instance Eq SerialSettings where
+    (SR a) == (SR b) =
+        SP.commSpeed a == SP.commSpeed b
+        && SP.bitsPerWord a == SP.bitsPerWord b
+        && SP.stopb a == SP.stopb b
+        && SP.parity a == SP.parity b
+        && SP.flowControl a == SP.flowControl b
+        && SP.timeout a == SP.timeout b
+
+
 buildSerialSettings :: BaudRate -> StopBits -> Parity -> Int -> SerialSettings
 buildSerialSettings baudrate stopbits parity tm =
     SR $
