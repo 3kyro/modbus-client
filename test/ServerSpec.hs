@@ -172,6 +172,12 @@ businessLogicSpec =
                     then result `shouldBe` Right KeepAliveActivated
                     else result `shouldBe` Right KeepAliveDisactivated
 
+            describe "POST /byteorder" $ do
+
+                bo <- runIO $ generate arbitrary
+                it "returns valid byteorder" $ \port -> do
+                    result <- runClientM (byteOrder bo)  (clientEnv port)
+                    result `shouldBe` Right bo
 
 
 
