@@ -3,7 +3,7 @@
 module ServerSpec (serverSpec) where
 
 import Test.Aeson.GenericSpecs (roundtripSpecs)
-import Test.Hspec (shouldSatisfy, shouldThrow, Spec, around, describe, hspec, it, runIO, shouldBe)
+import Test.Hspec (Spec, around, describe, hspec, it, runIO, shouldBe, shouldSatisfy, shouldThrow)
 import Types.Server (ConnectionInfo (..), ConnectionRequest (..), HeartBeatRequest, InitRequest, KeepAliveResponse, KeepAliveServ (..), OS)
 
 import Modbus (ByteOrder (..), ModbusProtocol (..))
@@ -12,22 +12,15 @@ import qualified Network.Wai.Handler.Warp as Warp
 import Servant.Client (baseUrlPort, client, mkClientEnv, parseBaseUrl, runClientM)
 import Server (ServerAPI, getInitState, server)
 
+import Control.Exception.Safe (bracket)
+import Control.Monad (void)
+import Data.Either (isLeft)
+import Data.Foldable (traverse_)
+import qualified Data.Text as T
 import Servant (Proxy (..), (:<|>) (..))
 import System.Process (cleanupProcess, createProcess, proc)
-import Types
-    (serializeModData, bitsFromString, createModData
-    , ReadWrite (..)
-    , ModValue (..)
-    , ModDataUpdate(..)
-    , RegType (..)
-    , setMDUModValue
-    , KeepAliveResponse (..)
-    )
-import Control.Monad (void)
-import Control.Exception.Safe (bracket)
-import Data.Either (isLeft)
 import Test.QuickCheck (arbitrary, generate)
-import qualified Data.Text as T
+import Types (HeartBeatRequest (hbrId), KeepAliveResponse (..), ModDataUpdate (..), ModValue (..), ReadWrite (..), RegType (..), bitsFromString, createModData, serializeModData, setMDUModValue)
 
 serverSpec :: IO ()
 serverSpec = do
@@ -83,13 +76,11 @@ businessLogicSpec =
                         (TCPConnectionInfo (read "127.0.0.1") 5502 10)
                         $ KeepAliveServ False 20 10
             describe "POST /Connect" $
-
                 it "should send the right response" $ \port -> do
                     result <- runClientM (connect connectRequest) (clientEnv port)
                     result `shouldBe` Right ()
 
             describe "POST /modData" $
-
                 it "returns correct test server modData" $ \port -> do
                     let zeroMD = createModData InputRegister 0 (ModWord Nothing) 0
                     let mdu0 = MDU zeroMD True MDURead
@@ -124,10 +115,11 @@ businessLogicSpec =
                     result `shouldBe` Right responseMDU
 
             describe "GET /connectInfo" $ do
-                let info = TCPConnectionInfo
-                        (read "127.0.0.1")
-                        5502
-                        10
+                let info =
+                        TCPConnectionInfo
+                            (read "127.0.0.1")
+                            5502
+                            10
                 it "returns Nothing when not connected" $ \port -> do
                     result <- runClientM getConnectionInfo (clientEnv port)
                     result `shouldBe` Right Nothing
@@ -138,47 +130,50 @@ businessLogicSpec =
                     result `shouldBe` Right (Just info)
 
             describe "POST /disconnect" $ do
-
                 it "returns error when not connected" $ \port -> do
-                    result <- runClientM (disconnect "disconnect")  (clientEnv port)
+                    result <- runClientM (disconnect "disconnect") (clientEnv port)
                     result `shouldSatisfy` isLeft
 
                 it "correctly disconnects" $ \port -> do
                     void $ runClientM (connect connectRequest) (clientEnv port)
-                    result <- runClientM (disconnect "disconnect")  (clientEnv port)
+                    result <- runClientM (disconnect "disconnect") (clientEnv port)
                     result `shouldBe` Right ()
 
             describe "POST /parseModData" $ do
-
                 mds <- runIO $ generate arbitrary
                 invalidmds <- runIO $ generate arbitrary
 
                 it "correctly parses valid ModData" $ \port -> do
                     let s = serializeModData mds
-                    result <- runClientM (parseAndSend $ T.unpack s)  (clientEnv port)
+                    result <- runClientM (parseAndSend $ T.unpack s) (clientEnv port)
                     result `shouldBe` Right mds
 
                 it "fails on invalid input" $ \port -> do
-                    result <- runClientM (parseAndSend invalidmds)  (clientEnv port)
+                    result <- runClientM (parseAndSend invalidmds) (clientEnv port)
                     result `shouldSatisfy` isLeft
 
             describe "POST /keepAlive" $ do
-
                 kas <- runIO $ generate arbitrary
                 it "returns valid keep alive response" $ \port -> do
                     void $ runClientM (connect connectRequest) (clientEnv port)
-                    result <- runClientM (keepAlive kas)  (clientEnv port)
+                    result <- runClientM (keepAlive kas) (clientEnv port)
                     if flag kas
-                    then result `shouldBe` Right KeepAliveActivated
-                    else result `shouldBe` Right KeepAliveDisactivated
+                        then result `shouldBe` Right KeepAliveActivated
+                        else result `shouldBe` Right KeepAliveDisactivated
 
             describe "POST /byteorder" $ do
-
                 bo <- runIO $ generate arbitrary
                 it "returns valid byteorder" $ \port -> do
-                    result <- runClientM (byteOrder bo)  (clientEnv port)
+                    result <- runClientM (byteOrder bo) (clientEnv port)
                     result `shouldBe` Right bo
 
-
-
-
+            describe "POST /startHeartBeat" $ do
+                -- send some initial heartbeat requests
+                initHbs <- runIO $ generate arbitrary
+                hbs <- runIO $ generate arbitrary
+                it "returns running heartbeat signals" $ \port -> do
+                    void $ runClientM (connect connectRequest) (clientEnv port)
+                    traverse_ (\hb -> runClientM (startHeartbeat hb) (clientEnv port)) initHbs
+                    result <- runClientM (startHeartbeat hbs) (clientEnv port)
+                    -- check that total heartbeat ids are returned
+                    result `shouldBe` Right (map hbrId initHbs ++ [hbrId hbs])

@@ -29,6 +29,7 @@ import Control.Exception.Safe (SomeException)
 import Control.Monad (foldM, void)
 import CsvParser (runpCSV)
 import Data.List (delete)
+import Data.Word (Word32)
 import Modbus (
     ByteOrder,
     HeartBeat,
@@ -70,8 +71,8 @@ type ServerAPI =
         :<|> "parseModData" :> ReqBody '[JSON] String :> Post '[JSON] [ModData]
         :<|> "keepAlive" :> ReqBody '[JSON] KeepAliveServ :> Post '[JSON] KeepAliveResponse
         :<|> "byteOrder" :> ReqBody '[JSON] ByteOrder :> Post '[JSON] ByteOrder
-        :<|> "startHeartbeat" :> ReqBody '[JSON] HeartBeatRequest :> Post '[JSON] [Int]
-        :<|> "stopHeartbeat" :> ReqBody '[JSON] [Int] :> Post '[JSON] [Int]
+        :<|> "startHeartbeat" :> ReqBody '[JSON] HeartBeatRequest :> Post '[JSON] [Word32]
+        :<|> "stopHeartbeat" :> ReqBody '[JSON] [Word32] :> Post '[JSON] [Word32]
         :<|> "initHeartbeat" :> Post '[JSON] [HeartBeatRequest]
         :<|> "init" :> Get '[JSON] InitRequest
         :<|> Raw --FIX ME :: fix for path traversal attacks
@@ -324,7 +325,7 @@ byteOrder state order = do
 
 -- Starts the provided heartbeat signal and returns the ids of all currently running
 -- heartbeat signals
-startHeartbeat :: TVar ServState -> HeartBeatRequest -> Handler [Int]
+startHeartbeat :: TVar ServState -> HeartBeatRequest -> Handler [Word32]
 startHeartbeat state hbr = do
     -- handle state
     currentState <- liftIO $ readTVarIO state
@@ -362,7 +363,7 @@ startHeartbeat state hbr = do
 
     pure $ fst <$> newPool
 
-stopHeartbeat :: TVar ServState -> [Int] -> Handler [Int]
+stopHeartbeat :: TVar ServState -> [Word32] -> Handler [Word32]
 stopHeartbeat state ids = do
     -- manage state
     currentState <- liftIO $ readTVarIO state
@@ -383,12 +384,12 @@ stopHeartbeat state ids = do
 
     pure $ fst <$> newPool
 
-stopHeartBeatsById :: [Int] -> [(Int, HeartBeat)] -> IO [(Int, HeartBeat)]
+stopHeartBeatsById :: [Word32] -> [(Word32, HeartBeat)] -> IO [(Word32, HeartBeat)]
 stopHeartBeatsById ids pool =
     foldM stopHeartBeatProcess pool ids
 
 -- find a heartbeat in a pool and stop its process if its active
-stopHeartBeatProcess :: [(Int, HeartBeat)] -> Int -> IO [(Int, HeartBeat)]
+stopHeartBeatProcess :: [(Word32, HeartBeat)] -> Word32 -> IO [(Word32, HeartBeat)]
 stopHeartBeatProcess pool hbid = do
     let mpair = do
             hb <- lookup hbid pool
@@ -402,7 +403,7 @@ stopHeartBeatProcess pool hbid = do
 
 -- Checks the pool of heartbeat signals to see if any has panicked
 -- and remove them from the pool
-checkServerPool :: [(Int, HeartBeat)] -> IO [(Int, HeartBeat)]
+checkServerPool :: [(Word32, HeartBeat)] -> IO [(Word32, HeartBeat)]
 checkServerPool xs =
     foldM checkStatus [] (reverse xs)
   where
@@ -427,7 +428,7 @@ initRequest state =
             _ -> pure Other
      in InitRequest <$> getConnectionInfo state <*> os
 
-getServPool :: TVar ServState -> Handler [(Int, HeartBeat)]
+getServPool :: TVar ServState -> Handler [(Word32, HeartBeat)]
 getServPool state = do
     -- manage state
     currentState <- liftIO $ readTVarIO state

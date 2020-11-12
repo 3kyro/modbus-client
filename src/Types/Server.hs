@@ -68,7 +68,7 @@ data ServState = ServState
     , servProtocol :: !ModbusProtocol
     , servOrd :: !ByteOrder
     , servTID :: !(TVar TID)
-    , servPool :: [(Int, HeartBeat)]
+    , servPool :: [(Word32, HeartBeat)]
     }
 
 ---------------------------------------------------------------------------------------------------------------
@@ -330,7 +330,7 @@ data HeartBeatRequest = HeartBeatRequest
     { hbrAddress :: Word16
     , hbrUid :: Word8
     , hbrInterval :: Int
-    , hbrId :: Int
+    , hbrId :: Word32
     }
 
 instance ToJSON HeartBeatRequest where
@@ -355,10 +355,10 @@ instance Arbitrary HeartBeatRequest where
     arbitrary =
         HeartBeatRequest <$> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
 
-fromHeartBeatRequest :: HeartBeatRequest -> IO (Int, HeartBeat)
+fromHeartBeatRequest :: HeartBeatRequest -> IO (Word32, HeartBeat)
 fromHeartBeatRequest (HeartBeatRequest addr uid intv hbid) =
     (,) <$> pure hbid <*> (HeartBeat (MB.Address addr) uid intv Nothing <$> newEmptyMVar)
 
-toHeartBeatRequest :: (Int, HeartBeat) -> HeartBeatRequest
+toHeartBeatRequest :: (Word32, HeartBeat) -> HeartBeatRequest
 toHeartBeatRequest (hbid, hb) =
     HeartBeatRequest (MB.unAddress $ hbAddress hb) (hbUid hb) (hbInterval hb) hbid
