@@ -39,7 +39,7 @@ import Control.Concurrent (MVar, newEmptyMVar)
 import Control.Concurrent.STM (TVar)
 import Data.List (intersperse)
 import qualified Data.Text as T
-import Data.Word (Word16, Word8)
+import Data.Word (Word32, Word16, Word8)
 import Modbus (
     ByteOrder,
     Client,
@@ -248,8 +248,8 @@ instance Arbitrary InitRequest where
 
 data KeepAliveServ = KeepAliveServ
     { flag :: Bool
-    , idle :: Int
-    , interval :: Int
+    , idle :: Word32
+    , interval :: Word32
     }
     deriving (Show)
 
@@ -275,6 +275,7 @@ instance Arbitrary KeepAliveServ where
 data KeepAliveResponse
     = KeepAliveActivated
     | KeepAliveDisactivated
+    deriving (Show, Eq)
 
 instance FromJSON KeepAliveResponse where
     parseJSON (String s) =

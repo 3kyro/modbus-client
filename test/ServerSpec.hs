@@ -21,6 +21,7 @@ import Types
     , ModDataUpdate(..)
     , RegType (..)
     , setMDUModValue
+    , KeepAliveResponse (..)
     )
 import Control.Monad (void)
 import Control.Exception.Safe (bracket)
@@ -160,6 +161,17 @@ businessLogicSpec =
                 it "fails on invalid input" $ \port -> do
                     result <- runClientM (parseAndSend invalidmds)  (clientEnv port)
                     result `shouldSatisfy` isLeft
+
+            describe "POST /keepAlive" $ do
+
+                kas <- runIO $ generate arbitrary
+                it "returns valid keep alive response" $ \port -> do
+                    void $ runClientM (connect connectRequest) (clientEnv port)
+                    result <- runClientM (keepAlive kas)  (clientEnv port)
+                    if flag kas
+                    then result `shouldBe` Right KeepAliveActivated
+                    else result `shouldBe` Right KeepAliveDisactivated
+
 
 
 
