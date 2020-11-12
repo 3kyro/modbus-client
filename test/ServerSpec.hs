@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module ServerSpec (serverSpec) where
 
 import Test.Aeson.GenericSpecs (roundtripSpecs)
@@ -13,7 +15,7 @@ import Server (ServerAPI, getInitState, server)
 import Servant (Proxy (..), (:<|>) (..))
 import System.Process (cleanupProcess, createProcess, proc)
 import Types
-    (bitsFromString, createModData
+    (serializeModData, bitsFromString, createModData
     , ReadWrite (..)
     , ModValue (..)
     , ModDataUpdate(..)
@@ -23,6 +25,8 @@ import Types
 import Control.Monad (void)
 import Control.Exception.Safe (bracket)
 import Data.Either (isLeft)
+import Test.QuickCheck (arbitrary, generate)
+import qualified Data.Text as T
 
 serverSpec :: IO ()
 serverSpec = do
@@ -142,5 +146,21 @@ businessLogicSpec =
                     void $ runClientM (connect connectRequest) (clientEnv port)
                     result <- runClientM (disconnect "disconnect")  (clientEnv port)
                     result `shouldBe` Right ()
+
+            describe "POST /parseModData" $ do
+
+                mds <- runIO $ generate arbitrary
+                invalidmds <- runIO $ generate arbitrary
+
+                it "correctly parses valid ModData" $ \port -> do
+                    let s = serializeModData mds
+                    result <- runClientM (parseAndSend $ T.unpack s)  (clientEnv port)
+                    result `shouldBe` Right mds
+
+                it "fails on invalid input" $ \port -> do
+                    result <- runClientM (parseAndSend invalidmds)  (clientEnv port)
+                    result `shouldSatisfy` isLeft
+
+
 
 
