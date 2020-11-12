@@ -422,11 +422,8 @@ initHeartbeat state = do
 
 initRequest :: TVar ServState -> Handler InitRequest
 initRequest state =
-    let os = case System.Info.os of
-            "linux" -> pure Linux
-            "windows" -> pure Windows
-            _ -> pure Other
-     in InitRequest <$> getConnectionInfo state <*> os
+    let os = getOs
+    in InitRequest <$> getConnectionInfo state <*> pure os
 
 getServPool :: TVar ServState -> Handler [(Word32, HeartBeat)]
 getServPool state = do

@@ -20,7 +20,7 @@ import qualified Data.Text as T
 import Servant (Proxy (..), (:<|>) (..))
 import System.Process (cleanupProcess, createProcess, proc)
 import Test.QuickCheck (arbitrary, generate)
-import Types (HeartBeatRequest (hbrId), KeepAliveResponse (..), ModDataUpdate (..), ModValue (..), ReadWrite (..), RegType (..), bitsFromString, createModData, serializeModData, setMDUModValue)
+import Types (OS(..), getOs, InitRequest (..), HeartBeatRequest (hbrId), KeepAliveResponse (..), ModDataUpdate (..), ModValue (..), ReadWrite (..), RegType (..), bitsFromString, createModData, serializeModData, setMDUModValue)
 import Data.List ((\\), (!!))
 serverSpec :: IO ()
 serverSpec = do
@@ -71,9 +71,10 @@ businessLogicSpec =
             manager <- runIO $ newManager defaultManagerSettings
             let clientEnv port = mkClientEnv manager (baseUrl{baseUrlPort = port})
             -- testing scenarios start here
+            let connInfo = TCPConnectionInfo (read "127.0.0.1") 5502 10
             let connectRequest =
                     ConnectionRequest
-                        (TCPConnectionInfo (read "127.0.0.1") 5502 10)
+                        connInfo
                         $ KeepAliveServ False 20 10
             describe "POST /Connect" $
                 it "should send the right response" $ \port -> do
@@ -205,7 +206,20 @@ businessLogicSpec =
                     void $ runClientM (connect connectRequest) (clientEnv port)
                     -- send some initial heartbeat requests
                     traverse_ (\hb -> runClientM (startHeartbeat hb) (clientEnv port)) initHbs
-                    -- send stop to a subset of the requests
                     result <- runClientM initHeartbeat (clientEnv port)
                     -- check that total heartbeat ids are returned
                     result `shouldBe` Right initHbs
+
+            describe "GET /init" $ do
+                let os = getOs
+
+                it "returns valid initial configuration when connected" $ \port -> do
+                    void $ runClientM (connect connectRequest) (clientEnv port)
+                    result <- runClientM initRequest (clientEnv port)
+                    -- check that total heartbeat ids are returned
+                    result `shouldBe` Right (InitRequest (Just connInfo) os)
+
+                it "returns valid initial configuration when not connected" $ \port -> do
+                    result <- runClientM initRequest (clientEnv port)
+                    -- check that total heartbeat ids are returned
+                    result `shouldBe` Right (InitRequest Nothing os)

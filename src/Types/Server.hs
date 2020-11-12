@@ -18,6 +18,7 @@ module Types.Server (
     HeartBeatRequest (..),
     fromHeartBeatRequest,
     toHeartBeatRequest,
+    getOs,
 ) where
 
 import qualified Network.Socket as S
@@ -39,7 +40,7 @@ import Control.Concurrent (MVar, newEmptyMVar)
 import Control.Concurrent.STM (TVar)
 import Data.List (intersperse)
 import qualified Data.Text as T
-import Data.Word (Word32, Word16, Word8)
+import Data.Word (Word16, Word32, Word8)
 import Modbus (
     ByteOrder,
     Client,
@@ -57,6 +58,7 @@ import Modbus (
 import qualified Network.Modbus.Protocol as MB
 import Network.Socket.KeepAlive (KeepAlive (..))
 import qualified System.Hardware.Serialport as SP
+import qualified System.Info
 import Test.QuickCheck (Arbitrary, Gen, arbitrary, elements, oneof)
 
 ---------------------------------------------------------------------------------------------------------------
@@ -128,23 +130,23 @@ data ConnectionInfo
     | RTUConnectionInfo
         { rtuAddress :: !String
         , serialSettings :: !SerialSettings
-        } deriving (Eq)
+        }
+    deriving (Eq)
 
 instance Show ConnectionInfo where
     show ci =
         case ci of
             TCPConnectionInfo addr port tm ->
                 "TCPConnectionInfo: "
-                ++ show addr
-                ++ ":"
-                ++ show port
-                ++ ", timeout:"
-                ++ show tm
-                ++ " sec"
+                    ++ show addr
+                    ++ ":"
+                    ++ show port
+                    ++ ", timeout:"
+                    ++ show tm
+                    ++ " sec"
             RTUConnectionInfo port _ ->
                 "RTUConnectionInfo: "
-                ++ port
-
+                    ++ port
 
 instance FromJSON ConnectionInfo where
     parseJSON (Object o) = do
@@ -223,7 +225,7 @@ instance Arbitrary ConnectionRequest where
 data InitRequest = InitRequest
     { initConnInfo :: !(Maybe ConnectionInfo)
     , initOs :: !OS
-    }
+    } deriving (Show, Eq)
 
 instance FromJSON InitRequest where
     parseJSON (Object o) = do
@@ -304,7 +306,8 @@ data OS
     = Linux
     | Windows
     | Other
-
+    deriving (Show, Eq)
+    
 instance FromJSON OS where
     parseJSON (String s) =
         case s of
@@ -322,6 +325,12 @@ instance ToJSON OS where
 instance Arbitrary OS where
     arbitrary = elements [Linux, Windows, Other]
 
+getOs :: OS
+getOs = case System.Info.os of
+    "linux" -> Linux
+    "windows" -> Windows
+    _ -> Other
+
 ---------------------------------------------------------------------------------------------------------------
 -- HeartBeat
 ---------------------------------------------------------------------------------------------------------------
@@ -331,7 +340,8 @@ data HeartBeatRequest = HeartBeatRequest
     , hbrUid :: Word8
     , hbrInterval :: Int
     , hbrId :: Word32
-    } deriving (Show, Eq)
+    }
+    deriving (Show, Eq)
 
 instance ToJSON HeartBeatRequest where
     toJSON hb =
