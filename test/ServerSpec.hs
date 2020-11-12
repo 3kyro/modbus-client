@@ -187,6 +187,7 @@ businessLogicSpec =
                 delHbs <- runIO $ pickFromList initHbs
                 let delHbsIds = map hbrId delHbs
                 let restIds = initHbsIds \\ delHbsIds
+
                 it "returns running heartbeat signals" $ \port -> do
                     void $ runClientM (connect connectRequest) (clientEnv port)
                     -- send some initial heartbeat requests
@@ -195,3 +196,16 @@ businessLogicSpec =
                     result <- runClientM (stopHeartbeat delHbsIds) (clientEnv port)
                     -- check that total heartbeat ids are returned
                     result `shouldBe` Right restIds
+
+            describe "POST /initHeartbeat" $ do
+                -- send some initial heartbeat requests
+                initHbs <- runIO $ generate arbitrary
+
+                it "returns running  (initial) heartbeat signals" $ \port -> do
+                    void $ runClientM (connect connectRequest) (clientEnv port)
+                    -- send some initial heartbeat requests
+                    traverse_ (\hb -> runClientM (startHeartbeat hb) (clientEnv port)) initHbs
+                    -- send stop to a subset of the requests
+                    result <- runClientM initHeartbeat (clientEnv port)
+                    -- check that total heartbeat ids are returned
+                    result `shouldBe` Right initHbs

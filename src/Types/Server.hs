@@ -331,7 +331,7 @@ data HeartBeatRequest = HeartBeatRequest
     , hbrUid :: Word8
     , hbrInterval :: Int
     , hbrId :: Word32
-    }
+    } deriving (Show, Eq)
 
 instance ToJSON HeartBeatRequest where
     toJSON hb =
