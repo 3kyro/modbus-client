@@ -1,7 +1,7 @@
 module ServerSpec (serverSpec) where
 
 import Test.Aeson.GenericSpecs (roundtripSpecs)
-import Test.Hspec (Spec, around, describe, hspec, it, runIO, shouldBe)
+import Test.Hspec (shouldSatisfy, shouldThrow, Spec, around, describe, hspec, it, runIO, shouldBe)
 import Types.Server (ConnectionInfo (..), ConnectionRequest (..), HeartBeatRequest, InitRequest, KeepAliveResponse, KeepAliveServ (..), OS)
 
 import Modbus (ByteOrder (..), ModbusProtocol (..))
@@ -22,6 +22,7 @@ import Types
     )
 import Control.Monad (void)
 import Control.Exception.Safe (bracket)
+import Data.Either (isLeft)
 
 serverSpec :: IO ()
 serverSpec = do
@@ -130,5 +131,16 @@ businessLogicSpec =
                     void $ runClientM (connect connectRequest) (clientEnv port)
                     result <- runClientM getConnectionInfo (clientEnv port)
                     result `shouldBe` Right (Just info)
+
+            describe "POST /disconnect" $ do
+
+                it "returns error when not connected" $ \port -> do
+                    result <- runClientM (disconnect "disconnect")  (clientEnv port)
+                    result `shouldSatisfy` isLeft
+
+                it "correctly disconnects" $ \port -> do
+                    void $ runClientM (connect connectRequest) (clientEnv port)
+                    result <- runClientM (disconnect "disconnect")  (clientEnv port)
+                    result `shouldBe` Right ()
 
 
