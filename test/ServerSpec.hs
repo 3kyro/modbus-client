@@ -5,7 +5,7 @@ module ServerSpec (serverSpec) where
 import Test.Aeson.GenericSpecs (roundtripSpecs)
 import Test.Hspec (Spec, around, describe, hspec, it, runIO, shouldBe, shouldSatisfy, shouldThrow)
 import Types.Server (ConnectionInfo (..), ConnectionRequest (..), HeartBeatRequest, InitRequest, KeepAliveResponse, KeepAliveServ (..), OS)
-
+import TestHelper (pickFromList)
 import Modbus (ByteOrder (..), ModbusProtocol (..))
 import Network.HTTP.Client (defaultManagerSettings, newManager)
 import qualified Network.Wai.Handler.Warp as Warp
@@ -21,7 +21,7 @@ import Servant (Proxy (..), (:<|>) (..))
 import System.Process (cleanupProcess, createProcess, proc)
 import Test.QuickCheck (arbitrary, generate)
 import Types (HeartBeatRequest (hbrId), KeepAliveResponse (..), ModDataUpdate (..), ModValue (..), ReadWrite (..), RegType (..), bitsFromString, createModData, serializeModData, setMDUModValue)
-
+import Data.List ((\\), (!!))
 serverSpec :: IO ()
 serverSpec = do
     hspec $ do
@@ -163,17 +163,35 @@ businessLogicSpec =
 
             describe "POST /byteorder" $ do
                 bo <- runIO $ generate arbitrary
+
                 it "returns valid byteorder" $ \port -> do
                     result <- runClientM (byteOrder bo) (clientEnv port)
                     result `shouldBe` Right bo
 
             describe "POST /startHeartBeat" $ do
-                -- send some initial heartbeat requests
                 initHbs <- runIO $ generate arbitrary
                 hbs <- runIO $ generate arbitrary
+
                 it "returns running heartbeat signals" $ \port -> do
                     void $ runClientM (connect connectRequest) (clientEnv port)
+                    -- send some initial heartbeat requests
                     traverse_ (\hb -> runClientM (startHeartbeat hb) (clientEnv port)) initHbs
                     result <- runClientM (startHeartbeat hbs) (clientEnv port)
                     -- check that total heartbeat ids are returned
                     result `shouldBe` Right (map hbrId initHbs ++ [hbrId hbs])
+
+            describe "POST /stopHeartBeat" $ do
+                -- send some initial heartbeat requests
+                initHbs <- runIO $ generate arbitrary
+                let initHbsIds = map hbrId initHbs
+                delHbs <- runIO $ pickFromList initHbs
+                let delHbsIds = map hbrId delHbs
+                let restIds = initHbsIds \\ delHbsIds
+                it "returns running heartbeat signals" $ \port -> do
+                    void $ runClientM (connect connectRequest) (clientEnv port)
+                    -- send some initial heartbeat requests
+                    traverse_ (\hb -> runClientM (startHeartbeat hb) (clientEnv port)) initHbs
+                    -- send stop to a subset of the requests
+                    result <- runClientM (stopHeartbeat delHbsIds) (clientEnv port)
+                    -- check that total heartbeat ids are returned
+                    result `shouldBe` Right restIds

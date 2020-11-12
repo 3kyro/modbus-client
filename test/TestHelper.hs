@@ -2,7 +2,7 @@ module TestHelper where
 
 import Types
 import qualified Data.Text as T
-
+import System.Random (randomRs, randomRIO, newStdGen)
 class TestShow a where
   tShow :: a -> String
 
@@ -34,3 +34,12 @@ instance TestShow ModData where
       ++ ";"
       ++ T.unpack com
 
+-- picks a random number of elements from the list
+pickFromList :: [a] -> IO [a]
+pickFromList [] = pure []
+pickFromList xs = do
+    num <- randomRIO (0, len - 1)
+    gen <- newStdGen
+    let picks = take num $ randomRs (0, len -1) gen
+    pure $ map (xs !!) picks
+  where len = length xs

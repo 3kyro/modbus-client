@@ -53,6 +53,7 @@ dependencies:
 - keep-alive
 - servant-client >= 0.16 && < 0.17
 - http-client >= 0.6 && < 0.7
+- random
 library:
   source-dirs: src
   ghc-options:

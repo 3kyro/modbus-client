@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 7f8bde8e21a269e0d695e13d08729f7db264eb8301b164cdf1a96c7031894435
+-- hash: 3884c46207ca85726068bdd2caead96a43a8fe6dc513aba0396bc4c04bc454ba
 
 name:           modbus-serve
 version:        0.1.0.0
@@ -69,6 +69,7 @@ library
     , optparse-applicative
     , parsec
     , process
+    , random
     , repline
     , safe-exceptions
     , serialport
@@ -113,6 +114,7 @@ executable modbus-serve-exe
     , optparse-applicative
     , parsec
     , process
+    , random
     , repline
     , safe-exceptions
     , serialport
@@ -165,6 +167,7 @@ test-suite modbus-serve-test
     , optparse-applicative
     , parsec
     , process
+    , random
     , repline
     , safe-exceptions
     , serialport
