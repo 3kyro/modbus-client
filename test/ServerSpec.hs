@@ -46,12 +46,10 @@ withUserApp action = do
 businessLogic :: IO ()
 businessLogic = do
     let os = getOs
-    print os
     let testClient = case os of
             Linux -> "testclient" </> "testclient"
             Windows -> "testclient" </> "testclient.exe"
             Other -> fail "Test server not availiable for this platform"
-    print testClient
     bracket (createProcess (proc testClient ["testclient" </> "regs.csv"])) cleanupProcess (\_ -> hspec businessLogicSpec)
 
 businessLogicSpec :: Spec
