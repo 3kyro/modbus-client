@@ -43,9 +43,12 @@ withUserApp action = do
 
 -- Spin up the test TCP modbus client and make sure it is cleaned up after testing
 businessLogic :: IO ()
-businessLogic =
-    bracket (createProcess (proc "./testserver" ["regs.csv"])) cleanupProcess (\_ -> hspec businessLogicSpec)
-
+businessLogic = do
+    let testClient = case getOs of
+            Linux -> "testclient/testclient"
+            Windows -> "testclient/testclient.exe"
+            Other -> fail "Test server not availiable for this platform"
+    bracket (createProcess (proc testClient ["testclient/regs.csv"])) cleanupProcess (\_ -> hspec businessLogicSpec)
 businessLogicSpec :: Spec
 businessLogicSpec =
     -- `around` will start our Server before the tests and turn it off after

@@ -1,8 +1,8 @@
 elm-stuff
 repl-temp-*
 dev-docs
-mbserver/Cargo.lock
-mbserver/target
+testclient/mbserver/Cargo.lock
+testclient/mbserver/target
 .stack-work/
 .history
 frontend/elm-stuff/*
