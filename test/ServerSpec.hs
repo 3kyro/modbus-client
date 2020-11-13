@@ -3,7 +3,7 @@
 module ServerSpec (serverSpec) where
 
 import Test.Aeson.GenericSpecs (roundtripSpecs)
-import Test.Hspec (Spec, around, describe, hspec, it, runIO, shouldBe, shouldSatisfy, shouldThrow)
+import Test.Hspec (Spec, around, describe, hspec, it, runIO, shouldBe, shouldSatisfy)
 import Types.Server (ConnectionInfo (..), ConnectionRequest (..), HeartBeatRequest, InitRequest, KeepAliveResponse, KeepAliveServ (..), OS)
 import TestHelper (pickFromList)
 import Modbus (ByteOrder (..), ModbusProtocol (..))
@@ -21,7 +21,8 @@ import Servant (Proxy (..), (:<|>) (..))
 import System.Process (cleanupProcess, createProcess, proc)
 import Test.QuickCheck (arbitrary, generate)
 import Types (OS(..), getOs, InitRequest (..), HeartBeatRequest (hbrId), KeepAliveResponse (..), ModDataUpdate (..), ModValue (..), ReadWrite (..), RegType (..), bitsFromString, createModData, serializeModData, setMDUModValue)
-import Data.List ((\\), (!!))
+import Data.List ((\\))
+import System.FilePath ((</>))
 serverSpec :: IO ()
 serverSpec = do
     hspec $ do
@@ -44,11 +45,15 @@ withUserApp action = do
 -- Spin up the test TCP modbus client and make sure it is cleaned up after testing
 businessLogic :: IO ()
 businessLogic = do
-    let testClient = case getOs of
-            Linux -> "testclient/testclient"
-            Windows -> "testclient/testclient.exe"
+    let os = getOs
+    print os
+    let testClient = case os of
+            Linux -> "testclient" </> "testclient"
+            Windows -> "testclient" </> "testclient.exe"
             Other -> fail "Test server not availiable for this platform"
-    bracket (createProcess (proc testClient ["testclient/regs.csv"])) cleanupProcess (\_ -> hspec businessLogicSpec)
+    print testClient
+    bracket (createProcess (proc testClient ["testclient" </> "regs.csv"])) cleanupProcess (\_ -> hspec businessLogicSpec)
+
 businessLogicSpec :: Spec
 businessLogicSpec =
     -- `around` will start our Server before the tests and turn it off after
@@ -67,7 +72,7 @@ businessLogicSpec =
                     :<|> stopHeartbeat
                     :<|> initHeartbeat
                     :<|> initRequest
-                    :<|> serverDirectoryWebApp =
+                    :<|> _ =
                         client (Proxy :: Proxy ServerAPI)
             -- create a servant-client ClientEnv
             baseUrl <- runIO $ parseBaseUrl "http://localhost"

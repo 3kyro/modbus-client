@@ -329,6 +329,7 @@ getOs :: OS
 getOs = case System.Info.os of
     "linux" -> Linux
     "windows" -> Windows
+    "mingw32" -> Windows
     _ -> Other
 
 ---------------------------------------------------------------------------------------------------------------
