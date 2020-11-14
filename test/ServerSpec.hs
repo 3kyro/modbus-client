@@ -46,11 +46,11 @@ withUserApp action = do
 businessLogic :: IO ()
 businessLogic = do
     let os = getOs
-    let testClient = case os of
-            Linux -> "testclient" </> "testclient"
-            Windows -> "testclient" </> "testclient.exe"
+    let testModbusServer = case os of
+            Linux -> "testModbusServer" </> "testserver"
+            Windows -> "testModbusServer" </> "testserver.exe"
             Other -> fail "Test server not availiable for this platform"
-    bracket (createProcess (proc testClient ["testclient" </> "regs.csv"])) cleanupProcess (\_ -> hspec businessLogicSpec)
+    bracket (createProcess (proc testModbusServer ["testModbusServer" </> "regs.csv"])) cleanupProcess (\_ -> hspec businessLogicSpec)
 
 businessLogicSpec :: Spec
 businessLogicSpec =

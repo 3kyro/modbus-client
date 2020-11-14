@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: d27ba5ad4481b7eba834aff035bb609f418eb5be7cc5d56b41f7a65bb0e1099b
+-- hash: a625dc266d0d9107470c25464e255df3cf84f8df4dc0ba7d79b4a60ee6ff5c9c
 
 name:           modbus-serve
 version:        0.1.0.0
@@ -80,11 +80,12 @@ library
     , tagged
     , text
     , transformers
+    , turtle
     , wai
     , warp
   default-language: Haskell2010
 
-executable modbus-serve-exe
+executable modbus-serve
   main-is: Main.hs
   other-modules:
       Paths_modbus_serve
@@ -126,6 +127,7 @@ executable modbus-serve-exe
     , tagged
     , text
     , transformers
+    , turtle
     , wai
     , warp
   default-language: Haskell2010
@@ -180,6 +182,7 @@ test-suite modbus-serve-test
     , tagged
     , text
     , transformers
+    , turtle
     , wai
     , warp
   default-language: Haskell2010

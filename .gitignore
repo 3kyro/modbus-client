@@ -1,12 +1,7 @@
-elm-stuff
-repl-temp-*
-dev-docs
-testclient/mbserver/Cargo.lock
-mbserver/Cargo.lock
-testclient/mbserver/target
-mbserver/target
+frontend/elm-stuff/*
+testModbusServer/mbserver/target
+testModbusServer/mbserver/Cargo.lock
 .stack-work/
 .history
-frontend/elm-stuff/*
-frontend/app.js
+build
 *~

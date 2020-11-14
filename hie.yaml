@@ -6,3 +6,5 @@ cradle:
           component: "modbus-serve:lib"
         - path: "./test"
           component: "modbus-serve:test:modbus-serve-test"
+        - path: "./build.sh"
+
