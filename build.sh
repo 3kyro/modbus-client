@@ -29,11 +29,10 @@ build basePath = basePath </> "build"
 mbServer :: FilePath -> FilePath
 mbServer basePath = testModbusServer basePath </> "mbserver"
 
-mbserverLinuxExec :: FilePath -> FilePath
-mbserverLinuxExec basePath = mbServer basePath </> "target" </> "release"
+mbserverExec :: FilePath -> FilePath
+mbserverExec basePath = mbServer basePath </> "target" </> "release"
 
-mbserverWinExec :: FilePath -> FilePath
-mbserverWinExec basePath = mbServer basePath </> "target" </> "x86_64-pc-windows-msvc" </> "release"
+
 
 testModbusServer :: FilePath -> FilePath
 testModbusServer baseDir = baseDir </> "testModbusServer"
@@ -94,9 +93,12 @@ main = do
         let os = Info.os
         case os of
             "linux" -> do
-                cp (mbserverLinuxExec appRootPath </> "main") (testModbusServer appRootPath </> "testserver")
+                cp (mbserverExec appRootPath </> "main") (testModbusServer appRootPath </> "testserver")
                 echo "testserver: linux executable copied"
             "windows" -> do
-                cp (mbserverWinExec appRootPath </> "main.exe") (testModbusServer appRootPath </> "testserver.exe")
+                cp (mbserverExec appRootPath </> "main.exe") (testModbusServer appRootPath </> "testserver.exe")
+                echo "testserver.exe: windows executable copied"
+            "mingw32" -> do
+                cp (mbserverExec appRootPath </> "main.exe") (testModbusServer appRootPath </> "testserver.exe")
                 echo "testserver.exe: windows executable copied"
             _ -> stderr "Cannot deduce machine os. Please perform a manual build :("
