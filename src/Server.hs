@@ -20,7 +20,6 @@ import Servant
 
 import qualified Data.Text as T
 import qualified Network.Socket as S
-import qualified System.Info
 import qualified System.Process as PS
 
 import Control.Concurrent (killThread, tryTakeMVar)
@@ -108,15 +107,18 @@ runServer ::
     IO ()
 runServer protocol order = do
     initState <- getInitState protocol order
-    spawnBrowser System.Info.os
+    putStrLn "Modbus Client"
+    putStrLn "Opening default browser"
+    spawnBrowser 
+    putStrLn "Starting server"
     run 4000 $ server initState
 
-spawnBrowser :: String -> IO ()
-spawnBrowser os =
-    case os of
-        "linux" -> PS.spawnProcess "xdg-open" ["http://localhost:4000/index.html"] >> pure ()
-        "windows" -> PS.spawnProcess "start" ["http://localhost:4000/index.html"] >> pure ()
-        _ ->
+spawnBrowser :: IO ()
+spawnBrowser =
+    case getOs of
+        Linux -> PS.callCommand "xdg-open http://localhost:4000/index.html"
+        Windows -> PS.callCommand "start http://localhost:4000/index.html" 
+        Other ->
             putStrLn $
                 "Cannot start default browser\n"
                     ++ "To run the application, open http://localhost:4000/index.html in a browser"
