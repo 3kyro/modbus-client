@@ -13,7 +13,7 @@ To build *Modbus Client* on Linux and Windows you will need the following tools 
 
 ### Building using `build.hs`
 
-You can use the provided `build.hs` script to build *Modbus Client* backend and frontend along with a Modbus test server and Linux and Windows installers. the script can only be run inside the applications root folder.
+You can use the provided `build.hs` script to build *Modbus Client* backend and frontend along with a Modbus test server, as well as Linux and Windows installers. The script can only be run inside the applications root folder.
 
 Linux: 
 ````
