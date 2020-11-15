@@ -11,6 +11,19 @@ import Prelude hiding (FilePath)
 -- Path declarations
 -- all paths are relative to the project's root folder
 
+data OS 
+    = Linux
+    | Windows
+    | Other
+    
+getOs :: OS
+getOs = 
+    case Info.os of
+        "linux" -> Linux
+        "windows" -> Windows
+        "mingw32" -> Windows
+        _ -> Other
+
 frontend :: FilePath -> FilePath
 frontend basePath = basePath </> "frontend"
 
@@ -83,6 +96,25 @@ main = do
         cp (frontend appRootPath </> "index.html")  (buildFrontend appRootPath </> "index.html")
         echo "copying finished"
         cd appRootPath
+        
+        echo "-----------------------------------------------------"
+        echo "copying license"
+        echo "-----------------------------------------------------"
+        cp (appRootPath </> "LICENSE")  (build appRootPath </> "LICENSE")
+        
+        case getOs of
+            Windows -> do
+                echo "-----------------------------------------------------"
+                echo "copying windows installer"
+                echo "-----------------------------------------------------"
+                cp (appRootPath </> "install.nsi")  (build appRootPath </> "install.nsi")
+
+                echo "-----------------------------------------------------"
+                echo "building windows installer"
+                echo "-----------------------------------------------------"
+                cd $ build appRootPath
+                void $ proc "makensis" ["install.nsi"] empty
+            _ -> return ()
 
         echo "-----------------------------------------------------"
         echo "building test client"
@@ -90,15 +122,11 @@ main = do
         cd $ mbServer appRootPath
         void $ shell "cargo build --release" empty
         echo "copying test client executables"
-        let os = Info.os
-        case os of
-            "linux" -> do
+        case getOs of
+            Linux -> do
                 cp (mbserverExec appRootPath </> "main") (testModbusServer appRootPath </> "testserver")
                 echo "testserver: linux executable copied"
-            "windows" -> do
+            Windows -> do
                 cp (mbserverExec appRootPath </> "main.exe") (testModbusServer appRootPath </> "testserver.exe")
                 echo "testserver.exe: windows executable copied"
-            "mingw32" -> do
-                cp (mbserverExec appRootPath </> "main.exe") (testModbusServer appRootPath </> "testserver.exe")
-                echo "testserver.exe: windows executable copied"
-            _ -> stderr "Cannot deduce machine os. Please perform a manual build :("
+            Other -> stderr "Cannot deduce machine os. Please build the test server manually :("
