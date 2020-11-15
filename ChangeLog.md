@@ -1,3 +1,3 @@
-# Changelog for modbus-serve
+# Changelog for modbus-client
 
 ## Unreleased changes

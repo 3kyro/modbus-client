@@ -41,7 +41,7 @@ main :: IO ()
 main = do
     -- get current directory information
     appRootPath <- pwd
-    validDir <- testfile "modbus-serve.cabal"
+    validDir <- testfile "modbus-client.cabal"
 
 
     echo "-----------------------------------------------------"
@@ -51,7 +51,7 @@ main = do
     -- check if we're at the root fo the project
     if not validDir
     then do
-        stderr "Cannot build outside modbus-serve main folder"
+        stderr "Cannot build outside modbus-client main folder"
         exit $ ExitFailure 1
     else do
         -- parse all relevant files

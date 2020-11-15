@@ -1,10 +1,10 @@
 cradle:
     stack:
         - path: "./app"
-          component: "modbus-serve:exe:modbus-serve-exe"
+          component: "modbus-client:exe:modbus-client"
         - path: "./src"
-          component: "modbus-serve:lib"
+          component: "modbus-client:lib"
         - path: "./test"
-          component: "modbus-serve:test:modbus-serve-test"
+          component: "modbus-client:test:modbus-client-test"
         - path: "./build.sh"
 

@@ -4,13 +4,13 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: a625dc266d0d9107470c25464e255df3cf84f8df4dc0ba7d79b4a60ee6ff5c9c
+-- hash: 7659a55100d8434fb2e26203119d2ed9f5a949938c6d9b1b8578e9b612a4bc2a
 
-name:           modbus-serve
+name:           modbus-client
 version:        0.1.0.0
-description:    Please see the README on GitHub at <https://github.com/githubuser/modbus-serve#readme>
-homepage:       https://github.com/3kyro/modbus-serve#readme
-bug-reports:    https://github.com/3kyro/modbus-serve/issues
+description:    Please see the README on GitHub at <https://github.com/githubuser/modbus-client#readme>
+homepage:       https://github.com/3kyro/modbus-client#readme
+bug-reports:    https://github.com/3kyro/modbus-client/issues
 author:         Kyriakos Papachrysanthou
 maintainer:     k.papachrisanthou@gmail.com
 copyright:      2020 Kyriakos Papachrysanthou
@@ -23,7 +23,7 @@ extra-source-files:
 
 source-repository head
   type: git
-  location: https://github.com/3kyro/modbus-serve
+  location: https://github.com/3kyro/modbus-client
 
 library
   exposed-modules:
@@ -42,7 +42,7 @@ library
       Types.Repl
       Types.Server
   other-modules:
-      Paths_modbus_serve
+      Paths_modbus_client
   hs-source-dirs:
       src
   ghc-options: -fwarn-unused-imports -Wall
@@ -59,8 +59,8 @@ library
     , exceptions
     , filepath
     , hspec
-    , hspec-golden-aeson >=0.7.0.0 && <0.8
-    , http-client >=0.6 && <0.7
+    , hspec-golden-aeson
+    , http-client
     , http-types
     , iproute
     , keep-alive
@@ -74,7 +74,7 @@ library
     , repline
     , safe-exceptions
     , serialport
-    , servant-client >=0.16 && <0.17
+    , servant-client
     , servant-server
     , stm
     , tagged
@@ -85,10 +85,10 @@ library
     , warp
   default-language: Haskell2010
 
-executable modbus-serve
+executable modbus-client
   main-is: Main.hs
   other-modules:
-      Paths_modbus_serve
+      Paths_modbus_client
   hs-source-dirs:
       app
   ghc-options: -threaded -rtsopts -with-rtsopts=-N -fwarn-unused-imports -Wall
@@ -105,12 +105,12 @@ executable modbus-serve
     , exceptions
     , filepath
     , hspec
-    , hspec-golden-aeson >=0.7.0.0 && <0.8
-    , http-client >=0.6 && <0.7
+    , hspec-golden-aeson
+    , http-client
     , http-types
     , iproute
     , keep-alive
-    , modbus-serve
+    , modbus-client
     , modbus-tcp
     , mtl
     , network
@@ -121,7 +121,7 @@ executable modbus-serve
     , repline
     , safe-exceptions
     , serialport
-    , servant-client >=0.16 && <0.17
+    , servant-client
     , servant-server
     , stm
     , tagged
@@ -132,7 +132,7 @@ executable modbus-serve
     , warp
   default-language: Haskell2010
 
-test-suite modbus-serve-test
+test-suite modbus-client-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
@@ -142,7 +142,7 @@ test-suite modbus-serve-test
       ReplSpec
       ServerSpec
       TestHelper
-      Paths_modbus_serve
+      Paths_modbus_client
   hs-source-dirs:
       test
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
@@ -161,11 +161,11 @@ test-suite modbus-serve-test
     , filepath
     , hspec
     , hspec-golden-aeson >=0.7.0.0 && <0.8
-    , http-client >=0.6 && <0.7
+    , http-client
     , http-types
     , iproute
     , keep-alive
-    , modbus-serve
+    , modbus-client
     , modbus-tcp
     , mtl
     , network
@@ -176,7 +176,7 @@ test-suite modbus-serve-test
     , repline
     , safe-exceptions
     , serialport
-    , servant-client >=0.16 && <0.17
+    , servant-client
     , servant-server
     , stm
     , tagged
