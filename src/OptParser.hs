@@ -43,9 +43,11 @@ data Opt = Opt
     , kaIntv        :: !Word32
     }
 
-data AppMode = AppTemplate
+data AppMode
+    = AppTemplate
     | AppRepl
     | AppWeb
+    | NoneSelected
 
 -- | Executes the options parser
 runOpts :: IO Opt
@@ -77,20 +79,27 @@ opt = Opt
 
 
 parseAppMode :: Parser AppMode
-parseAppMode = parseRepl <|> parseServer
+parseAppMode = parseRepl <|> parseServer <|> parseTemplate
 
 parseRepl :: Parser AppMode
-parseRepl = flag AppTemplate AppRepl
+parseRepl = flag NoneSelected AppRepl
     ( long      "repl"
     <> short    'r'
     <> help     "Starts an interactive Modbus client"
     )
 
 parseServer :: Parser AppMode
-parseServer = flag AppTemplate AppWeb
+parseServer = flag NoneSelected AppWeb
     ( long      "server"
     <> short    's'
     <> help     "Starts the local web server"
+    )
+
+parseTemplate :: Parser AppMode
+parseTemplate = flag NoneSelected AppTemplate
+    ( long      "template"
+    <> short    't'
+    <> help     "Parses a template file"
     )
 
 parseProtocol :: Parser ModbusProtocol

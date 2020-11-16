@@ -57,6 +57,9 @@ runApp opts =
                 ModBusTCP -> runTCPReplApp (getAddr ip portNum) tms order [] uid $ KeepAlive kaonoff kaidle kaintvl
                 ModBusRTU -> runRTUReplApp serial tms serialSettings order [] uid
             AppWeb -> runServer prot order
+            NoneSelected -> do
+                putStrLn "Modbus Client: No command line option given."
+                putStrLn "Use --help to get a list of availiable options"
 
 ---------------------------------------------------------------------------------------------------------------
 -- Template App
