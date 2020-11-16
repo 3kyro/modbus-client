@@ -8465,16 +8465,6 @@ var $author$project$Update$connInfoModelUpdate = F2(
 				});
 		}
 	});
-var $author$project$Types$showOs = function (os) {
-	switch (os.$) {
-		case 'Linux':
-			return 'linux';
-		case 'Windows':
-			return 'windows';
-		default:
-			return 'not detected';
-	}
-};
 var $author$project$Update$initInfoModelUpdate = F2(
 	function (model, result) {
 		if (result.$ === 'Ok') {
@@ -8482,13 +8472,7 @@ var $author$project$Update$initInfoModelUpdate = F2(
 			var connmodel = A2($author$project$Update$connInfoModelUpdate, model, info.initConnInfo);
 			return _Utils_update(
 				connmodel,
-				{
-					notifications: A2(
-						$author$project$Update$simpleNot,
-						connmodel,
-						'Server operating system: ' + $author$project$Types$showOs(info.initOS)),
-					os: info.initOS
-				});
+				{os: info.initOS});
 		} else {
 			var err = result.a;
 			return _Utils_update(

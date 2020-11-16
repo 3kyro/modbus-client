@@ -1084,10 +1084,6 @@ initInfoModelUpdate model result =
             in
             { connmodel
                 | os = info.initOS
-                , notifications =
-                    simpleNot connmodel <|
-                        "Server operating system: "
-                            ++ showOs info.initOS
             }
 
         Err err ->
@@ -1095,7 +1091,7 @@ initInfoModelUpdate model result =
                 | notifications =
                     detailedNot
                         model
-                        "Error retriving init info from server"
+                        "Error retriving initial info from server"
                         (showHttpError err)
             }
 
