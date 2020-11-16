@@ -167,13 +167,9 @@ update msg model =
             ( { model
                 | csvContent = Just content
                 , csvLoaded = False
-                , notifications = simpleNot model "Loaded register table from disk"
               }
-            , jumpToBottom "status"
+            , requestModData content
             )
-
-        ModDataRequest ->
-            ( model, requestModData model )
 
         ReceivedModData result ->
             ( receivedModDataModelUpdate model result
@@ -483,11 +479,11 @@ updateModDataRequest regs =
         }
 
 
-requestModData : Model -> Cmd Msg
-requestModData model =
+requestModData : String -> Cmd Msg
+requestModData content =
     Http.post
         { url = "http://localhost:4000/parseModData"
-        , body = Http.jsonBody <| E.string <| Maybe.withDefault "" model.csvContent
+        , body = Http.jsonBody <| E.string content
         , expect = Http.expectJson ReceivedModData <| D.list decodeModData
         }
 

@@ -571,7 +571,7 @@ decodeModValue =
                     "bits" ->
                         D.map ModBits <|
                             D.field "value" <|
-                                D.map bitsFromString D.string
+                                D.nullable decodeBits
 
                     "float" ->
                         D.map ModFloat <| D.field "value" (D.nullable decodeMFloat)
@@ -579,6 +579,7 @@ decodeModValue =
                     _ ->
                         D.fail "Not a valid ModValue"
             )
+
 
 
 getModValueMult : ModValue -> Int
@@ -673,6 +674,15 @@ bitsFromString str =
         Just <|
             Bits <| filtered
 
+decodeBits : D.Decoder Bits
+decodeBits =
+    D.andThen
+        (\str ->
+            case bitsFromString str of
+                Nothing -> D.fail "No valid Bits"
+                Just bits -> D.succeed bits
+        )
+        D.string
 
 bitsValidString : String -> Bool
 bitsValidString str =

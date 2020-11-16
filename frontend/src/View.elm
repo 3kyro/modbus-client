@@ -366,9 +366,8 @@ tableNavModule model =
         [ spacing 10
         , width fill
         ]
-        [ updateSelectedButton model
-        , loadCSVButton
-        , loadRegisterTableButton model
+        [ loadCSVButton
+        , updateSelectedButton model
         ]
 
 
@@ -893,29 +892,6 @@ loadCSVButton =
         , label = text "Load CSV File"
         }
 
-
-loadRegisterTableButton : Model -> Element Msg
-loadRegisterTableButton model =
-    case model.csvContent of
-        Just _ ->
-            Input.button
-                [ Background.color <| loadRegsButtonClr model
-                , mouseOver [ Font.color white ]
-                , height <| px 38
-                , width fill
-                , paddingXY 0 0
-                , Font.color greyWhite
-                , Font.center
-                , focused []
-                ]
-                { onPress = Just ModDataRequest
-                , label = text <| csvLoadButtonText model.csvLoaded
-                }
-
-        Nothing ->
-            none
-
-
 csvLoadButtonText : Bool -> String
 csvLoadButtonText flag =
     if flag then
@@ -1089,6 +1065,7 @@ updateSelectedButton : Model -> Element Msg
 updateSelectedButton model =
     Input.button
         [ Background.color lightGrey
+        , mouseOver [ Font.color white ]
         , width fill
         , height <| px 38
         , Font.center
@@ -1096,7 +1073,9 @@ updateSelectedButton model =
         , paddingXY 0 10
         , focused []
         ]
-        { onPress = Just <| RefreshRequest model.modDataUpdate
+        { onPress = case model.connectStatus of
+            Connected -> Just <| RefreshRequest model.modDataUpdate
+            _ -> Nothing
         , label = text "Update Selected"
         }
 

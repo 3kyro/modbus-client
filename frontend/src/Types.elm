@@ -97,7 +97,6 @@ type Msg
     | CsvRequested
     | CsvSelected File
     | CsvLoaded String
-    | ModDataRequest
     | ReceivedModData (Result Http.Error (List ModData))
     | SelectAllChecked Bool
     | ModDataChecked Int Bool

@@ -286,7 +286,8 @@ parseAndSend content =
     let md = runpCSV $ T.pack content
      in case md of
             Left _ -> throwError err400
-            Right mds -> pure mds
+            Right mds -> do
+                pure mds
 
 keepAlive :: TVar ServState -> KeepAliveServ -> Handler KeepAliveResponse
 keepAlive state kaValue = do
