@@ -42,7 +42,7 @@ import Data.List (intersperse)
 import qualified Data.Text as T
 import Data.Word (Word16, Word32, Word8)
 import Modbus (
-    ByteOrder,
+    WordOrder,
     Client,
     HeartBeat (..),
     ModbusProtocol,
@@ -68,7 +68,7 @@ import Test.QuickCheck (Arbitrary, Gen, arbitrary, elements, oneof)
 data ServState = ServState
     { servConnection :: !Connection
     , servProtocol :: !ModbusProtocol
-    , servOrd :: !ByteOrder
+    , servOrd :: !WordOrder
     , servTID :: !(TVar TID)
     , servPool :: [(Word32, HeartBeat)]
     }

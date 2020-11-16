@@ -30,7 +30,7 @@ import CsvParser (runpCSV)
 import Data.List (delete)
 import Data.Word (Word32)
 import Modbus (
-    ByteOrder,
+    WordOrder,
     HeartBeat,
     ModbusClient (..),
     ModbusProtocol (..),
@@ -69,7 +69,7 @@ type ServerAPI =
         :<|> "disconnect" :> ReqBody '[JSON] String :> Post '[JSON] ()
         :<|> "parseModData" :> ReqBody '[JSON] String :> Post '[JSON] [ModData]
         :<|> "keepAlive" :> ReqBody '[JSON] KeepAliveServ :> Post '[JSON] KeepAliveResponse
-        :<|> "byteOrder" :> ReqBody '[JSON] ByteOrder :> Post '[JSON] ByteOrder
+        :<|> "wordOrder" :> ReqBody '[JSON] WordOrder :> Post '[JSON] WordOrder
         :<|> "startHeartbeat" :> ReqBody '[JSON] HeartBeatRequest :> Post '[JSON] [Word32]
         :<|> "stopHeartbeat" :> ReqBody '[JSON] [Word32] :> Post '[JSON] [Word32]
         :<|> "initHeartbeat" :> Post '[JSON] [HeartBeatRequest]
@@ -84,7 +84,7 @@ serverAPI state =
         :<|> disconnect state
         :<|> parseAndSend
         :<|> keepAlive state
-        :<|> byteOrder state
+        :<|> wordOrder state
         :<|> startHeartbeat state
         :<|> stopHeartbeat state
         :<|> initHeartbeat state
@@ -103,7 +103,7 @@ server state = serve proxyAPI $ serverAPI state
 
 runServer ::
     ModbusProtocol ->
-    ByteOrder -> -- Byte order
+    WordOrder -> -- Word order
     IO ()
 runServer protocol order = do
     initState <- getInitState protocol order
@@ -230,7 +230,7 @@ handleDisconnect state result =
         Right () -> return ()
 
 -- Creates the server's initial state
-getInitState :: ModbusProtocol -> ByteOrder -> IO (TVar ServState)
+getInitState :: ModbusProtocol -> WordOrder -> IO (TVar ServState)
 getInitState protocol order = do
     tid <- initTID
     newTVarIO $
@@ -265,7 +265,7 @@ updateModData state mdus = do
                             sessions = traverse (rtuModUpdateSession order) mdus
                          in liftIO $ rtuRunClient worker client sessions
 
-tcpModUpdateSession :: TID -> ByteOrder -> ModDataUpdate -> TCPSession IO ModDataUpdate
+tcpModUpdateSession :: TID -> WordOrder -> ModDataUpdate -> TCPSession IO ModDataUpdate
 tcpModUpdateSession tid order mdu =
     if mduSelected mdu
         then case mduRW mdu of
@@ -273,7 +273,7 @@ tcpModUpdateSession tid order mdu =
             MDUWrite -> tcpUpdateMBRegister tid order mdu
         else pure mdu
 
-rtuModUpdateSession :: ByteOrder -> ModDataUpdate -> RTUSession IO ModDataUpdate
+rtuModUpdateSession :: WordOrder -> ModDataUpdate -> RTUSession IO ModDataUpdate
 rtuModUpdateSession order mdu =
     if mduSelected mdu
         then case mduRW mdu of
@@ -315,8 +315,8 @@ getKeepAliveServ :: S.Socket -> Handler Bool
 getKeepAliveServ sock = liftIO $
     S.withFdSocket sock $ \fd -> getKeepAliveOnOff fd
 
-byteOrder :: TVar ServState -> ByteOrder -> Handler ByteOrder
-byteOrder state order = do
+wordOrder :: TVar ServState -> WordOrder -> Handler WordOrder
+wordOrder state order = do
     currentState <- liftIO $ readTVarIO state
     liftIO $
         atomically $

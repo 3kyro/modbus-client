@@ -19,7 +19,7 @@ import           Options.Applicative        (eitherReader, Parser, ReadM, auto, 
                                              value, (<**>), (<|>))
 
 import           Data.Word                  (Word32, Word8)
-import           Modbus                     (BaudRate (..), ByteOrder (..),
+import           Modbus                     (BaudRate (..), WordOrder (..),
                                              ModbusProtocol (..), Parity (..),
                                              StopBits (..))
 import qualified System.Hardware.Serialport as SP
@@ -32,7 +32,7 @@ data Opt = Opt
     , ipAddr        :: !IPv4
     , port          :: !Int
     , serialPort    :: !String
-    , byteOrder     :: !ByteOrder
+    , wordOrder     :: !WordOrder
     , uId           :: !Word8
     , timeout       :: !Int
     , baudrate      :: !BaudRate
@@ -151,13 +151,13 @@ parseSerialPort = strOption
     <> help     "Serial Port for modbus RTU"
     )
 
-parseFloatRepr :: Parser ByteOrder
+parseFloatRepr :: Parser WordOrder
 parseFloatRepr = option auto
     (  long     "order"
     <> short    'o'
-    <> metavar  "BYTE_ORDER"
+    <> metavar  "WORD_ORDER"
     <> value    LE
-    <> help     "Server byte order"
+    <> help     "Server word order"
     )
 
 parseUid :: Parser Word8

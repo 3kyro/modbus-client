@@ -56,7 +56,7 @@ import Types
     exposing
         ( ActiveTab(..)
         , BaudRate
-        , ByteOrder(..)
+        , WordOrder(..)
         , ConnectActiveTab(..)
         , ConnectStatus(..)
         , ConnectionInfo(..)
@@ -68,13 +68,13 @@ import Types
         , Parity
         , SettingsOptions(..)
         , StopBits
-        , decodeByteOrder
+        , decodeWordOrder
         , decodeConnInfo
         , decodeHeartBeat
         , decodeInitInfo
         , decodeKeepAliveResponse
         , diffList
-        , encodeByteOrder
+        , encodeWordOrder
         , encodeHeartBeat
         , encodeKeepAlive
         , encodeRTUConnectionRequest
@@ -84,12 +84,12 @@ import Types
         , getSelectedIds
         , replaceHeartBeatSelected
         , retractDropdowns
-        , showByteOrderResponse
+        , showWordOrderResponse
         , showConnInfo
         , showFailedHeartBeat
         , showKeepAliveResponse
         , showOs
-        , toByteOrder
+        , toWordOrder
         )
 import Types.IpAddress exposing (IpAddressByte, setIpAddressByte)
 
@@ -261,13 +261,13 @@ update msg model =
             , jumpToBottom "status"
             )
 
-        ChangeByteOrderMsg settingIdx inputIdx setting ->
-            ( changeByteOrderModelUpdate model settingIdx inputIdx setting
-            , changeByteOrderRequest (toByteOrder setting)
+        ChangeWordOrderMsg settingIdx inputIdx setting ->
+            ( changeWordOrderModelUpdate model settingIdx inputIdx setting
+            , changeWordOrderRequest (toWordOrder setting)
             )
 
-        ChangeByteOrderResponse result ->
-            ( changeByteOrderResponseModelUpdate model result
+        ChangeWordOrderResponse result ->
+            ( changeWordOrderResponseModelUpdate model result
             , jumpToBottom "status"
             )
 
@@ -552,12 +552,12 @@ detailedNot model header detailed =
         :: model.notifications
 
 
-changeByteOrderRequest : ByteOrder -> Cmd Msg
-changeByteOrderRequest order =
+changeWordOrderRequest : WordOrder -> Cmd Msg
+changeWordOrderRequest order =
     Http.post
-        { url = "http://localhost:4000/byteOrder"
-        , body = Http.jsonBody <| encodeByteOrder order
-        , expect = Http.expectJson ChangeByteOrderResponse decodeByteOrder
+        { url = "http://localhost:4000/wordOrder"
+        , body = Http.jsonBody <| encodeWordOrder order
+        , expect = Http.expectJson ChangeWordOrderResponse decodeWordOrder
         }
 
 
@@ -979,11 +979,11 @@ updateKeepAliveResponseModel model response =
             }
 
 
-changeByteOrderModelUpdate : Model -> Int -> Int -> SettingsOptions -> Model
-changeByteOrderModelUpdate model settingIdx inputIdx option =
+changeWordOrderModelUpdate : Model -> Int -> Int -> SettingsOptions -> Model
+changeWordOrderModelUpdate model settingIdx inputIdx option =
     let
         order =
-            toByteOrder option
+            toWordOrder option
     in
     case updateIndexedSetting model.settings settingIdx inputIdx (RadioValue (Just option)) of
         Nothing ->
@@ -991,23 +991,23 @@ changeByteOrderModelUpdate model settingIdx inputIdx option =
 
         Just modifiedSettings ->
             { model
-                | byteOrder = order
+                | wordOrder = order
                 , settings = modifiedSettings
             }
 
 
-changeByteOrderResponseModelUpdate : Model -> Result Http.Error ByteOrder -> Model
-changeByteOrderResponseModelUpdate model result =
+changeWordOrderResponseModelUpdate : Model -> Result Http.Error WordOrder -> Model
+changeWordOrderResponseModelUpdate model result =
     case result of
         Ok order ->
-            { model | notifications = simpleNot model (showByteOrderResponse order) }
+            { model | notifications = simpleNot model (showWordOrderResponse order) }
 
         Err err ->
             { model
                 | notifications =
                     detailedNot
                         model
-                        "Error updating byte order setting"
+                        "Error updating word order setting"
                         (showHttpError err)
             }
 

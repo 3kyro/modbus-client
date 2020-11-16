@@ -20,7 +20,7 @@ import           Types.ModData                    (ModData (..))
 import           Control.Concurrent.STM           (TVar)
 import           Data.Range                       (Range)
 import           Data.Tagged                      (Tagged)
-import           Modbus                           (RTUWorker, Address, ByteOrder, Client,
+import           Modbus                           (RTUWorker, Address, WordOrder, Client,
                                                    HeartBeat (..),
                                                    ModbusProtocol, TCPSession, TID,
                                                    TransactionInfo, TCPWorker)
@@ -34,7 +34,7 @@ data ReplState = ReplState
     , replTCPBatchWorker   :: !(TCPWorker IO)
     , replRTUDirectWorker  :: !(RTUWorker IO)
     , replRTUBatchWorker   :: !(RTUWorker IO)
-    , replByteOrder     :: !ByteOrder
+    , replWordOrder     :: !WordOrder
     , replModData       :: ![ModData]
     , replUId           :: !Word8
     , replPool          :: ![HeartBeat]

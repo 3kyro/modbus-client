@@ -193,7 +193,7 @@ replReadModData mds = do
     state <- replGet
     tid <- replGetTID
     let protocol = replProtocol state
-    let order = replByteOrder state
+    let order = replWordOrder state
     let client = replClient state
     maybemdata <- case protocol of
         ModBusTCP -> do
@@ -253,7 +253,7 @@ replWriteModData mds = do
     state <- replGet
     let protocol = replProtocol state
     tid <- replGetTID
-    let order = replByteOrder state
+    let order = replWordOrder state
     let client = replClient state
     maybemdata <- case protocol of
         ModBusTCP -> do

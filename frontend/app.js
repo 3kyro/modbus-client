@@ -7103,9 +7103,9 @@ var $author$project$App$baudrateDd = {
 		$author$project$Types$BR9600,
 		$mdgriffith$elm_ui$Element$text('9600'))
 };
-var $author$project$Types$ChangeByteOrderMsg = F3(
+var $author$project$Types$ChangeWordOrderMsg = F3(
 	function (a, b, c) {
-		return {$: 'ChangeByteOrderMsg', a: a, b: b, c: c};
+		return {$: 'ChangeWordOrderMsg', a: a, b: b, c: c};
 	});
 var $author$project$Settings$NotActive = {$: 'NotActive'};
 var $author$project$Settings$Radio = function (a) {
@@ -7117,16 +7117,16 @@ var $author$project$Settings$Setting = F3(
 	function (description, status, inputs) {
 		return {description: description, inputs: inputs, status: status};
 	});
-var $author$project$App$byteOrderSetting = A3(
+var $author$project$App$wordOrderSetting = A3(
 	$author$project$Settings$Setting,
-	'Byte order',
+	'Word order',
 	$author$project$Settings$NotActive,
 	_List_fromArray(
 		[
 			$author$project$Settings$Radio(
 			{
 				description: 'Endianess',
-				message: $author$project$Types$ChangeByteOrderMsg,
+				message: $author$project$Types$ChangeWordOrderMsg,
 				selected: $elm$core$Maybe$Just($author$project$Types$SetLE),
 				values: _List_fromArray(
 					[
@@ -7288,7 +7288,7 @@ var $author$project$App$initModel = {
 	activeTab: $author$project$Types$ConnectMenu,
 	baudrate: $author$project$Types$BR9600,
 	baudrateDd: $author$project$App$baudrateDd,
-	byteOrder: $author$project$Types$LE,
+	wordOrder: $author$project$Types$LE,
 	connActiveTab: $author$project$Types$TCPTab,
 	connectStatus: $author$project$Types$Connect,
 	csvContent: $elm$core$Maybe$Nothing,
@@ -7322,7 +7322,7 @@ var $author$project$App$initModel = {
 	selectSome: false,
 	serialPort: $elm$core$Maybe$Nothing,
 	settings: _List_fromArray(
-		[$author$project$App$keepAliveSetting, $author$project$App$byteOrderSetting]),
+		[$author$project$App$keepAliveSetting, $author$project$App$wordOrderSetting]),
 	socketPort: $elm$core$Maybe$Just(502),
 	statusBarState: $author$project$Notifications$Retracted,
 	stopBits: $author$project$Types$OneStopBit,
@@ -7400,7 +7400,7 @@ var $author$project$Settings$RadioValue = function (a) {
 	return {$: 'RadioValue', a: a};
 };
 var $author$project$Types$BE = {$: 'BE'};
-var $author$project$Types$toByteOrder = function (option) {
+var $author$project$Types$toWordOrder = function (option) {
 	if (option.$ === 'SetLE') {
 		return $author$project$Types$LE;
 	} else {
@@ -7558,9 +7558,9 @@ var $author$project$Settings$updateIndexedSetting = F4(
 				},
 				mModifiedSetting));
 	});
-var $author$project$Update$changeByteOrderModelUpdate = F4(
+var $author$project$Update$changeWordOrderModelUpdate = F4(
 	function (model, settingIdx, inputIdx, option) {
-		var order = $author$project$Types$toByteOrder(option);
+		var order = $author$project$Types$toWordOrder(option);
 		var _v0 = A4(
 			$author$project$Settings$updateIndexedSetting,
 			model.settings,
@@ -7574,13 +7574,13 @@ var $author$project$Update$changeByteOrderModelUpdate = F4(
 			var modifiedSettings = _v0.a;
 			return _Utils_update(
 				model,
-				{byteOrder: order, settings: modifiedSettings});
+				{wordOrder: order, settings: modifiedSettings});
 		}
 	});
-var $author$project$Types$ChangeByteOrderResponse = function (a) {
-	return {$: 'ChangeByteOrderResponse', a: a};
+var $author$project$Types$ChangeWordOrderResponse = function (a) {
+	return {$: 'ChangeWordOrderResponse', a: a};
 };
-var $author$project$Types$decodeByteOrder = A2(
+var $author$project$Types$decodeWordOrder = A2(
 	$elm$json$Json$Decode$andThen,
 	function (s) {
 		switch (s) {
@@ -7589,12 +7589,12 @@ var $author$project$Types$decodeByteOrder = A2(
 			case 'be':
 				return $elm$json$Json$Decode$succeed($author$project$Types$BE);
 			default:
-				return $elm$json$Json$Decode$fail('Not a ByteOrder');
+				return $elm$json$Json$Decode$fail('Not a WordOrder');
 		}
 	},
 	$elm$json$Json$Decode$string);
 var $elm$json$Json$Encode$string = _Json_wrap;
-var $author$project$Types$encodeByteOrder = function (order) {
+var $author$project$Types$encodeWordOrder = function (order) {
 	if (order.$ === 'LE') {
 		return $elm$json$Json$Encode$string('le');
 	} else {
@@ -7607,13 +7607,13 @@ var $elm$http$Http$jsonBody = function (value) {
 		'application/json',
 		A2($elm$json$Json$Encode$encode, 0, value));
 };
-var $author$project$Update$changeByteOrderRequest = function (order) {
+var $author$project$Update$changeWordOrderRequest = function (order) {
 	return $elm$http$Http$post(
 		{
 			body: $elm$http$Http$jsonBody(
-				$author$project$Types$encodeByteOrder(order)),
-			expect: A2($elm$http$Http$expectJson, $author$project$Types$ChangeByteOrderResponse, $author$project$Types$decodeByteOrder),
-			url: 'http://localhost:4000/byteOrder'
+				$author$project$Types$encodeWordOrder(order)),
+			expect: A2($elm$http$Http$expectJson, $author$project$Types$ChangeWordOrderResponse, $author$project$Types$decodeWordOrder),
+			url: 'http://localhost:4000/wordOrder'
 		});
 };
 var $author$project$Notifications$NotifRetracted = {$: 'NotifRetracted'};
@@ -7633,11 +7633,11 @@ var $author$project$Update$detailedNot = F3(
 				$author$project$Notifications$NotifRetracted),
 			model.notifications);
 	});
-var $author$project$Types$showByteOrderResponse = function (order) {
+var $author$project$Types$showWordOrderResponse = function (order) {
 	if (order.$ === 'LE') {
-		return 'Byte order changed to Little Endian';
+		return 'Word order changed to Little Endian';
 	} else {
-		return 'Byte order changed to Big Endian';
+		return 'Word order changed to Big Endian';
 	}
 };
 var $author$project$Update$showHttpError = function (err) {
@@ -7664,7 +7664,7 @@ var $author$project$Update$simpleNot = F2(
 			A4($author$project$Notifications$Notification, model.timePosix, header, $elm$core$Maybe$Nothing, $author$project$Notifications$NotifRetracted),
 			model.notifications);
 	});
-var $author$project$Update$changeByteOrderResponseModelUpdate = F2(
+var $author$project$Update$changeWordOrderResponseModelUpdate = F2(
 	function (model, result) {
 		if (result.$ === 'Ok') {
 			var order = result.a;
@@ -7674,7 +7674,7 @@ var $author$project$Update$changeByteOrderResponseModelUpdate = F2(
 					notifications: A2(
 						$author$project$Update$simpleNot,
 						model,
-						$author$project$Types$showByteOrderResponse(order))
+						$author$project$Types$showWordOrderResponse(order))
 				});
 		} else {
 			var err = result.a;
@@ -7684,7 +7684,7 @@ var $author$project$Update$changeByteOrderResponseModelUpdate = F2(
 					notifications: A3(
 						$author$project$Update$detailedNot,
 						model,
-						'Error updating byte order setting',
+						'Error updating word order setting',
 						$author$project$Update$showHttpError(err))
 				});
 		}
@@ -9824,18 +9824,18 @@ var $author$project$Update$update = F2(
 				return _Utils_Tuple2(
 					A2($author$project$Update$updateKeepAliveResponseModel, model, response),
 					$author$project$Update$jumpToBottom('status'));
-			case 'ChangeByteOrderMsg':
+			case 'ChangeWordOrderMsg':
 				var settingIdx = msg.a;
 				var inputIdx = msg.b;
 				var setting = msg.c;
 				return _Utils_Tuple2(
-					A4($author$project$Update$changeByteOrderModelUpdate, model, settingIdx, inputIdx, setting),
-					$author$project$Update$changeByteOrderRequest(
-						$author$project$Types$toByteOrder(setting)));
-			case 'ChangeByteOrderResponse':
+					A4($author$project$Update$changeWordOrderModelUpdate, model, settingIdx, inputIdx, setting),
+					$author$project$Update$changeWordOrderRequest(
+						$author$project$Types$toWordOrder(setting)));
+			case 'ChangeWordOrderResponse':
 				var result = msg.a;
 				return _Utils_Tuple2(
-					A2($author$project$Update$changeByteOrderResponseModelUpdate, model, result),
+					A2($author$project$Update$changeWordOrderResponseModelUpdate, model, result),
 					$author$project$Update$jumpToBottom('status'));
 			case 'RegRegTypeDrop':
 				var opt = msg.a;

@@ -6,7 +6,7 @@ import Test.Aeson.GenericSpecs (roundtripSpecs)
 import Test.Hspec (Spec, around, describe, hspec, it, runIO, shouldBe, shouldSatisfy)
 import Types.Server (ConnectionInfo (..), ConnectionRequest (..), HeartBeatRequest, InitRequest, KeepAliveResponse, KeepAliveServ (..), OS)
 import TestHelper (pickFromList)
-import Modbus (ByteOrder (..), ModbusProtocol (..))
+import Modbus (WordOrder (..), ModbusProtocol (..))
 import Network.HTTP.Client (defaultManagerSettings, newManager)
 import qualified Network.Wai.Handler.Warp as Warp
 import Servant.Client (baseUrlPort, client, mkClientEnv, parseBaseUrl, runClientM)
@@ -65,7 +65,7 @@ businessLogicSpec =
                     :<|> disconnect
                     :<|> parseAndSend
                     :<|> keepAlive
-                    :<|> byteOrder
+                    :<|> wordOrder
                     :<|> startHeartbeat
                     :<|> stopHeartbeat
                     :<|> initHeartbeat
@@ -168,11 +168,11 @@ businessLogicSpec =
                         then result `shouldBe` Right KeepAliveActivated
                         else result `shouldBe` Right KeepAliveDisactivated
 
-            describe "POST /byteorder" $ do
+            describe "POST /wordorder" $ do
                 bo <- runIO $ generate arbitrary
 
-                it "returns valid byteorder" $ \port -> do
-                    result <- runClientM (byteOrder bo) (clientEnv port)
+                it "returns valid wordorder" $ \port -> do
+                    result <- runClientM (wordOrder bo) (clientEnv port)
                     result `shouldBe` Right bo
 
             describe "POST /startHeartBeat" $ do

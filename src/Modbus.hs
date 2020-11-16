@@ -30,7 +30,7 @@ module Modbus (
     serializeRegType,
     Client (..),
     ModbusProtocol (..),
-    ByteOrder (..),
+    WordOrder (..),
     float2Word16,
     word16ToFloat,
     HeartBeat (..),
@@ -250,7 +250,7 @@ rtuWriteMultipleRegisters tpu address values = RTUSession (RTU.writeMultipleRegi
 tcpReadMBRegister ::
     (MonadIO m, MonadThrow m, MBRegister b) =>
     TID ->
-    ByteOrder ->
+    WordOrder ->
     b ->
     TCPSession m b
 tcpReadMBRegister tid bo reg =
@@ -267,7 +267,7 @@ tcpReadMBRegister tid bo reg =
 
 rtuReadMBRegister ::
     (MonadIO m, MonadThrow m, MBRegister b) =>
-    ByteOrder ->
+    WordOrder ->
     b ->
     RTUSession m b
 rtuReadMBRegister bo reg =
@@ -284,7 +284,7 @@ rtuReadMBRegister bo reg =
 tcpWriteMBRegister ::
     (MonadIO m, MonadThrow m, MBRegister b) =>
     TID ->
-    ByteOrder ->
+    WordOrder ->
     b ->
     TCPSession m ()
 tcpWriteMBRegister tid bo reg =
@@ -299,7 +299,7 @@ tcpWriteMBRegister tid bo reg =
 tcpUpdateMBRegister ::
     (MonadIO m, MonadThrow m, MBRegister b) =>
     TID ->
-    ByteOrder ->
+    WordOrder ->
     b ->
     TCPSession m b
 tcpUpdateMBRegister tid bo reg =
@@ -307,7 +307,7 @@ tcpUpdateMBRegister tid bo reg =
 
 rtuWriteMBRegister ::
     (MonadIO m, MonadThrow m, MBRegister b) =>
-    ByteOrder ->
+    WordOrder ->
     b ->
     RTUSession m ()
 rtuWriteMBRegister bo reg =
@@ -320,7 +320,7 @@ rtuWriteMBRegister bo reg =
 
 rtuUpdateMBRegister ::
     (MonadIO m, MonadThrow m, MBRegister b) =>
-    ByteOrder ->
+    WordOrder ->
     b ->
     RTUSession m b
 rtuUpdateMBRegister bo reg =
@@ -346,8 +346,8 @@ class MBRegister a where
     registerType :: a -> RegType
     registerUID :: a -> Word8
     registerAddress :: a -> Range Address
-    registerToWord16 :: ByteOrder -> a -> [Word16]
-    registerFromWord16 :: ByteOrder -> a -> [Word16] -> a
+    registerToWord16 :: WordOrder -> a -> [Word16]
+    registerFromWord16 :: WordOrder -> a -> [Word16] -> a
 
 ---------------------------------------------------------------------------------------------------------------
 -- Worker
@@ -470,39 +470,39 @@ serializeRegType rt =
         HoldingRegister -> "holding register"
 
 ---------------------------------------------------------------------------------------------------------------
--- ByteOrder
+-- WordOrder
 ---------------------------------------------------------------------------------------------------------------
 -- Modbus uses a 'big-endian' encoding for all transmitted values by default.
 -- In order to encode data values bigger than a 16-bit word, multiple 16 bit registers have to
 -- be used.
--- Byte order defines the encoding used by the client for these multiple word data types
+-- Word order defines the encoding used by the client for these multiple word data types
 -- Eg: when receiving two two-byte words AB and CD
 -- LE   - AB CD
 -- BE   - CD AB
-data ByteOrder
+data WordOrder
     = LE
     | BE
     deriving (Show, Read, Eq)
 
-instance Arbitrary ByteOrder where
+instance Arbitrary WordOrder where
     arbitrary = elements [LE, BE]
 
-instance ToJSON ByteOrder where
+instance ToJSON WordOrder where
     toJSON bo =
         case bo of
             LE -> String "le"
             BE -> String "be"
 
-instance FromJSON ByteOrder where
+instance FromJSON WordOrder where
     parseJSON (String s) =
         case s of
             "le" -> return LE
             "be" -> return BE
-            _ -> fail "Not a ByteOrder"
-    parseJSON _ = fail "Not a ByteOrder"
+            _ -> fail "Not a WordOrder"
+    parseJSON _ = fail "Not a WordOrder"
 
 -- Converts a Float to a list of Word16s
-float2Word16 :: ByteOrder -> Float -> [Word16]
+float2Word16 :: WordOrder -> Float -> [Word16]
 float2Word16 LE float =
     runGet (combine <$> getWord16host <*> getWord16host) floatle
   where
@@ -515,7 +515,7 @@ float2Word16 BE float =
     combine a b = b : [a]
 
 -- Converts a list of Word16s to a Maybe Float
-word16ToFloat :: ByteOrder -> [Word16] -> Maybe Float
+word16ToFloat :: WordOrder -> [Word16] -> Maybe Float
 word16ToFloat _ [] = Nothing
 word16ToFloat LE [a, b] =
     Just $ runGet getFloatle float

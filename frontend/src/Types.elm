@@ -1,7 +1,7 @@
 module Types exposing
     ( ActiveTab(..)
     , BaudRate(..)
-    , ByteOrder(..)
+    , WordOrder(..)
     , ConnectActiveTab(..)
     , ConnectStatus(..)
     , ConnectionInfo(..)
@@ -14,14 +14,14 @@ module Types exposing
     , Parity(..)
     , SettingsOptions(..)
     , StopBits(..)
-    , decodeByteOrder
+    , decodeWordOrder
     , decodeConnInfo
     , decodeHeartBeat
     , decodeInitInfo
     , decodeKeepAliveResponse
     , deleteListElem
     , diffList
-    , encodeByteOrder
+    , encodeWordOrder
     , encodeHeartBeat
     , encodeKeepAlive
     , encodeRTUConnectionRequest
@@ -31,13 +31,13 @@ module Types exposing
     , getSelectedIds
     , replaceHeartBeatSelected
     , retractDropdowns
-    , showByteOrderResponse
+    , showWordOrderResponse
     , showConnInfo
     , showConnectStatus
     , showFailedHeartBeat
     , showKeepAliveResponse
     , showOs
-    , toByteOrder
+    , toWordOrder
     )
 
 import Dropdown exposing (..)
@@ -113,8 +113,8 @@ type Msg
     | KeepAliveIdleMsg Int Int String
     | KeepAliveIntervalMsg Int Int String
     | KeepAliveResponseMsg (Result Http.Error KeepAliveResponse)
-    | ChangeByteOrderMsg Int Int SettingsOptions
-    | ChangeByteOrderResponse (Result Http.Error ByteOrder)
+    | ChangeWordOrderMsg Int Int SettingsOptions
+    | ChangeWordOrderResponse (Result Http.Error WordOrder)
     | RegRegTypeDrop (Option RegType Msg)
     | RegValueTypeDrop (Option ModValue Msg)
     | RegAddress String
@@ -214,7 +214,7 @@ type alias Model =
     , keepAlive : Bool
     , keepAliveIdle : Maybe Int -- in seconds
     , keepAliveInterval : Maybe Int -- in seconds
-    , byteOrder : ByteOrder
+    , wordOrder : WordOrder
     }
 
 
@@ -516,17 +516,17 @@ decodeKeepAliveResponse =
 
 
 --------------------------------------------------------------------------------------------------
--- ByteOrder
+-- WordOrder
 --------------------------------------------------------------------------------------------------
 
 
-type ByteOrder
+type WordOrder
     = LE
     | BE
 
 
-encodeByteOrder : ByteOrder -> E.Value
-encodeByteOrder order =
+encodeWordOrder : WordOrder -> E.Value
+encodeWordOrder order =
     case order of
         LE ->
             E.string "le"
@@ -535,8 +535,8 @@ encodeByteOrder order =
             E.string "be"
 
 
-decodeByteOrder : D.Decoder ByteOrder
-decodeByteOrder =
+decodeWordOrder : D.Decoder WordOrder
+decodeWordOrder =
     D.string
         |> D.andThen
             (\s ->
@@ -548,22 +548,22 @@ decodeByteOrder =
                         D.succeed BE
 
                     _ ->
-                        D.fail "Not a ByteOrder"
+                        D.fail "Not a WordOrder"
             )
 
 
-showByteOrderResponse : ByteOrder -> String
-showByteOrderResponse order =
+showWordOrderResponse : WordOrder -> String
+showWordOrderResponse order =
     case order of
         LE ->
-            "Byte order changed to Little Endian"
+            "Word order changed to Little Endian"
 
         BE ->
-            "Byte order changed to Big Endian"
+            "Word order changed to Big Endian"
 
 
-toByteOrder : SettingsOptions -> ByteOrder
-toByteOrder option =
+toWordOrder : SettingsOptions -> WordOrder
+toWordOrder option =
     case option of
         SetLE ->
             LE

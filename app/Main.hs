@@ -41,7 +41,7 @@ runApp opts =
         ip = ipAddr opts
         portNum = port opts
         serial = serialPort opts
-        order = byteOrder opts
+        order = wordOrder opts
         uid = uId opts
         tms = timeout opts * 1000000 -- timeout in microseconds
         rate = baudrate opts
@@ -69,7 +69,7 @@ runAppTemplate ::
     IPv4 -> -- IP
     Int -> -- Port Number
     String -> -- Serial Port
-    ByteOrder -> -- Byte Order
+    WordOrder -> -- Word Order
     Int -> -- Timeout
     SerialSettings -> -- Serial settings
     IO ()
@@ -85,7 +85,7 @@ runAppTemplate prot input output ip portNum serial order tm settings = do
 
 runTCPTemplateApp ::
     S.SockAddr -> -- Socket Address
-    ByteOrder -> -- Byte Order
+    WordOrder -> -- Word Order
     Int -> -- Timeout in microseconds
     [ModData] ->
     IO [ModData]
@@ -99,7 +99,7 @@ runTCPTemplateApp addr order tm mds =
 
 runRTUTemplateApp ::
     String -> -- Serial Port
-    ByteOrder -> -- Byte Order
+    WordOrder -> -- Word Order
     Int -> -- Timeout in microseconds
     SerialSettings ->
     [ModData] ->
@@ -118,7 +118,7 @@ runRTUTemplateApp serial order tm settings mds =
 runTCPReplApp ::
     S.SockAddr ->
     Int -> -- timeout in microseconds
-    ByteOrder ->
+    WordOrder ->
     [ModData] ->
     Word8 -> -- unitid
     KeepAlive ->
@@ -147,7 +147,7 @@ runTCPReplApp addr tm order mdata uid ka =
                 tid
             )
 
-runRTUReplApp :: String -> Int -> SerialSettings -> ByteOrder -> [ModData] -> Word8 -> IO ()
+runRTUReplApp :: String -> Int -> SerialSettings -> WordOrder -> [ModData] -> Word8 -> IO ()
 runRTUReplApp serial tm settings order mdata uid =
     withSerialPort serial settings $ \s -> do
         client <- newMVar $ Client (getRTUConfig s tm)

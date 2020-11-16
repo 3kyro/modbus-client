@@ -21,7 +21,7 @@ import Types
     exposing
         ( ActiveTab(..)
         , BaudRate(..)
-        , ByteOrder(..)
+        , WordOrder(..)
         , ConnectActiveTab(..)
         , ConnectStatus(..)
         , HeartBeat
@@ -109,11 +109,11 @@ initModel =
     , heartId = 0
 
     -- settings
-    , settings = [ keepAliveSetting, byteOrderSetting ]
+    , settings = [ keepAliveSetting, wordOrderSetting ]
     , keepAlive = False
     , keepAliveIdle = Nothing
     , keepAliveInterval = Nothing
-    , byteOrder = LE
+    , wordOrder = LE
     }
 
 
@@ -294,18 +294,18 @@ keepAliveSetting =
         ]
 
 
-byteOrderSetting : Setting SettingsOptions Msg
-byteOrderSetting =
+wordOrderSetting : Setting SettingsOptions Msg
+wordOrderSetting =
     Setting
-        "Byte order"
+        "Word order: Defines the order of sequence of individual words in multi-word data types (e.g. Float)"
         NotActive
         [ Radio
-            { description = "Endianess"
+            { description = "Order"
             , values =
                 [ ( SetLE, "Little Endian" )
                 , ( SetBE, "Big Endian" )
                 ]
             , selected = Just SetLE
-            , message = ChangeByteOrderMsg
+            , message = ChangeWordOrderMsg
             }
         ]

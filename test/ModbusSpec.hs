@@ -7,30 +7,30 @@ import Test.QuickCheck
 import Control.Concurrent (forkIO)
 import Control.Concurrent.Async (mapConcurrently)
 import Control.Monad (void)
-import Modbus
+import Modbus 
 import Test.QuickCheck.Monadic (assert, monadicIO, run)
 import TestHelper ()
 
 modbusSpec :: IO ()
 modbusSpec = hspec $ do
-    byteOrderConversionsSpec
+    wordOrderConversionsSpec
     roundtripAndGoldenSpecs (Proxy :: Proxy ModbusProtocol)
-    roundtripAndGoldenSpecs (Proxy :: Proxy ByteOrder)
+    roundtripAndGoldenSpecs (Proxy :: Proxy WordOrder)
     roundtripAndGoldenSpecs (Proxy :: Proxy SerialSettings)
     roundtripAndGoldenSpecs (Proxy :: Proxy BaudRate)
     roundtripAndGoldenSpecs (Proxy :: Proxy StopBits)
     roundtripAndGoldenSpecs (Proxy :: Proxy Parity)
     incrementTIDspec
 
-byteOrderConversionsSpec :: Spec
-byteOrderConversionsSpec = describe "Convert data types using ByteOrder" $ do
+wordOrderConversionsSpec :: Spec
+wordOrderConversionsSpec = describe "Convert data types using WordOrder" $ do
     it "Converts to/from Float" $ property propConvertFloat
     it "Converts to Float in Big Endian" $
         word16ToFloat BE [17492, 32768] == Just 850.0
     it "Converts to Float in Little Endian" $
         word16ToFloat LE [32768, 17492] == Just 850.0
 
-propConvertFloat :: ByteOrder -> Float -> Bool
+propConvertFloat :: WordOrder -> Float -> Bool
 propConvertFloat bo float =
     Just float == word16ToFloat bo (float2Word16 bo float)
 
