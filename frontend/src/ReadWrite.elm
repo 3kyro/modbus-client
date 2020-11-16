@@ -5,6 +5,7 @@ import Element
         ( Color
         , Element
         , centerY
+        , centerX
         , focused
         , padding
         , text
@@ -67,6 +68,7 @@ readWriteButton rw clrRead clrWrite msg =
     Input.button
         [ Background.color <| rwButtonBGClr rw clrRead clrWrite
         , centerY
+        , centerX
         , padding 3
         , focused []
         ]

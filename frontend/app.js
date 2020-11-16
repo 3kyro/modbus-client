@@ -19121,6 +19121,7 @@ var $author$project$ReadWrite$readWriteButton = F4(
 					$mdgriffith$elm_ui$Element$Background$color(
 					A3($author$project$ReadWrite$rwButtonBGClr, rw, clrRead, clrWrite)),
 					$mdgriffith$elm_ui$Element$centerY,
+					$mdgriffith$elm_ui$Element$centerX,
 					$mdgriffith$elm_ui$Element$padding(3),
 					$mdgriffith$elm_ui$Element$focused(_List_Nil)
 				]),
@@ -19174,7 +19175,8 @@ var $author$project$View$readWriteColumn = function (model) {
 				[
 					$mdgriffith$elm_ui$Element$height(
 					$mdgriffith$elm_ui$Element$px(38)),
-					$mdgriffith$elm_ui$Element$Font$color($author$project$Palette$greyWhite)
+					$mdgriffith$elm_ui$Element$Font$color($author$project$Palette$greyWhite),
+					$mdgriffith$elm_ui$Element$centerX
 				]),
 			A4(
 				$author$project$ReadWrite$readWriteButton,
@@ -19249,6 +19251,7 @@ var $author$project$View$modDataColumns = function (model) {
 	return _List_fromArray(
 		[
 			$author$project$View$selectColumn(model),
+			$author$project$View$readWriteColumn(model),
 			$author$project$ModData$modNameColumn,
 			$author$project$ModData$modRegTypeColumn,
 			$author$project$ModData$modAddressColumn,
@@ -19256,8 +19259,7 @@ var $author$project$View$modDataColumns = function (model) {
 			$author$project$ModData$modValueColumn(
 			$elm$core$Maybe$Just($author$project$Types$ChangeModDataValue)),
 			$author$project$ModData$modUidColumn,
-			$author$project$ModData$modDescriptionColumn,
-			$author$project$View$readWriteColumn(model)
+			$author$project$ModData$modDescriptionColumn
 		]);
 };
 var $author$project$View$newRegisterTab = F2(

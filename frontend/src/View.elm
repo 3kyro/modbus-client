@@ -937,6 +937,7 @@ newRegisterTab dt cl =
 modDataColumns : Model -> List (IndexedColumn ModDataUpdate Msg)
 modDataColumns model =
     [ selectColumn model
+    , readWriteColumn model
     , modNameColumn
     , modRegTypeColumn
     , modAddressColumn
@@ -944,7 +945,6 @@ modDataColumns model =
     , modValueColumn (Just ChangeModDataValue)
     , modUidColumn
     , modDescriptionColumn
-    , readWriteColumn model
     ]
 
 
@@ -954,6 +954,7 @@ readWriteColumn model =
         el
             [ height <| px 38
             , Font.color greyWhite
+            , centerX
             ]
         <|
             readWriteButton
