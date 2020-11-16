@@ -6,5 +6,7 @@ cradle:
           component: "modbus-client:lib"
         - path: "./test"
           component: "modbus-client:test:modbus-client-test"
+        - path: '.stack-work/dist'
+          component: "modbus-client:lib"
         - path: "./build.hs"
 
