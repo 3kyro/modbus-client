@@ -7103,38 +7103,6 @@ var $author$project$App$baudrateDd = {
 		$author$project$Types$BR9600,
 		$mdgriffith$elm_ui$Element$text('9600'))
 };
-var $author$project$Types$ChangeWordOrderMsg = F3(
-	function (a, b, c) {
-		return {$: 'ChangeWordOrderMsg', a: a, b: b, c: c};
-	});
-var $author$project$Settings$NotActive = {$: 'NotActive'};
-var $author$project$Settings$Radio = function (a) {
-	return {$: 'Radio', a: a};
-};
-var $author$project$Types$SetBE = {$: 'SetBE'};
-var $author$project$Types$SetLE = {$: 'SetLE'};
-var $author$project$Settings$Setting = F3(
-	function (description, status, inputs) {
-		return {description: description, inputs: inputs, status: status};
-	});
-var $author$project$App$wordOrderSetting = A3(
-	$author$project$Settings$Setting,
-	'Word order',
-	$author$project$Settings$NotActive,
-	_List_fromArray(
-		[
-			$author$project$Settings$Radio(
-			{
-				description: 'Endianess',
-				message: $author$project$Types$ChangeWordOrderMsg,
-				selected: $elm$core$Maybe$Just($author$project$Types$SetLE),
-				values: _List_fromArray(
-					[
-						_Utils_Tuple2($author$project$Types$SetLE, 'Little Endian'),
-						_Utils_Tuple2($author$project$Types$SetBE, 'Big Endian')
-					])
-			})
-		]));
 var $author$project$Types$IpAddress$defaultIpAddr = A4(
 	$author$project$Types$IpAddress$IpAddress,
 	$elm$core$Maybe$Just(192),
@@ -7172,9 +7140,14 @@ var $author$project$Types$KeepAliveMsg = F3(
 	function (a, b, c) {
 		return {$: 'KeepAliveMsg', a: a, b: b, c: c};
 	});
+var $author$project$Settings$NotActive = {$: 'NotActive'};
 var $author$project$Settings$NumberInput = function (a) {
 	return {$: 'NumberInput', a: a};
 };
+var $author$project$Settings$Setting = F3(
+	function (description, status, inputs) {
+		return {description: description, inputs: inputs, status: status};
+	});
 var $author$project$App$keepAliveSetting = A3(
 	$author$project$Settings$Setting,
 	'Keep Alive',
@@ -7284,11 +7257,37 @@ var $author$project$App$valueTypeDropdown = {
 		[$author$project$App$wordOption, $author$project$App$bitsOption, $author$project$App$floatOption]),
 	selected: $author$project$App$wordOption
 };
+var $author$project$Types$ChangeWordOrderMsg = F3(
+	function (a, b, c) {
+		return {$: 'ChangeWordOrderMsg', a: a, b: b, c: c};
+	});
+var $author$project$Settings$Radio = function (a) {
+	return {$: 'Radio', a: a};
+};
+var $author$project$Types$SetBE = {$: 'SetBE'};
+var $author$project$Types$SetLE = {$: 'SetLE'};
+var $author$project$App$wordOrderSetting = A3(
+	$author$project$Settings$Setting,
+	'Word order: Defines the order of sequence of individual words in multi-word data types (e.g. Float)',
+	$author$project$Settings$NotActive,
+	_List_fromArray(
+		[
+			$author$project$Settings$Radio(
+			{
+				description: 'Order',
+				message: $author$project$Types$ChangeWordOrderMsg,
+				selected: $elm$core$Maybe$Just($author$project$Types$SetLE),
+				values: _List_fromArray(
+					[
+						_Utils_Tuple2($author$project$Types$SetLE, 'Little Endian'),
+						_Utils_Tuple2($author$project$Types$SetBE, 'Big Endian')
+					])
+			})
+		]));
 var $author$project$App$initModel = {
 	activeTab: $author$project$Types$ConnectMenu,
 	baudrate: $author$project$Types$BR9600,
 	baudrateDd: $author$project$App$baudrateDd,
-	wordOrder: $author$project$Types$LE,
 	connActiveTab: $author$project$Types$TCPTab,
 	connectStatus: $author$project$Types$Connect,
 	csvContent: $elm$core$Maybe$Nothing,
@@ -7329,7 +7328,8 @@ var $author$project$App$initModel = {
 	stopBitsDd: $author$project$App$stopbitsDd,
 	timePosix: $elm$time$Time$millisToPosix(0),
 	timeZone: $elm$time$Time$utc,
-	timeout: $elm$core$Maybe$Just(10)
+	timeout: $elm$core$Maybe$Just(10),
+	wordOrder: $author$project$Types$LE
 };
 var $author$project$Types$Connecting = {$: 'Connecting'};
 var $author$project$Types$CsvLoaded = function (a) {
@@ -7396,17 +7396,79 @@ var $author$project$Update$changeActiveTabModelUpdate = F2(
 			retractedModel,
 			{activeTab: tab});
 	});
-var $author$project$Settings$RadioValue = function (a) {
-	return {$: 'RadioValue', a: a};
+var $author$project$Types$IpAddress$setIpAddressByte = F3(
+	function (_byte, ip, mint) {
+		switch (_byte.$) {
+			case 'Byte0':
+				return _Utils_update(
+					ip,
+					{b0: mint});
+			case 'Byte1':
+				return _Utils_update(
+					ip,
+					{b1: mint});
+			case 'Byte2':
+				return _Utils_update(
+					ip,
+					{b2: mint});
+			default:
+				return _Utils_update(
+					ip,
+					{b3: mint});
+		}
+	});
+var $author$project$Update$changeIpAddressModelUpdate = F3(
+	function (model, _byte, str) {
+		if ($elm$core$String$isEmpty(str)) {
+			return _Utils_update(
+				model,
+				{
+					ipAddress: A3($author$project$Types$IpAddress$setIpAddressByte, _byte, model.ipAddress, $elm$core$Maybe$Nothing)
+				});
+		} else {
+			var _v0 = $elm$core$String$toInt(str);
+			if (_v0.$ === 'Nothing') {
+				return model;
+			} else {
+				var b = _v0.a;
+				return ((b < 0) || (b > 255)) ? model : _Utils_update(
+					model,
+					{
+						ipAddress: A3(
+							$author$project$Types$IpAddress$setIpAddressByte,
+							_byte,
+							model.ipAddress,
+							$elm$core$Maybe$Just(b))
+					});
+			}
+		}
+	});
+var $author$project$ModData$Bits = function (value) {
+	return {value: value};
 };
-var $author$project$Types$BE = {$: 'BE'};
-var $author$project$Types$toWordOrder = function (option) {
-	if (option.$ === 'SetLE') {
-		return $author$project$Types$LE;
-	} else {
-		return $author$project$Types$BE;
-	}
+var $elm$core$String$filter = _String_filter;
+var $author$project$ModData$bitsFromString = function (str) {
+	var filtered = A2(
+		$elm$core$String$filter,
+		function (c) {
+			return _Utils_eq(
+				c,
+				_Utils_chr('0')) || _Utils_eq(
+				c,
+				_Utils_chr('1'));
+		},
+		str);
+	return $elm$core$String$isEmpty(filtered) ? $elm$core$Maybe$Nothing : $elm$core$Maybe$Just(
+		$author$project$ModData$Bits(filtered));
 };
+var $author$project$ModData$bitsValidString = function (str) {
+	var len = $elm$core$String$length(str);
+	return (len > 0) && (len <= 16);
+};
+var $author$project$ModData$MFloat = F2(
+	function (str, flt) {
+		return {flt: flt, str: str};
+	});
 var $elm$core$Maybe$map = F2(
 	function (f, maybe) {
 		if (maybe.$ === 'Just') {
@@ -7415,6 +7477,40 @@ var $elm$core$Maybe$map = F2(
 				f(value));
 		} else {
 			return $elm$core$Maybe$Nothing;
+		}
+	});
+var $elm$core$String$toFloat = _String_toFloat;
+var $author$project$ModData$toMFloat = function (s) {
+	return A2(
+		$elm$core$Maybe$map,
+		$author$project$ModData$MFloat(s),
+		$elm$core$String$toFloat(s));
+};
+var $author$project$ModData$fromModValueInput = F2(
+	function (md, str) {
+		var _v0 = md.modValue;
+		switch (_v0.$) {
+			case 'ModWord':
+				return _Utils_update(
+					md,
+					{
+						modValue: $author$project$ModData$ModWord(
+							$elm$core$String$toInt(str))
+					});
+			case 'ModBits':
+				return $author$project$ModData$bitsValidString(str) ? _Utils_update(
+					md,
+					{
+						modValue: $author$project$ModData$ModBits(
+							$author$project$ModData$bitsFromString(str))
+					}) : md;
+			default:
+				return _Utils_update(
+					md,
+					{
+						modValue: $author$project$ModData$ModFloat(
+							$author$project$ModData$toMFloat(str))
+					});
 		}
 	});
 var $elm$core$Elm$JsArray$unsafeSet = _JsArray_unsafeSet;
@@ -7460,6 +7556,114 @@ var $elm$core$Array$set = F3(
 			A4($elm$core$Array$setHelp, startShift, index, value, tree),
 			tail));
 	});
+var $author$project$Update$changeModDataValueModelUpdate = F3(
+	function (model, idx, str) {
+		var arrMDU = $elm$core$Array$fromList(model.modDataUpdate);
+		var maybeMDU = A2($elm$core$Array$get, idx, arrMDU);
+		var newMaybeMd = A2(
+			$elm$core$Maybe$map,
+			function (mdu) {
+				return _Utils_update(
+					mdu,
+					{
+						mduModData: A2($author$project$ModData$fromModValueInput, mdu.mduModData, str)
+					});
+			},
+			maybeMDU);
+		if (newMaybeMd.$ === 'Nothing') {
+			return model;
+		} else {
+			var md = newMaybeMd.a;
+			return _Utils_update(
+				model,
+				{
+					modDataUpdate: $elm$core$Array$toList(
+						A3($elm$core$Array$set, idx, md, arrMDU))
+				});
+		}
+	});
+var $author$project$Notifications$NotifExpanded = {$: 'NotifExpanded'};
+var $author$project$Notifications$NotifRetracted = {$: 'NotifRetracted'};
+var $author$project$Notifications$flipExpandState = function (not) {
+	var _v0 = not.state;
+	if (_v0.$ === 'NotifExpanded') {
+		return _Utils_update(
+			not,
+			{state: $author$project$Notifications$NotifRetracted});
+	} else {
+		return _Utils_update(
+			not,
+			{state: $author$project$Notifications$NotifExpanded});
+	}
+};
+var $author$project$Notifications$changeNotificationState = F2(
+	function (not, nots) {
+		var fun = function (notification) {
+			return _Utils_eq(notification.time, not.time) ? $author$project$Notifications$flipExpandState(notification) : notification;
+		};
+		return A2($elm$core$List$map, fun, nots);
+	});
+var $author$project$Update$changePortModelUpdate = F2(
+	function (model, str) {
+		if ($elm$core$String$isEmpty(str)) {
+			return _Utils_update(
+				model,
+				{socketPort: $elm$core$Maybe$Nothing});
+		} else {
+			var _v0 = $elm$core$String$toInt(str);
+			if (_v0.$ === 'Nothing') {
+				return model;
+			} else {
+				var p = _v0.a;
+				return ((p < 0) || (p > 65535)) ? model : _Utils_update(
+					model,
+					{
+						socketPort: $elm$core$Maybe$Just(p)
+					});
+			}
+		}
+	});
+var $author$project$Update$changeSerialPortModelUpdate = F2(
+	function (model, str) {
+		return $elm$core$String$isEmpty(str) ? _Utils_update(
+			model,
+			{serialPort: $elm$core$Maybe$Nothing}) : _Utils_update(
+			model,
+			{
+				serialPort: $elm$core$Maybe$Just(str)
+			});
+	});
+var $author$project$Update$changeTimeoutModelUpdate = F2(
+	function (model, str) {
+		if ($elm$core$String$isEmpty(str)) {
+			return _Utils_update(
+				model,
+				{timeout: $elm$core$Maybe$Nothing});
+		} else {
+			var _v0 = $elm$core$String$toInt(str);
+			if (_v0.$ === 'Nothing') {
+				return model;
+			} else {
+				var t = _v0.a;
+				return ((t < 0) || (t > 65535)) ? model : _Utils_update(
+					model,
+					{
+						timeout: $elm$core$Maybe$Just(t)
+					});
+			}
+		}
+	});
+var $author$project$Settings$RadioValue = function (a) {
+	return {$: 'RadioValue', a: a};
+};
+var $author$project$Types$BE = {$: 'BE'};
+var $author$project$Types$toWordOrder = function (option) {
+	if (option.$ === 'SetLE') {
+		return $author$project$Types$LE;
+	} else {
+		return $author$project$Types$BE;
+	}
+};
 var $author$project$Settings$updateSettingInput = F2(
 	function (settingInput, updateValue) {
 		switch (settingInput.$) {
@@ -7574,7 +7778,7 @@ var $author$project$Update$changeWordOrderModelUpdate = F4(
 			var modifiedSettings = _v0.a;
 			return _Utils_update(
 				model,
-				{wordOrder: order, settings: modifiedSettings});
+				{settings: modifiedSettings, wordOrder: order});
 		}
 	});
 var $author$project$Types$ChangeWordOrderResponse = function (a) {
@@ -7616,7 +7820,6 @@ var $author$project$Update$changeWordOrderRequest = function (order) {
 			url: 'http://localhost:4000/wordOrder'
 		});
 };
-var $author$project$Notifications$NotifRetracted = {$: 'NotifRetracted'};
 var $author$project$Notifications$Notification = F4(
 	function (time, header, detailed, state) {
 		return {detailed: detailed, header: header, state: state, time: time};
@@ -7633,13 +7836,6 @@ var $author$project$Update$detailedNot = F3(
 				$author$project$Notifications$NotifRetracted),
 			model.notifications);
 	});
-var $author$project$Types$showWordOrderResponse = function (order) {
-	if (order.$ === 'LE') {
-		return 'Word order changed to Little Endian';
-	} else {
-		return 'Word order changed to Big Endian';
-	}
-};
 var $author$project$Update$showHttpError = function (err) {
 	switch (err.$) {
 		case 'BadUrl':
@@ -7655,6 +7851,13 @@ var $author$project$Update$showHttpError = function (err) {
 		default:
 			var s = err.a;
 			return s;
+	}
+};
+var $author$project$Types$showWordOrderResponse = function (order) {
+	if (order.$ === 'LE') {
+		return 'Word order changed to Little Endian';
+	} else {
+		return 'Word order changed to Big Endian';
 	}
 };
 var $author$project$Update$simpleNot = F2(
@@ -7687,209 +7890,6 @@ var $author$project$Update$changeWordOrderResponseModelUpdate = F2(
 						'Error updating word order setting',
 						$author$project$Update$showHttpError(err))
 				});
-		}
-	});
-var $author$project$Types$IpAddress$setIpAddressByte = F3(
-	function (_byte, ip, mint) {
-		switch (_byte.$) {
-			case 'Byte0':
-				return _Utils_update(
-					ip,
-					{b0: mint});
-			case 'Byte1':
-				return _Utils_update(
-					ip,
-					{b1: mint});
-			case 'Byte2':
-				return _Utils_update(
-					ip,
-					{b2: mint});
-			default:
-				return _Utils_update(
-					ip,
-					{b3: mint});
-		}
-	});
-var $author$project$Update$changeIpAddressModelUpdate = F3(
-	function (model, _byte, str) {
-		if ($elm$core$String$isEmpty(str)) {
-			return _Utils_update(
-				model,
-				{
-					ipAddress: A3($author$project$Types$IpAddress$setIpAddressByte, _byte, model.ipAddress, $elm$core$Maybe$Nothing)
-				});
-		} else {
-			var _v0 = $elm$core$String$toInt(str);
-			if (_v0.$ === 'Nothing') {
-				return model;
-			} else {
-				var b = _v0.a;
-				return ((b < 0) || (b > 255)) ? model : _Utils_update(
-					model,
-					{
-						ipAddress: A3(
-							$author$project$Types$IpAddress$setIpAddressByte,
-							_byte,
-							model.ipAddress,
-							$elm$core$Maybe$Just(b))
-					});
-			}
-		}
-	});
-var $author$project$ModData$Bits = function (value) {
-	return {value: value};
-};
-var $elm$core$String$filter = _String_filter;
-var $author$project$ModData$bitsFromString = function (str) {
-	var filtered = A2(
-		$elm$core$String$filter,
-		function (c) {
-			return _Utils_eq(
-				c,
-				_Utils_chr('0')) || _Utils_eq(
-				c,
-				_Utils_chr('1'));
-		},
-		str);
-	return $elm$core$String$isEmpty(filtered) ? $elm$core$Maybe$Nothing : $elm$core$Maybe$Just(
-		$author$project$ModData$Bits(filtered));
-};
-var $author$project$ModData$bitsValidString = function (str) {
-	var len = $elm$core$String$length(str);
-	return (len > 0) && (len <= 16);
-};
-var $author$project$ModData$MFloat = F2(
-	function (str, flt) {
-		return {flt: flt, str: str};
-	});
-var $elm$core$String$toFloat = _String_toFloat;
-var $author$project$ModData$toMFloat = function (s) {
-	return A2(
-		$elm$core$Maybe$map,
-		$author$project$ModData$MFloat(s),
-		$elm$core$String$toFloat(s));
-};
-var $author$project$ModData$fromModValueInput = F2(
-	function (md, str) {
-		var _v0 = md.modValue;
-		switch (_v0.$) {
-			case 'ModWord':
-				return _Utils_update(
-					md,
-					{
-						modValue: $author$project$ModData$ModWord(
-							$elm$core$String$toInt(str))
-					});
-			case 'ModBits':
-				return $author$project$ModData$bitsValidString(str) ? _Utils_update(
-					md,
-					{
-						modValue: $author$project$ModData$ModBits(
-							$author$project$ModData$bitsFromString(str))
-					}) : md;
-			default:
-				return _Utils_update(
-					md,
-					{
-						modValue: $author$project$ModData$ModFloat(
-							$author$project$ModData$toMFloat(str))
-					});
-		}
-	});
-var $author$project$Update$changeModDataValueModelUpdate = F3(
-	function (model, idx, str) {
-		var arrMDU = $elm$core$Array$fromList(model.modDataUpdate);
-		var maybeMDU = A2($elm$core$Array$get, idx, arrMDU);
-		var newMaybeMd = A2(
-			$elm$core$Maybe$map,
-			function (mdu) {
-				return _Utils_update(
-					mdu,
-					{
-						mduModData: A2($author$project$ModData$fromModValueInput, mdu.mduModData, str)
-					});
-			},
-			maybeMDU);
-		if (newMaybeMd.$ === 'Nothing') {
-			return model;
-		} else {
-			var md = newMaybeMd.a;
-			return _Utils_update(
-				model,
-				{
-					modDataUpdate: $elm$core$Array$toList(
-						A3($elm$core$Array$set, idx, md, arrMDU))
-				});
-		}
-	});
-var $author$project$Notifications$NotifExpanded = {$: 'NotifExpanded'};
-var $author$project$Notifications$flipExpandState = function (not) {
-	var _v0 = not.state;
-	if (_v0.$ === 'NotifExpanded') {
-		return _Utils_update(
-			not,
-			{state: $author$project$Notifications$NotifRetracted});
-	} else {
-		return _Utils_update(
-			not,
-			{state: $author$project$Notifications$NotifExpanded});
-	}
-};
-var $author$project$Notifications$changeNotificationState = F2(
-	function (not, nots) {
-		var fun = function (notification) {
-			return _Utils_eq(notification.time, not.time) ? $author$project$Notifications$flipExpandState(notification) : notification;
-		};
-		return A2($elm$core$List$map, fun, nots);
-	});
-var $author$project$Update$changePortModelUpdate = F2(
-	function (model, str) {
-		if ($elm$core$String$isEmpty(str)) {
-			return _Utils_update(
-				model,
-				{socketPort: $elm$core$Maybe$Nothing});
-		} else {
-			var _v0 = $elm$core$String$toInt(str);
-			if (_v0.$ === 'Nothing') {
-				return model;
-			} else {
-				var p = _v0.a;
-				return ((p < 0) || (p > 65535)) ? model : _Utils_update(
-					model,
-					{
-						socketPort: $elm$core$Maybe$Just(p)
-					});
-			}
-		}
-	});
-var $author$project$Update$changeSerialPortModelUpdate = F2(
-	function (model, str) {
-		return $elm$core$String$isEmpty(str) ? _Utils_update(
-			model,
-			{serialPort: $elm$core$Maybe$Nothing}) : _Utils_update(
-			model,
-			{
-				serialPort: $elm$core$Maybe$Just(str)
-			});
-	});
-var $author$project$Update$changeTimeoutModelUpdate = F2(
-	function (model, str) {
-		if ($elm$core$String$isEmpty(str)) {
-			return _Utils_update(
-				model,
-				{timeout: $elm$core$Maybe$Nothing});
-		} else {
-			var _v0 = $elm$core$String$toInt(str);
-			if (_v0.$ === 'Nothing') {
-				return model;
-			} else {
-				var t = _v0.a;
-				return ((t < 0) || (t > 65535)) ? model : _Utils_update(
-					model,
-					{
-						timeout: $elm$core$Maybe$Just(t)
-					});
-			}
 		}
 	});
 var $author$project$Types$ConnectedResponse = function (a) {
@@ -19732,6 +19732,7 @@ var $author$project$Settings$renderSettingInput = F3(
 							$mdgriffith$elm_ui$Element$px(500)),
 							$mdgriffith$elm_ui$Element$height(
 							$mdgriffith$elm_ui$Element$px(32)),
+							$mdgriffith$elm_ui$Element$spacing(20),
 							$mdgriffith$elm_ui$Element$centerY,
 							$mdgriffith$elm_ui$Element$Background$color($author$project$Palette$lightGrey),
 							$mdgriffith$elm_ui$Element$Font$color($author$project$Palette$greyWhite),
@@ -19746,7 +19747,11 @@ var $author$project$Settings$renderSettingInput = F3(
 						label: A2(
 							$mdgriffith$elm_ui$Element$Input$labelLeft,
 							_List_fromArray(
-								[$mdgriffith$elm_ui$Element$centerY]),
+								[
+									$mdgriffith$elm_ui$Element$centerY,
+									$mdgriffith$elm_ui$Element$width(
+									$mdgriffith$elm_ui$Element$px(200))
+								]),
 							$mdgriffith$elm_ui$Element$text(ni.description)),
 						onChange: A2(ni.message, parentIdx, idx),
 						placeholder: $elm$core$Maybe$Nothing,

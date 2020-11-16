@@ -28,6 +28,7 @@ import Element
         , spacing
         , text
         , width
+        , alignRight
         )
 import Element.Background as Background
 import Element.Border as Border
@@ -155,6 +156,7 @@ renderSettingInput parentIdx idx input =
             Input.text
                 [ width <| px 500
                 , height <| px 32
+                , spacing 20
                 , centerY
                 , Background.color lightGrey
                 , Font.color greyWhite
@@ -164,7 +166,7 @@ renderSettingInput parentIdx idx input =
                 { onChange = ni.message parentIdx idx
                 , text = Maybe.withDefault "" <| Maybe.map String.fromInt ni.value
                 , placeholder = Nothing
-                , label = Input.labelLeft [ centerY ] (text ni.description)
+                , label = Input.labelLeft [ centerY, width <| px 200 ] (text ni.description)
                 }
 
         Radio ro ->
