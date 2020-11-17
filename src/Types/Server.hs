@@ -54,6 +54,7 @@ import Modbus (
     rtuDirectWorker,
     tcpBatchWorker,
     tcpDirectWorker,
+    HeartBeatType (..)
  )
 import qualified Network.Modbus.Protocol as MB
 import Network.Socket.KeepAlive (KeepAlive (..))
@@ -341,6 +342,7 @@ data HeartBeatRequest = HeartBeatRequest
     , hbrUid :: Word8
     , hbrInterval :: Int
     , hbrId :: Word32
+    , hbrType :: HeartBeatType
     }
     deriving (Show, Eq)
 
@@ -351,6 +353,7 @@ instance ToJSON HeartBeatRequest where
             , "address" .= hbrAddress hb
             , "interval" .= hbrInterval hb
             , "id" .= hbrId hb
+            , "type" .= hbrType hb
             ]
 
 instance FromJSON HeartBeatRequest where
@@ -359,17 +362,18 @@ instance FromJSON HeartBeatRequest where
         pAddr <- o .: "address"
         pIntv <- o .: "interval"
         pId <- o .: "id"
-        return $ HeartBeatRequest pAddr pUid pIntv pId
+        pType <- o .: "type"
+        return $ HeartBeatRequest pAddr pUid pIntv pId pType
     parseJSON _ = fail "Not a HeartBeatRequest"
 
 instance Arbitrary HeartBeatRequest where
     arbitrary =
-        HeartBeatRequest <$> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
+        HeartBeatRequest <$> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
 
 fromHeartBeatRequest :: HeartBeatRequest -> IO (Word32, HeartBeat)
-fromHeartBeatRequest (HeartBeatRequest addr uid intv hbid) =
-    (,) <$> pure hbid <*> (HeartBeat (MB.Address addr) uid intv Nothing <$> newEmptyMVar)
+fromHeartBeatRequest (HeartBeatRequest addr uid intv hbid tp) =
+    (,) <$> pure hbid <*> (HeartBeat (MB.Address addr) uid intv tp Nothing <$> newEmptyMVar)
 
 toHeartBeatRequest :: (Word32, HeartBeat) -> HeartBeatRequest
 toHeartBeatRequest (hbid, hb) =
-    HeartBeatRequest (MB.unAddress $ hbAddress hb) (hbUid hb) (hbInterval hb) hbid
+    HeartBeatRequest (MB.unAddress $ hbAddress hb) (hbUid hb) (hbInterval hb) hbid (hbType hb)

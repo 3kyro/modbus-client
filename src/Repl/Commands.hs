@@ -28,6 +28,7 @@ import Modbus (
     tcpReadMBRegister,
     tcpRunClient,
     tcpWriteMBRegister,
+    HeartBeatType (..),
  )
 import PrettyPrint (
     ppError,
@@ -299,7 +300,7 @@ startHeartbeat (addr, timer)
             let uid = replUId state
             let tid = replTransactionId state
             let protocol = replProtocol state
-            hb <- liftIO $ newHeartBeat addr uid timer
+            hb <- liftIO $ newHeartBeat addr uid timer Increment
             heart <- case protocol of
                 ModBusTCP -> do
                     let worker = Left $ replTCPDirectWorker state

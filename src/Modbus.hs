@@ -62,6 +62,8 @@ module Modbus (
     StopBits (..),
     Parity (..),
     newHeartBeat,
+    HeartBeatType (..),
+    getFunctionAcc,
 ) where
 
 import Control.Concurrent (
@@ -102,15 +104,17 @@ import Data.Binary.Get (getFloatle, getWord16host, runGet)
 import Data.Binary.Put (putFloatle, putWord16host, runPut)
 import Data.IP (toHostAddress)
 import Data.IP.Internal (IPv4)
-import Data.Range (Range (..), begin)
+import Data.Range (Range (..), begin, fromBounds)
 import Data.Word (Word16, Word8)
 import Network.Modbus.Protocol (Address, Config)
 import Test.QuickCheck (
     Arbitrary (..),
     arbitrary,
     elements,
+    oneof,
  )
 
+import qualified Data.Text as T
 import qualified Network.Modbus.Protocol as MB
 import qualified Network.Modbus.RTU as RTU
 import qualified Network.Modbus.TCP as TCP
@@ -534,18 +538,73 @@ word16ToFloat _ _ = Nothing
 -- A HeartBeat signal
 data HeartBeat = HeartBeat
     { hbAddress :: !MB.Address -- Address
-    -- Unit id
-    , hbUid :: !Word8
-    , -- Interval in seconds
-      hbInterval :: !Int
-    , -- ThreadId
-      hbThreadId :: !(Maybe ThreadId)
-    , -- Status : Empty = Ok , SomeException = thread has panicked
-      hbStatus :: MVar SomeException -- Status : Empty = Ok , SomeException = thread has panicked
+    , hbUid :: !Word8 -- Unit id
+    , hbInterval :: !Int -- Interval in seconds
+    , hbType :: !HeartBeatType
+    , hbThreadId :: !(Maybe ThreadId) -- ThreadId
+    , hbStatus :: MVar SomeException -- Status : Empty = Ok , SomeException = thread has panicked
     }
     deriving (Eq)
 
--- Spawns a heartbeat signal thread
+data HeartBeatType
+    = Increment
+    | Pulse Word16
+    | Alternate (Word16, Word16)
+    | Range (Range Word16)
+    deriving (Show, Eq)
+
+instance Arbitrary HeartBeatType where
+    arbitrary =
+        oneof
+            [ pure Increment
+            , Pulse <$> arbitrary
+            , Alternate <$> ((,) <$> arbitrary <*> arbitrary)
+            , Range <$> (fromBounds <$> arbitrary <*> arbitrary)
+            ]
+
+instance ToJSON HeartBeatType where
+    toJSON hbt = case hbt of
+        Increment ->
+            object
+                ["type" .= String "Increment"]
+        Pulse value ->
+            object
+                [ "type" .= String "Pulse"
+                , "value" .= value
+                ]
+        Alternate (low, hi) ->
+            object
+                [ "type" .= String "Alternate"
+                , "low" .= low
+                , "high" .= hi
+                ]
+        Range range ->
+            object
+                [ "type" .= String "Range"
+                , "low" .= begin range
+                , "high" .= end range
+                ]
+
+instance FromJSON HeartBeatType where
+    parseJSON (Object o) = do
+        (valueType :: T.Text) <- o .: "type"
+        case valueType of
+            "Increment" -> pure Increment
+            "Pulse" -> do
+                value <- o .: "value"
+                pure $ Pulse value
+            "Alternate" -> do
+                low <- o .: "low"
+                high <- o .: "high"
+                pure $ Alternate (low, high)
+            "Range" -> do
+                low <- o .: "low"
+                high <- o .: "high"
+                pure $ Range $ fromBounds low high
+            _ -> fail "Not a HeartBeatType"
+    parseJSON _ = fail "Not a HeartBeatType"
+
+-- Spawns a heartbeat signal thread that modifies a register based on a provided function
 heartBeatSignal ::
     (MonadIO m, Application m, ModbusClient a, MonadThrow m, MonadMask m) =>
     HeartBeat ->
@@ -561,21 +620,12 @@ heartBeatSignal hb worker clientMVar tid =
             let address = hbAddress hb
             let uid = hbUid hb
             let interval = hbInterval hb
-            threadid <- liftIO $ forkFinally (execApp $ thread address uid interval 0) (finally status)
-            return $ HeartBeat address uid interval (Just threadid) status
+
+            let (f, acc) = getFunctionAcc $ hbType hb
+
+            threadid <- liftIO $ forkFinally (execApp $ thread address uid interval tid worker clientMVar f acc) (finally status)
+            return $ hb{hbThreadId = Just threadid, hbStatus = status}
   where
-    thread address uid interval acc = do
-        liftIO $ threadDelay (interval * 1000000) -- in microseconds
-        tid' <- liftIO $ getNewTID tid
-        let tpu' = setTPU uid tid'
-        case worker of
-            Left tcpworker ->
-                let session = TCPSession (TCP.writeSingleRegister (getTPU tpu') address acc)
-                 in tcpRunClient tcpworker clientMVar session
-            Right rtuworker ->
-                let session = RTUSession (RTU.writeSingleRegister (RTU.UnitId uid) address acc)
-                 in rtuRunClient rtuworker clientMVar session
-        thread address uid interval (acc + 1)
     finally status terminationStatus =
         case terminationStatus of
             Left someExcept ->
@@ -583,10 +633,66 @@ heartBeatSignal hb worker clientMVar tid =
             Right () ->
                 return ()
 
-newHeartBeat :: Word16 -> Word8 -> Int -> IO HeartBeat
-newHeartBeat addr uid tm = do
+-- get an accumulator and a modifying function
+getFunctionAcc :: HeartBeatType -> (Word16 -> Word16, Word16)
+getFunctionAcc tp =
+    case tp of
+        Increment -> ((+ 1), 1)
+        Pulse value -> (id, value)
+        Alternate (low, hi) -> (\value -> if value == hi then low else hi, low)
+        Range range ->
+            ( \value ->
+                if value == end range
+                    then begin range
+                    else value + 1
+            , begin range
+            )
+
+-- heartbeat signal loop thread
+thread ::
+    (MonadIO m, MonadThrow m, ModbusClient a, Application m, MonadMask m) =>
+    Address ->
+    Word8 -> -- uid
+    Int -> -- loop interval
+    TVar TID -> -- TID
+    Either (TCPWorker m) (RTUWorker m) -> -- worker
+    MVar a -> -- client configuration
+    (Word16 -> Word16) -> -- function that modifies the accumulator every loop
+    Word16 -> -- accumulator
+    m ()
+thread address uid interval tid worker clientMVar f acc = do
+    -- delay the thread
+    liftIO $ threadDelay (interval * 1000000) -- in microseconds
+
+    -- get a new TPU
+    newTID <- liftIO $ getNewTID tid
+    let newTPU = setTPU uid newTID
+
+    -- execute modbus write for this loop
+    case worker of
+        Left tcpworker ->
+            let session = TCPSession (TCP.writeSingleRegister (getTPU newTPU) address acc)
+             in tcpRunClient tcpworker clientMVar session
+        Right rtuworker ->
+            let session = RTUSession (RTU.writeSingleRegister (RTU.UnitId uid) address acc)
+             in rtuRunClient rtuworker clientMVar session
+
+    -- loop
+    thread address uid interval tid worker clientMVar f (f acc)
+
+-- alternateHeartBeatSignal ::
+--     (MonadIO m, Application m, ModbusClient a, MonadThrow m, MonadMask m) =>
+--     HeartBeat ->
+--     Either (TCPWorker m) (RTUWorker m) -> -- Worker to execute the session
+--     MVar a -> -- Client configuration
+--     TVar TID ->
+--     m HeartBeat
+-- alternateHeartBeatSignal hb worker clientMVar tid =
+
+newHeartBeat :: Word16 -> Word8 -> Int -> HeartBeatType -> IO HeartBeat
+newHeartBeat addr uid tm tp = do
     status <- liftIO newEmptyMVar
-    return $ HeartBeat (MB.Address addr) uid tm Nothing status
+    return $ HeartBeat (MB.Address addr) uid tm tp Nothing status
 
 ---------------------------------------------------------------------------------------------------------------
 -- Config
@@ -650,12 +756,11 @@ newtype SerialSettings = SR {unSR :: SP.SerialPortSettings}
 instance Eq SerialSettings where
     (SR a) == (SR b) =
         SP.commSpeed a == SP.commSpeed b
-        && SP.bitsPerWord a == SP.bitsPerWord b
-        && SP.stopb a == SP.stopb b
-        && SP.parity a == SP.parity b
-        && SP.flowControl a == SP.flowControl b
-        && SP.timeout a == SP.timeout b
-
+            && SP.bitsPerWord a == SP.bitsPerWord b
+            && SP.stopb a == SP.stopb b
+            && SP.parity a == SP.parity b
+            && SP.flowControl a == SP.flowControl b
+            && SP.timeout a == SP.timeout b
 
 buildSerialSettings :: BaudRate -> StopBits -> Parity -> Int -> SerialSettings
 buildSerialSettings baudrate stopbits parity tm =

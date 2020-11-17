@@ -1,0 +1,24 @@
+{
+    "seed": 3754796662744999989,
+    "samples": [
+        {
+            "type": "Increment"
+        },
+        {
+            "value": 19272,
+            "type": "Pulse"
+        },
+        {
+            "type": "Increment"
+        },
+        {
+            "value": 24471,
+            "type": "Pulse"
+        },
+        {
+            "low": 32352,
+            "type": "Alternate",
+            "high": 21000
+        }
+    ]
+}

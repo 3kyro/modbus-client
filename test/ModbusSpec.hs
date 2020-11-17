@@ -1,4 +1,4 @@
-module ModbusSpec (modbusSpec) where
+module ModbusSpec (modbusSpec, helpFun1) where
 
 import Test.Aeson.GenericSpecs
 import Test.Hspec (Spec, describe, hspec, it)
@@ -7,9 +7,12 @@ import Test.QuickCheck
 import Control.Concurrent (forkIO)
 import Control.Concurrent.Async (mapConcurrently)
 import Control.Monad (void)
-import Modbus 
+import Modbus
 import Test.QuickCheck.Monadic (assert, monadicIO, run)
 import TestHelper ()
+import Data.Range
+import Data.Binary (Word16)
+import Data.List (foldl')
 
 modbusSpec :: IO ()
 modbusSpec = hspec $ do
@@ -20,7 +23,9 @@ modbusSpec = hspec $ do
     roundtripAndGoldenSpecs (Proxy :: Proxy BaudRate)
     roundtripAndGoldenSpecs (Proxy :: Proxy StopBits)
     roundtripAndGoldenSpecs (Proxy :: Proxy Parity)
+    roundtripAndGoldenSpecs (Proxy :: Proxy HeartBeatType)
     incrementTIDspec
+    getFunctionAccSpec
 
 wordOrderConversionsSpec :: Spec
 wordOrderConversionsSpec = describe "Convert data types using WordOrder" $ do
@@ -47,3 +52,24 @@ propIncrementTID = monadicIO $ do
     incremented <- run $ getNewTID tid
     assert $ unTID incremented == repeats + 1
 
+getFunctionAccSpec :: Spec
+getFunctionAccSpec =
+    describe "propGetFunctionAcc" $
+        it "Correctly assigns HeartBeatType functions and values" $
+            property propGetFunctionAcc
+
+propGetFunctionAcc :: HeartBeatType -> Word16 -> Bool
+propGetFunctionAcc hbtp n =
+    let
+        (f, acc) = getFunctionAcc hbtp
+        accs = take (fromIntegral n) $ iterate f acc
+    in
+        case hbtp of
+            Increment -> foldl' (\b w -> b && f w == w + 1) True accs
+            Pulse value -> all (== value) accs
+            Alternate (low, hi) -> all (\e -> e == low || e == hi) accs
+            Range range -> foldl'
+                (\b acc ->
+                    b
+                    && if acc < end range then f acc == (acc + 1) else f acc == begin range
+                ) True accs
