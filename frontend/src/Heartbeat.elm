@@ -1,4 +1,4 @@
-module HeartBeat exposing
+module Heartbeat exposing
     ( hbTypeDropDown
     , heartBeatInfoModule
     , heartBeatNav
@@ -41,8 +41,8 @@ import NavigationModule
 import Palette exposing (background, grey, greyWhite, lightGrey)
 import Types
     exposing
-        ( HeartBeat
-        , HeartBeatType(..)
+        ( Heartbeat
+        , HeartbeatType(..)
         , Model
         , Msg(..)
         , getHbTypeLabel
@@ -117,12 +117,12 @@ navHigh model =
 
 startButton : Element Msg
 startButton =
-    navButton "Start" (Just StartHeartBeat)
+    navButton "Start" (Just StartHeartbeat)
 
 
 stopButton : Element Msg
 stopButton =
-    navButton "Stop" (Just StopHeartBeat)
+    navButton "Stop" (Just StopHeartbeat)
 
 
 heartBeatInfoModule : Model -> Element Msg
@@ -134,7 +134,7 @@ heartBeatInfoModule model =
         }
 
 
-heartbeatColumns : Model -> List (IndexedColumn HeartBeat Msg)
+heartbeatColumns : Model -> List (IndexedColumn Heartbeat Msg)
 heartbeatColumns model =
     [ selectColumn model
     , uidColumn
@@ -144,7 +144,7 @@ heartbeatColumns model =
     ]
 
 
-uidColumn : IndexedColumn HeartBeat Msg
+uidColumn : IndexedColumn Heartbeat Msg
 uidColumn =
     { header = el [ height <| px 38 ] <| el headerTextAttr <| text "Unit Id"
     , width = fillPortion 1
@@ -152,7 +152,7 @@ uidColumn =
     }
 
 
-addressColumn : IndexedColumn HeartBeat Msg
+addressColumn : IndexedColumn Heartbeat Msg
 addressColumn =
     { header = el [ height <| px 38 ] <| el headerTextAttr <| text "Address"
     , width = fillPortion 1
@@ -160,14 +160,14 @@ addressColumn =
     }
 
 
-intervalColumn : IndexedColumn HeartBeat Msg
+intervalColumn : IndexedColumn Heartbeat Msg
 intervalColumn =
     { header = el [ height <| px 38 ] <| el headerTextAttr <| text "Interval"
     , width = fillPortion 1
     , view = \i hb -> viewCell i <| String.fromInt hb.interval
     }
 
-typeColumn : IndexedColumn HeartBeat Msg
+typeColumn : IndexedColumn Heartbeat Msg
 typeColumn =
     { header = el [ height <| px 38 ] <| el headerTextAttr <| text "Type"
     , width = fillPortion 1
@@ -200,7 +200,7 @@ tableCellColor idx =
         grey
 
 
-selectColumn : Model -> IndexedColumn HeartBeat Msg
+selectColumn : Model -> IndexedColumn Heartbeat Msg
 selectColumn model =
     { header =
         el
@@ -237,18 +237,18 @@ viewCheckedCell idx selected =
         , paddingXY 10 0
         ]
     <|
-        selectCheckbox (HeartBeatChecked idx) selected
+        selectCheckbox (HeartbeatChecked idx) selected
 
 
 
 ----------------------------------------------------------------------------------------------------------------------------------
--- HeartBeatType Dropdowns
+-- HeartbeatType Dropdowns
 ----------------------------------------------------------------------------------------------------------------------------------
 
 
-hbTypeDropDown : Int -> Int -> Bool -> Dropdown HeartBeatType Msg
+hbTypeDropDown : Int -> Int -> Bool -> Dropdown HeartbeatType Msg
 hbTypeDropDown low high flag =
-    { onClick = HeartBeatTypeDrop
+    { onClick = HeartbeatTypeDrop
     , options = [ increment, pulse low, alternate low high, range low high ]
     , selected = increment
     , expanded = flag
@@ -260,7 +260,7 @@ hbTypeDropDown low high flag =
 -- update selected option on a heartbeattype dropdown
 
 
-updateSelectedHbType : Maybe Int -> Maybe Int -> Option HeartBeatType Msg -> Option HeartBeatType Msg
+updateSelectedHbType : Maybe Int -> Maybe Int -> Option HeartbeatType Msg -> Option HeartbeatType Msg
 updateSelectedHbType mlow mhigh opt =
     let
         mpair =
@@ -298,21 +298,21 @@ updateSelectedHbType mlow mhigh opt =
                     range low high
 
 
-increment : Option HeartBeatType Msg
+increment : Option HeartbeatType Msg
 increment =
     getOption Increment (text "Increment")
 
 
-pulse : Int -> Option HeartBeatType Msg
+pulse : Int -> Option HeartbeatType Msg
 pulse value =
     getOption (Pulse value) (text "Pulse")
 
 
-alternate : Int -> Int -> Option HeartBeatType Msg
+alternate : Int -> Int -> Option HeartbeatType Msg
 alternate low high =
     getOption (Alternate low high) (text "Alternate")
 
 
-range : Int -> Int -> Option HeartBeatType Msg
+range : Int -> Int -> Option HeartbeatType Msg
 range low high =
     getOption (Range low high) (text "Range")

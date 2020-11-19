@@ -20,7 +20,7 @@ import System.Console.ANSI
 
 import qualified Data.Text as T
 
-import Modbus (HeartBeat (..))
+import Modbus (Heartbeat (..))
 import Types
 
 ppErrReset :: IO ()
@@ -122,21 +122,21 @@ ppAndReset = ppAndResetFun putStr
 ppAndResetLn :: String -> Color -> IO ()
 ppAndResetLn = ppAndResetFun putStrLn
 
-ppThreadState :: HeartBeat -> IO ()
+ppThreadState :: Heartbeat -> IO ()
 ppThreadState state = do
     ppAndReset "@address: " Blue
     putStr $ show (hbAddress state) ++ "\t"
     ppAndReset "Interval: " Blue
     putStrLn $ show (hbInterval state) ++ "ms"
 
-ppMultThreadState :: [HeartBeat] -> IO ()
+ppMultThreadState :: [Heartbeat] -> IO ()
 ppMultThreadState [] = putStrLn "No active heartbeat signals"
 ppMultThreadState xs =
     insideMagentaDashes
         Nothing
         $ mapM_ ppThreadState xs
 
-ppThreadError :: HeartBeat -> SomeException -> IO ()
+ppThreadError :: Heartbeat -> SomeException -> IO ()
 ppThreadError thread exc =
     ppStrError $
         "A heartbeat signal was previously running at address "

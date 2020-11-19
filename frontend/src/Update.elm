@@ -6,7 +6,7 @@ import Dropdown exposing (Option, retract, setDropdown, setDropdownExpanded, set
 import Element exposing (onLeft)
 import File
 import File.Select as Select
-import HeartBeat exposing (updateSelectedHbType)
+import Heartbeat exposing (updateSelectedHbType)
 import Html.Attributes exposing (selected)
 import Http
 import Json.Decode as D
@@ -60,8 +60,8 @@ import Types
         , ConnectActiveTab(..)
         , ConnectStatus(..)
         , ConnectionInfo(..)
-        , HeartBeat
-        , HeartBeatType(..)
+        , Heartbeat
+        , HeartbeatType(..)
         , InitInfo
         , KeepAliveResponse(..)
         , Model
@@ -71,12 +71,12 @@ import Types
         , StopBits
         , WordOrder(..)
         , decodeConnInfo
-        , decodeHeartBeat
+        , decodeHeartbeat
         , decodeInitInfo
         , decodeKeepAliveResponse
         , decodeWordOrder
         , diffList
-        , encodeHeartBeat
+        , encodeHeartbeat
         , encodeKeepAlive
         , encodeRTUConnectionRequest
         , encodeTCPConnectionInfo
@@ -84,10 +84,10 @@ import Types
         , encodeWordOrder
         , fromIdList
         , getSelectedIds
-        , replaceHeartBeatSelected
+        , replaceHeartbeatSelected
         , retractDropdowns
         , showConnInfo
-        , showFailedHeartBeat
+        , showFailedHeartbeat
         , showKeepAliveResponse
         , showOs
         , showWordOrderResponse
@@ -355,7 +355,7 @@ update msg model =
             , Cmd.none
             )
 
-        -- HeartBeat
+        -- Heartbeat
         HeartUid uid ->
             ( heartUidModelUpdate model uid
             , Cmd.none
@@ -371,24 +371,24 @@ update msg model =
             , Cmd.none
             )
 
-        StartHeartBeat ->
-            startHeartBeat model
+        StartHeartbeat ->
+            startHeartbeat model
 
-        StopHeartBeat ->
-            stopHeartBeat model
+        StopHeartbeat ->
+            stopHeartbeat model
 
-        UpdateActiveHeartBeats result ->
-            updateActiveHeartBeats model result
+        UpdateActiveHeartbeats result ->
+            updateActiveHeartbeats model result
 
-        HeartBeatChecked idx flag ->
+        HeartbeatChecked idx flag ->
             ( hbCheckedModelUpdate model idx flag
             , Cmd.none
             )
 
-        InitHeartBeat result ->
-            initHeartBeat model result
+        InitHeartbeat result ->
+            initHeartbeat model result
 
-        HeartBeatTypeDrop opt ->
+        HeartbeatTypeDrop opt ->
             ( hbTypeDropModelUpdate model opt, Cmd.none )
 
         HBLow str ->
@@ -415,7 +415,7 @@ initCmd =
     Cmd.batch
         [ getTimeZone
         , initRequest
-        , initHeartBeatRequest
+        , initHeartbeatRequest
         ]
 
 
@@ -596,21 +596,21 @@ getRegMduList model =
                     offsetMdu model.regMdu num
 
 
-sendHeartBeats : HeartBeat -> Cmd Msg
-sendHeartBeats hb =
+sendHeartbeats : Heartbeat -> Cmd Msg
+sendHeartbeats hb =
     Http.post
         { url = "http://localhost:4000/startHeartbeat"
-        , body = Http.jsonBody <| encodeHeartBeat <| hb
-        , expect = Http.expectJson UpdateActiveHeartBeats <| D.list D.int
+        , body = Http.jsonBody <| encodeHeartbeat <| hb
+        , expect = Http.expectJson UpdateActiveHeartbeats <| D.list D.int
         }
 
 
-stopHeartBeatRequest : List HeartBeat -> Cmd Msg
-stopHeartBeatRequest hbs =
+stopHeartbeatRequest : List Heartbeat -> Cmd Msg
+stopHeartbeatRequest hbs =
     Http.post
         { url = "http://localhost:4000/stopHeartbeat"
         , body = Http.jsonBody <| E.list E.int <| getSelectedIds hbs
-        , expect = Http.expectJson UpdateActiveHeartBeats <| D.list D.int
+        , expect = Http.expectJson UpdateActiveHeartbeats <| D.list D.int
         }
 
 
@@ -619,12 +619,12 @@ stopHeartBeatRequest hbs =
 -- Nedded when the frontend is reloaded
 
 
-initHeartBeatRequest : Cmd Msg
-initHeartBeatRequest =
+initHeartbeatRequest : Cmd Msg
+initHeartbeatRequest =
     Http.post
         { url = "http://localhost:4000/initHeartbeat"
         , body = Http.emptyBody
-        , expect = Http.expectJson InitHeartBeat <| D.list decodeHeartBeat
+        , expect = Http.expectJson InitHeartbeat <| D.list decodeHeartbeat
         }
 
 
@@ -1217,8 +1217,8 @@ heartIntvModelUpdate model str =
     }
 
 
-startHeartBeat : Model -> ( Model, Cmd Msg )
-startHeartBeat model =
+startHeartbeat : Model -> ( Model, Cmd Msg )
+startHeartbeat model =
     let
         hbdd =
             model.hbTypeDd
@@ -1228,7 +1228,7 @@ startHeartBeat model =
             { hbdd | selected = updateSelectedHbType model.hbLow model.hbHigh hbdd.selected }
 
         mheartbeat =
-            Maybe.map HeartBeat model.heartUid
+            Maybe.map Heartbeat model.heartUid
                 |> andMap
                     model.heartAddr
                 |> andMap
@@ -1251,12 +1251,12 @@ startHeartBeat model =
                 -- increment id counter
                 , heartId = model.heartId + 1
               }
-            , sendHeartBeats hb
+            , sendHeartbeats hb
             )
 
 
-stopHeartBeat : Model -> ( Model, Cmd Msg )
-stopHeartBeat model =
+stopHeartbeat : Model -> ( Model, Cmd Msg )
+stopHeartbeat model =
     let
         ( selectedHbs, notSelectedHbs ) =
             List.partition .selected model.heartbeats
@@ -1266,12 +1266,12 @@ stopHeartBeat model =
         , heartSelectAll = False
         , heartSelectSome = False
       }
-    , stopHeartBeatRequest selectedHbs
+    , stopHeartbeatRequest selectedHbs
     )
 
 
-updateActiveHeartBeats : Model -> Result Http.Error (List Int) -> ( Model, Cmd Msg )
-updateActiveHeartBeats model result =
+updateActiveHeartbeats : Model -> Result Http.Error (List Int) -> ( Model, Cmd Msg )
+updateActiveHeartbeats model result =
     case result of
         Err err ->
             ( { model
@@ -1310,14 +1310,14 @@ updateActiveHeartBeats model result =
                     | heartbeats = hbs
                     , notifications =
                         detailedNot model "Some heartbeat signals have failed" <|
-                            List.foldl showFailedHeartBeat "Failed heartbeat signals:\n" diffs
+                            List.foldl showFailedHeartbeat "Failed heartbeat signals:\n" diffs
                   }
                 , jumpToBottom "status"
                 )
 
 
-initHeartBeat : Model -> Result Http.Error (List HeartBeat) -> ( Model, Cmd Msg )
-initHeartBeat model result =
+initHeartbeat : Model -> Result Http.Error (List Heartbeat) -> ( Model, Cmd Msg )
+initHeartbeat model result =
     case result of
         Err err ->
             ( { model
@@ -1348,7 +1348,7 @@ hbCheckedModelUpdate : Model -> Int -> Bool -> Model
 hbCheckedModelUpdate model idx flag =
     let
         newHB =
-            List.indexedMap (replaceHeartBeatSelected idx flag) model.heartbeats
+            List.indexedMap (replaceHeartbeatSelected idx flag) model.heartbeats
     in
     { model
         | heartbeats = newHB
@@ -1356,7 +1356,7 @@ hbCheckedModelUpdate model idx flag =
     }
 
 
-hbTypeDropModelUpdate : Model -> Option HeartBeatType Msg -> Model
+hbTypeDropModelUpdate : Model -> Option HeartbeatType Msg -> Model
 hbTypeDropModelUpdate model opt =
     { model
         | hbTypeDd =

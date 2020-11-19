@@ -4,8 +4,8 @@ module Types exposing
     , ConnectActiveTab(..)
     , ConnectStatus(..)
     , ConnectionInfo(..)
-    , HeartBeat
-    , HeartBeatType(..)
+    , Heartbeat
+    , HeartbeatType(..)
     , InitInfo
     , KeepAliveResponse(..)
     , Model
@@ -16,13 +16,13 @@ module Types exposing
     , StopBits(..)
     , WordOrder(..)
     , decodeConnInfo
-    , decodeHeartBeat
+    , decodeHeartbeat
     , decodeInitInfo
     , decodeKeepAliveResponse
     , decodeWordOrder
     , deleteListElem
     , diffList
-    , encodeHeartBeat
+    , encodeHeartbeat
     , encodeKeepAlive
     , encodeRTUConnectionRequest
     , encodeTCPConnectionInfo
@@ -31,11 +31,11 @@ module Types exposing
     , fromIdList
     , getHbTypeLabel
     , getSelectedIds
-    , replaceHeartBeatSelected
+    , replaceHeartbeatSelected
     , retractDropdowns
     , showConnInfo
     , showConnectStatus
-    , showFailedHeartBeat
+    , showFailedHeartbeat
     , showKeepAliveResponse
     , showOs
     , showWordOrderResponse
@@ -132,16 +132,16 @@ type Msg
     | BaudRateDrop (Option BaudRate Msg)
     | StopBitsDrop (Option StopBits Msg)
     | ParityDrop (Option Parity Msg)
-      -- HeartBeat
+      -- Heartbeat
     | HeartUid String
     | HeartAddress String
     | HeartInterval String
-    | StartHeartBeat
-    | StopHeartBeat
-    | UpdateActiveHeartBeats (Result Http.Error (List Int))
-    | HeartBeatChecked Int Bool
-    | InitHeartBeat (Result Http.Error (List HeartBeat))
-    | HeartBeatTypeDrop (Option HeartBeatType Msg)
+    | StartHeartbeat
+    | StopHeartbeat
+    | UpdateActiveHeartbeats (Result Http.Error (List Int))
+    | HeartbeatChecked Int Bool
+    | InitHeartbeat (Result Http.Error (List Heartbeat))
+    | HeartbeatTypeDrop (Option HeartbeatType Msg)
     | HBLow String
     | HBHigh String
       -- Noop
@@ -206,13 +206,13 @@ type alias Model =
     , timeZone : Time.Zone
 
     -- heartbeats
-    , heartbeats : List HeartBeat
+    , heartbeats : List Heartbeat
     , heartUid : Maybe Int
     , heartAddr : Maybe Int
     , heartIntv : Maybe Int
     , heartSelectAll : Bool
     , heartSelectSome : Bool
-    , hbTypeDd : Dropdown HeartBeatType Msg
+    , hbTypeDd : Dropdown HeartbeatType Msg
     , heartId : Int
     , hbLow : Maybe Int
     , hbHigh : Maybe Int
@@ -775,19 +775,19 @@ encodeParity pr =
 
 
 --------------------------------------------------------------------------------------------------
--- HeartBeatType
+-- HeartbeatType
 --------------------------------------------------------------------------------------------------
 
 
-type HeartBeatType
+type HeartbeatType
     = Increment
     | Pulse Int
     | Alternate Int Int
     | Range Int Int
 
 
-encodeHeartBeatType : HeartBeatType -> E.Value
-encodeHeartBeatType hbt =
+encodeHeartbeatType : HeartbeatType -> E.Value
+encodeHeartbeatType hbt =
     case hbt of
         Increment ->
             E.object
@@ -814,8 +814,8 @@ encodeHeartBeatType hbt =
                 ]
 
 
-decodeHeartBeatType : D.Decoder HeartBeatType
-decodeHeartBeatType =
+decodeHeartbeatType : D.Decoder HeartbeatType
+decodeHeartbeatType =
     D.field "type" D.string
         |> D.andThen
             (\s ->
@@ -838,11 +838,11 @@ decodeHeartBeatType =
                             (D.field "high" D.int)
 
                     _ ->
-                        D.fail "Not a valid HeartBeatType"
+                        D.fail "Not a valid HeartbeatType"
             )
 
 
-getHbTypeLabel : HeartBeatType -> String
+getHbTypeLabel : HeartbeatType -> String
 getHbTypeLabel hbt =
     case hbt of
         Increment ->
@@ -864,44 +864,44 @@ getHbTypeLabel hbt =
 
 
 --------------------------------------------------------------------------------------------------
--- HeartBeat
+-- Heartbeat
 --------------------------------------------------------------------------------------------------
 
 
-type alias HeartBeat =
+type alias Heartbeat =
     { uid : Int
     , address : Int
     , interval : Int
     , selected : Bool
     , id : Int
-    , hbType : HeartBeatType
+    , hbType : HeartbeatType
     }
 
 
-encodeHeartBeat : HeartBeat -> E.Value
-encodeHeartBeat hb =
+encodeHeartbeat : Heartbeat -> E.Value
+encodeHeartbeat hb =
     E.object
         [ ( "uid", E.int hb.uid )
         , ( "address", E.int hb.address )
         , ( "interval", E.int hb.interval )
         , ( "id", E.int hb.id )
-        , ( "type", encodeHeartBeatType hb.hbType )
+        , ( "type", encodeHeartbeatType hb.hbType )
         ]
 
 
-decodeHeartBeat : D.Decoder HeartBeat
-decodeHeartBeat =
-    D.map6 HeartBeat
+decodeHeartbeat : D.Decoder Heartbeat
+decodeHeartbeat =
+    D.map6 Heartbeat
         (D.field "uid" D.int)
         (D.field "address" D.int)
         (D.field "interval" D.int)
         (D.succeed False)
         (D.field "id" D.int)
-        (D.field "type" decodeHeartBeatType)
+        (D.field "type" decodeHeartbeatType)
 
 
-showFailedHeartBeat : HeartBeat -> String -> String
-showFailedHeartBeat hb str =
+showFailedHeartbeat : Heartbeat -> String -> String
+showFailedHeartbeat hb str =
     str
         ++ "Heartbeat: Address: "
         ++ String.fromInt hb.address
@@ -912,8 +912,8 @@ showFailedHeartBeat hb str =
         ++ "\n"
 
 
-replaceHeartBeatSelected : Int -> Bool -> Int -> HeartBeat -> HeartBeat
-replaceHeartBeatSelected idx flag =
+replaceHeartbeatSelected : Int -> Bool -> Int -> Heartbeat -> Heartbeat
+replaceHeartbeatSelected idx flag =
     \i hb ->
         if i == idx then
             { hb | selected = flag }
@@ -927,7 +927,7 @@ replaceHeartBeatSelected idx flag =
 -- selected
 
 
-getSelectedIds : List HeartBeat -> List Int
+getSelectedIds : List Heartbeat -> List Int
 getSelectedIds hbs =
     let
         getId hb ids =
@@ -940,7 +940,7 @@ getSelectedIds hbs =
 -- Filters a list of heartbeats based on their ids
 
 
-fromIdList : List HeartBeat -> List Int -> List HeartBeat
+fromIdList : List Heartbeat -> List Int -> List Heartbeat
 fromIdList hbs ids =
     let
         f heartbeats id acc =

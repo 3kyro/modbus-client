@@ -31,7 +31,7 @@ import Data.List (delete)
 import Data.Word (Word32)
 import Modbus (
     WordOrder,
-    HeartBeat,
+    Heartbeat,
     ModbusClient (..),
     ModbusProtocol (..),
     RTUSession,
@@ -70,9 +70,9 @@ type ServerAPI =
         :<|> "parseModData" :> ReqBody '[JSON] String :> Post '[JSON] [ModData]
         :<|> "keepAlive" :> ReqBody '[JSON] KeepAliveServ :> Post '[JSON] KeepAliveResponse
         :<|> "wordOrder" :> ReqBody '[JSON] WordOrder :> Post '[JSON] WordOrder
-        :<|> "startHeartbeat" :> ReqBody '[JSON] HeartBeatRequest :> Post '[JSON] [Word32]
+        :<|> "startHeartbeat" :> ReqBody '[JSON] HeartbeatRequest :> Post '[JSON] [Word32]
         :<|> "stopHeartbeat" :> ReqBody '[JSON] [Word32] :> Post '[JSON] [Word32]
-        :<|> "initHeartbeat" :> Post '[JSON] [HeartBeatRequest]
+        :<|> "initHeartbeat" :> Post '[JSON] [HeartbeatRequest]
         :<|> "init" :> Get '[JSON] InitRequest
         :<|> Raw --FIX ME :: fix for path traversal attacks
 
@@ -328,7 +328,7 @@ wordOrder state order = do
 
 -- Starts the provided heartbeat signal and returns the ids of all currently running
 -- heartbeat signals
-startHeartbeat :: TVar ServState -> HeartBeatRequest -> Handler [Word32]
+startHeartbeat :: TVar ServState -> HeartbeatRequest -> Handler [Word32]
 startHeartbeat state hbr = do
     liftIO $ print hbr
     -- handle state
@@ -341,7 +341,7 @@ startHeartbeat state hbr = do
     runningPool <- liftIO $ checkServerPool pool
 
     -- get new heartbeat
-    (hbid, hb) <- liftIO $ fromHeartBeatRequest hbr
+    (hbid, hb) <- liftIO $ fromHeartbeatRequest hbr
 
     -- start heartbeat thread
     activated <- case actors of
@@ -377,7 +377,7 @@ stopHeartbeat state ids = do
     runningPool <- liftIO $ checkServerPool pool
 
     -- stop heartbeats
-    newPool <- liftIO $ stopHeartBeatsById ids runningPool
+    newPool <- liftIO $ stopHeartbeatsById ids runningPool
     -- update state
     liftIO $
         atomically $
@@ -388,13 +388,13 @@ stopHeartbeat state ids = do
 
     pure $ fst <$> newPool
 
-stopHeartBeatsById :: [Word32] -> [(Word32, HeartBeat)] -> IO [(Word32, HeartBeat)]
-stopHeartBeatsById ids pool =
-    foldM stopHeartBeatProcess pool ids
+stopHeartbeatsById :: [Word32] -> [(Word32, Heartbeat)] -> IO [(Word32, Heartbeat)]
+stopHeartbeatsById ids pool =
+    foldM stopHeartbeatProcess pool ids
 
 -- find a heartbeat in a pool and stop its process if its active
-stopHeartBeatProcess :: [(Word32, HeartBeat)] -> Word32 -> IO [(Word32, HeartBeat)]
-stopHeartBeatProcess pool hbid = do
+stopHeartbeatProcess :: [(Word32, Heartbeat)] -> Word32 -> IO [(Word32, Heartbeat)]
+stopHeartbeatProcess pool hbid = do
     let mpair = do
             hb <- lookup hbid pool
             thread <- hbThreadId hb
@@ -407,7 +407,7 @@ stopHeartBeatProcess pool hbid = do
 
 -- Checks the pool of heartbeat signals to see if any has panicked
 -- and remove them from the pool
-checkServerPool :: [(Word32, HeartBeat)] -> IO [(Word32, HeartBeat)]
+checkServerPool :: [(Word32, Heartbeat)] -> IO [(Word32, Heartbeat)]
 checkServerPool xs =
     foldM checkStatus [] (reverse xs)
   where
@@ -417,19 +417,19 @@ checkServerPool xs =
             Nothing -> pure $ assoc : previous
             Just _ -> pure previous
 
-initHeartbeat :: TVar ServState -> Handler [HeartBeatRequest]
+initHeartbeat :: TVar ServState -> Handler [HeartbeatRequest]
 initHeartbeat state = do
     -- Check active running signals
     runningPool <- getServPool state
 
-    pure $ toHeartBeatRequest <$> runningPool
+    pure $ toHeartbeatRequest <$> runningPool
 
 initRequest :: TVar ServState -> Handler InitRequest
 initRequest state =
     let os = getOs
     in InitRequest <$> getConnectionInfo state <*> pure os
 
-getServPool :: TVar ServState -> Handler [(Word32, HeartBeat)]
+getServPool :: TVar ServState -> Handler [(Word32, Heartbeat)]
 getServPool state = do
     -- manage state
     currentState <- liftIO $ readTVarIO state

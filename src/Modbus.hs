@@ -33,7 +33,7 @@ module Modbus (
     WordOrder (..),
     float2Word16,
     word16ToFloat,
-    HeartBeat (..),
+    Heartbeat (..),
     heartBeatSignal,
     getTCPClient,
     getRTUClient,
@@ -61,8 +61,8 @@ module Modbus (
     BaudRate (..),
     StopBits (..),
     Parity (..),
-    newHeartBeat,
-    HeartBeatType (..),
+    newHeartbeat,
+    HeartbeatType (..),
     getFunctionAcc,
 ) where
 
@@ -532,28 +532,28 @@ word16ToFloat BE [a, b] =
 word16ToFloat _ _ = Nothing
 
 ---------------------------------------------------------------------------------------------------------------
--- HeartBeat Signal
+-- Heartbeat Signal
 ---------------------------------------------------------------------------------------------------------------
 
--- A HeartBeat signal
-data HeartBeat = HeartBeat
+-- A Heartbeat signal
+data Heartbeat = Heartbeat
     { hbAddress :: !MB.Address -- Address
     , hbUid :: !Word8 -- Unit id
     , hbInterval :: !Int -- Interval in seconds
-    , hbType :: !HeartBeatType
+    , hbType :: !HeartbeatType
     , hbThreadId :: !(Maybe ThreadId) -- ThreadId
     , hbStatus :: MVar SomeException -- Status : Empty = Ok , SomeException = thread has panicked
     }
     deriving (Eq)
 
-data HeartBeatType
+data HeartbeatType
     = Increment
     | Pulse Word16
     | Alternate (Word16, Word16)
     | Range (Range Word16)
     deriving (Show, Eq)
 
-instance Arbitrary HeartBeatType where
+instance Arbitrary HeartbeatType where
     arbitrary =
         oneof
             [ pure Increment
@@ -562,7 +562,7 @@ instance Arbitrary HeartBeatType where
             , Range <$> (fromBounds <$> arbitrary <*> arbitrary)
             ]
 
-instance ToJSON HeartBeatType where
+instance ToJSON HeartbeatType where
     toJSON hbt = case hbt of
         Increment ->
             object
@@ -585,7 +585,7 @@ instance ToJSON HeartBeatType where
                 , "high" .= end range
                 ]
 
-instance FromJSON HeartBeatType where
+instance FromJSON HeartbeatType where
     parseJSON (Object o) = do
         (valueType :: T.Text) <- o .: "type"
         case valueType of
@@ -601,17 +601,17 @@ instance FromJSON HeartBeatType where
                 low <- o .: "low"
                 high <- o .: "high"
                 pure $ Range $ fromBounds low high
-            _ -> fail "Not a HeartBeatType"
-    parseJSON _ = fail "Not a HeartBeatType"
+            _ -> fail "Not a HeartbeatType"
+    parseJSON _ = fail "Not a HeartbeatType"
 
 -- Spawns a heartbeat signal thread that modifies a register based on a provided function
 heartBeatSignal ::
     (MonadIO m, Application m, ModbusClient a, MonadThrow m, MonadMask m) =>
-    HeartBeat ->
+    Heartbeat ->
     Either (TCPWorker m) (RTUWorker m) -> -- Worker to execute the session
     MVar a -> -- Client configuration
     TVar TID ->
-    m HeartBeat
+    m Heartbeat
 heartBeatSignal hb worker clientMVar tid =
     case hbThreadId hb of
         Just _ -> return hb
@@ -634,7 +634,7 @@ heartBeatSignal hb worker clientMVar tid =
                 return ()
 
 -- get an accumulator and a modifying function
-getFunctionAcc :: HeartBeatType -> (Word16 -> Word16, Word16)
+getFunctionAcc :: HeartbeatType -> (Word16 -> Word16, Word16)
 getFunctionAcc tp =
     case tp of
         Increment -> ((+ 1), 1)
@@ -680,19 +680,19 @@ thread address uid interval tid worker clientMVar f acc = do
     -- loop
     thread address uid interval tid worker clientMVar f (f acc)
 
--- alternateHeartBeatSignal ::
+-- alternateHeartbeatSignal ::
 --     (MonadIO m, Application m, ModbusClient a, MonadThrow m, MonadMask m) =>
---     HeartBeat ->
+--     Heartbeat ->
 --     Either (TCPWorker m) (RTUWorker m) -> -- Worker to execute the session
 --     MVar a -> -- Client configuration
 --     TVar TID ->
---     m HeartBeat
--- alternateHeartBeatSignal hb worker clientMVar tid =
+--     m Heartbeat
+-- alternateHeartbeatSignal hb worker clientMVar tid =
 
-newHeartBeat :: Word16 -> Word8 -> Int -> HeartBeatType -> IO HeartBeat
-newHeartBeat addr uid tm tp = do
+newHeartbeat :: Word16 -> Word8 -> Int -> HeartbeatType -> IO Heartbeat
+newHeartbeat addr uid tm tp = do
     status <- liftIO newEmptyMVar
-    return $ HeartBeat (MB.Address addr) uid tm tp Nothing status
+    return $ Heartbeat (MB.Address addr) uid tm tp Nothing status
 
 ---------------------------------------------------------------------------------------------------------------
 -- Config

@@ -21,7 +21,7 @@ import           Control.Concurrent.STM           (TVar)
 import           Data.Range                       (Range)
 import           Data.Tagged                      (Tagged)
 import           Modbus                           (RTUWorker, Address, WordOrder, Client,
-                                                   HeartBeat (..),
+                                                   Heartbeat (..),
                                                    ModbusProtocol, TCPSession, TID,
                                                    TransactionInfo, TCPWorker)
 
@@ -37,7 +37,7 @@ data ReplState = ReplState
     , replWordOrder     :: !WordOrder
     , replModData       :: ![ModData]
     , replUId           :: !Word8
-    , replPool          :: ![HeartBeat]
+    , replPool          :: ![Heartbeat]
     , replTransactionId :: !(TVar TID)
     }
 
@@ -57,7 +57,7 @@ data Command = ReadInputRegistersWord
     | WriteRegistersFloat
     | Read
     | Write
-    | Heartbeat
+    | StartHeartbeat
     | StopHeartbeat
     | ListHeartbeat
     | Import

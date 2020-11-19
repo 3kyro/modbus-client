@@ -23,7 +23,7 @@ modbusSpec = hspec $ do
     roundtripAndGoldenSpecs (Proxy :: Proxy BaudRate)
     roundtripAndGoldenSpecs (Proxy :: Proxy StopBits)
     roundtripAndGoldenSpecs (Proxy :: Proxy Parity)
-    roundtripAndGoldenSpecs (Proxy :: Proxy HeartBeatType)
+    roundtripAndGoldenSpecs (Proxy :: Proxy HeartbeatType)
     incrementTIDspec
     getFunctionAccSpec
 
@@ -55,10 +55,10 @@ propIncrementTID = monadicIO $ do
 getFunctionAccSpec :: Spec
 getFunctionAccSpec =
     describe "propGetFunctionAcc" $
-        it "Correctly assigns HeartBeatType functions and values" $
+        it "Correctly assigns HeartbeatType functions and values" $
             property propGetFunctionAcc
 
-propGetFunctionAcc :: HeartBeatType -> Word16 -> Bool
+propGetFunctionAcc :: HeartbeatType -> Word16 -> Bool
 propGetFunctionAcc hbtp n =
     let
         (f, acc) = getFunctionAcc hbtp

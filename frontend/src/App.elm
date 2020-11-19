@@ -23,8 +23,8 @@ import Types
         , BaudRate(..)
         , ConnectActiveTab(..)
         , ConnectStatus(..)
-        , HeartBeat
-        , HeartBeatType(..)
+        , Heartbeat
+        , HeartbeatType(..)
         , Model
         , Msg(..)
         , OS(..)
@@ -36,7 +36,7 @@ import Types
 import Types.IpAddress exposing (defaultIpAddr)
 import Update exposing (initCmd, update)
 import View exposing (view)
-import HeartBeat exposing (hbTypeDropDown)
+import Heartbeat exposing (hbTypeDropDown)
 
 main : Program () Model Msg
 main =

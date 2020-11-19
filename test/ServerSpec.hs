@@ -4,7 +4,7 @@ module ServerSpec (serverSpec) where
 
 import Test.Aeson.GenericSpecs (roundtripSpecs)
 import Test.Hspec (Spec, around, describe, hspec, it, runIO, shouldBe, shouldSatisfy)
-import Types.Server (ConnectionInfo (..), ConnectionRequest (..), HeartBeatRequest, InitRequest, KeepAliveResponse, KeepAliveServ (..), OS)
+import Types.Server (ConnectionInfo (..), ConnectionRequest (..), HeartbeatRequest, InitRequest, KeepAliveResponse, KeepAliveServ (..), OS)
 import TestHelper (pickFromList)
 import Modbus (WordOrder (..), ModbusProtocol (..))
 import Network.HTTP.Client (defaultManagerSettings, newManager)
@@ -20,14 +20,14 @@ import qualified Data.Text as T
 import Servant (Proxy (..), (:<|>) (..))
 import System.Process (cleanupProcess, createProcess, proc)
 import Test.QuickCheck (arbitrary, generate)
-import Types (OS(..), getOs, InitRequest (..), HeartBeatRequest (hbrId), KeepAliveResponse (..), ModDataUpdate (..), ModValue (..), ReadWrite (..), RegType (..), bitsFromString, createModData, serializeModData, setMDUModValue)
+import Types (OS(..), getOs, InitRequest (..), HeartbeatRequest (hbrId), KeepAliveResponse (..), ModDataUpdate (..), ModValue (..), ReadWrite (..), RegType (..), bitsFromString, createModData, serializeModData, setMDUModValue)
 import Data.List ((\\))
 import System.FilePath ((</>))
 serverSpec :: IO ()
 serverSpec = do
     hspec $ do
         roundtripSpecs (Proxy :: Proxy ConnectionInfo)
-        roundtripSpecs (Proxy :: Proxy HeartBeatRequest)
+        roundtripSpecs (Proxy :: Proxy HeartbeatRequest)
         roundtripSpecs (Proxy :: Proxy ConnectionRequest)
         roundtripSpecs (Proxy :: Proxy InitRequest)
         roundtripSpecs (Proxy :: Proxy KeepAliveServ)
@@ -175,7 +175,7 @@ businessLogicSpec =
                     result <- runClientM (wordOrder bo) (clientEnv port)
                     result `shouldBe` Right bo
 
-            describe "POST /startHeartBeat" $ do
+            describe "POST /startHeartbeat" $ do
                 initHbs <- runIO $ generate arbitrary
                 hbs <- runIO $ generate arbitrary
 
@@ -187,7 +187,7 @@ businessLogicSpec =
                     -- check that total heartbeat ids are returned
                     result `shouldBe` Right (map hbrId initHbs ++ [hbrId hbs])
 
-            describe "POST /stopHeartBeat" $ do
+            describe "POST /stopHeartbeat" $ do
                 -- send some initial heartbeat requests
                 initHbs <- runIO $ generate arbitrary
                 let initHbsIds = map hbrId initHbs

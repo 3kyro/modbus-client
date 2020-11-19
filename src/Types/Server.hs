@@ -15,9 +15,9 @@ module Types.Server (
     toKeepAlive,
     OS (..),
     InitRequest (..),
-    HeartBeatRequest (..),
-    fromHeartBeatRequest,
-    toHeartBeatRequest,
+    HeartbeatRequest (..),
+    fromHeartbeatRequest,
+    toHeartbeatRequest,
     getOs,
 ) where
 
@@ -44,7 +44,7 @@ import Data.Word (Word16, Word32, Word8)
 import Modbus (
     WordOrder,
     Client,
-    HeartBeat (..),
+    Heartbeat (..),
     ModbusProtocol,
     RTUWorker,
     SerialSettings,
@@ -54,7 +54,7 @@ import Modbus (
     rtuDirectWorker,
     tcpBatchWorker,
     tcpDirectWorker,
-    HeartBeatType (..)
+    HeartbeatType (..)
  )
 import qualified Network.Modbus.Protocol as MB
 import Network.Socket.KeepAlive (KeepAlive (..))
@@ -71,7 +71,7 @@ data ServState = ServState
     , servProtocol :: !ModbusProtocol
     , servOrd :: !WordOrder
     , servTID :: !(TVar TID)
-    , servPool :: [(Word32, HeartBeat)]
+    , servPool :: [(Word32, Heartbeat)]
     }
 
 ---------------------------------------------------------------------------------------------------------------
@@ -334,19 +334,19 @@ getOs = case System.Info.os of
     _ -> Other
 
 ---------------------------------------------------------------------------------------------------------------
--- HeartBeat
+-- Heartbeat
 ---------------------------------------------------------------------------------------------------------------
 
-data HeartBeatRequest = HeartBeatRequest
+data HeartbeatRequest = HeartbeatRequest
     { hbrAddress :: Word16
     , hbrUid :: Word8
     , hbrInterval :: Int
     , hbrId :: Word32
-    , hbrType :: HeartBeatType
+    , hbrType :: HeartbeatType
     }
     deriving (Show, Eq)
 
-instance ToJSON HeartBeatRequest where
+instance ToJSON HeartbeatRequest where
     toJSON hb =
         object
             [ "uid" .= hbrUid hb
@@ -356,24 +356,24 @@ instance ToJSON HeartBeatRequest where
             , "type" .= hbrType hb
             ]
 
-instance FromJSON HeartBeatRequest where
+instance FromJSON HeartbeatRequest where
     parseJSON (Object o) = do
         pUid <- o .: "uid"
         pAddr <- o .: "address"
         pIntv <- o .: "interval"
         pId <- o .: "id"
         pType <- o .: "type"
-        return $ HeartBeatRequest pAddr pUid pIntv pId pType
-    parseJSON _ = fail "Not a HeartBeatRequest"
+        return $ HeartbeatRequest pAddr pUid pIntv pId pType
+    parseJSON _ = fail "Not a HeartbeatRequest"
 
-instance Arbitrary HeartBeatRequest where
+instance Arbitrary HeartbeatRequest where
     arbitrary =
-        HeartBeatRequest <$> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
+        HeartbeatRequest <$> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
 
-fromHeartBeatRequest :: HeartBeatRequest -> IO (Word32, HeartBeat)
-fromHeartBeatRequest (HeartBeatRequest addr uid intv hbid tp) =
-    (,) <$> pure hbid <*> (HeartBeat (MB.Address addr) uid intv tp Nothing <$> newEmptyMVar)
+fromHeartbeatRequest :: HeartbeatRequest -> IO (Word32, Heartbeat)
+fromHeartbeatRequest (HeartbeatRequest addr uid intv hbid tp) =
+    (,) <$> pure hbid <*> (Heartbeat (MB.Address addr) uid intv tp Nothing <$> newEmptyMVar)
 
-toHeartBeatRequest :: (Word32, HeartBeat) -> HeartBeatRequest
-toHeartBeatRequest (hbid, hb) =
-    HeartBeatRequest (MB.unAddress $ hbAddress hb) (hbUid hb) (hbInterval hb) hbid (hbType hb)
+toHeartbeatRequest :: (Word32, Heartbeat) -> HeartbeatRequest
+toHeartbeatRequest (hbid, hb) =
+    HeartbeatRequest (MB.unAddress $ hbAddress hb) (hbUid hb) (hbInterval hb) hbid (hbType hb)

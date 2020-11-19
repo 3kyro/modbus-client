@@ -16,19 +16,19 @@ import Data.Maybe (fromJust)
 import Data.Word (Word16, Word8)
 import Modbus (
     Address (..),
-    HeartBeat (..),
+    Heartbeat (..),
     ModbusProtocol (..),
     TID,
     getNewTID,
     heartBeatSignal,
-    newHeartBeat,
+    newHeartbeat,
     rtuReadMBRegister,
     rtuRunClient,
     rtuWriteMBRegister,
     tcpReadMBRegister,
     tcpRunClient,
     tcpWriteMBRegister,
-    HeartBeatType (..),
+    HeartbeatType (..),
  )
 import PrettyPrint (
     ppError,
@@ -69,7 +69,7 @@ getCommand s = case s of
     "writeRegistersFloat" -> WriteRegistersFloat
     "read" -> Read
     "write" -> Write
-    "heartbeat" -> Heartbeat
+    "heartbeat" -> StartHeartbeat
     "stopHeartbeat" -> StopHeartbeat
     "listHeartbeat" -> ListHeartbeat
     "import" -> Import
@@ -106,7 +106,7 @@ runReplCommand input =
                 writeRegisters args HoldingRegister (ModFloat Nothing)
             Read -> readModData args
             Write -> writeModData args
-            Heartbeat -> heartbeat args
+            StartHeartbeat -> heartbeat args
             StopHeartbeat -> stopHeartbeat args
             ListHeartbeat -> listHeartbeat args
             Import -> replImport args
@@ -268,7 +268,7 @@ replWriteModData mds = do
     void $ replRunExceptT (except maybemdata) []
 
 ------------------------------------------------------------------------------------------
--- HeartBeat
+-- Heartbeat
 ------------------------------------------------------------------------------------------
 -- Parse the input and call startHeartbeat with the
 -- address and timer pairs
@@ -300,7 +300,7 @@ startHeartbeat (addr, timer)
             let uid = replUId state
             let tid = replTransactionId state
             let protocol = replProtocol state
-            hb <- liftIO $ newHeartBeat addr uid timer Increment
+            hb <- liftIO $ newHeartbeat addr uid timer Increment
             heart <- case protocol of
                 ModBusTCP -> do
                     let worker = Left $ replTCPDirectWorker state
@@ -308,7 +308,7 @@ startHeartbeat (addr, timer)
                 ModBusRTU -> do
                     let worker = Right $ replRTUDirectWorker state
                     liftIO $ heartBeatSignal hb worker client tid
-            putHeartBeat heart
+            putHeartbeat heart
 
 -- Parse the argument list and call stopHeartbeatThread on
 -- each valid identifier
@@ -345,15 +345,15 @@ stopHeartbeatThread addr = do
                         ++ " has been stopped."
 
 -- removes the provided thead from the pool
-removeThread :: HeartBeat -> Repl ()
+removeThread :: Heartbeat -> Repl ()
 removeThread ts = do
     state <- lift get
     let pool = delete ts $ replPool state
     lift $ put $ state{replPool = pool}
 
 -- Put the provided heartbeat in the pool
-putHeartBeat :: HeartBeat -> Repl ()
-putHeartBeat st = do
+putHeartbeat :: Heartbeat -> Repl ()
+putHeartbeat st = do
     state <- replGet
     let pool = replPool state
     replPut $ state{replPool = st : pool}
@@ -404,7 +404,7 @@ checkActiveHeartbeat = do
 -- Checks if the heartbeat threads are still running.
 -- If some exception is raised in a hearbeat, it prints an error message and
 -- removes the hearbeat from the pool
-checkThreads :: [HeartBeat] -> IO [HeartBeat]
+checkThreads :: [Heartbeat] -> IO [Heartbeat]
 checkThreads [] = return []
 checkThreads (x : xs) = do
     checked <- tryReadMVar (hbStatus x)

@@ -28,7 +28,7 @@ getHelpCmd str =
         WriteRegistersFloat       -> hWriteRegistersFloat
         Read                      -> hRead
         Write                     -> hWrite
-        Heartbeat                 -> hHeartbeat
+        StartHeartbeat            -> hHeartbeat
         StopHeartbeat             -> hStopHeartbeat
         ListHeartbeat             -> hListHeartbeat
         Import                    -> hImport

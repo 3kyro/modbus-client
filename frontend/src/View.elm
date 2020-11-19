@@ -38,7 +38,7 @@ import Element.Background as Background
 import Element.Border as Border
 import Element.Font as Font
 import Element.Input as Input
-import HeartBeat exposing (heartBeatInfoModule, heartBeatNav)
+import Heartbeat exposing (heartBeatInfoModule, heartBeatNav)
 import Html exposing (Html)
 import Html.Attributes
 import ModData

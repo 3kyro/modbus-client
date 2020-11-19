@@ -6004,10 +6004,10 @@ var $author$project$Types$TimeZone = function (a) {
 };
 var $elm$time$Time$here = _Time_here(_Utils_Tuple0);
 var $author$project$Update$getTimeZone = A2($elm$core$Task$perform, $author$project$Types$TimeZone, $elm$time$Time$here);
-var $author$project$Types$InitHeartBeat = function (a) {
-	return {$: 'InitHeartBeat', a: a};
+var $author$project$Types$InitHeartbeat = function (a) {
+	return {$: 'InitHeartbeat', a: a};
 };
-var $author$project$Types$HeartBeat = F6(
+var $author$project$Types$Heartbeat = F6(
 	function (uid, address, interval, selected, id, hbType) {
 		return {address: address, hbType: hbType, id: id, interval: interval, selected: selected, uid: uid};
 	});
@@ -6028,7 +6028,7 @@ var $elm$json$Json$Decode$fail = _Json_fail;
 var $elm$json$Json$Decode$field = _Json_decodeField;
 var $elm$json$Json$Decode$int = _Json_decodeInt;
 var $elm$json$Json$Decode$string = _Json_decodeString;
-var $author$project$Types$decodeHeartBeatType = A2(
+var $author$project$Types$decodeHeartbeatType = A2(
 	$elm$json$Json$Decode$andThen,
 	function (s) {
 		switch (s) {
@@ -6052,20 +6052,20 @@ var $author$project$Types$decodeHeartBeatType = A2(
 					A2($elm$json$Json$Decode$field, 'low', $elm$json$Json$Decode$int),
 					A2($elm$json$Json$Decode$field, 'high', $elm$json$Json$Decode$int));
 			default:
-				return $elm$json$Json$Decode$fail('Not a valid HeartBeatType');
+				return $elm$json$Json$Decode$fail('Not a valid HeartbeatType');
 		}
 	},
 	A2($elm$json$Json$Decode$field, 'type', $elm$json$Json$Decode$string));
 var $elm$json$Json$Decode$map6 = _Json_map6;
-var $author$project$Types$decodeHeartBeat = A7(
+var $author$project$Types$decodeHeartbeat = A7(
 	$elm$json$Json$Decode$map6,
-	$author$project$Types$HeartBeat,
+	$author$project$Types$Heartbeat,
 	A2($elm$json$Json$Decode$field, 'uid', $elm$json$Json$Decode$int),
 	A2($elm$json$Json$Decode$field, 'address', $elm$json$Json$Decode$int),
 	A2($elm$json$Json$Decode$field, 'interval', $elm$json$Json$Decode$int),
 	$elm$json$Json$Decode$succeed(false),
 	A2($elm$json$Json$Decode$field, 'id', $elm$json$Json$Decode$int),
-	A2($elm$json$Json$Decode$field, 'type', $author$project$Types$decodeHeartBeatType));
+	A2($elm$json$Json$Decode$field, 'type', $author$project$Types$decodeHeartbeatType));
 var $elm$http$Http$BadStatus_ = F2(
 	function (a, b) {
 		return {$: 'BadStatus_', a: a, b: b};
@@ -6709,13 +6709,13 @@ var $elm$http$Http$post = function (r) {
 	return $elm$http$Http$request(
 		{body: r.body, expect: r.expect, headers: _List_Nil, method: 'POST', timeout: $elm$core$Maybe$Nothing, tracker: $elm$core$Maybe$Nothing, url: r.url});
 };
-var $author$project$Update$initHeartBeatRequest = $elm$http$Http$post(
+var $author$project$Update$initHeartbeatRequest = $elm$http$Http$post(
 	{
 		body: $elm$http$Http$emptyBody,
 		expect: A2(
 			$elm$http$Http$expectJson,
-			$author$project$Types$InitHeartBeat,
-			$elm$json$Json$Decode$list($author$project$Types$decodeHeartBeat)),
+			$author$project$Types$InitHeartbeat,
+			$elm$json$Json$Decode$list($author$project$Types$decodeHeartbeat)),
 		url: 'http://localhost:4000/initHeartbeat'
 	});
 var $author$project$Types$ReceivedInitInfo = function (a) {
@@ -7063,7 +7063,7 @@ var $author$project$Update$initRequest = $elm$http$Http$get(
 	});
 var $author$project$Update$initCmd = $elm$core$Platform$Cmd$batch(
 	_List_fromArray(
-		[$author$project$Update$getTimeZone, $author$project$Update$initRequest, $author$project$Update$initHeartBeatRequest]));
+		[$author$project$Update$getTimeZone, $author$project$Update$initRequest, $author$project$Update$initHeartbeatRequest]));
 var $author$project$Types$Connect = {$: 'Connect'};
 var $author$project$Types$ConnectMenu = {$: 'ConnectMenu'};
 var $author$project$Types$LE = {$: 'LE'};
@@ -7150,47 +7150,47 @@ var $author$project$Types$IpAddress$defaultIpAddr = A4(
 	$elm$core$Maybe$Just(168),
 	$elm$core$Maybe$Just(0),
 	$elm$core$Maybe$Just(1));
-var $author$project$Types$HeartBeatTypeDrop = function (a) {
-	return {$: 'HeartBeatTypeDrop', a: a};
+var $author$project$Types$HeartbeatTypeDrop = function (a) {
+	return {$: 'HeartbeatTypeDrop', a: a};
 };
-var $author$project$HeartBeat$alternate = F2(
+var $author$project$Heartbeat$alternate = F2(
 	function (low, high) {
 		return A2(
 			$author$project$Dropdown$getOption,
 			A2($author$project$Types$Alternate, low, high),
 			$mdgriffith$elm_ui$Element$text('Alternate'));
 	});
-var $author$project$HeartBeat$increment = A2(
+var $author$project$Heartbeat$increment = A2(
 	$author$project$Dropdown$getOption,
 	$author$project$Types$Increment,
 	$mdgriffith$elm_ui$Element$text('Increment'));
-var $author$project$HeartBeat$pulse = function (value) {
+var $author$project$Heartbeat$pulse = function (value) {
 	return A2(
 		$author$project$Dropdown$getOption,
 		$author$project$Types$Pulse(value),
 		$mdgriffith$elm_ui$Element$text('Pulse'));
 };
-var $author$project$HeartBeat$range = F2(
+var $author$project$Heartbeat$range = F2(
 	function (low, high) {
 		return A2(
 			$author$project$Dropdown$getOption,
 			A2($author$project$Types$Range, low, high),
 			$mdgriffith$elm_ui$Element$text('Range'));
 	});
-var $author$project$HeartBeat$hbTypeDropDown = F3(
+var $author$project$Heartbeat$hbTypeDropDown = F3(
 	function (low, high, flag) {
 		return {
 			expanded: flag,
 			label: '',
-			onClick: $author$project$Types$HeartBeatTypeDrop,
+			onClick: $author$project$Types$HeartbeatTypeDrop,
 			options: _List_fromArray(
 				[
-					$author$project$HeartBeat$increment,
-					$author$project$HeartBeat$pulse(low),
-					A2($author$project$HeartBeat$alternate, low, high),
-					A2($author$project$HeartBeat$range, low, high)
+					$author$project$Heartbeat$increment,
+					$author$project$Heartbeat$pulse(low),
+					A2($author$project$Heartbeat$alternate, low, high),
+					A2($author$project$Heartbeat$range, low, high)
 				]),
-			selected: $author$project$HeartBeat$increment
+			selected: $author$project$Heartbeat$increment
 		};
 	});
 var $author$project$ModData$InputRegister = {$: 'InputRegister'};
@@ -7379,7 +7379,7 @@ var $author$project$App$initModel = {
 	csvLoaded: false,
 	hbHigh: $elm$core$Maybe$Nothing,
 	hbLow: $elm$core$Maybe$Nothing,
-	hbTypeDd: A3($author$project$HeartBeat$hbTypeDropDown, 0, 0, false),
+	hbTypeDd: A3($author$project$Heartbeat$hbTypeDropDown, 0, 0, false),
 	heartAddr: $elm$core$Maybe$Nothing,
 	heartId: 0,
 	heartIntv: $elm$core$Maybe$Nothing,
@@ -8295,7 +8295,7 @@ var $elm$core$List$any = F2(
 			}
 		}
 	});
-var $author$project$Types$replaceHeartBeatSelected = F2(
+var $author$project$Types$replaceHeartbeatSelected = F2(
 	function (idx, flag) {
 		return F2(
 			function (i, hb) {
@@ -8308,7 +8308,7 @@ var $author$project$Update$hbCheckedModelUpdate = F3(
 	function (model, idx, flag) {
 		var newHB = A2(
 			$elm$core$List$indexedMap,
-			A2($author$project$Types$replaceHeartBeatSelected, idx, flag),
+			A2($author$project$Types$replaceHeartbeatSelected, idx, flag),
 			model.heartbeats);
 		return _Utils_update(
 			model,
@@ -8440,7 +8440,7 @@ var $elm$core$List$maximum = function (list) {
 	}
 };
 var $elm$core$Platform$Cmd$none = $elm$core$Platform$Cmd$batch(_List_Nil);
-var $author$project$Update$initHeartBeat = F2(
+var $author$project$Update$initHeartbeat = F2(
 	function (model, result) {
 		if (result.$ === 'Err') {
 			var err = result.a;
@@ -9160,10 +9160,10 @@ var $author$project$Update$andMap = F2(
 			},
 			x);
 	});
-var $author$project$Types$UpdateActiveHeartBeats = function (a) {
-	return {$: 'UpdateActiveHeartBeats', a: a};
+var $author$project$Types$UpdateActiveHeartbeats = function (a) {
+	return {$: 'UpdateActiveHeartbeats', a: a};
 };
-var $author$project$Types$encodeHeartBeatType = function (hbt) {
+var $author$project$Types$encodeHeartbeatType = function (hbt) {
 	switch (hbt.$) {
 		case 'Increment':
 			return $elm$json$Json$Encode$object(
@@ -9219,7 +9219,7 @@ var $author$project$Types$encodeHeartBeatType = function (hbt) {
 					]));
 	}
 };
-var $author$project$Types$encodeHeartBeat = function (hb) {
+var $author$project$Types$encodeHeartbeat = function (hb) {
 	return $elm$json$Json$Encode$object(
 		_List_fromArray(
 			[
@@ -9237,17 +9237,17 @@ var $author$project$Types$encodeHeartBeat = function (hb) {
 				$elm$json$Json$Encode$int(hb.id)),
 				_Utils_Tuple2(
 				'type',
-				$author$project$Types$encodeHeartBeatType(hb.hbType))
+				$author$project$Types$encodeHeartbeatType(hb.hbType))
 			]));
 };
-var $author$project$Update$sendHeartBeats = function (hb) {
+var $author$project$Update$sendHeartbeats = function (hb) {
 	return $elm$http$Http$post(
 		{
 			body: $elm$http$Http$jsonBody(
-				$author$project$Types$encodeHeartBeat(hb)),
+				$author$project$Types$encodeHeartbeat(hb)),
 			expect: A2(
 				$elm$http$Http$expectJson,
-				$author$project$Types$UpdateActiveHeartBeats,
+				$author$project$Types$UpdateActiveHeartbeats,
 				$elm$json$Json$Decode$list($elm$json$Json$Decode$int)),
 			url: 'http://localhost:4000/startHeartbeat'
 		});
@@ -9271,7 +9271,7 @@ var $elm$core$Tuple$pair = F2(
 	function (a, b) {
 		return _Utils_Tuple2(a, b);
 	});
-var $author$project$HeartBeat$updateSelectedHbType = F3(
+var $author$project$Heartbeat$updateSelectedHbType = F3(
 	function (mlow, mhigh, opt) {
 		var mpair = A3($elm$core$Maybe$map2, $elm$core$Tuple$pair, mlow, mhigh);
 		var _v0 = opt.value;
@@ -9283,7 +9283,7 @@ var $author$project$HeartBeat$updateSelectedHbType = F3(
 					return opt;
 				} else {
 					var low = mlow.a;
-					return $author$project$HeartBeat$pulse(low);
+					return $author$project$Heartbeat$pulse(low);
 				}
 			case 'Alternate':
 				if (mpair.$ === 'Nothing') {
@@ -9292,7 +9292,7 @@ var $author$project$HeartBeat$updateSelectedHbType = F3(
 					var _v3 = mpair.a;
 					var low = _v3.a;
 					var high = _v3.b;
-					return A2($author$project$HeartBeat$alternate, low, high);
+					return A2($author$project$Heartbeat$alternate, low, high);
 				}
 			default:
 				if (mpair.$ === 'Nothing') {
@@ -9301,16 +9301,16 @@ var $author$project$HeartBeat$updateSelectedHbType = F3(
 					var _v5 = mpair.a;
 					var low = _v5.a;
 					var high = _v5.b;
-					return A2($author$project$HeartBeat$range, low, high);
+					return A2($author$project$Heartbeat$range, low, high);
 				}
 		}
 	});
-var $author$project$Update$startHeartBeat = function (model) {
+var $author$project$Update$startHeartbeat = function (model) {
 	var hbdd = model.hbTypeDd;
 	var newTypeDd = _Utils_update(
 		hbdd,
 		{
-			selected: A3($author$project$HeartBeat$updateSelectedHbType, model.hbLow, model.hbHigh, hbdd.selected)
+			selected: A3($author$project$Heartbeat$updateSelectedHbType, model.hbLow, model.hbHigh, hbdd.selected)
 		});
 	var mheartbeat = A2(
 		$author$project$Update$andMap,
@@ -9327,7 +9327,7 @@ var $author$project$Update$startHeartBeat = function (model) {
 					A2(
 						$author$project$Update$andMap,
 						model.heartAddr,
-						A2($elm$core$Maybe$map, $author$project$Types$HeartBeat, model.heartUid))))));
+						A2($elm$core$Maybe$map, $author$project$Types$Heartbeat, model.heartUid))))));
 	if (mheartbeat.$ === 'Nothing') {
 		return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
 	} else {
@@ -9342,7 +9342,7 @@ var $author$project$Update$startHeartBeat = function (model) {
 						_List_fromArray(
 							[hb]))
 				}),
-			$author$project$Update$sendHeartBeats(hb));
+			$author$project$Update$sendHeartbeats(hb));
 	}
 };
 var $author$project$Update$stopBitsModelUpdate = F2(
@@ -9389,7 +9389,7 @@ var $elm$json$Json$Encode$list = F2(
 				_Json_emptyArray(_Utils_Tuple0),
 				entries));
 	});
-var $author$project$Update$stopHeartBeatRequest = function (hbs) {
+var $author$project$Update$stopHeartbeatRequest = function (hbs) {
 	return $elm$http$Http$post(
 		{
 			body: $elm$http$Http$jsonBody(
@@ -9399,12 +9399,12 @@ var $author$project$Update$stopHeartBeatRequest = function (hbs) {
 					$author$project$Types$getSelectedIds(hbs))),
 			expect: A2(
 				$elm$http$Http$expectJson,
-				$author$project$Types$UpdateActiveHeartBeats,
+				$author$project$Types$UpdateActiveHeartbeats,
 				$elm$json$Json$Decode$list($elm$json$Json$Decode$int)),
 			url: 'http://localhost:4000/stopHeartbeat'
 		});
 };
-var $author$project$Update$stopHeartBeat = function (model) {
+var $author$project$Update$stopHeartbeat = function (model) {
 	var _v0 = A2(
 		$elm$core$List$partition,
 		function ($) {
@@ -9417,7 +9417,7 @@ var $author$project$Update$stopHeartBeat = function (model) {
 		_Utils_update(
 			model,
 			{heartSelectAll: false, heartSelectSome: false, heartbeats: notSelectedHbs}),
-		$author$project$Update$stopHeartBeatRequest(selectedHbs));
+		$author$project$Update$stopHeartbeatRequest(selectedHbs));
 };
 var $elm$file$File$toString = _File_toString;
 var $author$project$Update$toggleWriteAllModelUpdate = F2(
@@ -9509,11 +9509,11 @@ var $elm$core$List$isEmpty = function (xs) {
 		return false;
 	}
 };
-var $author$project$Types$showFailedHeartBeat = F2(
+var $author$project$Types$showFailedHeartbeat = F2(
 	function (hb, str) {
 		return str + ('Heartbeat: Address: ' + ($elm$core$String$fromInt(hb.address) + (', unit id: ' + ($elm$core$String$fromInt(hb.uid) + (', interval: ' + ($elm$core$String$fromInt(hb.interval) + '\n'))))));
 	});
-var $author$project$Update$updateActiveHeartBeats = F2(
+var $author$project$Update$updateActiveHeartbeats = F2(
 	function (model, result) {
 		if (result.$ === 'Err') {
 			var err = result.a;
@@ -9548,7 +9548,7 @@ var $author$project$Update$updateActiveHeartBeats = F2(
 							$author$project$Update$detailedNot,
 							model,
 							'Some heartbeat signals have failed',
-							A3($elm$core$List$foldl, $author$project$Types$showFailedHeartBeat, 'Failed heartbeat signals:\n', diffs))
+							A3($elm$core$List$foldl, $author$project$Types$showFailedHeartbeat, 'Failed heartbeat signals:\n', diffs))
 					}),
 				$author$project$Update$jumpToBottom('status'));
 		}
@@ -10172,23 +10172,23 @@ var $author$project$Update$update = F2(
 				return _Utils_Tuple2(
 					A2($author$project$Update$heartIntvModelUpdate, model, intv),
 					$elm$core$Platform$Cmd$none);
-			case 'StartHeartBeat':
-				return $author$project$Update$startHeartBeat(model);
-			case 'StopHeartBeat':
-				return $author$project$Update$stopHeartBeat(model);
-			case 'UpdateActiveHeartBeats':
+			case 'StartHeartbeat':
+				return $author$project$Update$startHeartbeat(model);
+			case 'StopHeartbeat':
+				return $author$project$Update$stopHeartbeat(model);
+			case 'UpdateActiveHeartbeats':
 				var result = msg.a;
-				return A2($author$project$Update$updateActiveHeartBeats, model, result);
-			case 'HeartBeatChecked':
+				return A2($author$project$Update$updateActiveHeartbeats, model, result);
+			case 'HeartbeatChecked':
 				var idx = msg.a;
 				var flag = msg.b;
 				return _Utils_Tuple2(
 					A3($author$project$Update$hbCheckedModelUpdate, model, idx, flag),
 					$elm$core$Platform$Cmd$none);
-			case 'InitHeartBeat':
+			case 'InitHeartbeat':
 				var result = msg.a;
-				return A2($author$project$Update$initHeartBeat, model, result);
-			case 'HeartBeatTypeDrop':
+				return A2($author$project$Update$initHeartbeat, model, result);
+			case 'HeartbeatTypeDrop':
 				var opt = msg.a;
 				return _Utils_Tuple2(
 					A2($author$project$Update$hbTypeDropModelUpdate, model, opt),
@@ -17497,7 +17497,7 @@ var $author$project$NavigationModule$navInput = F3(
 						}))
 				]));
 	});
-var $author$project$HeartBeat$navAddress = function (model) {
+var $author$project$Heartbeat$navAddress = function (model) {
 	return A3(
 		$author$project$NavigationModule$navInput,
 		'Address',
@@ -17626,7 +17626,7 @@ var $author$project$NavigationModule$navDd = F2(
 var $author$project$Types$HBHigh = function (a) {
 	return {$: 'HBHigh', a: a};
 };
-var $author$project$HeartBeat$navHigh = function (model) {
+var $author$project$Heartbeat$navHigh = function (model) {
 	var _v0 = model.hbTypeDd.selected.value;
 	switch (_v0.$) {
 		case 'Increment':
@@ -17650,7 +17650,7 @@ var $author$project$HeartBeat$navHigh = function (model) {
 var $author$project$Types$HeartInterval = function (a) {
 	return {$: 'HeartInterval', a: a};
 };
-var $author$project$HeartBeat$navInterval = function (model) {
+var $author$project$Heartbeat$navInterval = function (model) {
 	return A3(
 		$author$project$NavigationModule$navInput,
 		'Interval',
@@ -17660,7 +17660,7 @@ var $author$project$HeartBeat$navInterval = function (model) {
 var $author$project$Types$HBLow = function (a) {
 	return {$: 'HBLow', a: a};
 };
-var $author$project$HeartBeat$navLow = function (model) {
+var $author$project$Heartbeat$navLow = function (model) {
 	var _v0 = model.hbTypeDd.selected.value;
 	switch (_v0.$) {
 		case 'Increment':
@@ -17688,14 +17688,14 @@ var $author$project$HeartBeat$navLow = function (model) {
 var $author$project$Types$HeartUid = function (a) {
 	return {$: 'HeartUid', a: a};
 };
-var $author$project$HeartBeat$navUid = function (model) {
+var $author$project$Heartbeat$navUid = function (model) {
 	return A3(
 		$author$project$NavigationModule$navInput,
 		'Unit id',
 		$author$project$Types$HeartUid,
 		A2($elm$core$Maybe$map, $elm$core$String$fromInt, model.heartUid));
 };
-var $author$project$Types$StartHeartBeat = {$: 'StartHeartBeat'};
+var $author$project$Types$StartHeartbeat = {$: 'StartHeartbeat'};
 var $author$project$NavigationModule$navButton = F2(
 	function (label, msg) {
 		return A2(
@@ -17716,16 +17716,16 @@ var $author$project$NavigationModule$navButton = F2(
 				onPress: msg
 			});
 	});
-var $author$project$HeartBeat$startButton = A2(
+var $author$project$Heartbeat$startButton = A2(
 	$author$project$NavigationModule$navButton,
 	'Start',
-	$elm$core$Maybe$Just($author$project$Types$StartHeartBeat));
-var $author$project$Types$StopHeartBeat = {$: 'StopHeartBeat'};
-var $author$project$HeartBeat$stopButton = A2(
+	$elm$core$Maybe$Just($author$project$Types$StartHeartbeat));
+var $author$project$Types$StopHeartbeat = {$: 'StopHeartbeat'};
+var $author$project$Heartbeat$stopButton = A2(
 	$author$project$NavigationModule$navButton,
 	'Stop',
-	$elm$core$Maybe$Just($author$project$Types$StopHeartBeat));
-var $author$project$HeartBeat$heartBeatNav = function (model) {
+	$elm$core$Maybe$Just($author$project$Types$StopHeartbeat));
+var $author$project$Heartbeat$heartBeatNav = function (model) {
 	return A2(
 		$mdgriffith$elm_ui$Element$column,
 		_List_fromArray(
@@ -17737,14 +17737,14 @@ var $author$project$HeartBeat$heartBeatNav = function (model) {
 			]),
 		_List_fromArray(
 			[
-				$author$project$HeartBeat$navUid(model),
-				$author$project$HeartBeat$navAddress(model),
-				$author$project$HeartBeat$navInterval(model),
+				$author$project$Heartbeat$navUid(model),
+				$author$project$Heartbeat$navAddress(model),
+				$author$project$Heartbeat$navInterval(model),
 				A2($author$project$NavigationModule$navDd, 'Type', model.hbTypeDd),
-				$author$project$HeartBeat$navLow(model),
-				$author$project$HeartBeat$navHigh(model),
-				$author$project$HeartBeat$startButton,
-				$author$project$HeartBeat$stopButton
+				$author$project$Heartbeat$navLow(model),
+				$author$project$Heartbeat$navHigh(model),
+				$author$project$Heartbeat$startButton,
+				$author$project$Heartbeat$stopButton
 			]));
 };
 var $author$project$View$heartbeatNavModule = function (model) {
@@ -17754,7 +17754,7 @@ var $author$project$View$heartbeatNavModule = function (model) {
 			[
 				$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill)
 			]),
-		$author$project$HeartBeat$heartBeatNav(model));
+		$author$project$Heartbeat$heartBeatNav(model));
 };
 var $author$project$Types$RegAddress = function (a) {
 	return {$: 'RegAddress', a: a};
@@ -18596,20 +18596,20 @@ var $author$project$View$connectIsland = function (model) {
 		return $author$project$View$rtuConnectIsland(model);
 	}
 };
-var $author$project$HeartBeat$headerTextAttr = _List_fromArray(
+var $author$project$Heartbeat$headerTextAttr = _List_fromArray(
 	[$mdgriffith$elm_ui$Element$centerX, $mdgriffith$elm_ui$Element$centerY]);
 var $elm$core$Basics$modBy = _Basics_modBy;
-var $author$project$HeartBeat$tableCellColor = function (idx) {
+var $author$project$Heartbeat$tableCellColor = function (idx) {
 	return (!A2($elm$core$Basics$modBy, 2, idx)) ? $author$project$Palette$lightGrey : $author$project$Palette$grey;
 };
-var $author$project$HeartBeat$viewCell = F2(
+var $author$project$Heartbeat$viewCell = F2(
 	function (idx, str) {
 		return A2(
 			$mdgriffith$elm_ui$Element$el,
 			_List_fromArray(
 				[
 					$mdgriffith$elm_ui$Element$Background$color(
-					$author$project$HeartBeat$tableCellColor(idx)),
+					$author$project$Heartbeat$tableCellColor(idx)),
 					$mdgriffith$elm_ui$Element$Font$color($author$project$Palette$greyWhite),
 					$mdgriffith$elm_ui$Element$height(
 					$mdgriffith$elm_ui$Element$px(38)),
@@ -18621,7 +18621,7 @@ var $author$project$HeartBeat$viewCell = F2(
 					[$mdgriffith$elm_ui$Element$centerX, $mdgriffith$elm_ui$Element$centerY]),
 				$mdgriffith$elm_ui$Element$text(str)));
 	});
-var $author$project$HeartBeat$addressColumn = {
+var $author$project$Heartbeat$addressColumn = {
 	header: A2(
 		$mdgriffith$elm_ui$Element$el,
 		_List_fromArray(
@@ -18631,18 +18631,18 @@ var $author$project$HeartBeat$addressColumn = {
 			]),
 		A2(
 			$mdgriffith$elm_ui$Element$el,
-			$author$project$HeartBeat$headerTextAttr,
+			$author$project$Heartbeat$headerTextAttr,
 			$mdgriffith$elm_ui$Element$text('Address'))),
 	view: F2(
 		function (i, hb) {
 			return A2(
-				$author$project$HeartBeat$viewCell,
+				$author$project$Heartbeat$viewCell,
 				i,
 				$elm$core$String$fromInt(hb.address));
 		}),
 	width: $mdgriffith$elm_ui$Element$fillPortion(1)
 };
-var $author$project$HeartBeat$intervalColumn = {
+var $author$project$Heartbeat$intervalColumn = {
 	header: A2(
 		$mdgriffith$elm_ui$Element$el,
 		_List_fromArray(
@@ -18652,12 +18652,12 @@ var $author$project$HeartBeat$intervalColumn = {
 			]),
 		A2(
 			$mdgriffith$elm_ui$Element$el,
-			$author$project$HeartBeat$headerTextAttr,
+			$author$project$Heartbeat$headerTextAttr,
 			$mdgriffith$elm_ui$Element$text('Interval'))),
 	view: F2(
 		function (i, hb) {
 			return A2(
-				$author$project$HeartBeat$viewCell,
+				$author$project$Heartbeat$viewCell,
 				i,
 				$elm$core$String$fromInt(hb.interval));
 		}),
@@ -18834,7 +18834,7 @@ var $mdgriffith$elm_ui$Element$Input$defaultCheckbox = function (checked) {
 			]),
 		$mdgriffith$elm_ui$Element$none);
 };
-var $author$project$HeartBeat$selectCheckbox = F2(
+var $author$project$Heartbeat$selectCheckbox = F2(
 	function (msg, flag) {
 		return A2(
 			$mdgriffith$elm_ui$Element$Input$checkbox,
@@ -18847,18 +18847,18 @@ var $author$project$HeartBeat$selectCheckbox = F2(
 				onChange: msg
 			});
 	});
-var $author$project$Types$HeartBeatChecked = F2(
+var $author$project$Types$HeartbeatChecked = F2(
 	function (a, b) {
-		return {$: 'HeartBeatChecked', a: a, b: b};
+		return {$: 'HeartbeatChecked', a: a, b: b};
 	});
-var $author$project$HeartBeat$viewCheckedCell = F2(
+var $author$project$Heartbeat$viewCheckedCell = F2(
 	function (idx, selected) {
 		return A2(
 			$mdgriffith$elm_ui$Element$el,
 			_List_fromArray(
 				[
 					$mdgriffith$elm_ui$Element$Background$color(
-					$author$project$HeartBeat$tableCellColor(idx)),
+					$author$project$Heartbeat$tableCellColor(idx)),
 					$mdgriffith$elm_ui$Element$Font$color($author$project$Palette$greyWhite),
 					$mdgriffith$elm_ui$Element$height(
 					$mdgriffith$elm_ui$Element$px(38)),
@@ -18866,11 +18866,11 @@ var $author$project$HeartBeat$viewCheckedCell = F2(
 					A2($mdgriffith$elm_ui$Element$paddingXY, 10, 0)
 				]),
 			A2(
-				$author$project$HeartBeat$selectCheckbox,
-				$author$project$Types$HeartBeatChecked(idx),
+				$author$project$Heartbeat$selectCheckbox,
+				$author$project$Types$HeartbeatChecked(idx),
 				selected));
 	});
-var $author$project$HeartBeat$selectColumn = function (model) {
+var $author$project$Heartbeat$selectColumn = function (model) {
 	return {
 		header: A2(
 			$mdgriffith$elm_ui$Element$el,
@@ -18880,10 +18880,10 @@ var $author$project$HeartBeat$selectColumn = function (model) {
 					$mdgriffith$elm_ui$Element$px(38)),
 					A2($mdgriffith$elm_ui$Element$paddingXY, 10, 0)
 				]),
-			A2($author$project$HeartBeat$selectCheckbox, $author$project$Types$SelectAllChecked, model.heartSelectAll)),
+			A2($author$project$Heartbeat$selectCheckbox, $author$project$Types$SelectAllChecked, model.heartSelectAll)),
 		view: F2(
 			function (i, hb) {
-				return A2($author$project$HeartBeat$viewCheckedCell, i, hb.selected);
+				return A2($author$project$Heartbeat$viewCheckedCell, i, hb.selected);
 			}),
 		width: $mdgriffith$elm_ui$Element$px(30)
 	};
@@ -18902,10 +18902,10 @@ var $author$project$Types$getHbTypeLabel = function (hbt) {
 		default:
 			var low = hbt.a;
 			var high = hbt.b;
-			return 'Range (' + ($elm$core$String$fromInt(low) + (', ' + ($elm$core$String$fromInt(high) + ')')));
+			return (_Utils_cmp(low, high) < 1) ? ('Range (' + ($elm$core$String$fromInt(low) + (', ' + ($elm$core$String$fromInt(high) + ')')))) : ('Range (' + ($elm$core$String$fromInt(high) + (', ' + ($elm$core$String$fromInt(low) + ')'))));
 	}
 };
-var $author$project$HeartBeat$typeColumn = {
+var $author$project$Heartbeat$typeColumn = {
 	header: A2(
 		$mdgriffith$elm_ui$Element$el,
 		_List_fromArray(
@@ -18915,18 +18915,18 @@ var $author$project$HeartBeat$typeColumn = {
 			]),
 		A2(
 			$mdgriffith$elm_ui$Element$el,
-			$author$project$HeartBeat$headerTextAttr,
+			$author$project$Heartbeat$headerTextAttr,
 			$mdgriffith$elm_ui$Element$text('Type'))),
 	view: F2(
 		function (i, hb) {
 			return A2(
-				$author$project$HeartBeat$viewCell,
+				$author$project$Heartbeat$viewCell,
 				i,
 				$author$project$Types$getHbTypeLabel(hb.hbType));
 		}),
 	width: $mdgriffith$elm_ui$Element$fillPortion(1)
 };
-var $author$project$HeartBeat$uidColumn = {
+var $author$project$Heartbeat$uidColumn = {
 	header: A2(
 		$mdgriffith$elm_ui$Element$el,
 		_List_fromArray(
@@ -18936,25 +18936,25 @@ var $author$project$HeartBeat$uidColumn = {
 			]),
 		A2(
 			$mdgriffith$elm_ui$Element$el,
-			$author$project$HeartBeat$headerTextAttr,
+			$author$project$Heartbeat$headerTextAttr,
 			$mdgriffith$elm_ui$Element$text('Unit Id'))),
 	view: F2(
 		function (i, hb) {
 			return A2(
-				$author$project$HeartBeat$viewCell,
+				$author$project$Heartbeat$viewCell,
 				i,
 				$elm$core$String$fromInt(hb.uid));
 		}),
 	width: $mdgriffith$elm_ui$Element$fillPortion(1)
 };
-var $author$project$HeartBeat$heartbeatColumns = function (model) {
+var $author$project$Heartbeat$heartbeatColumns = function (model) {
 	return _List_fromArray(
 		[
-			$author$project$HeartBeat$selectColumn(model),
-			$author$project$HeartBeat$uidColumn,
-			$author$project$HeartBeat$addressColumn,
-			$author$project$HeartBeat$intervalColumn,
-			$author$project$HeartBeat$typeColumn
+			$author$project$Heartbeat$selectColumn(model),
+			$author$project$Heartbeat$uidColumn,
+			$author$project$Heartbeat$addressColumn,
+			$author$project$Heartbeat$intervalColumn,
+			$author$project$Heartbeat$typeColumn
 		]);
 };
 var $mdgriffith$elm_ui$Element$InternalIndexedColumn = function (a) {
@@ -19160,12 +19160,12 @@ var $mdgriffith$elm_ui$Element$indexedTable = F2(
 				data: config.data
 			});
 	});
-var $author$project$HeartBeat$heartBeatInfoModule = function (model) {
+var $author$project$Heartbeat$heartBeatInfoModule = function (model) {
 	return A2(
 		$mdgriffith$elm_ui$Element$indexedTable,
 		_List_Nil,
 		{
-			columns: $author$project$HeartBeat$heartbeatColumns(model),
+			columns: $author$project$Heartbeat$heartbeatColumns(model),
 			data: model.heartbeats
 		});
 };
@@ -20199,7 +20199,7 @@ var $author$project$View$renderInfoModule = function (model) {
 		case 'SettingsTab':
 			return $author$project$View$settingsTab(model);
 		default:
-			return $author$project$HeartBeat$heartBeatInfoModule(model);
+			return $author$project$Heartbeat$heartBeatInfoModule(model);
 	}
 };
 var $author$project$View$infoModule = function (model) {
