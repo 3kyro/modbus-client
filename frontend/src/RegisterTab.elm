@@ -26,11 +26,13 @@ import Element
         , paddingXY
         , px
         , row
+        , scrollbars
         , spacing
         , text
         , width
         )
 import Element.Background as Background
+import Element.Border as Border
 import Element.Events as Events
 import Element.Font as Font
 import Element.Input as Input
@@ -38,12 +40,13 @@ import ModData
     exposing
         ( ModDataUpdate
         , getModValueUpdate
+        , isWriteableReg
         , modAddressColumn
+        , modEmptyColumn
         , modRegTypeColumn
         , modUidColumn
         , modValueColumn
         , modValueTypeColumn
-        , modEmptyColumn
         )
 import NavigationModule
     exposing
@@ -63,7 +66,6 @@ import Types
         ( Model
         , Msg(..)
         )
-import Element exposing (scrollbars)
 
 
 regNav : Model -> Element Msg
@@ -141,27 +143,49 @@ sendRegRequestButton =
 navRWButton : Model -> Element Msg
 navRWButton model =
     Input.button
-        [ Background.color <| rwButtonClr model.regMdu.mduRW
+        [ Background.color <| rwButtonClr model
         , width <| fillPortion 3
         , height <| px 38
         , Font.center
         , Font.color greyWhite
         , paddingXY 0 10
         , focused []
+        , Border.width <| getBorderWidth model
         ]
         { onPress = Just <| RegToggleRW <| flipRW model.regMdu.mduRW
         , label = text <| rwButtonText model.regMdu.mduRW
         }
 
 
-rwButtonClr : ReadWrite -> Color
-rwButtonClr rw =
-    case rw of
-        Read ->
-            blueSapphire
 
-        Write ->
-            fireBrick
+-- Display a border when button is clickable
+
+
+getBorderWidth : Model -> Int
+getBorderWidth model =
+    if isWriteableReg model.regTypeDd.selected.value then
+        1
+
+    else
+        0
+
+
+
+-- Change color to signify when button is clicable
+
+
+rwButtonClr : Model -> Color
+rwButtonClr model =
+    if isWriteableReg model.regTypeDd.selected.value then
+        case model.regMdu.mduRW of
+            Read ->
+                blueSapphire
+
+            Write ->
+                fireBrick
+
+    else
+        lightGrey
 
 
 rwButtonText : ReadWrite -> String
@@ -177,8 +201,7 @@ rwButtonText rw =
 renderOutput : List ModDataUpdate -> Element Msg
 renderOutput mdus =
     indexedTable
-        [
-        ]
+        []
         { data = mdus
         , columns = responseColumns mdus
         }

@@ -17894,12 +17894,20 @@ var $author$project$ReadWrite$flipRW = function (rw) {
 		return $author$project$ReadWrite$Read;
 	}
 };
+var $author$project$RegisterTab$getBorderWidth = function (model) {
+	return $author$project$ModData$isWriteableReg(model.regTypeDd.selected.value) ? 1 : 0;
+};
 var $author$project$Palette$fireBrick = A3($mdgriffith$elm_ui$Element$rgb255, 179, 45, 17);
-var $author$project$RegisterTab$rwButtonClr = function (rw) {
-	if (rw.$ === 'Read') {
-		return $author$project$Palette$blueSapphire;
+var $author$project$RegisterTab$rwButtonClr = function (model) {
+	if ($author$project$ModData$isWriteableReg(model.regTypeDd.selected.value)) {
+		var _v0 = model.regMdu.mduRW;
+		if (_v0.$ === 'Read') {
+			return $author$project$Palette$blueSapphire;
+		} else {
+			return $author$project$Palette$fireBrick;
+		}
 	} else {
-		return $author$project$Palette$fireBrick;
+		return $author$project$Palette$lightGrey;
 	}
 };
 var $author$project$RegisterTab$rwButtonText = function (rw) {
@@ -17915,7 +17923,7 @@ var $author$project$RegisterTab$navRWButton = function (model) {
 		_List_fromArray(
 			[
 				$mdgriffith$elm_ui$Element$Background$color(
-				$author$project$RegisterTab$rwButtonClr(model.regMdu.mduRW)),
+				$author$project$RegisterTab$rwButtonClr(model)),
 				$mdgriffith$elm_ui$Element$width(
 				$mdgriffith$elm_ui$Element$fillPortion(3)),
 				$mdgriffith$elm_ui$Element$height(
@@ -17923,7 +17931,9 @@ var $author$project$RegisterTab$navRWButton = function (model) {
 				$mdgriffith$elm_ui$Element$Font$center,
 				$mdgriffith$elm_ui$Element$Font$color($author$project$Palette$greyWhite),
 				A2($mdgriffith$elm_ui$Element$paddingXY, 0, 10),
-				$mdgriffith$elm_ui$Element$focused(_List_Nil)
+				$mdgriffith$elm_ui$Element$focused(_List_Nil),
+				$mdgriffith$elm_ui$Element$Border$width(
+				$author$project$RegisterTab$getBorderWidth(model))
 			]),
 		{
 			label: $mdgriffith$elm_ui$Element$text(
