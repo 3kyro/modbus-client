@@ -1,5 +1,6 @@
 module RegisterTab exposing
     ( regNav
+    , registersHelpModule
     , renderOutput
     , sendRegRequestButton
     )
@@ -24,6 +25,7 @@ import Element
         , indexedTable
         , padding
         , paddingXY
+        , paragraph
         , px
         , row
         , scrollbars
@@ -39,6 +41,8 @@ import Element.Input as Input
 import ModData
     exposing
         ( ModDataUpdate
+        , ModValue
+        , RegType(..)
         , getModValueUpdate
         , isWriteableReg
         , modAddressColumn
@@ -47,6 +51,8 @@ import ModData
         , modUidColumn
         , modValueColumn
         , modValueTypeColumn
+        , showModValueType
+        , showRegType
         )
 import NavigationModule
     exposing
@@ -61,11 +67,18 @@ import ReadWrite
         , flipRW
         , readWriteButton
         )
+import String
 import Types
     exposing
         ( Model
         , Msg(..)
         )
+
+
+
+----------------------------------------------------------------------------------------------------------------------------------
+-- Register Navigtion Module
+-----------------------------------------------------------------------------------------------------------------------------------
 
 
 regNav : Model -> Element Msg
@@ -216,3 +229,51 @@ responseColumns mdus =
     , modUidColumn
     , modEmptyColumn
     ]
+
+
+
+----------------------------------------------------------------------------------------------------------------------------------
+-- Register Navigtion Module
+-----------------------------------------------------------------------------------------------------------------------------------
+-- didplay register tab help messages
+
+
+registersHelpModule : Model -> Element Msg
+registersHelpModule model =
+    paragraph
+        [ alignTop
+        , Font.color lightGrey
+        ]
+    <|
+        regHelpText model.regMdu
+
+
+regHelpText : ModDataUpdate -> List (Element Msg)
+regHelpText mdu =
+    let
+        -- very crude plural conversion. Works only for the set of ModValues
+        plural str =
+            if String.endsWith "s" str then
+                str
+
+            else
+                str ++ "s"
+    in
+    case mdu.mduRW of
+        Read ->
+            [ text <|
+                "Read multiple "
+                    ++ showRegType mdu.mduModData.modRegType
+                    ++ " "
+                    ++ plural (showModValueType mdu.mduModData.modValue)
+                    ++ "."
+            ]
+
+        Write ->
+            [ text <|
+                "Write a single "
+                    ++ showRegType mdu.mduModData.modRegType
+                    ++ " "
+                    ++ showModValueType mdu.mduModData.modValue
+                    ++ "."
+            ]

@@ -12,7 +12,7 @@ module ModData exposing
     , fromModValueInputUpdate
     , fuzzModData
     , getModValue
-    , getModValueType
+    , showModValueType
     , getModValueUpdate
     , isWriteableReg
     , modAddressColumn
@@ -412,7 +412,7 @@ modValueTypeColumn : IndexedColumn ModDataUpdate msg
 modValueTypeColumn =
     { header = el [ height <| px 38 ] <| el headerTextAttr <| text "Value Type"
     , width = fill |> minimum 100 |> maximum 200
-    , view = \i md -> viewCell i <| getModValueType md.mduModData.modValue
+    , view = \i md -> viewCell i <| showModValueType md.mduModData.modValue
     }
 
 
@@ -619,14 +619,14 @@ type ModValue
     | ModFloat (Maybe MFloat)
 
 
-getModValueType : ModValue -> String
-getModValueType mv =
+showModValueType : ModValue -> String
+showModValueType mv =
     case mv of
         ModWord _ ->
             "Word"
 
         ModBits _ ->
-            "Bits"
+            "Word Bits"
 
         ModFloat _ ->
             "Float"

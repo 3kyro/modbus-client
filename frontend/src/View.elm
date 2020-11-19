@@ -51,7 +51,6 @@ import ModData
         ( ModData
         , ModDataUpdate
         , getModValue
-        , getModValueType
         , getModValueUpdate
         , isWriteableReg
         , modAddressColumn
@@ -63,6 +62,7 @@ import ModData
         , modValueTypeColumn
         , readWriteColumn
         , selectColumn
+        , showModValueType
         , showRegType
         , tableCellColor
         )
@@ -92,7 +92,13 @@ import ReadWrite
         , flipRW
         , readWriteButton
         )
-import RegisterTab exposing (regNav, renderOutput, sendRegRequestButton)
+import RegisterTab
+    exposing
+        ( regNav
+        , registersHelpModule
+        , renderOutput
+        , sendRegRequestButton
+        )
 import Settings
     exposing
         ( renderSettings
@@ -426,6 +432,9 @@ emptySpace =
 renderHelpModule : Model -> Element Msg
 renderHelpModule model =
     case model.activeTab of
+        RegistersTab ->
+            registersHelpModule model
+
         HeartbeatTab ->
             hbHelpModule model
 

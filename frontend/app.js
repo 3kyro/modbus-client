@@ -16005,12 +16005,63 @@ var $author$project$View$hbHelpModule = function (model) {
 };
 var $mdgriffith$elm_ui$Internal$Model$Empty = {$: 'Empty'};
 var $mdgriffith$elm_ui$Element$none = $mdgriffith$elm_ui$Internal$Model$Empty;
+var $elm$core$String$endsWith = _String_endsWith;
+var $author$project$ModData$showModValueType = function (mv) {
+	switch (mv.$) {
+		case 'ModWord':
+			return 'Word';
+		case 'ModBits':
+			return 'Word Bits';
+		default:
+			return 'Float';
+	}
+};
+var $author$project$ModData$showRegType = function (rt) {
+	if (rt.$ === 'InputRegister') {
+		return 'Input Register';
+	} else {
+		return 'Holding Register';
+	}
+};
+var $author$project$RegisterTab$regHelpText = function (mdu) {
+	var plural = function (str) {
+		return A2($elm$core$String$endsWith, 's', str) ? str : (str + 's');
+	};
+	var _v0 = mdu.mduRW;
+	if (_v0.$ === 'Read') {
+		return _List_fromArray(
+			[
+				$mdgriffith$elm_ui$Element$text(
+				'Read multiple ' + ($author$project$ModData$showRegType(mdu.mduModData.modRegType) + (' ' + (plural(
+					$author$project$ModData$showModValueType(mdu.mduModData.modValue)) + '.'))))
+			]);
+	} else {
+		return _List_fromArray(
+			[
+				$mdgriffith$elm_ui$Element$text(
+				'Write a single ' + ($author$project$ModData$showRegType(mdu.mduModData.modRegType) + (' ' + ($author$project$ModData$showModValueType(mdu.mduModData.modValue) + '.'))))
+			]);
+	}
+};
+var $author$project$RegisterTab$registersHelpModule = function (model) {
+	return A2(
+		$mdgriffith$elm_ui$Element$paragraph,
+		_List_fromArray(
+			[
+				$mdgriffith$elm_ui$Element$alignTop,
+				$mdgriffith$elm_ui$Element$Font$color($author$project$Palette$lightGrey)
+			]),
+		$author$project$RegisterTab$regHelpText(model.regMdu));
+};
 var $author$project$View$renderHelpModule = function (model) {
 	var _v0 = model.activeTab;
-	if (_v0.$ === 'HeartbeatTab') {
-		return $author$project$View$hbHelpModule(model);
-	} else {
-		return $mdgriffith$elm_ui$Element$none;
+	switch (_v0.$) {
+		case 'RegistersTab':
+			return $author$project$RegisterTab$registersHelpModule(model);
+		case 'HeartbeatTab':
+			return $author$project$View$hbHelpModule(model);
+		default:
+			return $mdgriffith$elm_ui$Element$none;
 	}
 };
 var $author$project$View$helpModule = function (model) {
@@ -19390,13 +19441,6 @@ var $author$project$ModData$modNameColumn = {
 		200,
 		A2($mdgriffith$elm_ui$Element$minimum, 100, $mdgriffith$elm_ui$Element$fill))
 };
-var $author$project$ModData$showRegType = function (rt) {
-	if (rt.$ === 'InputRegister') {
-		return 'Input Register';
-	} else {
-		return 'Holding Register';
-	}
-};
 var $author$project$ModData$modRegTypeColumn = {
 	header: A2(
 		$mdgriffith$elm_ui$Element$el,
@@ -19526,16 +19570,6 @@ var $author$project$ModData$modValueColumn = function (cmd) {
 			A2($mdgriffith$elm_ui$Element$minimum, 100, $mdgriffith$elm_ui$Element$fill))
 	};
 };
-var $author$project$ModData$getModValueType = function (mv) {
-	switch (mv.$) {
-		case 'ModWord':
-			return 'Word';
-		case 'ModBits':
-			return 'Bits';
-		default:
-			return 'Float';
-	}
-};
 var $author$project$ModData$modValueTypeColumn = {
 	header: A2(
 		$mdgriffith$elm_ui$Element$el,
@@ -19553,7 +19587,7 @@ var $author$project$ModData$modValueTypeColumn = {
 			return A2(
 				$author$project$ModData$viewCell,
 				i,
-				$author$project$ModData$getModValueType(md.mduModData.modValue));
+				$author$project$ModData$showModValueType(md.mduModData.modValue));
 		}),
 	width: A2(
 		$mdgriffith$elm_ui$Element$maximum,
