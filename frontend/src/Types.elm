@@ -1,11 +1,11 @@
 module Types exposing
     ( ActiveTab(..)
     , BaudRate(..)
-    , WordOrder(..)
     , ConnectActiveTab(..)
     , ConnectStatus(..)
     , ConnectionInfo(..)
     , HeartBeat
+    , HeartBeatType(..)
     , InitInfo
     , KeepAliveResponse(..)
     , Model
@@ -14,29 +14,30 @@ module Types exposing
     , Parity(..)
     , SettingsOptions(..)
     , StopBits(..)
-    , decodeWordOrder
+    , WordOrder(..)
     , decodeConnInfo
     , decodeHeartBeat
     , decodeInitInfo
     , decodeKeepAliveResponse
+    , decodeWordOrder
     , deleteListElem
     , diffList
-    , encodeWordOrder
     , encodeHeartBeat
     , encodeKeepAlive
     , encodeRTUConnectionRequest
     , encodeTCPConnectionInfo
     , encodeTCPConnectionRequest
+    , encodeWordOrder
     , fromIdList
     , getSelectedIds
     , replaceHeartBeatSelected
     , retractDropdowns
-    , showWordOrderResponse
     , showConnInfo
     , showConnectStatus
     , showFailedHeartBeat
     , showKeepAliveResponse
     , showOs
+    , showWordOrderResponse
     , toWordOrder
     )
 
@@ -139,6 +140,9 @@ type Msg
     | UpdateActiveHeartBeats (Result Http.Error (List Int))
     | HeartBeatChecked Int Bool
     | InitHeartBeat (Result Http.Error (List HeartBeat))
+    | HeartBeatTypeDrop (Option HeartBeatType Msg)
+    | HBLow String
+    | HBHigh String
       -- Noop
     | NoOp
 
@@ -207,7 +211,10 @@ type alias Model =
     , heartIntv : Maybe Int
     , heartSelectAll : Bool
     , heartSelectSome : Bool
+    , hbTypeDd : Dropdown HeartBeatType Msg
     , heartId : Int
+    , hbLow : Maybe Int
+    , hbHigh : Maybe Int
 
     -- settings
     , settings : List (Setting SettingsOptions Msg)
@@ -767,6 +774,75 @@ encodeParity pr =
 
 
 --------------------------------------------------------------------------------------------------
+-- HeartBeatType
+--------------------------------------------------------------------------------------------------
+
+
+type HeartBeatType
+    = Increment
+    | Pulse Int
+    | Alternate Int Int
+    | Range Int Int
+
+
+encodeHeartBeatType : HeartBeatType -> E.Value
+encodeHeartBeatType hbt =
+    case hbt of
+        Increment ->
+            E.object
+                [ ( "type", E.string "Increment" ) ]
+
+        Pulse value ->
+            E.object
+                [ ( "type", E.string "Pulse" )
+                , ( "value", E.int value )
+                ]
+
+        Alternate low high ->
+            E.object
+                [ ( "type", E.string "Alternate" )
+                , ( "low", E.int low )
+                , ( "high", E.int high )
+                ]
+
+        Range low high ->
+            E.object
+                [ ( "type", E.string "Range" )
+                , ( "low", E.int low )
+                , ( "high", E.int high )
+                ]
+
+
+decodeHeartBeatType : D.Decoder HeartBeatType
+decodeHeartBeatType =
+    D.field "type" D.string
+        |> D.andThen
+            (\s ->
+                case s of
+                    "Increment" ->
+                        D.succeed Increment
+
+                    "Pulse" ->
+                        D.map Pulse <|
+                            D.field "value" D.int
+
+                    "Alternate" ->
+                        D.map2 Alternate
+                            (D.field "low" D.int)
+                            (D.field "high" D.int)
+
+                    "Range" ->
+                        D.map2 Range
+                            (D.field "low" D.int)
+                            (D.field "high" D.int)
+
+                    _ ->
+                        D.fail "Not a valid HeartBeatType"
+            )
+
+
+
+--------------------------------------------------------------------------------------------------
 -- HeartBeat
 --------------------------------------------------------------------------------------------------
 
@@ -777,6 +853,7 @@ type alias HeartBeat =
     , interval : Int
     , selected : Bool
     , id : Int
+    , hbType : HeartBeatType
     }
 
 
@@ -787,17 +864,19 @@ encodeHeartBeat hb =
         , ( "address", E.int hb.address )
         , ( "interval", E.int hb.interval )
         , ( "id", E.int hb.id )
+        , ( "type", encodeHeartBeatType hb.hbType )
         ]
 
 
 decodeHeartBeat : D.Decoder HeartBeat
 decodeHeartBeat =
-    D.map5 HeartBeat
+    D.map6 HeartBeat
         (D.field "uid" D.int)
         (D.field "address" D.int)
         (D.field "interval" D.int)
         (D.succeed False)
         (D.field "id" D.int)
+        (D.field "type" decodeHeartBeatType)
 
 
 showFailedHeartBeat : HeartBeat -> String -> String

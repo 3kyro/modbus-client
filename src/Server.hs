@@ -330,6 +330,7 @@ wordOrder state order = do
 -- heartbeat signals
 startHeartbeat :: TVar ServState -> HeartBeatRequest -> Handler [Word32]
 startHeartbeat state hbr = do
+    liftIO $ print hbr
     -- handle state
     currentState <- liftIO $ readTVarIO state
     let pool = servPool currentState

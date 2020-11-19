@@ -1,11 +1,18 @@
-module HeartBeat exposing (heartBeatInfoModule, heartBeatNav)
+module HeartBeat exposing
+    ( hbTypeDropDown
+    , heartBeatInfoModule
+    , heartBeatNav
+    , updateSelectedHbType
+    )
 
+import Dropdown exposing (Dropdown, Option, getOption)
 import Element
     exposing
         ( Attribute
         , Color
         , Element
         , IndexedColumn
+        , alignLeft
         , centerX
         , centerY
         , column
@@ -14,25 +21,28 @@ import Element
         , fillPortion
         , height
         , indexedTable
+        , none
+        , paddingXY
         , px
         , spacing
         , text
         , width
-        , paddingXY
-        , alignLeft
         )
 import Element.Background as Background
 import Element.Font as Font
 import Element.Input as Input
+import Json.Encode exposing (Value)
 import NavigationModule
     exposing
         ( navButton
+        , navDd
         , navInput
         )
 import Palette exposing (background, grey, greyWhite, lightGrey)
 import Types
     exposing
         ( HeartBeat
+        , HeartBeatType(..)
         , Model
         , Msg(..)
         )
@@ -49,6 +59,9 @@ heartBeatNav model =
         [ navUid model
         , navAddress model
         , navInterval model
+        , navDd "Type" model.hbTypeDd
+        , navLow model
+        , navHigh model
         , startButton
         , stopButton
         ]
@@ -67,6 +80,38 @@ navAddress model =
 navInterval : Model -> Element Msg
 navInterval model =
     navInput "Interval" HeartInterval <| Maybe.map String.fromInt model.heartIntv
+
+
+navLow : Model -> Element Msg
+navLow model =
+    case model.hbTypeDd.selected.value of
+        Increment ->
+            none
+
+        Pulse _ ->
+            navInput "Value" HBLow <| Maybe.map String.fromInt model.hbLow
+
+        Alternate _ _ ->
+            navInput "First" HBLow <| Maybe.map String.fromInt model.hbLow
+
+        Range _ _ ->
+            navInput "Low" HBLow <| Maybe.map String.fromInt model.hbLow
+
+
+navHigh : Model -> Element Msg
+navHigh model =
+    case model.hbTypeDd.selected.value of
+        Increment ->
+            none
+
+        Pulse _ ->
+            none
+
+        Alternate _ _ ->
+            navInput "Second" HBHigh <| Maybe.map String.fromInt model.hbHigh
+
+        Range _ _ ->
+            navInput "High" HBHigh <| Maybe.map String.fromInt model.hbHigh
 
 
 startButton : Element Msg
@@ -145,6 +190,7 @@ tableCellColor idx =
     else
         grey
 
+
 selectColumn : Model -> IndexedColumn HeartBeat Msg
 selectColumn model =
     { header =
@@ -158,6 +204,7 @@ selectColumn model =
     , view = \i hb -> viewCheckedCell i hb.selected
     }
 
+
 selectCheckbox : (Bool -> Msg) -> Bool -> Element Msg
 selectCheckbox msg flag =
     Input.checkbox
@@ -170,6 +217,7 @@ selectCheckbox msg flag =
         , label = Input.labelHidden "Select Checkbox"
         }
 
+
 viewCheckedCell : Int -> Bool -> Element Msg
 viewCheckedCell idx selected =
     el
@@ -181,3 +229,81 @@ viewCheckedCell idx selected =
         ]
     <|
         selectCheckbox (HeartBeatChecked idx) selected
+
+
+
+----------------------------------------------------------------------------------------------------------------------------------
+-- HeartBeatType Dropdowns
+----------------------------------------------------------------------------------------------------------------------------------
+
+
+hbTypeDropDown : Int -> Int -> Bool -> Dropdown HeartBeatType Msg
+hbTypeDropDown low high flag =
+    { onClick = HeartBeatTypeDrop
+    , options = [ increment, pulse low, alternate low high, range low high ]
+    , selected = increment
+    , expanded = flag
+    , label = ""
+    }
+
+
+
+-- update selected option on a heartbeattype dropdown
+
+
+updateSelectedHbType : Maybe Int -> Maybe Int -> Option HeartBeatType Msg -> Option HeartBeatType Msg
+updateSelectedHbType mlow mhigh opt =
+    let
+        mpair =
+            Maybe.map2 Tuple.pair
+                mlow
+                mhigh
+    in
+    case opt.value of
+        Increment ->
+            opt
+
+        -- only check low value
+        Pulse _ ->
+            case mlow of
+                Nothing ->
+                    opt
+
+                Just low ->
+                    pulse low
+
+        Alternate _ _ ->
+            case mpair of
+                Nothing ->
+                    opt
+
+                Just ( low, high ) ->
+                    alternate low high
+
+        Range _ _ ->
+            case mpair of
+                Nothing ->
+                    opt
+
+                Just ( low, high ) ->
+                    range low high
+
+
+increment : Option HeartBeatType Msg
+increment =
+    getOption Increment (text "Increment")
+
+
+pulse : Int -> Option HeartBeatType Msg
+pulse value =
+    getOption (Pulse value) (text "Pulse")
+
+
+alternate : Int -> Int -> Option HeartBeatType Msg
+alternate low high =
+    getOption (Alternate low high) (text "Alternate")
+
+
+range : Int -> Int -> Option HeartBeatType Msg
+range low high =
+    getOption (Range low high) (text "Range")

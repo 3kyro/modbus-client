@@ -21,21 +21,22 @@ import Types
     exposing
         ( ActiveTab(..)
         , BaudRate(..)
-        , WordOrder(..)
         , ConnectActiveTab(..)
         , ConnectStatus(..)
         , HeartBeat
+        , HeartBeatType(..)
         , Model
         , Msg(..)
         , OS(..)
         , Parity(..)
         , SettingsOptions(..)
         , StopBits(..)
+        , WordOrder(..)
         )
 import Types.IpAddress exposing (defaultIpAddr)
 import Update exposing (initCmd, update)
 import View exposing (view)
-
+import HeartBeat exposing (hbTypeDropDown)
 
 main : Program () Model Msg
 main =
@@ -106,7 +107,10 @@ initModel =
     , heartIntv = Nothing
     , heartSelectAll = False
     , heartSelectSome = False
+    , hbTypeDd = hbTypeDropDown 0 0 False
     , heartId = 0
+    , hbLow = Nothing
+    , hbHigh = Nothing
 
     -- settings
     , settings = [ keepAliveSetting, wordOrderSetting ]
@@ -263,6 +267,10 @@ odd =
 even : Option Parity Msg
 even =
     getOption EvenParity (text "Even")
+
+
+
+
 
 
 

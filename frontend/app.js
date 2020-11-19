@@ -6007,21 +6007,65 @@ var $author$project$Update$getTimeZone = A2($elm$core$Task$perform, $author$proj
 var $author$project$Types$InitHeartBeat = function (a) {
 	return {$: 'InitHeartBeat', a: a};
 };
-var $author$project$Types$HeartBeat = F5(
-	function (uid, address, interval, selected, id) {
-		return {address: address, id: id, interval: interval, selected: selected, uid: uid};
+var $author$project$Types$HeartBeat = F6(
+	function (uid, address, interval, selected, id, hbType) {
+		return {address: address, hbType: hbType, id: id, interval: interval, selected: selected, uid: uid};
 	});
+var $author$project$Types$Alternate = F2(
+	function (a, b) {
+		return {$: 'Alternate', a: a, b: b};
+	});
+var $author$project$Types$Increment = {$: 'Increment'};
+var $author$project$Types$Pulse = function (a) {
+	return {$: 'Pulse', a: a};
+};
+var $author$project$Types$Range = F2(
+	function (a, b) {
+		return {$: 'Range', a: a, b: b};
+	});
+var $elm$json$Json$Decode$andThen = _Json_andThen;
+var $elm$json$Json$Decode$fail = _Json_fail;
 var $elm$json$Json$Decode$field = _Json_decodeField;
 var $elm$json$Json$Decode$int = _Json_decodeInt;
-var $elm$json$Json$Decode$map5 = _Json_map5;
-var $author$project$Types$decodeHeartBeat = A6(
-	$elm$json$Json$Decode$map5,
+var $elm$json$Json$Decode$string = _Json_decodeString;
+var $author$project$Types$decodeHeartBeatType = A2(
+	$elm$json$Json$Decode$andThen,
+	function (s) {
+		switch (s) {
+			case 'Increment':
+				return $elm$json$Json$Decode$succeed($author$project$Types$Increment);
+			case 'Pulse':
+				return A2(
+					$elm$json$Json$Decode$map,
+					$author$project$Types$Pulse,
+					A2($elm$json$Json$Decode$field, 'value', $elm$json$Json$Decode$int));
+			case 'Alternate':
+				return A3(
+					$elm$json$Json$Decode$map2,
+					$author$project$Types$Alternate,
+					A2($elm$json$Json$Decode$field, 'low', $elm$json$Json$Decode$int),
+					A2($elm$json$Json$Decode$field, 'high', $elm$json$Json$Decode$int));
+			case 'Range':
+				return A3(
+					$elm$json$Json$Decode$map2,
+					$author$project$Types$Range,
+					A2($elm$json$Json$Decode$field, 'low', $elm$json$Json$Decode$int),
+					A2($elm$json$Json$Decode$field, 'high', $elm$json$Json$Decode$int));
+			default:
+				return $elm$json$Json$Decode$fail('Not a valid HeartBeatType');
+		}
+	},
+	A2($elm$json$Json$Decode$field, 'type', $elm$json$Json$Decode$string));
+var $elm$json$Json$Decode$map6 = _Json_map6;
+var $author$project$Types$decodeHeartBeat = A7(
+	$elm$json$Json$Decode$map6,
 	$author$project$Types$HeartBeat,
 	A2($elm$json$Json$Decode$field, 'uid', $elm$json$Json$Decode$int),
 	A2($elm$json$Json$Decode$field, 'address', $elm$json$Json$Decode$int),
 	A2($elm$json$Json$Decode$field, 'interval', $elm$json$Json$Decode$int),
 	$elm$json$Json$Decode$succeed(false),
-	A2($elm$json$Json$Decode$field, 'id', $elm$json$Json$Decode$int));
+	A2($elm$json$Json$Decode$field, 'id', $elm$json$Json$Decode$int),
+	A2($elm$json$Json$Decode$field, 'type', $author$project$Types$decodeHeartBeatType));
 var $elm$http$Http$BadStatus_ = F2(
 	function (a, b) {
 		return {$: 'BadStatus_', a: a, b: b};
@@ -6681,8 +6725,6 @@ var $author$project$Types$InitInfo = F2(
 	function (initConnInfo, initOS) {
 		return {initConnInfo: initConnInfo, initOS: initOS};
 	});
-var $elm$json$Json$Decode$andThen = _Json_andThen;
-var $elm$json$Json$Decode$fail = _Json_fail;
 var $elm$core$Maybe$andThen = F2(
 	function (callback, maybeValue) {
 		if (maybeValue.$ === 'Just') {
@@ -6842,7 +6884,6 @@ var $author$project$Types$IpAddress$ipFromString = function (s) {
 		},
 		mip);
 };
-var $elm$json$Json$Decode$string = _Json_decodeString;
 var $author$project$Types$IpAddress$decodeIpAddress = A2(
 	$elm$json$Json$Decode$andThen,
 	function (str) {
@@ -7109,6 +7150,49 @@ var $author$project$Types$IpAddress$defaultIpAddr = A4(
 	$elm$core$Maybe$Just(168),
 	$elm$core$Maybe$Just(0),
 	$elm$core$Maybe$Just(1));
+var $author$project$Types$HeartBeatTypeDrop = function (a) {
+	return {$: 'HeartBeatTypeDrop', a: a};
+};
+var $author$project$HeartBeat$alternate = F2(
+	function (low, high) {
+		return A2(
+			$author$project$Dropdown$getOption,
+			A2($author$project$Types$Alternate, low, high),
+			$mdgriffith$elm_ui$Element$text('Alternate'));
+	});
+var $author$project$HeartBeat$increment = A2(
+	$author$project$Dropdown$getOption,
+	$author$project$Types$Increment,
+	$mdgriffith$elm_ui$Element$text('Increment'));
+var $author$project$HeartBeat$pulse = function (value) {
+	return A2(
+		$author$project$Dropdown$getOption,
+		$author$project$Types$Pulse(value),
+		$mdgriffith$elm_ui$Element$text('Pulse'));
+};
+var $author$project$HeartBeat$range = F2(
+	function (low, high) {
+		return A2(
+			$author$project$Dropdown$getOption,
+			A2($author$project$Types$Range, low, high),
+			$mdgriffith$elm_ui$Element$text('Range'));
+	});
+var $author$project$HeartBeat$hbTypeDropDown = F3(
+	function (low, high, flag) {
+		return {
+			expanded: flag,
+			label: '',
+			onClick: $author$project$Types$HeartBeatTypeDrop,
+			options: _List_fromArray(
+				[
+					$author$project$HeartBeat$increment,
+					$author$project$HeartBeat$pulse(low),
+					A2($author$project$HeartBeat$alternate, low, high),
+					A2($author$project$HeartBeat$range, low, high)
+				]),
+			selected: $author$project$HeartBeat$increment
+		};
+	});
 var $author$project$ModData$InputRegister = {$: 'InputRegister'};
 var $author$project$ModData$ModWord = function (a) {
 	return {$: 'ModWord', a: a};
@@ -7293,6 +7377,9 @@ var $author$project$App$initModel = {
 	csvContent: $elm$core$Maybe$Nothing,
 	csvFileName: $elm$core$Maybe$Nothing,
 	csvLoaded: false,
+	hbHigh: $elm$core$Maybe$Nothing,
+	hbLow: $elm$core$Maybe$Nothing,
+	hbTypeDd: A3($author$project$HeartBeat$hbTypeDropDown, 0, 0, false),
 	heartAddr: $elm$core$Maybe$Nothing,
 	heartId: 0,
 	heartIntv: $elm$core$Maybe$Nothing,
@@ -8235,6 +8322,54 @@ var $author$project$Update$hbCheckedModelUpdate = F3(
 				heartbeats: newHB
 			});
 	});
+var $author$project$Update$hbHighModelUpdate = F2(
+	function (model, str) {
+		if ($elm$core$String$isEmpty(str)) {
+			return _Utils_update(
+				model,
+				{hbHigh: $elm$core$Maybe$Nothing});
+		} else {
+			var _v0 = $elm$core$String$toInt(str);
+			if (_v0.$ === 'Nothing') {
+				return model;
+			} else {
+				var t = _v0.a;
+				return ((t < 0) || (t > 65535)) ? model : _Utils_update(
+					model,
+					{
+						hbHigh: $elm$core$Maybe$Just(t)
+					});
+			}
+		}
+	});
+var $author$project$Update$hbLowModelUpdate = F2(
+	function (model, str) {
+		if ($elm$core$String$isEmpty(str)) {
+			return _Utils_update(
+				model,
+				{hbLow: $elm$core$Maybe$Nothing});
+		} else {
+			var _v0 = $elm$core$String$toInt(str);
+			if (_v0.$ === 'Nothing') {
+				return model;
+			} else {
+				var t = _v0.a;
+				return ((t < 0) || (t > 65535)) ? model : _Utils_update(
+					model,
+					{
+						hbLow: $elm$core$Maybe$Just(t)
+					});
+			}
+		}
+	});
+var $author$project$Update$hbTypeDropModelUpdate = F2(
+	function (model, opt) {
+		return _Utils_update(
+			model,
+			{
+				hbTypeDd: A2($author$project$Dropdown$setDropdown, model.hbTypeDd, opt)
+			});
+	});
 var $author$project$Update$heartAddrModelUpdate = F2(
 	function (model, str) {
 		return _Utils_update(
@@ -8481,7 +8616,7 @@ var $author$project$Update$initInfoModelUpdate = F2(
 					notifications: A3(
 						$author$project$Update$detailedNot,
 						model,
-						'Error retriving init info from server',
+						'Error retriving initial info from server',
 						$author$project$Update$showHttpError(err))
 				});
 		}
@@ -8935,7 +9070,6 @@ var $author$project$ModData$decodeRegType = A2(
 		}
 	},
 	$elm$json$Json$Decode$string);
-var $elm$json$Json$Decode$map6 = _Json_map6;
 var $author$project$ModData$decodeModData = A7(
 	$elm$json$Json$Decode$map6,
 	$author$project$ModData$ModData,
@@ -9011,38 +9145,79 @@ var $author$project$ModData$setModValueUpdate = F2(
 				mduModData: A2($author$project$ModData$setModValue, mdu.mduModData, mv)
 			});
 	});
-var $elm$core$Maybe$map5 = F6(
-	function (func, ma, mb, mc, md, me) {
-		if (ma.$ === 'Nothing') {
-			return $elm$core$Maybe$Nothing;
-		} else {
-			var a = ma.a;
-			if (mb.$ === 'Nothing') {
-				return $elm$core$Maybe$Nothing;
-			} else {
-				var b = mb.a;
-				if (mc.$ === 'Nothing') {
-					return $elm$core$Maybe$Nothing;
-				} else {
-					var c = mc.a;
-					if (md.$ === 'Nothing') {
-						return $elm$core$Maybe$Nothing;
-					} else {
-						var d = md.a;
-						if (me.$ === 'Nothing') {
-							return $elm$core$Maybe$Nothing;
-						} else {
-							var e = me.a;
-							return $elm$core$Maybe$Just(
-								A5(func, a, b, c, d, e));
-						}
-					}
-				}
-			}
-		}
+var $author$project$Update$andMap = F2(
+	function (x, f) {
+		return A2(
+			$elm$core$Maybe$andThen,
+			function (x2) {
+				return A2(
+					$elm$core$Maybe$andThen,
+					function (f2) {
+						return $elm$core$Maybe$Just(
+							f2(x2));
+					},
+					f);
+			},
+			x);
 	});
 var $author$project$Types$UpdateActiveHeartBeats = function (a) {
 	return {$: 'UpdateActiveHeartBeats', a: a};
+};
+var $author$project$Types$encodeHeartBeatType = function (hbt) {
+	switch (hbt.$) {
+		case 'Increment':
+			return $elm$json$Json$Encode$object(
+				_List_fromArray(
+					[
+						_Utils_Tuple2(
+						'type',
+						$elm$json$Json$Encode$string('Increment'))
+					]));
+		case 'Pulse':
+			var value = hbt.a;
+			return $elm$json$Json$Encode$object(
+				_List_fromArray(
+					[
+						_Utils_Tuple2(
+						'type',
+						$elm$json$Json$Encode$string('Pulse')),
+						_Utils_Tuple2(
+						'value',
+						$elm$json$Json$Encode$int(value))
+					]));
+		case 'Alternate':
+			var low = hbt.a;
+			var high = hbt.b;
+			return $elm$json$Json$Encode$object(
+				_List_fromArray(
+					[
+						_Utils_Tuple2(
+						'type',
+						$elm$json$Json$Encode$string('Alternate')),
+						_Utils_Tuple2(
+						'low',
+						$elm$json$Json$Encode$int(low)),
+						_Utils_Tuple2(
+						'high',
+						$elm$json$Json$Encode$int(high))
+					]));
+		default:
+			var low = hbt.a;
+			var high = hbt.b;
+			return $elm$json$Json$Encode$object(
+				_List_fromArray(
+					[
+						_Utils_Tuple2(
+						'type',
+						$elm$json$Json$Encode$string('Range')),
+						_Utils_Tuple2(
+						'low',
+						$elm$json$Json$Encode$int(low)),
+						_Utils_Tuple2(
+						'high',
+						$elm$json$Json$Encode$int(high))
+					]));
+	}
 };
 var $author$project$Types$encodeHeartBeat = function (hb) {
 	return $elm$json$Json$Encode$object(
@@ -9059,7 +9234,10 @@ var $author$project$Types$encodeHeartBeat = function (hb) {
 				$elm$json$Json$Encode$int(hb.interval)),
 				_Utils_Tuple2(
 				'id',
-				$elm$json$Json$Encode$int(hb.id))
+				$elm$json$Json$Encode$int(hb.id)),
+				_Utils_Tuple2(
+				'type',
+				$author$project$Types$encodeHeartBeatType(hb.hbType))
 			]));
 };
 var $author$project$Update$sendHeartBeats = function (hb) {
@@ -9074,15 +9252,82 @@ var $author$project$Update$sendHeartBeats = function (hb) {
 			url: 'http://localhost:4000/startHeartbeat'
 		});
 };
+var $elm$core$Maybe$map2 = F3(
+	function (func, ma, mb) {
+		if (ma.$ === 'Nothing') {
+			return $elm$core$Maybe$Nothing;
+		} else {
+			var a = ma.a;
+			if (mb.$ === 'Nothing') {
+				return $elm$core$Maybe$Nothing;
+			} else {
+				var b = mb.a;
+				return $elm$core$Maybe$Just(
+					A2(func, a, b));
+			}
+		}
+	});
+var $elm$core$Tuple$pair = F2(
+	function (a, b) {
+		return _Utils_Tuple2(a, b);
+	});
+var $author$project$HeartBeat$updateSelectedHbType = F3(
+	function (mlow, mhigh, opt) {
+		var mpair = A3($elm$core$Maybe$map2, $elm$core$Tuple$pair, mlow, mhigh);
+		var _v0 = opt.value;
+		switch (_v0.$) {
+			case 'Increment':
+				return opt;
+			case 'Pulse':
+				if (mlow.$ === 'Nothing') {
+					return opt;
+				} else {
+					var low = mlow.a;
+					return $author$project$HeartBeat$pulse(low);
+				}
+			case 'Alternate':
+				if (mpair.$ === 'Nothing') {
+					return opt;
+				} else {
+					var _v3 = mpair.a;
+					var low = _v3.a;
+					var high = _v3.b;
+					return A2($author$project$HeartBeat$alternate, low, high);
+				}
+			default:
+				if (mpair.$ === 'Nothing') {
+					return opt;
+				} else {
+					var _v5 = mpair.a;
+					var low = _v5.a;
+					var high = _v5.b;
+					return A2($author$project$HeartBeat$range, low, high);
+				}
+		}
+	});
 var $author$project$Update$startHeartBeat = function (model) {
-	var mheartbeat = A6(
-		$elm$core$Maybe$map5,
-		$author$project$Types$HeartBeat,
-		model.heartUid,
-		model.heartAddr,
-		model.heartIntv,
-		$elm$core$Maybe$Just(false),
-		$elm$core$Maybe$Just(model.heartId));
+	var hbdd = model.hbTypeDd;
+	var newTypeDd = _Utils_update(
+		hbdd,
+		{
+			selected: A3($author$project$HeartBeat$updateSelectedHbType, model.hbLow, model.hbHigh, hbdd.selected)
+		});
+	var mheartbeat = A2(
+		$author$project$Update$andMap,
+		$elm$core$Maybe$Just(newTypeDd.selected.value),
+		A2(
+			$author$project$Update$andMap,
+			$elm$core$Maybe$Just(model.heartId),
+			A2(
+				$author$project$Update$andMap,
+				$elm$core$Maybe$Just(false),
+				A2(
+					$author$project$Update$andMap,
+					model.heartIntv,
+					A2(
+						$author$project$Update$andMap,
+						model.heartAddr,
+						A2($elm$core$Maybe$map, $author$project$Types$HeartBeat, model.heartUid))))));
 	if (mheartbeat.$ === 'Nothing') {
 		return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
 	} else {
@@ -9943,6 +10188,21 @@ var $author$project$Update$update = F2(
 			case 'InitHeartBeat':
 				var result = msg.a;
 				return A2($author$project$Update$initHeartBeat, model, result);
+			case 'HeartBeatTypeDrop':
+				var opt = msg.a;
+				return _Utils_Tuple2(
+					A2($author$project$Update$hbTypeDropModelUpdate, model, opt),
+					$elm$core$Platform$Cmd$none);
+			case 'HBLow':
+				var str = msg.a;
+				return _Utils_Tuple2(
+					A2($author$project$Update$hbLowModelUpdate, model, str),
+					$elm$core$Platform$Cmd$none);
+			case 'HBHigh':
+				var str = msg.a;
+				return _Utils_Tuple2(
+					A2($author$project$Update$hbHighModelUpdate, model, str),
+					$elm$core$Platform$Cmd$none);
 			default:
 				return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
 		}
@@ -17244,6 +17504,149 @@ var $author$project$HeartBeat$navAddress = function (model) {
 		$author$project$Types$HeartAddress,
 		A2($elm$core$Maybe$map, $elm$core$String$fromInt, model.heartAddr));
 };
+var $mdgriffith$elm_ui$Internal$Model$Below = {$: 'Below'};
+var $mdgriffith$elm_ui$Element$below = function (element) {
+	return A2($mdgriffith$elm_ui$Element$createNearby, $mdgriffith$elm_ui$Internal$Model$Below, element);
+};
+var $author$project$Palette$dClrNotExpanded = A3($mdgriffith$elm_ui$Element$rgb255, 96, 135, 201);
+var $author$project$Palette$dClrHover = A3($mdgriffith$elm_ui$Element$rgb255, 69, 96, 142);
+var $author$project$Dropdown$setHoverColor = F2(
+	function (selectedValue, value) {
+		return _Utils_eq(value, selectedValue) ? $mdgriffith$elm_ui$Element$Background$color($author$project$Palette$dClrNotExpanded) : $mdgriffith$elm_ui$Element$Background$color($author$project$Palette$dClrHover);
+	});
+var $author$project$Dropdown$renderOption = F3(
+	function (attributes, drop, value) {
+		return A2(
+			$mdgriffith$elm_ui$Element$el,
+			_Utils_ap(
+				_List_fromArray(
+					[
+						$mdgriffith$elm_ui$Element$Background$color($author$project$Palette$dClrNotExpanded),
+						$mdgriffith$elm_ui$Element$Border$width(1),
+						$mdgriffith$elm_ui$Element$mouseOver(
+						_List_fromArray(
+							[
+								A2($author$project$Dropdown$setHoverColor, drop.selected, value)
+							])),
+						$mdgriffith$elm_ui$Element$Events$onClick(
+						drop.onClick(value)),
+						$mdgriffith$elm_ui$Element$pointer
+					]),
+				attributes),
+			value.element);
+	});
+var $mdgriffith$elm_ui$Element$none = $mdgriffith$elm_ui$Internal$Model$Empty;
+var $author$project$Dropdown$renderRemainingOptions = F2(
+	function (attributes, drop) {
+		return A2(
+			$elm$core$List$map,
+			function (opt) {
+				return _Utils_eq(opt, drop.selected) ? $mdgriffith$elm_ui$Element$none : A3($author$project$Dropdown$renderOption, attributes, drop, opt);
+			},
+			drop.options);
+	});
+var $author$project$Dropdown$renderExpandedDropdown = F2(
+	function (attributes, drop) {
+		return A2(
+			$mdgriffith$elm_ui$Element$el,
+			_List_fromArray(
+				[
+					$mdgriffith$elm_ui$Element$below(
+					A2(
+						$mdgriffith$elm_ui$Element$column,
+						_Utils_ap(
+							attributes,
+							_List_fromArray(
+								[
+									$mdgriffith$elm_ui$Element$padding(0),
+									$mdgriffith$elm_ui$Element$height(
+									$mdgriffith$elm_ui$Element$px(38)),
+									$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill),
+									$mdgriffith$elm_ui$Element$Font$center
+								])),
+						A2($author$project$Dropdown$renderRemainingOptions, attributes, drop))),
+					$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill),
+					$mdgriffith$elm_ui$Element$spacing(10)
+				]),
+			A3($author$project$Dropdown$renderOption, attributes, drop, drop.selected));
+	});
+var $author$project$Dropdown$dropdown = F2(
+	function (attributes, drop) {
+		return drop.expanded ? A2($author$project$Dropdown$renderExpandedDropdown, attributes, drop) : A3($author$project$Dropdown$renderOption, attributes, drop, drop.selected);
+	});
+var $author$project$NavigationModule$navDd = F2(
+	function (label, db) {
+		return A2(
+			$mdgriffith$elm_ui$Element$row,
+			_List_fromArray(
+				[
+					$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill),
+					$mdgriffith$elm_ui$Element$height(
+					$mdgriffith$elm_ui$Element$px(38)),
+					$mdgriffith$elm_ui$Element$spacing(10)
+				]),
+			_List_fromArray(
+				[
+					A2(
+					$mdgriffith$elm_ui$Element$el,
+					_List_fromArray(
+						[
+							$mdgriffith$elm_ui$Element$width(
+							$mdgriffith$elm_ui$Element$fillPortion(2)),
+							$mdgriffith$elm_ui$Element$Background$color($author$project$Palette$lightGrey),
+							$mdgriffith$elm_ui$Element$padding(11),
+							$mdgriffith$elm_ui$Element$height($mdgriffith$elm_ui$Element$fill)
+						]),
+					$mdgriffith$elm_ui$Element$text(label)),
+					A2(
+					$mdgriffith$elm_ui$Element$el,
+					_List_fromArray(
+						[
+							$mdgriffith$elm_ui$Element$width(
+							$mdgriffith$elm_ui$Element$fillPortion(3)),
+							$mdgriffith$elm_ui$Element$Background$color($author$project$Palette$lightGrey),
+							$mdgriffith$elm_ui$Element$height(
+							$mdgriffith$elm_ui$Element$px(38))
+						]),
+					A2(
+						$author$project$Dropdown$dropdown,
+						_List_fromArray(
+							[
+								$mdgriffith$elm_ui$Element$Background$color($author$project$Palette$blueSapphire),
+								$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill),
+								$mdgriffith$elm_ui$Element$padding(11),
+								$mdgriffith$elm_ui$Element$height(
+								$mdgriffith$elm_ui$Element$px(38)),
+								$mdgriffith$elm_ui$Element$Font$center,
+								$mdgriffith$elm_ui$Element$Font$color($author$project$Palette$greyWhite)
+							]),
+						db))
+				]));
+	});
+var $author$project$Types$HBHigh = function (a) {
+	return {$: 'HBHigh', a: a};
+};
+var $author$project$HeartBeat$navHigh = function (model) {
+	var _v0 = model.hbTypeDd.selected.value;
+	switch (_v0.$) {
+		case 'Increment':
+			return $mdgriffith$elm_ui$Element$none;
+		case 'Pulse':
+			return $mdgriffith$elm_ui$Element$none;
+		case 'Alternate':
+			return A3(
+				$author$project$NavigationModule$navInput,
+				'Second',
+				$author$project$Types$HBHigh,
+				A2($elm$core$Maybe$map, $elm$core$String$fromInt, model.hbHigh));
+		default:
+			return A3(
+				$author$project$NavigationModule$navInput,
+				'High',
+				$author$project$Types$HBHigh,
+				A2($elm$core$Maybe$map, $elm$core$String$fromInt, model.hbHigh));
+	}
+};
 var $author$project$Types$HeartInterval = function (a) {
 	return {$: 'HeartInterval', a: a};
 };
@@ -17253,6 +17656,34 @@ var $author$project$HeartBeat$navInterval = function (model) {
 		'Interval',
 		$author$project$Types$HeartInterval,
 		A2($elm$core$Maybe$map, $elm$core$String$fromInt, model.heartIntv));
+};
+var $author$project$Types$HBLow = function (a) {
+	return {$: 'HBLow', a: a};
+};
+var $author$project$HeartBeat$navLow = function (model) {
+	var _v0 = model.hbTypeDd.selected.value;
+	switch (_v0.$) {
+		case 'Increment':
+			return $mdgriffith$elm_ui$Element$none;
+		case 'Pulse':
+			return A3(
+				$author$project$NavigationModule$navInput,
+				'Value',
+				$author$project$Types$HBLow,
+				A2($elm$core$Maybe$map, $elm$core$String$fromInt, model.hbLow));
+		case 'Alternate':
+			return A3(
+				$author$project$NavigationModule$navInput,
+				'First',
+				$author$project$Types$HBLow,
+				A2($elm$core$Maybe$map, $elm$core$String$fromInt, model.hbLow));
+		default:
+			return A3(
+				$author$project$NavigationModule$navInput,
+				'Low',
+				$author$project$Types$HBLow,
+				A2($elm$core$Maybe$map, $elm$core$String$fromInt, model.hbLow));
+	}
 };
 var $author$project$Types$HeartUid = function (a) {
 	return {$: 'HeartUid', a: a};
@@ -17309,6 +17740,9 @@ var $author$project$HeartBeat$heartBeatNav = function (model) {
 				$author$project$HeartBeat$navUid(model),
 				$author$project$HeartBeat$navAddress(model),
 				$author$project$HeartBeat$navInterval(model),
+				A2($author$project$NavigationModule$navDd, 'Type', model.hbTypeDd),
+				$author$project$HeartBeat$navLow(model),
+				$author$project$HeartBeat$navHigh(model),
 				$author$project$HeartBeat$startButton,
 				$author$project$HeartBeat$stopButton
 			]));
@@ -17453,125 +17887,6 @@ var $author$project$RegisterTab$navRW = function (model) {
 				$author$project$RegisterTab$navRWButton(model)
 			]));
 };
-var $mdgriffith$elm_ui$Internal$Model$Below = {$: 'Below'};
-var $mdgriffith$elm_ui$Element$below = function (element) {
-	return A2($mdgriffith$elm_ui$Element$createNearby, $mdgriffith$elm_ui$Internal$Model$Below, element);
-};
-var $author$project$Palette$dClrNotExpanded = A3($mdgriffith$elm_ui$Element$rgb255, 96, 135, 201);
-var $author$project$Palette$dClrHover = A3($mdgriffith$elm_ui$Element$rgb255, 69, 96, 142);
-var $author$project$Dropdown$setHoverColor = F2(
-	function (selectedValue, value) {
-		return _Utils_eq(value, selectedValue) ? $mdgriffith$elm_ui$Element$Background$color($author$project$Palette$dClrNotExpanded) : $mdgriffith$elm_ui$Element$Background$color($author$project$Palette$dClrHover);
-	});
-var $author$project$Dropdown$renderOption = F3(
-	function (attributes, drop, value) {
-		return A2(
-			$mdgriffith$elm_ui$Element$el,
-			_Utils_ap(
-				_List_fromArray(
-					[
-						$mdgriffith$elm_ui$Element$Background$color($author$project$Palette$dClrNotExpanded),
-						$mdgriffith$elm_ui$Element$Border$width(1),
-						$mdgriffith$elm_ui$Element$mouseOver(
-						_List_fromArray(
-							[
-								A2($author$project$Dropdown$setHoverColor, drop.selected, value)
-							])),
-						$mdgriffith$elm_ui$Element$Events$onClick(
-						drop.onClick(value)),
-						$mdgriffith$elm_ui$Element$pointer
-					]),
-				attributes),
-			value.element);
-	});
-var $mdgriffith$elm_ui$Element$none = $mdgriffith$elm_ui$Internal$Model$Empty;
-var $author$project$Dropdown$renderRemainingOptions = F2(
-	function (attributes, drop) {
-		return A2(
-			$elm$core$List$map,
-			function (opt) {
-				return _Utils_eq(opt, drop.selected) ? $mdgriffith$elm_ui$Element$none : A3($author$project$Dropdown$renderOption, attributes, drop, opt);
-			},
-			drop.options);
-	});
-var $author$project$Dropdown$renderExpandedDropdown = F2(
-	function (attributes, drop) {
-		return A2(
-			$mdgriffith$elm_ui$Element$el,
-			_List_fromArray(
-				[
-					$mdgriffith$elm_ui$Element$below(
-					A2(
-						$mdgriffith$elm_ui$Element$column,
-						_Utils_ap(
-							attributes,
-							_List_fromArray(
-								[
-									$mdgriffith$elm_ui$Element$padding(0),
-									$mdgriffith$elm_ui$Element$height(
-									$mdgriffith$elm_ui$Element$px(38)),
-									$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill),
-									$mdgriffith$elm_ui$Element$Font$center
-								])),
-						A2($author$project$Dropdown$renderRemainingOptions, attributes, drop))),
-					$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill),
-					$mdgriffith$elm_ui$Element$spacing(10)
-				]),
-			A3($author$project$Dropdown$renderOption, attributes, drop, drop.selected));
-	});
-var $author$project$Dropdown$dropdown = F2(
-	function (attributes, drop) {
-		return drop.expanded ? A2($author$project$Dropdown$renderExpandedDropdown, attributes, drop) : A3($author$project$Dropdown$renderOption, attributes, drop, drop.selected);
-	});
-var $author$project$NavigationModule$navDd = F2(
-	function (label, db) {
-		return A2(
-			$mdgriffith$elm_ui$Element$row,
-			_List_fromArray(
-				[
-					$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill),
-					$mdgriffith$elm_ui$Element$height(
-					$mdgriffith$elm_ui$Element$px(38)),
-					$mdgriffith$elm_ui$Element$spacing(10)
-				]),
-			_List_fromArray(
-				[
-					A2(
-					$mdgriffith$elm_ui$Element$el,
-					_List_fromArray(
-						[
-							$mdgriffith$elm_ui$Element$width(
-							$mdgriffith$elm_ui$Element$fillPortion(2)),
-							$mdgriffith$elm_ui$Element$Background$color($author$project$Palette$lightGrey),
-							$mdgriffith$elm_ui$Element$padding(11),
-							$mdgriffith$elm_ui$Element$height($mdgriffith$elm_ui$Element$fill)
-						]),
-					$mdgriffith$elm_ui$Element$text(label)),
-					A2(
-					$mdgriffith$elm_ui$Element$el,
-					_List_fromArray(
-						[
-							$mdgriffith$elm_ui$Element$width(
-							$mdgriffith$elm_ui$Element$fillPortion(3)),
-							$mdgriffith$elm_ui$Element$Background$color($author$project$Palette$lightGrey),
-							$mdgriffith$elm_ui$Element$height(
-							$mdgriffith$elm_ui$Element$px(38))
-						]),
-					A2(
-						$author$project$Dropdown$dropdown,
-						_List_fromArray(
-							[
-								$mdgriffith$elm_ui$Element$Background$color($author$project$Palette$blueSapphire),
-								$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill),
-								$mdgriffith$elm_ui$Element$padding(11),
-								$mdgriffith$elm_ui$Element$height(
-								$mdgriffith$elm_ui$Element$px(38)),
-								$mdgriffith$elm_ui$Element$Font$center,
-								$mdgriffith$elm_ui$Element$Font$color($author$project$Palette$greyWhite)
-							]),
-						db))
-				]));
-	});
 var $author$project$RegisterTab$navRegTypeDb = function (model) {
 	return A2($author$project$NavigationModule$navDd, 'Reg. Type', model.regTypeDd);
 };

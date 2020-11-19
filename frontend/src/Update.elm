@@ -6,6 +6,7 @@ import Dropdown exposing (Option, retract, setDropdown, setDropdownExpanded, set
 import Element exposing (onLeft)
 import File
 import File.Select as Select
+import HeartBeat exposing (updateSelectedHbType)
 import Html.Attributes exposing (selected)
 import Http
 import Json.Decode as D
@@ -56,11 +57,11 @@ import Types
     exposing
         ( ActiveTab(..)
         , BaudRate
-        , WordOrder(..)
         , ConnectActiveTab(..)
         , ConnectStatus(..)
         , ConnectionInfo(..)
         , HeartBeat
+        , HeartBeatType(..)
         , InitInfo
         , KeepAliveResponse(..)
         , Model
@@ -68,27 +69,28 @@ import Types
         , Parity
         , SettingsOptions(..)
         , StopBits
-        , decodeWordOrder
+        , WordOrder(..)
         , decodeConnInfo
         , decodeHeartBeat
         , decodeInitInfo
         , decodeKeepAliveResponse
+        , decodeWordOrder
         , diffList
-        , encodeWordOrder
         , encodeHeartBeat
         , encodeKeepAlive
         , encodeRTUConnectionRequest
         , encodeTCPConnectionInfo
         , encodeTCPConnectionRequest
+        , encodeWordOrder
         , fromIdList
         , getSelectedIds
         , replaceHeartBeatSelected
         , retractDropdowns
-        , showWordOrderResponse
         , showConnInfo
         , showFailedHeartBeat
         , showKeepAliveResponse
         , showOs
+        , showWordOrderResponse
         , toWordOrder
         )
 import Types.IpAddress exposing (IpAddressByte, setIpAddressByte)
@@ -385,6 +387,15 @@ update msg model =
 
         InitHeartBeat result ->
             initHeartBeat model result
+
+        HeartBeatTypeDrop opt ->
+            ( hbTypeDropModelUpdate model opt, Cmd.none )
+
+        HBLow str ->
+            ( hbLowModelUpdate model str, Cmd.none )
+
+        HBHigh str ->
+            ( hbHighModelUpdate model str, Cmd.none )
 
         -- Noop
         NoOp ->
@@ -1209,13 +1220,25 @@ heartIntvModelUpdate model str =
 startHeartBeat : Model -> ( Model, Cmd Msg )
 startHeartBeat model =
     let
+        hbdd =
+            model.hbTypeDd
+
+        -- update selected hearbeat type with actual low and high values
+        newTypeDd =
+            { hbdd | selected = updateSelectedHbType model.hbLow model.hbHigh hbdd.selected }
+
         mheartbeat =
-            Maybe.map5 HeartBeat
-                model.heartUid
-                model.heartAddr
-                model.heartIntv
-                (Just False)
-                (Just model.heartId)
+            Maybe.map HeartBeat model.heartUid
+                |> andMap
+                    model.heartAddr
+                |> andMap
+                    model.heartIntv
+                |> andMap
+                    (Just False)
+                |> andMap
+                    (Just model.heartId)
+                |> andMap
+                    (Just newTypeDd.selected.value)
     in
     case mheartbeat of
         Nothing ->
@@ -1331,3 +1354,59 @@ hbCheckedModelUpdate model idx flag =
         | heartbeats = newHB
         , heartSelectSome = List.any (\hb -> hb.selected) newHB
     }
+
+
+hbTypeDropModelUpdate : Model -> Option HeartBeatType Msg -> Model
+hbTypeDropModelUpdate model opt =
+    { model
+        | hbTypeDd =
+            setDropdown
+                model.hbTypeDd
+                opt
+    }
+
+
+hbLowModelUpdate : Model -> String -> Model
+hbLowModelUpdate model str =
+    if String.isEmpty str then
+        { model | hbLow = Nothing }
+
+    else
+        case String.toInt str of
+            Nothing ->
+                model
+
+            Just t ->
+                if t < 0 || t > 65535 then
+                    model
+
+                else
+                    { model | hbLow = Just t }
+
+
+hbHighModelUpdate : Model -> String -> Model
+hbHighModelUpdate model str =
+    if String.isEmpty str then
+        { model | hbHigh = Nothing }
+
+    else
+        case String.toInt str of
+            Nothing ->
+                model
+
+            Just t ->
+                if t < 0 || t > 65535 then
+                    model
+
+                else
+                    { model | hbHigh = Just t }
+
+
+
+-- haskell's <*> for elm
+-- from https://github.com/circuithub/elm-maybe-extra/blob/master/src/Maybe/Extra.elm
+
+
+andMap : Maybe a -> Maybe (a -> b) -> Maybe b
+andMap x f =
+    x |> Maybe.andThen (\x2 -> f |> Maybe.andThen (\f2 -> Just <| f2 x2))
