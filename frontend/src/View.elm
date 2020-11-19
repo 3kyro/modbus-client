@@ -5,6 +5,7 @@ import Element
     exposing
         ( Attribute
         , Color
+        , paragraph
         , Element
         , IndexedColumn
         , alignBottom
@@ -38,7 +39,7 @@ import Element.Background as Background
 import Element.Border as Border
 import Element.Font as Font
 import Element.Input as Input
-import Heartbeat exposing (heartBeatInfoModule, heartBeatNav)
+import Heartbeat exposing (heartBeatInfoModule, heartBeatNav, hbHelpText)
 import Html exposing (Html)
 import Html.Attributes
 import ModData
@@ -153,6 +154,7 @@ left model =
         ]
         [ navigationModule model
         , manipulationModule model
+        , helpModule model
         , logoModule model
         ]
 
@@ -180,6 +182,15 @@ manipulationModule model =
         ]
     <|
         renderManModule model
+
+helpModule : Model -> Element Msg
+helpModule model =
+    el
+        [ width fill
+        , height <| fillPortion 1
+        ]
+    <|
+        renderHelpModule model
 
 
 logoModule : Model -> Element Msg
@@ -397,20 +408,33 @@ emptySpace =
 
 
 ------------------------------------------------------------------------------------------------------------------
+-- Help Module
+------------------------------------------------------------------------------------------------------------------
+
+renderHelpModule : Model -> Element Msg
+renderHelpModule model =
+    case model.activeTab of
+        HeartbeatTab ->
+            hbHelpModule model
+
+        _ ->
+            none
+hbHelpModule : Model -> Element Msg
+hbHelpModule model =
+    paragraph
+        [ alignTop
+        , Font.color lightGrey
+        ]
+        <| hbHelpText model.hbTypeDd.selected.value
+
+------------------------------------------------------------------------------------------------------------------
 -- Logo Module
 ------------------------------------------------------------------------------------------------------------------
 
 
 renderLogoModule : Model -> Element Msg
 renderLogoModule model =
-    case model.activeTab of
-        _ ->
-            simpleLogo
-
-
-simpleLogo : Element Msg
-simpleLogo =
-    column
+     column
         [ Background.color background
         , Font.color lightGrey
         , alignLeft
@@ -892,6 +916,7 @@ loadCSVButton =
         , label = text "Load CSV File"
         }
 
+
 csvLoadButtonText : Bool -> String
 csvLoadButtonText flag =
     if flag then
@@ -1074,9 +1099,13 @@ updateSelectedButton model =
         , paddingXY 0 10
         , focused []
         ]
-        { onPress = case model.connectStatus of
-            Connected -> Just <| RefreshRequest model.modDataUpdate
-            _ -> Nothing
+        { onPress =
+            case model.connectStatus of
+                Connected ->
+                    Just <| RefreshRequest model.modDataUpdate
+
+                _ ->
+                    Nothing
         , label = text "Update Selected"
         }
 

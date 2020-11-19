@@ -15915,13 +15915,8 @@ var $mdgriffith$elm_ui$Element$el = F2(
 var $mdgriffith$elm_ui$Internal$Model$AlignY = function (a) {
 	return {$: 'AlignY', a: a};
 };
-var $mdgriffith$elm_ui$Internal$Model$Bottom = {$: 'Bottom'};
-var $mdgriffith$elm_ui$Element$alignBottom = $mdgriffith$elm_ui$Internal$Model$AlignY($mdgriffith$elm_ui$Internal$Model$Bottom);
-var $mdgriffith$elm_ui$Internal$Model$AlignX = function (a) {
-	return {$: 'AlignX', a: a};
-};
-var $mdgriffith$elm_ui$Internal$Model$Left = {$: 'Left'};
-var $mdgriffith$elm_ui$Element$alignLeft = $mdgriffith$elm_ui$Internal$Model$AlignX($mdgriffith$elm_ui$Internal$Model$Left);
+var $mdgriffith$elm_ui$Internal$Model$Top = {$: 'Top'};
+var $mdgriffith$elm_ui$Element$alignTop = $mdgriffith$elm_ui$Internal$Model$AlignY($mdgriffith$elm_ui$Internal$Model$Top);
 var $mdgriffith$elm_ui$Element$Font$color = function (fontColor) {
 	return A2(
 		$mdgriffith$elm_ui$Internal$Model$StyleClass,
@@ -15932,13 +15927,35 @@ var $mdgriffith$elm_ui$Element$Font$color = function (fontColor) {
 			'color',
 			fontColor));
 };
-var $author$project$Palette$lightGrey = A3($mdgriffith$elm_ui$Element$rgb255, 122, 122, 122);
-var $mdgriffith$elm_ui$Element$Font$size = function (i) {
-	return A2(
-		$mdgriffith$elm_ui$Internal$Model$StyleClass,
-		$mdgriffith$elm_ui$Internal$Flag$fontSize,
-		$mdgriffith$elm_ui$Internal$Model$FontSize(i));
+var $author$project$Heartbeat$hbHelpText = function (hbt) {
+	switch (hbt.$) {
+		case 'Increment':
+			return _List_fromArray(
+				[
+					$mdgriffith$elm_ui$Element$text('Start a heartbeat signal that increments a value every period by one.')
+				]);
+		case 'Pulse':
+			return _List_fromArray(
+				[
+					$mdgriffith$elm_ui$Element$text('Start a heartbeat signal that pulses the same value every period.')
+				]);
+		case 'Alternate':
+			return _List_fromArray(
+				[
+					$mdgriffith$elm_ui$Element$text('Start a heartbeat signal that alternates between two values every period.')
+				]);
+		default:
+			return _List_fromArray(
+				[
+					$mdgriffith$elm_ui$Element$text('Start a heartbeat signal that increments a value every period by one. The value is always withing the specified range.')
+				]);
+	}
 };
+var $author$project$Palette$lightGrey = A3($mdgriffith$elm_ui$Element$rgb255, 122, 122, 122);
+var $mdgriffith$elm_ui$Internal$Model$Describe = function (a) {
+	return {$: 'Describe', a: a};
+};
+var $mdgriffith$elm_ui$Internal$Model$Paragraph = {$: 'Paragraph'};
 var $mdgriffith$elm_ui$Internal$Model$SpacingStyle = F3(
 	function (a, b, c) {
 		return {$: 'SpacingStyle', a: a, b: b, c: c};
@@ -15958,36 +15975,96 @@ var $mdgriffith$elm_ui$Element$spacing = function (x) {
 			x,
 			x));
 };
-var $author$project$View$simpleLogo = A2(
-	$mdgriffith$elm_ui$Element$column,
-	_List_fromArray(
-		[
-			$mdgriffith$elm_ui$Element$Background$color($author$project$Palette$background),
-			$mdgriffith$elm_ui$Element$Font$color($author$project$Palette$lightGrey),
-			$mdgriffith$elm_ui$Element$alignLeft,
-			$mdgriffith$elm_ui$Element$alignBottom,
-			$mdgriffith$elm_ui$Element$spacing(10)
-		]),
-	_List_fromArray(
-		[
+var $mdgriffith$elm_ui$Element$paragraph = F2(
+	function (attrs, children) {
+		return A4(
+			$mdgriffith$elm_ui$Internal$Model$element,
+			$mdgriffith$elm_ui$Internal$Model$asParagraph,
+			$mdgriffith$elm_ui$Internal$Model$div,
 			A2(
-			$mdgriffith$elm_ui$Element$el,
-			_List_fromArray(
-				[
-					$mdgriffith$elm_ui$Element$Font$size(15)
-				]),
-			$mdgriffith$elm_ui$Element$text('version : 0.1.0')),
-			A2(
-			$mdgriffith$elm_ui$Element$el,
-			_List_fromArray(
-				[
-					$mdgriffith$elm_ui$Element$Font$size(30)
-				]),
-			$mdgriffith$elm_ui$Element$text('Modbus Client'))
-		]));
-var $author$project$View$renderLogoModule = function (model) {
+				$elm$core$List$cons,
+				$mdgriffith$elm_ui$Internal$Model$Describe($mdgriffith$elm_ui$Internal$Model$Paragraph),
+				A2(
+					$elm$core$List$cons,
+					$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill),
+					A2(
+						$elm$core$List$cons,
+						$mdgriffith$elm_ui$Element$spacing(5),
+						attrs))),
+			$mdgriffith$elm_ui$Internal$Model$Unkeyed(children));
+	});
+var $author$project$View$hbHelpModule = function (model) {
+	return A2(
+		$mdgriffith$elm_ui$Element$paragraph,
+		_List_fromArray(
+			[
+				$mdgriffith$elm_ui$Element$alignTop,
+				$mdgriffith$elm_ui$Element$Font$color($author$project$Palette$lightGrey)
+			]),
+		$author$project$Heartbeat$hbHelpText(model.hbTypeDd.selected.value));
+};
+var $mdgriffith$elm_ui$Internal$Model$Empty = {$: 'Empty'};
+var $mdgriffith$elm_ui$Element$none = $mdgriffith$elm_ui$Internal$Model$Empty;
+var $author$project$View$renderHelpModule = function (model) {
 	var _v0 = model.activeTab;
-	return $author$project$View$simpleLogo;
+	if (_v0.$ === 'HeartbeatTab') {
+		return $author$project$View$hbHelpModule(model);
+	} else {
+		return $mdgriffith$elm_ui$Element$none;
+	}
+};
+var $author$project$View$helpModule = function (model) {
+	return A2(
+		$mdgriffith$elm_ui$Element$el,
+		_List_fromArray(
+			[
+				$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill),
+				$mdgriffith$elm_ui$Element$height(
+				$mdgriffith$elm_ui$Element$fillPortion(1))
+			]),
+		$author$project$View$renderHelpModule(model));
+};
+var $mdgriffith$elm_ui$Internal$Model$Bottom = {$: 'Bottom'};
+var $mdgriffith$elm_ui$Element$alignBottom = $mdgriffith$elm_ui$Internal$Model$AlignY($mdgriffith$elm_ui$Internal$Model$Bottom);
+var $mdgriffith$elm_ui$Internal$Model$AlignX = function (a) {
+	return {$: 'AlignX', a: a};
+};
+var $mdgriffith$elm_ui$Internal$Model$Left = {$: 'Left'};
+var $mdgriffith$elm_ui$Element$alignLeft = $mdgriffith$elm_ui$Internal$Model$AlignX($mdgriffith$elm_ui$Internal$Model$Left);
+var $mdgriffith$elm_ui$Element$Font$size = function (i) {
+	return A2(
+		$mdgriffith$elm_ui$Internal$Model$StyleClass,
+		$mdgriffith$elm_ui$Internal$Flag$fontSize,
+		$mdgriffith$elm_ui$Internal$Model$FontSize(i));
+};
+var $author$project$View$renderLogoModule = function (model) {
+	return A2(
+		$mdgriffith$elm_ui$Element$column,
+		_List_fromArray(
+			[
+				$mdgriffith$elm_ui$Element$Background$color($author$project$Palette$background),
+				$mdgriffith$elm_ui$Element$Font$color($author$project$Palette$lightGrey),
+				$mdgriffith$elm_ui$Element$alignLeft,
+				$mdgriffith$elm_ui$Element$alignBottom,
+				$mdgriffith$elm_ui$Element$spacing(10)
+			]),
+		_List_fromArray(
+			[
+				A2(
+				$mdgriffith$elm_ui$Element$el,
+				_List_fromArray(
+					[
+						$mdgriffith$elm_ui$Element$Font$size(15)
+					]),
+				$mdgriffith$elm_ui$Element$text('version : 0.1.0')),
+				A2(
+				$mdgriffith$elm_ui$Element$el,
+				_List_fromArray(
+					[
+						$mdgriffith$elm_ui$Element$Font$size(30)
+					]),
+				$mdgriffith$elm_ui$Element$text('Modbus Client'))
+			]));
 };
 var $author$project$View$logoModule = function (model) {
 	return A2(
@@ -16006,9 +16083,6 @@ var $author$project$Types$ChangeActiveConnectTab = function (a) {
 	return {$: 'ChangeActiveConnectTab', a: a};
 };
 var $mdgriffith$elm_ui$Internal$Model$Button = {$: 'Button'};
-var $mdgriffith$elm_ui$Internal$Model$Describe = function (a) {
-	return {$: 'Describe', a: a};
-};
 var $elm$html$Html$Attributes$boolProperty = F2(
 	function (key, bool) {
 		return A2(
@@ -16180,7 +16254,6 @@ var $mdgriffith$elm_ui$Internal$Model$TransformComponent = F2(
 	function (a, b) {
 		return {$: 'TransformComponent', a: a, b: b};
 	});
-var $mdgriffith$elm_ui$Internal$Model$Empty = {$: 'Empty'};
 var $elm$virtual_dom$VirtualDom$map = _VirtualDom_map;
 var $mdgriffith$elm_ui$Internal$Model$map = F2(
 	function (fn, el) {
@@ -17535,7 +17608,6 @@ var $author$project$Dropdown$renderOption = F3(
 				attributes),
 			value.element);
 	});
-var $mdgriffith$elm_ui$Element$none = $mdgriffith$elm_ui$Internal$Model$Empty;
 var $author$project$Dropdown$renderRemainingOptions = F2(
 	function (attributes, drop) {
 		return A2(
@@ -18182,6 +18254,7 @@ var $author$project$View$left = function (model) {
 			[
 				$author$project$View$navigationModule(model),
 				$author$project$View$manipulationModule(model),
+				$author$project$View$helpModule(model),
 				$author$project$View$logoModule(model)
 			]));
 };
@@ -19635,8 +19708,6 @@ var $author$project$RegisterTab$renderOutput = function (mdus) {
 var $author$project$Types$SetActiveSetting = function (a) {
 	return {$: 'SetActiveSetting', a: a};
 };
-var $mdgriffith$elm_ui$Internal$Model$Top = {$: 'Top'};
-var $mdgriffith$elm_ui$Element$alignTop = $mdgriffith$elm_ui$Internal$Model$AlignY($mdgriffith$elm_ui$Internal$Model$Top);
 var $author$project$Settings$hoverBGColor = function (settingStatus) {
 	if (settingStatus.$ === 'Active') {
 		return $author$project$Palette$darkGrey;

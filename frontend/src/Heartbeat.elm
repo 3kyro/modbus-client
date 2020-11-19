@@ -3,6 +3,7 @@ module Heartbeat exposing
     , heartBeatInfoModule
     , heartBeatNav
     , updateSelectedHbType
+    , hbHelpText
     )
 
 import Dropdown exposing (Dropdown, Option, getOption)
@@ -27,6 +28,8 @@ import Element
         , spacing
         , text
         , width
+        , paragraph
+        , alignTop
         )
 import Element.Background as Background
 import Element.Font as Font
@@ -239,6 +242,25 @@ viewCheckedCell idx selected =
     <|
         selectCheckbox (HeartbeatChecked idx) selected
 
+
+
+
+----------------------------------------------------------------------------------------------------------------------------------
+-- HeartbeatType help text
+----------------------------------------------------------------------------------------------------------------------------------
+
+
+hbHelpText : HeartbeatType -> List (Element Msg)
+hbHelpText hbt =
+    case hbt of
+        Increment ->
+            [ text "Start a heartbeat signal that increments a value every period by one."]
+        Pulse _ ->
+            [ text "Start a heartbeat signal that pulses the same value every period."]
+        Alternate _ _ ->
+            [ text "Start a heartbeat signal that alternates between two values every period."]
+        Range _ _ ->
+            [ text "Start a heartbeat signal that increments a value every period by one. The value is always withing the specified range."]
 
 
 ----------------------------------------------------------------------------------------------------------------------------------
