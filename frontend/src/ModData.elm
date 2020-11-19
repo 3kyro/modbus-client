@@ -2,7 +2,7 @@ module ModData exposing
     ( ModData
     , ModDataUpdate
     , ModValue(..)
-    , RegType(..)
+    , RegType(..), readWriteColumn
     , bitsFromString
     , decodeModData
     , decodeModDataUpdate
@@ -26,6 +26,7 @@ module ModData exposing
     , offsetMdu
     , replaceModDataSelected
     , replaceModDataWrite
+    , selectColumn
     , setModValueUpdate
     , setRegAddressUpdate
     , setRegRWUpdate
@@ -49,10 +50,13 @@ import Element
         , fillPortion
         , focused
         , height
+        , maximum
+        , minimum
         , paddingXY
         , px
         , text
         , width
+        , none
         )
 import Element.Background as Background
 import Element.Border as Border
@@ -66,14 +70,17 @@ import Palette
         ( grey
         , greyWhite
         , lightGrey
+        , blueSapphire
+        , fireBrick
         )
 import ReadWrite
     exposing
         ( ReadWrite(..)
         , decodeRW
         , encodeRW
+        , readWriteButton
+        , flipRW
         )
-
 
 
 --------------------------------------------------------------------------------------------------
@@ -279,10 +286,108 @@ offsetMdu mdu num =
         mdus
 
 
+
+----------------------------------------------------------------------------------------------------------------------------------
+-- View ModDataUpdate
+----------------------------------------------------------------------------------------------------------------------------------
+-- Column for selection checkboxes
+
+
+selectColumn : (Bool -> msg) -> Bool -> (Int -> Bool -> msg) -> IndexedColumn ModDataUpdate msg
+selectColumn selectAllmsg flag selectOnemsg =
+    { header =
+        el
+            [ height <| px 38
+            , paddingXY 10 0
+            ]
+        <|
+            selectCheckbox selectAllmsg flag
+    , width = fillPortion 1 |> maximum 30
+    , view = \i md -> viewCheckedCell selectOnemsg i md.mduSelected
+    }
+
+
+
+-- A generic checkbox
+
+
+selectCheckbox : (Bool -> msg) -> Bool -> Element msg
+selectCheckbox msg flag =
+    Input.checkbox
+        [ alignLeft
+        , centerY
+        ]
+        { onChange = msg
+        , icon = Input.defaultCheckbox
+        , checked = flag
+        , label = Input.labelHidden "Select Checkbox"
+        }
+
+
+
+-- A checkbox inside a table cell
+
+
+viewCheckedCell : (Int -> Bool -> msg) -> Int -> Bool -> Element msg
+viewCheckedCell msg idx selected =
+    el
+        [ Background.color <| tableCellColor idx
+        , Font.color greyWhite
+        , height <| px 38
+        , Font.center
+        , paddingXY 10 0
+        ]
+    <|
+        selectCheckbox (msg idx) selected
+
+
+readWriteColumn : (ReadWrite -> msg) -> ReadWrite -> (Int -> ReadWrite -> msg) -> IndexedColumn ModDataUpdate msg
+readWriteColumn rwAllmsg readwriteall rwOnemsg =
+    { header =
+        el
+            [ height <| px 38
+            , Font.color greyWhite
+            , centerX
+            , width <| fillPortion 1
+            ]
+        <|
+            readWriteButton
+                readwriteall
+                blueSapphire
+                fireBrick
+            <|
+                Just <|
+                    rwAllmsg <|
+                        flipRW readwriteall
+    , width = px 50
+    , view = \i md -> viewReadWriteModDataCell i md rwOnemsg
+    }
+
+viewReadWriteModDataCell : Int -> ModDataUpdate -> (Int -> ReadWrite -> msg) -> Element msg
+viewReadWriteModDataCell idx md msg =
+    el
+        [ Background.color <| tableCellColor idx
+        , Font.color greyWhite
+        , height <| px 38
+        , Font.center
+        ]
+    <|
+        if isWriteableReg md.mduModData.modRegType then
+            readWriteButton md.mduRW
+                blueSapphire
+                fireBrick
+            <|
+                Just <|
+                    msg idx <|
+                        flipRW md.mduRW
+
+        else
+            none
+
 modNameColumn : IndexedColumn ModDataUpdate msg
 modNameColumn =
     { header = el [ height <| px 38 ] <| el headerTextAttr <| text "Name"
-    , width = fillPortion 1
+    , width = fill |> minimum 100 |> maximum 200
     , view = \i md -> viewCell i md.mduModData.modName
     }
 
@@ -290,7 +395,7 @@ modNameColumn =
 modRegTypeColumn : IndexedColumn ModDataUpdate msg
 modRegTypeColumn =
     { header = el [ height <| px 38 ] <| el headerTextAttr <| text "Type"
-    , width = fillPortion 1
+    , width = fill |> minimum 100 |> maximum 200
     , view = \i md -> viewCell i <| showRegType md.mduModData.modRegType
     }
 
@@ -298,7 +403,7 @@ modRegTypeColumn =
 modAddressColumn : IndexedColumn ModDataUpdate msg
 modAddressColumn =
     { header = el [ height <| px 38 ] <| el headerTextAttr <| text "Address"
-    , width = fillPortion 1
+    , width = fill |> minimum 100 |> maximum 200
     , view = \i md -> viewCell i <| String.fromInt md.mduModData.modAddress
     }
 
@@ -306,7 +411,7 @@ modAddressColumn =
 modValueTypeColumn : IndexedColumn ModDataUpdate msg
 modValueTypeColumn =
     { header = el [ height <| px 38 ] <| el headerTextAttr <| text "Value Type"
-    , width = fillPortion 1
+    , width = fill |> minimum 100 |> maximum 200
     , view = \i md -> viewCell i <| getModValueType md.mduModData.modValue
     }
 
@@ -314,7 +419,7 @@ modValueTypeColumn =
 modValueColumn : Maybe (Int -> String -> msg) -> IndexedColumn ModDataUpdate msg
 modValueColumn cmd =
     { header = el [ height <| px 38 ] <| el headerTextAttr <| text "Value"
-    , width = fillPortion 2
+    , width = fill |> minimum 100 |> maximum 200
     , view = \idx md -> viewModValueColumn cmd idx md
     }
 
@@ -369,7 +474,7 @@ viewReadModValue idx md =
 modUidColumn : IndexedColumn ModDataUpdate msg
 modUidColumn =
     { header = el [ height <| px 38 ] <| el headerTextAttr <| text "Unit Id"
-    , width = fillPortion 1
+    , width = fill |> minimum 80 |> maximum 100
     , view = \i md -> viewCell i <| String.fromInt md.mduModData.modUid
     }
 
@@ -377,7 +482,7 @@ modUidColumn =
 modDescriptionColumn : IndexedColumn ModDataUpdate msg
 modDescriptionColumn =
     { header = el [ height <| px 38 ] <| el [ alignLeft, centerY ] <| text "Description"
-    , width = fillPortion 4
+    , width = fill
     , view = \i md -> viewDescCell i md.mduModData.modDescription
     }
 
@@ -581,7 +686,6 @@ decodeModValue =
             )
 
 
-
 getModValueMult : ModValue -> Int
 getModValueMult mv =
     case mv of
@@ -662,27 +766,32 @@ bitsFromString : String -> Maybe Bits
 bitsFromString str =
     let
         filtered =
-                String.filter
-                    (\c -> c == '0' || c == '1')
-                    str
+            String.filter
+                (\c -> c == '0' || c == '1')
+                str
     in
-
     if String.isEmpty filtered then
         Nothing
 
     else
         Just <|
-            Bits <| filtered
+            Bits <|
+                filtered
+
 
 decodeBits : D.Decoder Bits
 decodeBits =
     D.andThen
         (\str ->
             case bitsFromString str of
-                Nothing -> D.fail "No valid Bits"
-                Just bits -> D.succeed bits
+                Nothing ->
+                    D.fail "No valid Bits"
+
+                Just bits ->
+                    D.succeed bits
         )
         D.string
+
 
 bitsValidString : String -> Bool
 bitsValidString str =

@@ -2,4 +2,4 @@ Description;Function;Register;Data type;Value;id;Comments
 status;input register;10;Word;0;1;0 = Device stopped, 1 = Device running
 power;holding register;15;Float;;1;Power in Watts
 temp;input register;20;Float;;1;temp unscaled
-bits;holding register;22;bits;;1;bit test
+bits;holding register;22;bits;;1;bit test with a very long uncessary ddescription                                                                                                  end                                                                                                                                 more stuff here

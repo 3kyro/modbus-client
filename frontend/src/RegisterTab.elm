@@ -62,6 +62,7 @@ import Types
         ( Model
         , Msg(..)
         )
+import Element exposing (scrollbars)
 
 
 regNav : Model -> Element Msg
@@ -175,7 +176,8 @@ rwButtonText rw =
 renderOutput : List ModDataUpdate -> Element Msg
 renderOutput mdus =
     indexedTable
-        []
+        [
+        ]
         { data = mdus
         , columns = responseColumns mdus
         }

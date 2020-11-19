@@ -19246,8 +19246,35 @@ var $author$project$Types$ChangeModDataValue = F2(
 	function (a, b) {
 		return {$: 'ChangeModDataValue', a: a, b: b};
 	});
+var $author$project$Types$ModDataChecked = F2(
+	function (a, b) {
+		return {$: 'ModDataChecked', a: a, b: b};
+	});
+var $author$project$Types$ModDataWrite = F2(
+	function (a, b) {
+		return {$: 'ModDataWrite', a: a, b: b};
+	});
+var $author$project$Types$ToggleWriteAll = function (a) {
+	return {$: 'ToggleWriteAll', a: a};
+};
 var $author$project$ModData$headerTextAttr = _List_fromArray(
 	[$mdgriffith$elm_ui$Element$centerX, $mdgriffith$elm_ui$Element$centerY]);
+var $mdgriffith$elm_ui$Internal$Model$Max = F2(
+	function (a, b) {
+		return {$: 'Max', a: a, b: b};
+	});
+var $mdgriffith$elm_ui$Element$maximum = F2(
+	function (i, l) {
+		return A2($mdgriffith$elm_ui$Internal$Model$Max, i, l);
+	});
+var $mdgriffith$elm_ui$Internal$Model$Min = F2(
+	function (a, b) {
+		return {$: 'Min', a: a, b: b};
+	});
+var $mdgriffith$elm_ui$Element$minimum = F2(
+	function (i, l) {
+		return A2($mdgriffith$elm_ui$Internal$Model$Min, i, l);
+	});
 var $author$project$ModData$tableCellColor = function (idx) {
 	return (!A2($elm$core$Basics$modBy, 2, idx)) ? $author$project$Palette$lightGrey : $author$project$Palette$grey;
 };
@@ -19289,7 +19316,10 @@ var $author$project$ModData$modAddressColumn = {
 				i,
 				$elm$core$String$fromInt(md.mduModData.modAddress));
 		}),
-	width: $mdgriffith$elm_ui$Element$fillPortion(1)
+	width: A2(
+		$mdgriffith$elm_ui$Element$maximum,
+		200,
+		A2($mdgriffith$elm_ui$Element$minimum, 100, $mdgriffith$elm_ui$Element$fill))
 };
 var $author$project$ModData$viewDescCell = F2(
 	function (idx, str) {
@@ -19327,7 +19357,7 @@ var $author$project$ModData$modDescriptionColumn = {
 		function (i, md) {
 			return A2($author$project$ModData$viewDescCell, i, md.mduModData.modDescription);
 		}),
-	width: $mdgriffith$elm_ui$Element$fillPortion(4)
+	width: $mdgriffith$elm_ui$Element$fill
 };
 var $author$project$ModData$modNameColumn = {
 	header: A2(
@@ -19345,7 +19375,10 @@ var $author$project$ModData$modNameColumn = {
 		function (i, md) {
 			return A2($author$project$ModData$viewCell, i, md.mduModData.modName);
 		}),
-	width: $mdgriffith$elm_ui$Element$fillPortion(1)
+	width: A2(
+		$mdgriffith$elm_ui$Element$maximum,
+		200,
+		A2($mdgriffith$elm_ui$Element$minimum, 100, $mdgriffith$elm_ui$Element$fill))
 };
 var $author$project$ModData$showRegType = function (rt) {
 	if (rt.$ === 'InputRegister') {
@@ -19373,7 +19406,10 @@ var $author$project$ModData$modRegTypeColumn = {
 				i,
 				$author$project$ModData$showRegType(md.mduModData.modRegType));
 		}),
-	width: $mdgriffith$elm_ui$Element$fillPortion(1)
+	width: A2(
+		$mdgriffith$elm_ui$Element$maximum,
+		200,
+		A2($mdgriffith$elm_ui$Element$minimum, 100, $mdgriffith$elm_ui$Element$fill))
 };
 var $author$project$ModData$modUidColumn = {
 	header: A2(
@@ -19394,7 +19430,10 @@ var $author$project$ModData$modUidColumn = {
 				i,
 				$elm$core$String$fromInt(md.mduModData.modUid));
 		}),
-	width: $mdgriffith$elm_ui$Element$fillPortion(1)
+	width: A2(
+		$mdgriffith$elm_ui$Element$maximum,
+		100,
+		A2($mdgriffith$elm_ui$Element$minimum, 80, $mdgriffith$elm_ui$Element$fill))
 };
 var $author$project$ModData$viewReadModValue = F2(
 	function (idx, md) {
@@ -19471,7 +19510,10 @@ var $author$project$ModData$modValueColumn = function (cmd) {
 			function (idx, md) {
 				return A3($author$project$ModData$viewModValueColumn, cmd, idx, md);
 			}),
-		width: $mdgriffith$elm_ui$Element$fillPortion(2)
+		width: A2(
+			$mdgriffith$elm_ui$Element$maximum,
+			200,
+			A2($mdgriffith$elm_ui$Element$minimum, 100, $mdgriffith$elm_ui$Element$fill))
 	};
 };
 var $author$project$ModData$getModValueType = function (mv) {
@@ -19503,10 +19545,10 @@ var $author$project$ModData$modValueTypeColumn = {
 				i,
 				$author$project$ModData$getModValueType(md.mduModData.modValue));
 		}),
-	width: $mdgriffith$elm_ui$Element$fillPortion(1)
-};
-var $author$project$Types$ToggleWriteAll = function (a) {
-	return {$: 'ToggleWriteAll', a: a};
+	width: A2(
+		$mdgriffith$elm_ui$Element$maximum,
+		200,
+		A2($mdgriffith$elm_ui$Element$minimum, 100, $mdgriffith$elm_ui$Element$fill))
 };
 var $author$project$ReadWrite$readWriteButtonText = function (rw) {
 	if (rw.$ === 'Read') {
@@ -19541,12 +19583,8 @@ var $author$project$ReadWrite$readWriteButton = F4(
 				onPress: msg
 			});
 	});
-var $author$project$Types$ModDataWrite = F2(
-	function (a, b) {
-		return {$: 'ModDataWrite', a: a, b: b};
-	});
-var $author$project$View$viewReadWriteModDataCell = F2(
-	function (idx, md) {
+var $author$project$ModData$viewReadWriteModDataCell = F3(
+	function (idx, md, msg) {
 		return A2(
 			$mdgriffith$elm_ui$Element$el,
 			_List_fromArray(
@@ -19565,46 +19603,40 @@ var $author$project$View$viewReadWriteModDataCell = F2(
 				$author$project$Palette$fireBrick,
 				$elm$core$Maybe$Just(
 					A2(
-						$author$project$Types$ModDataWrite,
+						msg,
 						idx,
 						$author$project$ReadWrite$flipRW(md.mduRW)))) : $mdgriffith$elm_ui$Element$none);
 	});
-var $author$project$View$viewReadWriteCell = F3(
-	function (model, idx, md) {
-		var _v0 = model.activeTab;
-		if (_v0.$ === 'ModDataTab') {
-			return A2($author$project$View$viewReadWriteModDataCell, idx, md);
-		} else {
-			return $mdgriffith$elm_ui$Element$none;
-		}
+var $author$project$ModData$readWriteColumn = F3(
+	function (rwAllmsg, readwriteall, rwOnemsg) {
+		return {
+			header: A2(
+				$mdgriffith$elm_ui$Element$el,
+				_List_fromArray(
+					[
+						$mdgriffith$elm_ui$Element$height(
+						$mdgriffith$elm_ui$Element$px(38)),
+						$mdgriffith$elm_ui$Element$Font$color($author$project$Palette$greyWhite),
+						$mdgriffith$elm_ui$Element$centerX,
+						$mdgriffith$elm_ui$Element$width(
+						$mdgriffith$elm_ui$Element$fillPortion(1))
+					]),
+				A4(
+					$author$project$ReadWrite$readWriteButton,
+					readwriteall,
+					$author$project$Palette$blueSapphire,
+					$author$project$Palette$fireBrick,
+					$elm$core$Maybe$Just(
+						rwAllmsg(
+							$author$project$ReadWrite$flipRW(readwriteall))))),
+			view: F2(
+				function (i, md) {
+					return A3($author$project$ModData$viewReadWriteModDataCell, i, md, rwOnemsg);
+				}),
+			width: $mdgriffith$elm_ui$Element$px(50)
+		};
 	});
-var $author$project$View$readWriteColumn = function (model) {
-	return {
-		header: A2(
-			$mdgriffith$elm_ui$Element$el,
-			_List_fromArray(
-				[
-					$mdgriffith$elm_ui$Element$height(
-					$mdgriffith$elm_ui$Element$px(38)),
-					$mdgriffith$elm_ui$Element$Font$color($author$project$Palette$greyWhite),
-					$mdgriffith$elm_ui$Element$centerX
-				]),
-			A4(
-				$author$project$ReadWrite$readWriteButton,
-				model.readWriteAll,
-				$author$project$Palette$blueSapphire,
-				$author$project$Palette$fireBrick,
-				$elm$core$Maybe$Just(
-					$author$project$Types$ToggleWriteAll(
-						$author$project$ReadWrite$flipRW(model.readWriteAll))))),
-		view: F2(
-			function (i, md) {
-				return A3($author$project$View$viewReadWriteCell, model, i, md);
-			}),
-		width: $mdgriffith$elm_ui$Element$px(50)
-	};
-};
-var $author$project$View$selectCheckbox = F2(
+var $author$project$ModData$selectCheckbox = F2(
 	function (msg, flag) {
 		return A2(
 			$mdgriffith$elm_ui$Element$Input$checkbox,
@@ -19617,12 +19649,8 @@ var $author$project$View$selectCheckbox = F2(
 				onChange: msg
 			});
 	});
-var $author$project$Types$ModDataChecked = F2(
-	function (a, b) {
-		return {$: 'ModDataChecked', a: a, b: b};
-	});
-var $author$project$View$viewCheckedCell = F2(
-	function (idx, selected) {
+var $author$project$ModData$viewCheckedCell = F3(
+	function (msg, idx, selected) {
 		return A2(
 			$mdgriffith$elm_ui$Element$el,
 			_List_fromArray(
@@ -19636,33 +19664,37 @@ var $author$project$View$viewCheckedCell = F2(
 					A2($mdgriffith$elm_ui$Element$paddingXY, 10, 0)
 				]),
 			A2(
-				$author$project$View$selectCheckbox,
-				$author$project$Types$ModDataChecked(idx),
+				$author$project$ModData$selectCheckbox,
+				msg(idx),
 				selected));
 	});
-var $author$project$View$selectColumn = function (model) {
-	return {
-		header: A2(
-			$mdgriffith$elm_ui$Element$el,
-			_List_fromArray(
-				[
-					$mdgriffith$elm_ui$Element$height(
-					$mdgriffith$elm_ui$Element$px(38)),
-					A2($mdgriffith$elm_ui$Element$paddingXY, 10, 0)
-				]),
-			A2($author$project$View$selectCheckbox, $author$project$Types$SelectAllChecked, model.selectAllCheckbox)),
-		view: F2(
-			function (i, md) {
-				return A2($author$project$View$viewCheckedCell, i, md.mduSelected);
-			}),
-		width: $mdgriffith$elm_ui$Element$px(30)
-	};
-};
+var $author$project$ModData$selectColumn = F3(
+	function (selectAllmsg, flag, selectOnemsg) {
+		return {
+			header: A2(
+				$mdgriffith$elm_ui$Element$el,
+				_List_fromArray(
+					[
+						$mdgriffith$elm_ui$Element$height(
+						$mdgriffith$elm_ui$Element$px(38)),
+						A2($mdgriffith$elm_ui$Element$paddingXY, 10, 0)
+					]),
+				A2($author$project$ModData$selectCheckbox, selectAllmsg, flag)),
+			view: F2(
+				function (i, md) {
+					return A3($author$project$ModData$viewCheckedCell, selectOnemsg, i, md.mduSelected);
+				}),
+			width: A2(
+				$mdgriffith$elm_ui$Element$maximum,
+				30,
+				$mdgriffith$elm_ui$Element$fillPortion(1))
+		};
+	});
 var $author$project$View$modDataColumns = function (model) {
 	return _List_fromArray(
 		[
-			$author$project$View$selectColumn(model),
-			$author$project$View$readWriteColumn(model),
+			A3($author$project$ModData$selectColumn, $author$project$Types$SelectAllChecked, model.selectAllCheckbox, $author$project$Types$ModDataChecked),
+			A3($author$project$ModData$readWriteColumn, $author$project$Types$ToggleWriteAll, model.readWriteAll, $author$project$Types$ModDataWrite),
 			$author$project$ModData$modNameColumn,
 			$author$project$ModData$modRegTypeColumn,
 			$author$project$ModData$modAddressColumn,
@@ -19681,8 +19713,7 @@ var $author$project$View$newRegisterTab = F2(
 				[
 					$mdgriffith$elm_ui$Element$Background$color($author$project$Palette$grey),
 					$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill),
-					$mdgriffith$elm_ui$Element$height($mdgriffith$elm_ui$Element$fill),
-					$mdgriffith$elm_ui$Element$Font$center
+					$mdgriffith$elm_ui$Element$height($mdgriffith$elm_ui$Element$fill)
 				]),
 			{columns: cl, data: dt});
 	});
@@ -20273,6 +20304,7 @@ var $author$project$View$renderInfoModule = function (model) {
 			return $author$project$Heartbeat$heartBeatInfoModule(model);
 	}
 };
+var $mdgriffith$elm_ui$Element$scrollbarX = A2($mdgriffith$elm_ui$Internal$Model$Class, $mdgriffith$elm_ui$Internal$Flag$overflow, $mdgriffith$elm_ui$Internal$Style$classes.scrollbarsX);
 var $author$project$View$infoModule = function (model) {
 	return A2(
 		$mdgriffith$elm_ui$Element$el,
@@ -20281,7 +20313,9 @@ var $author$project$View$infoModule = function (model) {
 				$mdgriffith$elm_ui$Element$Background$color($author$project$Palette$grey),
 				$mdgriffith$elm_ui$Element$width(
 				$mdgriffith$elm_ui$Element$fillPortion(4)),
-				$mdgriffith$elm_ui$Element$height($mdgriffith$elm_ui$Element$fill)
+				$mdgriffith$elm_ui$Element$height($mdgriffith$elm_ui$Element$fill),
+				$mdgriffith$elm_ui$Element$scrollbarX,
+				$mdgriffith$elm_ui$Element$scrollbarY
 			]),
 		$author$project$View$renderInfoModule(model));
 };
@@ -20296,7 +20330,8 @@ var $author$project$View$mainModule = function (model) {
 				$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill),
 				$mdgriffith$elm_ui$Element$height($mdgriffith$elm_ui$Element$fill),
 				$mdgriffith$elm_ui$Element$padding(50),
-				$mdgriffith$elm_ui$Element$spacing(50)
+				$mdgriffith$elm_ui$Element$spacing(50),
+				$mdgriffith$elm_ui$Element$scrollbarY
 			]),
 		_List_fromArray(
 			[
@@ -20621,7 +20656,8 @@ var $author$project$View$page = function (model) {
 		_List_fromArray(
 			[
 				$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill),
-				$mdgriffith$elm_ui$Element$height($mdgriffith$elm_ui$Element$fill)
+				$mdgriffith$elm_ui$Element$height($mdgriffith$elm_ui$Element$fill),
+				$mdgriffith$elm_ui$Element$scrollbarY
 			]),
 		_List_fromArray(
 			[

@@ -5,7 +5,6 @@ import Element
     exposing
         ( Attribute
         , Color
-        , paragraph
         , Element
         , IndexedColumn
         , alignBottom
@@ -28,9 +27,12 @@ import Element
         , none
         , padding
         , paddingXY
+        , paragraph
         , px
         , rotate
         , row
+        , scrollbars
+        , scrollbarY
         , spacing
         , text
         , width
@@ -39,7 +41,7 @@ import Element.Background as Background
 import Element.Border as Border
 import Element.Font as Font
 import Element.Input as Input
-import Heartbeat exposing (heartBeatInfoModule, heartBeatNav, hbHelpText)
+import Heartbeat exposing (hbHelpText, heartBeatInfoModule, heartBeatNav)
 import Html exposing (Html)
 import Html.Attributes
 import ModData
@@ -57,6 +59,8 @@ import ModData
         , modUidColumn
         , modValueColumn
         , modValueTypeColumn
+        , readWriteColumn
+        , selectColumn
         , showRegType
         , tableCellColor
         )
@@ -107,6 +111,7 @@ import Types.IpAddress
         , IpAddressByte(..)
         , showIpAddressByte
         )
+import Element exposing (scrollbarX)
 
 
 view : Model -> Html Msg
@@ -126,6 +131,7 @@ page model =
     column
         [ width fill
         , height fill
+        , scrollbarY
         ]
         [ mainModule model
         , notifications model
@@ -139,6 +145,7 @@ mainModule model =
         , height fill
         , padding 50
         , spacing 50
+        , scrollbarY
         ]
         [ left model
         , right model
@@ -183,6 +190,7 @@ manipulationModule model =
     <|
         renderManModule model
 
+
 helpModule : Model -> Element Msg
 helpModule model =
     el
@@ -210,6 +218,8 @@ infoModule model =
         [ Background.color grey
         , width <| fillPortion 4
         , height fill
+        , scrollbarX
+        , scrollbarY
         ]
     <|
         renderInfoModule model
@@ -411,6 +421,7 @@ emptySpace =
 -- Help Module
 ------------------------------------------------------------------------------------------------------------------
 
+
 renderHelpModule : Model -> Element Msg
 renderHelpModule model =
     case model.activeTab of
@@ -419,13 +430,18 @@ renderHelpModule model =
 
         _ ->
             none
+
+
 hbHelpModule : Model -> Element Msg
 hbHelpModule model =
     paragraph
         [ alignTop
         , Font.color lightGrey
         ]
-        <| hbHelpText model.hbTypeDd.selected.value
+    <|
+        hbHelpText model.hbTypeDd.selected.value
+
+
 
 ------------------------------------------------------------------------------------------------------------------
 -- Logo Module
@@ -434,7 +450,7 @@ hbHelpModule model =
 
 renderLogoModule : Model -> Element Msg
 renderLogoModule model =
-     column
+    column
         [ Background.color background
         , Font.color lightGrey
         , alignLeft
@@ -952,7 +968,6 @@ newRegisterTab dt cl =
         [ Background.color grey
         , width fill
         , height fill
-        , Font.center
         ]
         { data = dt
         , columns = cl
@@ -961,8 +976,8 @@ newRegisterTab dt cl =
 
 modDataColumns : Model -> List (IndexedColumn ModDataUpdate Msg)
 modDataColumns model =
-    [ selectColumn model
-    , readWriteColumn model
+    [ selectColumn SelectAllChecked model.selectAllCheckbox ModDataChecked
+    , readWriteColumn ToggleWriteAll model.readWriteAll ModDataWrite
     , modNameColumn
     , modRegTypeColumn
     , modAddressColumn
@@ -971,100 +986,6 @@ modDataColumns model =
     , modUidColumn
     , modDescriptionColumn
     ]
-
-
-readWriteColumn : Model -> IndexedColumn ModDataUpdate Msg
-readWriteColumn model =
-    { header =
-        el
-            [ height <| px 38
-            , Font.color greyWhite
-            , centerX
-            ]
-        <|
-            readWriteButton
-                model.readWriteAll
-                blueSapphire
-                fireBrick
-            <|
-                Just <|
-                    ToggleWriteAll <|
-                        flipRW model.readWriteAll
-    , width = px 50
-    , view = \i md -> viewReadWriteCell model i md
-    }
-
-
-selectColumn : Model -> IndexedColumn ModDataUpdate Msg
-selectColumn model =
-    { header =
-        el
-            [ height <| px 38
-            , paddingXY 10 0
-            ]
-        <|
-            selectCheckbox SelectAllChecked model.selectAllCheckbox
-    , width = px 30
-    , view = \i md -> viewCheckedCell i md.mduSelected
-    }
-
-
-selectCheckbox : (Bool -> Msg) -> Bool -> Element Msg
-selectCheckbox msg flag =
-    Input.checkbox
-        [ alignLeft
-        , centerY
-        ]
-        { onChange = msg
-        , icon = Input.defaultCheckbox
-        , checked = flag
-        , label = Input.labelHidden "Select Checkbox"
-        }
-
-
-viewCheckedCell : Int -> Bool -> Element Msg
-viewCheckedCell idx selected =
-    el
-        [ Background.color <| tableCellColor idx
-        , Font.color greyWhite
-        , height <| px 38
-        , Font.center
-        , paddingXY 10 0
-        ]
-    <|
-        selectCheckbox (ModDataChecked idx) selected
-
-
-viewReadWriteCell : Model -> Int -> ModDataUpdate -> Element Msg
-viewReadWriteCell model idx md =
-    case model.activeTab of
-        ModDataTab ->
-            viewReadWriteModDataCell idx md
-
-        _ ->
-            none
-
-
-viewReadWriteModDataCell : Int -> ModDataUpdate -> Element Msg
-viewReadWriteModDataCell idx md =
-    el
-        [ Background.color <| tableCellColor idx
-        , Font.color greyWhite
-        , height <| px 38
-        , Font.center
-        ]
-    <|
-        if isWriteableReg md.mduModData.modRegType then
-            readWriteButton md.mduRW
-                blueSapphire
-                fireBrick
-            <|
-                Just <|
-                    ModDataWrite idx <|
-                        flipRW md.mduRW
-
-        else
-            none
 
 
 registersTab : Model -> Element Msg
