@@ -1,5 +1,6 @@
 module View exposing (view)
 
+import Deque exposing (isEmpty)
 import Dropdown exposing (..)
 import Element
     exposing
@@ -31,8 +32,9 @@ import Element
         , px
         , rotate
         , row
-        , scrollbars
+        , scrollbarX
         , scrollbarY
+        , scrollbars
         , spacing
         , text
         , width
@@ -111,7 +113,6 @@ import Types.IpAddress
         , IpAddressByte(..)
         , showIpAddressByte
         )
-import Element exposing (scrollbarX)
 
 
 view : Model -> Html Msg
@@ -475,10 +476,18 @@ renderInfoModule model =
             connectIsland model
 
         RegistersTab ->
-            renderOutput model.regResponse
+            if List.isEmpty model.regResponse then
+                none
+
+            else
+                renderOutput model.regResponse
 
         ModDataTab ->
-            newRegisterTab model.modDataUpdate <| modDataColumns model
+            if List.isEmpty model.modDataUpdate then
+                none
+
+            else
+                newRegisterTab model.modDataUpdate <| modDataColumns model
 
         SettingsTab ->
             settingsTab model

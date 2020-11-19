@@ -20292,9 +20292,9 @@ var $author$project$View$renderInfoModule = function (model) {
 		case 'ConnectMenu':
 			return $author$project$View$connectIsland(model);
 		case 'RegistersTab':
-			return $author$project$RegisterTab$renderOutput(model.regResponse);
+			return $elm$core$List$isEmpty(model.regResponse) ? $mdgriffith$elm_ui$Element$none : $author$project$RegisterTab$renderOutput(model.regResponse);
 		case 'ModDataTab':
-			return A2(
+			return $elm$core$List$isEmpty(model.modDataUpdate) ? $mdgriffith$elm_ui$Element$none : A2(
 				$author$project$View$newRegisterTab,
 				model.modDataUpdate,
 				$author$project$View$modDataColumns(model));
