@@ -2,7 +2,7 @@ module ModData exposing
     ( ModData
     , ModDataUpdate
     , ModValue(..)
-    , RegType(..), readWriteColumn
+    , RegType(..), modEmptyColumn, readWriteColumn
     , bitsFromString
     , decodeModData
     , decodeModDataUpdate
@@ -496,6 +496,24 @@ viewDescCell idx str =
         , Font.center
         ]
         (el [ alignLeft, centerY ] <| text str)
+
+-- Hack to fill empty space in a ModDataYpdate table
+modEmptyColumn : IndexedColumn ModDataUpdate msg
+modEmptyColumn =
+    { header = el [ height <| px 38 ] <| el headerTextAttr <| text ""
+    , width = fill
+    , view = \i md -> viewEmptyColumn i
+    }
+
+viewEmptyColumn : Int -> Element msg
+viewEmptyColumn idx =
+    el
+        [ Background.color <| tableCellColor idx
+        , Font.color greyWhite
+        , height <| px 38
+        , Font.center
+        ]
+        (el [ alignLeft, centerY ] <| text " ")
 
 
 headerTextAttr : List (Attribute msg)

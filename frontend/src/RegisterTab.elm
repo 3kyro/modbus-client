@@ -43,6 +43,7 @@ import ModData
         , modUidColumn
         , modValueColumn
         , modValueTypeColumn
+        , modEmptyColumn
         )
 import NavigationModule
     exposing
@@ -190,4 +191,5 @@ responseColumns mdus =
     , modValueTypeColumn
     , modValueColumn Nothing
     , modUidColumn
+    , modEmptyColumn
     ]

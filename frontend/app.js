@@ -19717,6 +19717,42 @@ var $author$project$View$newRegisterTab = F2(
 				]),
 			{columns: cl, data: dt});
 	});
+var $author$project$ModData$viewEmptyColumn = function (idx) {
+	return A2(
+		$mdgriffith$elm_ui$Element$el,
+		_List_fromArray(
+			[
+				$mdgriffith$elm_ui$Element$Background$color(
+				$author$project$ModData$tableCellColor(idx)),
+				$mdgriffith$elm_ui$Element$Font$color($author$project$Palette$greyWhite),
+				$mdgriffith$elm_ui$Element$height(
+				$mdgriffith$elm_ui$Element$px(38)),
+				$mdgriffith$elm_ui$Element$Font$center
+			]),
+		A2(
+			$mdgriffith$elm_ui$Element$el,
+			_List_fromArray(
+				[$mdgriffith$elm_ui$Element$alignLeft, $mdgriffith$elm_ui$Element$centerY]),
+			$mdgriffith$elm_ui$Element$text(' ')));
+};
+var $author$project$ModData$modEmptyColumn = {
+	header: A2(
+		$mdgriffith$elm_ui$Element$el,
+		_List_fromArray(
+			[
+				$mdgriffith$elm_ui$Element$height(
+				$mdgriffith$elm_ui$Element$px(38))
+			]),
+		A2(
+			$mdgriffith$elm_ui$Element$el,
+			$author$project$ModData$headerTextAttr,
+			$mdgriffith$elm_ui$Element$text(''))),
+	view: F2(
+		function (i, md) {
+			return $author$project$ModData$viewEmptyColumn(i);
+		}),
+	width: $mdgriffith$elm_ui$Element$fill
+};
 var $author$project$RegisterTab$responseColumns = function (mdus) {
 	return _List_fromArray(
 		[
@@ -19724,7 +19760,8 @@ var $author$project$RegisterTab$responseColumns = function (mdus) {
 			$author$project$ModData$modAddressColumn,
 			$author$project$ModData$modValueTypeColumn,
 			$author$project$ModData$modValueColumn($elm$core$Maybe$Nothing),
-			$author$project$ModData$modUidColumn
+			$author$project$ModData$modUidColumn,
+			$author$project$ModData$modEmptyColumn
 		]);
 };
 var $author$project$RegisterTab$renderOutput = function (mdus) {
