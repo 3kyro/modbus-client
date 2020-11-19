@@ -45,6 +45,7 @@ import Types
         , HeartBeatType(..)
         , Model
         , Msg(..)
+        , getHbTypeLabel
         )
 
 
@@ -139,6 +140,7 @@ heartbeatColumns model =
     , uidColumn
     , addressColumn
     , intervalColumn
+    , typeColumn
     ]
 
 
@@ -146,7 +148,7 @@ uidColumn : IndexedColumn HeartBeat Msg
 uidColumn =
     { header = el [ height <| px 38 ] <| el headerTextAttr <| text "Unit Id"
     , width = fillPortion 1
-    , view = \i md -> viewCell i <| String.fromInt md.uid
+    , view = \i hb -> viewCell i <| String.fromInt hb.uid
     }
 
 
@@ -154,7 +156,7 @@ addressColumn : IndexedColumn HeartBeat Msg
 addressColumn =
     { header = el [ height <| px 38 ] <| el headerTextAttr <| text "Address"
     , width = fillPortion 1
-    , view = \i md -> viewCell i <| String.fromInt md.address
+    , view = \i hb -> viewCell i <| String.fromInt hb.address
     }
 
 
@@ -162,7 +164,14 @@ intervalColumn : IndexedColumn HeartBeat Msg
 intervalColumn =
     { header = el [ height <| px 38 ] <| el headerTextAttr <| text "Interval"
     , width = fillPortion 1
-    , view = \i md -> viewCell i <| String.fromInt md.interval
+    , view = \i hb -> viewCell i <| String.fromInt hb.interval
+    }
+
+typeColumn : IndexedColumn HeartBeat Msg
+typeColumn =
+    { header = el [ height <| px 38 ] <| el headerTextAttr <| text "Type"
+    , width = fillPortion 1
+    , view = \i hb -> viewCell i <| getHbTypeLabel hb.hbType
     }
 
 

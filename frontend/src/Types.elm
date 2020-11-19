@@ -29,6 +29,7 @@ module Types exposing
     , encodeTCPConnectionRequest
     , encodeWordOrder
     , fromIdList
+    , getHbTypeLabel
     , getSelectedIds
     , replaceHeartBeatSelected
     , retractDropdowns
@@ -839,6 +840,26 @@ decodeHeartBeatType =
                     _ ->
                         D.fail "Not a valid HeartBeatType"
             )
+
+
+getHbTypeLabel : HeartBeatType -> String
+getHbTypeLabel hbt =
+    case hbt of
+        Increment ->
+            "Increment"
+
+        Pulse value ->
+            "Pulse (" ++ String.fromInt value ++ ")"
+
+        Alternate low high ->
+            "Alternate (" ++ String.fromInt low ++ ", " ++ String.fromInt high ++ ")"
+
+        Range low high ->
+            if low <= high then
+                "Range (" ++ String.fromInt low ++ ", " ++ String.fromInt high ++ ")"
+
+            else
+                "Range (" ++ String.fromInt high ++ ", " ++ String.fromInt low ++ ")"
 
 
 

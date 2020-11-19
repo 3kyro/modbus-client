@@ -18634,11 +18634,11 @@ var $author$project$HeartBeat$addressColumn = {
 			$author$project$HeartBeat$headerTextAttr,
 			$mdgriffith$elm_ui$Element$text('Address'))),
 	view: F2(
-		function (i, md) {
+		function (i, hb) {
 			return A2(
 				$author$project$HeartBeat$viewCell,
 				i,
-				$elm$core$String$fromInt(md.address));
+				$elm$core$String$fromInt(hb.address));
 		}),
 	width: $mdgriffith$elm_ui$Element$fillPortion(1)
 };
@@ -18655,11 +18655,11 @@ var $author$project$HeartBeat$intervalColumn = {
 			$author$project$HeartBeat$headerTextAttr,
 			$mdgriffith$elm_ui$Element$text('Interval'))),
 	view: F2(
-		function (i, md) {
+		function (i, hb) {
 			return A2(
 				$author$project$HeartBeat$viewCell,
 				i,
-				$elm$core$String$fromInt(md.interval));
+				$elm$core$String$fromInt(hb.interval));
 		}),
 	width: $mdgriffith$elm_ui$Element$fillPortion(1)
 };
@@ -18888,6 +18888,44 @@ var $author$project$HeartBeat$selectColumn = function (model) {
 		width: $mdgriffith$elm_ui$Element$px(30)
 	};
 };
+var $author$project$Types$getHbTypeLabel = function (hbt) {
+	switch (hbt.$) {
+		case 'Increment':
+			return 'Increment';
+		case 'Pulse':
+			var value = hbt.a;
+			return 'Pulse (' + ($elm$core$String$fromInt(value) + ')');
+		case 'Alternate':
+			var low = hbt.a;
+			var high = hbt.b;
+			return 'Alternate (' + ($elm$core$String$fromInt(low) + (', ' + ($elm$core$String$fromInt(high) + ')')));
+		default:
+			var low = hbt.a;
+			var high = hbt.b;
+			return 'Range (' + ($elm$core$String$fromInt(low) + (', ' + ($elm$core$String$fromInt(high) + ')')));
+	}
+};
+var $author$project$HeartBeat$typeColumn = {
+	header: A2(
+		$mdgriffith$elm_ui$Element$el,
+		_List_fromArray(
+			[
+				$mdgriffith$elm_ui$Element$height(
+				$mdgriffith$elm_ui$Element$px(38))
+			]),
+		A2(
+			$mdgriffith$elm_ui$Element$el,
+			$author$project$HeartBeat$headerTextAttr,
+			$mdgriffith$elm_ui$Element$text('Type'))),
+	view: F2(
+		function (i, hb) {
+			return A2(
+				$author$project$HeartBeat$viewCell,
+				i,
+				$author$project$Types$getHbTypeLabel(hb.hbType));
+		}),
+	width: $mdgriffith$elm_ui$Element$fillPortion(1)
+};
 var $author$project$HeartBeat$uidColumn = {
 	header: A2(
 		$mdgriffith$elm_ui$Element$el,
@@ -18901,11 +18939,11 @@ var $author$project$HeartBeat$uidColumn = {
 			$author$project$HeartBeat$headerTextAttr,
 			$mdgriffith$elm_ui$Element$text('Unit Id'))),
 	view: F2(
-		function (i, md) {
+		function (i, hb) {
 			return A2(
 				$author$project$HeartBeat$viewCell,
 				i,
-				$elm$core$String$fromInt(md.uid));
+				$elm$core$String$fromInt(hb.uid));
 		}),
 	width: $mdgriffith$elm_ui$Element$fillPortion(1)
 };
@@ -18915,7 +18953,8 @@ var $author$project$HeartBeat$heartbeatColumns = function (model) {
 			$author$project$HeartBeat$selectColumn(model),
 			$author$project$HeartBeat$uidColumn,
 			$author$project$HeartBeat$addressColumn,
-			$author$project$HeartBeat$intervalColumn
+			$author$project$HeartBeat$intervalColumn,
+			$author$project$HeartBeat$typeColumn
 		]);
 };
 var $mdgriffith$elm_ui$Element$InternalIndexedColumn = function (a) {
