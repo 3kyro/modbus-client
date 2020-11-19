@@ -7453,6 +7453,7 @@ var $author$project$Types$retractDropdowns = function (model) {
 		model,
 		{
 			baudrateDd: $author$project$Dropdown$retract(model.baudrateDd),
+			hbTypeDd: $author$project$Dropdown$retract(model.hbTypeDd),
 			parityDd: $author$project$Dropdown$retract(model.parityDd),
 			regModValueDd: $author$project$Dropdown$retract(model.regModValueDd),
 			regTypeDd: $author$project$Dropdown$retract(model.regTypeDd),
@@ -7504,6 +7505,9 @@ var $author$project$Types$IpAddress$setIpAddressByte = F3(
 					{b3: mint});
 		}
 	});
+var $author$project$Update$validByte = function (_int) {
+	return ((_int < 0) || (_int > 255)) ? $elm$core$Maybe$Nothing : $elm$core$Maybe$Just(_int);
+};
 var $author$project$Update$changeIpAddressModelUpdate = F3(
 	function (model, _byte, str) {
 		if ($elm$core$String$isEmpty(str)) {
@@ -7513,12 +7517,15 @@ var $author$project$Update$changeIpAddressModelUpdate = F3(
 					ipAddress: A3($author$project$Types$IpAddress$setIpAddressByte, _byte, model.ipAddress, $elm$core$Maybe$Nothing)
 				});
 		} else {
-			var _v0 = $elm$core$String$toInt(str);
+			var _v0 = A2(
+				$elm$core$Maybe$andThen,
+				$author$project$Update$validByte,
+				$elm$core$String$toInt(str));
 			if (_v0.$ === 'Nothing') {
 				return model;
 			} else {
 				var b = _v0.a;
-				return ((b < 0) || (b > 255)) ? model : _Utils_update(
+				return _Utils_update(
 					model,
 					{
 						ipAddress: A3(
@@ -7646,7 +7653,6 @@ var $elm$core$Array$set = F3(
 var $author$project$Update$changeModDataValueModelUpdate = F3(
 	function (model, idx, str) {
 		var arrMDU = $elm$core$Array$fromList(model.modDataUpdate);
-		var maybeMDU = A2($elm$core$Array$get, idx, arrMDU);
 		var newMaybeMd = A2(
 			$elm$core$Maybe$map,
 			function (mdu) {
@@ -7656,7 +7662,7 @@ var $author$project$Update$changeModDataValueModelUpdate = F3(
 						mduModData: A2($author$project$ModData$fromModValueInput, mdu.mduModData, str)
 					});
 			},
-			maybeMDU);
+			A2($elm$core$Array$get, idx, arrMDU));
 		if (newMaybeMd.$ === 'Nothing') {
 			return model;
 		} else {
@@ -7690,6 +7696,9 @@ var $author$project$Notifications$changeNotificationState = F2(
 		};
 		return A2($elm$core$List$map, fun, nots);
 	});
+var $author$project$Update$validWord16 = function (_int) {
+	return ((_int < 0) || (_int > 65535)) ? $elm$core$Maybe$Nothing : $elm$core$Maybe$Just(_int);
+};
 var $author$project$Update$changePortModelUpdate = F2(
 	function (model, str) {
 		if ($elm$core$String$isEmpty(str)) {
@@ -7697,12 +7706,15 @@ var $author$project$Update$changePortModelUpdate = F2(
 				model,
 				{socketPort: $elm$core$Maybe$Nothing});
 		} else {
-			var _v0 = $elm$core$String$toInt(str);
+			var _v0 = A2(
+				$elm$core$Maybe$andThen,
+				$author$project$Update$validWord16,
+				$elm$core$String$toInt(str));
 			if (_v0.$ === 'Nothing') {
 				return model;
 			} else {
 				var p = _v0.a;
-				return ((p < 0) || (p > 65535)) ? model : _Utils_update(
+				return _Utils_update(
 					model,
 					{
 						socketPort: $elm$core$Maybe$Just(p)
@@ -7727,12 +7739,15 @@ var $author$project$Update$changeTimeoutModelUpdate = F2(
 				model,
 				{timeout: $elm$core$Maybe$Nothing});
 		} else {
-			var _v0 = $elm$core$String$toInt(str);
+			var _v0 = A2(
+				$elm$core$Maybe$andThen,
+				$author$project$Update$validWord16,
+				$elm$core$String$toInt(str));
 			if (_v0.$ === 'Nothing') {
 				return model;
 			} else {
 				var t = _v0.a;
-				return ((t < 0) || (t > 65535)) ? model : _Utils_update(
+				return _Utils_update(
 					model,
 					{
 						timeout: $elm$core$Maybe$Just(t)
@@ -7979,8 +7994,8 @@ var $author$project$Update$changeWordOrderResponseModelUpdate = F2(
 				});
 		}
 	});
-var $author$project$Types$ConnectedResponse = function (a) {
-	return {$: 'ConnectedResponse', a: a};
+var $author$project$Types$ConnectionResponse = function (a) {
+	return {$: 'ConnectionResponse', a: a};
 };
 var $elm$json$Json$Encode$bool = _Json_wrap;
 var $elm$json$Json$Encode$int = _Json_wrap;
@@ -8006,8 +8021,8 @@ var $elm$core$Maybe$withDefault = F2(
 			return _default;
 		}
 	});
-var $author$project$Types$encodeKeepAlive = F2(
-	function (model, flag) {
+var $author$project$Types$encodeKeepAlive = F3(
+	function (flag, idle, intv) {
 		return $elm$json$Json$Encode$object(
 			_List_fromArray(
 				[
@@ -8017,11 +8032,11 @@ var $author$project$Types$encodeKeepAlive = F2(
 					_Utils_Tuple2(
 					'idle',
 					$elm$json$Json$Encode$int(
-						A2($elm$core$Maybe$withDefault, 60, model.keepAliveIdle))),
+						A2($elm$core$Maybe$withDefault, 60, idle))),
 					_Utils_Tuple2(
 					'interval',
 					$elm$json$Json$Encode$int(
-						A2($elm$core$Maybe$withDefault, 10, model.keepAliveInterval)))
+						A2($elm$core$Maybe$withDefault, 10, intv)))
 				]));
 	});
 var $author$project$Types$encodeBaudRate = function (br) {
@@ -8113,7 +8128,7 @@ var $author$project$Types$encodeRTUConnectionRequest = function (model) {
 				$author$project$Types$encodeRTUConnectionInfo(model)),
 				_Utils_Tuple2(
 				'keep alive',
-				A2($author$project$Types$encodeKeepAlive, model, model.keepAlive))
+				A3($author$project$Types$encodeKeepAlive, model.keepAlive, model.keepAliveIdle, model.keepAliveInterval))
 			]));
 };
 var $author$project$Types$IpAddress$unsafeShowIp = function (ip) {
@@ -8161,7 +8176,7 @@ var $author$project$Types$encodeTCPConnectionRequest = function (model) {
 				$author$project$Types$encodeTCPConnectionInfo(model)),
 				_Utils_Tuple2(
 				'keep alive',
-				A2($author$project$Types$encodeKeepAlive, model, model.keepAlive))
+				A3($author$project$Types$encodeKeepAlive, model.keepAlive, model.keepAliveIdle, model.keepAliveInterval))
 			]));
 };
 var $elm$http$Http$expectBytesResponse = F2(
@@ -8193,7 +8208,7 @@ var $author$project$Update$connectRequest = function (model) {
 	return $elm$http$Http$post(
 		{
 			body: $elm$http$Http$jsonBody(encodeRequest),
-			expect: $elm$http$Http$expectWhatever($author$project$Types$ConnectedResponse),
+			expect: $elm$http$Http$expectWhatever($author$project$Types$ConnectionResponse),
 			url: 'http://localhost:4000/connect'
 		});
 };
@@ -8221,6 +8236,25 @@ var $author$project$Update$connectedResponseModelUpdate = F2(
 				});
 		}
 	});
+var $author$project$Update$csvLoadedModelUpdate = F2(
+	function (model, content) {
+		return _Utils_update(
+			model,
+			{
+				csvContent: $elm$core$Maybe$Just(content),
+				csvLoaded: false
+			});
+	});
+var $elm$file$File$name = _File_name;
+var $author$project$Update$csvSelectedModelUpdate = F2(
+	function (model, file) {
+		return _Utils_update(
+			model,
+			{
+				csvFileName: $elm$core$Maybe$Just(
+					$elm$file$File$name(file))
+			});
+	});
 var $author$project$Types$DisconnectedResponse = function (a) {
 	return {$: 'DisconnectedResponse', a: a};
 };
@@ -8233,26 +8267,23 @@ var $author$project$Update$disconnectRequest = $elm$http$Http$post(
 	});
 var $author$project$Update$disconnectedResponseModelUpdate = F2(
 	function (model, result) {
-		if (result.$ === 'Ok') {
-			return _Utils_update(
-				model,
-				{
-					connectStatus: $author$project$Types$Connect,
-					notifications: A2($author$project$Update$simpleNot, model, 'Disconnected')
-				});
-		} else {
-			var err = result.a;
-			return _Utils_update(
-				model,
-				{
-					connectStatus: $author$project$Types$Connect,
-					notifications: A3(
-						$author$project$Update$detailedNot,
-						model,
-						'Error disconnectiing from client',
-						$author$project$Update$showHttpError(err))
-				});
-		}
+		return _Utils_update(
+			model,
+			{
+				connectStatus: $author$project$Types$Connect,
+				notifications: function () {
+					if (result.$ === 'Ok') {
+						return A2($author$project$Update$simpleNot, model, 'Disconnected');
+					} else {
+						var err = result.a;
+						return A3(
+							$author$project$Update$detailedNot,
+							model,
+							'Error disconnectiing from client',
+							$author$project$Update$showHttpError(err));
+					}
+				}()
+			});
 	});
 var $author$project$Notifications$Expanded = {$: 'Expanded'};
 var $author$project$Update$expandStatusModelUpdate = function (model) {
@@ -8329,12 +8360,15 @@ var $author$project$Update$hbHighModelUpdate = F2(
 				model,
 				{hbHigh: $elm$core$Maybe$Nothing});
 		} else {
-			var _v0 = $elm$core$String$toInt(str);
+			var _v0 = A2(
+				$elm$core$Maybe$andThen,
+				$author$project$Update$validWord16,
+				$elm$core$String$toInt(str));
 			if (_v0.$ === 'Nothing') {
 				return model;
 			} else {
 				var t = _v0.a;
-				return ((t < 0) || (t > 65535)) ? model : _Utils_update(
+				return _Utils_update(
 					model,
 					{
 						hbHigh: $elm$core$Maybe$Just(t)
@@ -8349,12 +8383,15 @@ var $author$project$Update$hbLowModelUpdate = F2(
 				model,
 				{hbLow: $elm$core$Maybe$Nothing});
 		} else {
-			var _v0 = $elm$core$String$toInt(str);
+			var _v0 = A2(
+				$elm$core$Maybe$andThen,
+				$author$project$Update$validWord16,
+				$elm$core$String$toInt(str));
 			if (_v0.$ === 'Nothing') {
 				return model;
 			} else {
 				var t = _v0.a;
-				return ((t < 0) || (t > 65535)) ? model : _Utils_update(
+				return _Utils_update(
 					model,
 					{
 						hbLow: $elm$core$Maybe$Just(t)
@@ -8630,7 +8667,10 @@ var $author$project$Settings$NumberInputValue = function (a) {
 };
 var $author$project$Update$keepAliveIdleModelUpdate = F4(
 	function (model, settingIdx, inputIdx, valueStr) {
-		var checkedValue = $elm$core$String$toInt(valueStr);
+		var checkedValue = A2(
+			$elm$core$Maybe$andThen,
+			$author$project$Update$validWord16,
+			$elm$core$String$toInt(valueStr));
 		var _v0 = A4(
 			$author$project$Settings$updateIndexedSetting,
 			model.settings,
@@ -8650,7 +8690,10 @@ var $author$project$Update$keepAliveIdleModelUpdate = F4(
 	});
 var $author$project$Update$keepAliveIntervalModelUpdate = F4(
 	function (model, settingIdx, inputIdx, valueStr) {
-		var checkedValue = $elm$core$String$toInt(valueStr);
+		var checkedValue = A2(
+			$elm$core$Maybe$andThen,
+			$author$project$Update$validWord16,
+			$elm$core$String$toInt(valueStr));
 		var _v0 = A4(
 			$author$project$Settings$updateIndexedSetting,
 			model.settings,
@@ -8715,7 +8758,7 @@ var $author$project$Update$keepAliveRequest = F2(
 			return $elm$http$Http$post(
 				{
 					body: $elm$http$Http$jsonBody(
-						A2($author$project$Types$encodeKeepAlive, model, flag)),
+						A3($author$project$Types$encodeKeepAlive, flag, model.keepAliveIdle, model.keepAliveInterval)),
 					expect: A2($elm$http$Http$expectJson, $author$project$Types$KeepAliveResponseMsg, $author$project$Types$decodeKeepAliveResponse),
 					url: 'http://localhost:4000/keepAlive'
 				});
@@ -8776,7 +8819,6 @@ var $author$project$Update$modDataWriteModelUpdate = F3(
 			model,
 			{modDataUpdate: newMd});
 	});
-var $elm$file$File$name = _File_name;
 var $author$project$Update$parityModelUpdate = F2(
 	function (model, opt) {
 		var retracted = $author$project$Types$retractDropdowns(model);
@@ -8787,208 +8829,8 @@ var $author$project$Update$parityModelUpdate = F2(
 				parityDd: A2($author$project$Dropdown$setDropdown, model.parityDd, opt)
 			});
 	});
-var $author$project$Update$readRegistersModelUpdate = F2(
-	function (model, result) {
-		if (result.$ === 'Ok') {
-			var regs = result.a;
-			return _Utils_update(
-				model,
-				{
-					modDataUpdate: regs,
-					notifications: A2($author$project$Update$simpleNot, model, 'Selected registers updated')
-				});
-		} else {
-			var err = result.a;
-			return _Utils_update(
-				model,
-				{
-					notifications: A3(
-						$author$project$Update$detailedNot,
-						model,
-						'Error reading registers',
-						$author$project$Update$showHttpError(err))
-				});
-		}
-	});
-var $author$project$Update$receivedConnectionInfoModelUpdate = F2(
-	function (model, result) {
-		if (result.$ === 'Ok') {
-			var mconninfo = result.a;
-			return A2($author$project$Update$connInfoModelUpdate, model, mconninfo);
-		} else {
-			var err = result.a;
-			return _Utils_update(
-				model,
-				{
-					notifications: A3(
-						$author$project$Update$detailedNot,
-						model,
-						'Error receiving connection info',
-						$author$project$Update$showHttpError(err))
-				});
-		}
-	});
-var $author$project$ModData$ModDataUpdate = F3(
-	function (mduModData, mduSelected, mduRW) {
-		return {mduModData: mduModData, mduRW: mduRW, mduSelected: mduSelected};
-	});
-var $author$project$ModData$newModDataUpdate = function (mds) {
-	return A2(
-		$elm$core$List$map,
-		function (md) {
-			return A3($author$project$ModData$ModDataUpdate, md, false, $author$project$ReadWrite$Read);
-		},
-		mds);
-};
-var $author$project$Update$receivedModDataModelUpdate = F2(
-	function (model, result) {
-		if (result.$ === 'Err') {
-			var err = result.a;
-			return _Utils_update(
-				model,
-				{
-					notifications: A3(
-						$author$project$Update$detailedNot,
-						model,
-						'Error parsing register table',
-						$author$project$Update$showHttpError(err))
-				});
-		} else {
-			var md = result.a;
-			return _Utils_update(
-				model,
-				{
-					csvLoaded: true,
-					modDataUpdate: $author$project$ModData$newModDataUpdate(md),
-					notifications: A2($author$project$Update$simpleNot, model, 'Register table updated'),
-					selectAllCheckbox: false,
-					selectSome: false
-				});
-		}
-	});
-var $author$project$ModData$setRegAddress = F2(
-	function (md, addr) {
-		return _Utils_update(
-			md,
-			{modAddress: addr});
-	});
-var $author$project$ModData$setRegAddressUpdate = F2(
-	function (mdu, addr) {
-		return _Utils_update(
-			mdu,
-			{
-				mduModData: A2($author$project$ModData$setRegAddress, mdu.mduModData, addr)
-			});
-	});
-var $author$project$Update$regAddressModelUpdate = F2(
-	function (model, str) {
-		return _Utils_update(
-			model,
-			{
-				regAddress: $elm$core$String$toInt(str),
-				regMdu: A2(
-					$author$project$ModData$setRegAddressUpdate,
-					model.regMdu,
-					A2(
-						$elm$core$Maybe$withDefault,
-						0,
-						$elm$core$String$toInt(str)))
-			});
-	});
-var $author$project$ModData$fromModValueInputUpdate = F2(
-	function (mdu, str) {
-		return _Utils_update(
-			mdu,
-			{
-				mduModData: A2($author$project$ModData$fromModValueInput, mdu.mduModData, str)
-			});
-	});
-var $author$project$Update$regModValueModelUpdate = F2(
-	function (model, str) {
-		return _Utils_update(
-			model,
-			{
-				regMdu: A2($author$project$ModData$fromModValueInputUpdate, model.regMdu, str)
-			});
-	});
-var $author$project$ModData$setRegRWUpdate = F2(
-	function (mdu, rw) {
-		return _Utils_update(
-			mdu,
-			{mduRW: rw});
-	});
-var $author$project$Update$regToggleRWModelUpdate = F2(
-	function (model, rw) {
-		return $author$project$ModData$isWriteableReg(model.regMdu.mduModData.modRegType) ? _Utils_update(
-			model,
-			{
-				regMdu: A2($author$project$ModData$setRegRWUpdate, model.regMdu, rw)
-			}) : _Utils_update(
-			model,
-			{
-				regMdu: A2($author$project$ModData$setRegRWUpdate, model.regMdu, $author$project$ReadWrite$Read)
-			});
-	});
-var $author$project$ModData$setRegType = F2(
-	function (md, rt) {
-		return _Utils_update(
-			md,
-			{modRegType: rt});
-	});
-var $author$project$ModData$setRegTypeUpdate = F2(
-	function (mdu, rt) {
-		return $author$project$ModData$isWriteableReg(rt) ? _Utils_update(
-			mdu,
-			{
-				mduModData: A2($author$project$ModData$setRegType, mdu.mduModData, rt)
-			}) : _Utils_update(
-			mdu,
-			{
-				mduModData: A2($author$project$ModData$setRegType, mdu.mduModData, rt),
-				mduRW: $author$project$ReadWrite$Read
-			});
-	});
-var $author$project$Update$regTypeDropModelUpdate = F2(
-	function (model, opt) {
-		return _Utils_update(
-			model,
-			{
-				regMdu: A2($author$project$ModData$setRegTypeUpdate, model.regMdu, opt.value),
-				regModValueDd: $author$project$Dropdown$retract(model.regModValueDd),
-				regTypeDd: A2($author$project$Dropdown$setDropdown, model.regTypeDd, opt)
-			});
-	});
-var $author$project$ModData$setRegUid = F2(
-	function (md, uid) {
-		return _Utils_update(
-			md,
-			{modUid: uid});
-	});
-var $author$project$ModData$setRegUidUpdate = F2(
-	function (mdu, uid) {
-		return _Utils_update(
-			mdu,
-			{
-				mduModData: A2($author$project$ModData$setRegUid, mdu.mduModData, uid)
-			});
-	});
-var $author$project$Update$regUidModelUpdate = F2(
-	function (model, str) {
-		return _Utils_update(
-			model,
-			{
-				regMdu: A2(
-					$author$project$ModData$setRegUidUpdate,
-					model.regMdu,
-					A2(
-						$elm$core$Maybe$withDefault,
-						1,
-						$elm$core$String$toInt(str))),
-				regUid: $elm$core$String$toInt(str)
-			});
-	});
-var $author$project$Types$ReceivedModData = function (a) {
-	return {$: 'ReceivedModData', a: a};
+var $author$project$Types$ReceivedParsedModData = function (a) {
+	return {$: 'ReceivedParsedModData', a: a};
 };
 var $author$project$ModData$ModData = F6(
 	function (modName, modRegType, modAddress, modValue, modUid, modDescription) {
@@ -9079,18 +8921,241 @@ var $author$project$ModData$decodeModData = A7(
 	A2($elm$json$Json$Decode$field, 'register value', $author$project$ModData$decodeModValue),
 	A2($elm$json$Json$Decode$field, 'uid', $elm$json$Json$Decode$int),
 	A2($elm$json$Json$Decode$field, 'description', $elm$json$Json$Decode$string));
-var $author$project$Update$requestModData = function (content) {
+var $author$project$Update$parseModDataRequest = function (content) {
 	return $elm$http$Http$post(
 		{
 			body: $elm$http$Http$jsonBody(
 				$elm$json$Json$Encode$string(content)),
 			expect: A2(
 				$elm$http$Http$expectJson,
-				$author$project$Types$ReceivedModData,
+				$author$project$Types$ReceivedParsedModData,
 				$elm$json$Json$Decode$list($author$project$ModData$decodeModData)),
 			url: 'http://localhost:4000/parseModData'
 		});
 };
+var $author$project$Update$readRegistersModelUpdate = F2(
+	function (model, result) {
+		if (result.$ === 'Ok') {
+			var mdus = result.a;
+			return _Utils_update(
+				model,
+				{
+					modDataUpdate: mdus,
+					notifications: A2($author$project$Update$simpleNot, model, 'Selected registers updated')
+				});
+		} else {
+			var err = result.a;
+			return _Utils_update(
+				model,
+				{
+					notifications: A3(
+						$author$project$Update$detailedNot,
+						model,
+						'Error reading registers',
+						$author$project$Update$showHttpError(err))
+				});
+		}
+	});
+var $author$project$ModData$ModDataUpdate = F3(
+	function (mduModData, mduSelected, mduRW) {
+		return {mduModData: mduModData, mduRW: mduRW, mduSelected: mduSelected};
+	});
+var $author$project$ModData$newModDataUpdate = function (mds) {
+	return A2(
+		$elm$core$List$map,
+		function (md) {
+			return A3($author$project$ModData$ModDataUpdate, md, false, $author$project$ReadWrite$Read);
+		},
+		mds);
+};
+var $author$project$Update$receivedParsedModDataModelUpdate = F2(
+	function (model, result) {
+		if (result.$ === 'Err') {
+			var err = result.a;
+			return _Utils_update(
+				model,
+				{
+					notifications: A3(
+						$author$project$Update$detailedNot,
+						model,
+						'Error parsing register table',
+						$author$project$Update$showHttpError(err))
+				});
+		} else {
+			var mds = result.a;
+			return _Utils_update(
+				model,
+				{
+					csvLoaded: true,
+					modDataUpdate: $author$project$ModData$newModDataUpdate(mds),
+					notifications: A2($author$project$Update$simpleNot, model, 'Register table updated'),
+					selectAllCheckbox: false,
+					selectSome: false
+				});
+		}
+	});
+var $author$project$ModData$setRegAddress = F2(
+	function (md, addr) {
+		return _Utils_update(
+			md,
+			{modAddress: addr});
+	});
+var $author$project$ModData$setRegAddressUpdate = F2(
+	function (mdu, addr) {
+		return _Utils_update(
+			mdu,
+			{
+				mduModData: A2($author$project$ModData$setRegAddress, mdu.mduModData, addr)
+			});
+	});
+var $author$project$Update$regAddressModelUpdate = F2(
+	function (model, str) {
+		return _Utils_update(
+			model,
+			{
+				regAddress: A2(
+					$elm$core$Maybe$andThen,
+					$author$project$Update$validWord16,
+					$elm$core$String$toInt(str)),
+				regMdu: A2(
+					$author$project$ModData$setRegAddressUpdate,
+					model.regMdu,
+					A2(
+						$elm$core$Maybe$withDefault,
+						0,
+						$elm$core$String$toInt(str)))
+			});
+	});
+var $author$project$ModData$fromModValueInputUpdate = F2(
+	function (mdu, str) {
+		return _Utils_update(
+			mdu,
+			{
+				mduModData: A2($author$project$ModData$fromModValueInput, mdu.mduModData, str)
+			});
+	});
+var $author$project$Update$regModValueModelUpdate = F2(
+	function (model, str) {
+		return _Utils_update(
+			model,
+			{
+				regMdu: A2($author$project$ModData$fromModValueInputUpdate, model.regMdu, str)
+			});
+	});
+var $author$project$Update$regNumberModelUpdate = F2(
+	function (model, str) {
+		return _Utils_update(
+			model,
+			{
+				regNumReg: A2(
+					$elm$core$Maybe$andThen,
+					$author$project$Update$validWord16,
+					$elm$core$String$toInt(str))
+			});
+	});
+var $author$project$ModData$setRegRWUpdate = F2(
+	function (mdu, rw) {
+		return _Utils_update(
+			mdu,
+			{mduRW: rw});
+	});
+var $author$project$Update$regToggleRWModelUpdate = F2(
+	function (model, rw) {
+		return $author$project$ModData$isWriteableReg(model.regMdu.mduModData.modRegType) ? _Utils_update(
+			model,
+			{
+				regMdu: A2($author$project$ModData$setRegRWUpdate, model.regMdu, rw)
+			}) : _Utils_update(
+			model,
+			{
+				regMdu: A2($author$project$ModData$setRegRWUpdate, model.regMdu, $author$project$ReadWrite$Read)
+			});
+	});
+var $author$project$ModData$setRegType = F2(
+	function (md, rt) {
+		return _Utils_update(
+			md,
+			{modRegType: rt});
+	});
+var $author$project$ModData$setRegTypeUpdate = F2(
+	function (mdu, rt) {
+		return $author$project$ModData$isWriteableReg(rt) ? _Utils_update(
+			mdu,
+			{
+				mduModData: A2($author$project$ModData$setRegType, mdu.mduModData, rt)
+			}) : _Utils_update(
+			mdu,
+			{
+				mduModData: A2($author$project$ModData$setRegType, mdu.mduModData, rt),
+				mduRW: $author$project$ReadWrite$Read
+			});
+	});
+var $author$project$Update$regTypeDropModelUpdate = F2(
+	function (model, opt) {
+		return _Utils_update(
+			model,
+			{
+				regMdu: A2($author$project$ModData$setRegTypeUpdate, model.regMdu, opt.value),
+				regModValueDd: $author$project$Dropdown$retract(model.regModValueDd),
+				regTypeDd: A2($author$project$Dropdown$setDropdown, model.regTypeDd, opt)
+			});
+	});
+var $author$project$ModData$setRegUid = F2(
+	function (md, uid) {
+		return _Utils_update(
+			md,
+			{modUid: uid});
+	});
+var $author$project$ModData$setRegUidUpdate = F2(
+	function (mdu, uid) {
+		return _Utils_update(
+			mdu,
+			{
+				mduModData: A2($author$project$ModData$setRegUid, mdu.mduModData, uid)
+			});
+	});
+var $author$project$Update$regUidModelUpdate = F2(
+	function (model, str) {
+		return _Utils_update(
+			model,
+			{
+				regMdu: A2(
+					$author$project$ModData$setRegUidUpdate,
+					model.regMdu,
+					A2(
+						$elm$core$Maybe$withDefault,
+						1,
+						$elm$core$String$toInt(str))),
+				regUid: A2(
+					$elm$core$Maybe$andThen,
+					$author$project$Update$validByte,
+					$elm$core$String$toInt(str))
+			});
+	});
+var $author$project$ModData$setModValue = F2(
+	function (md, mv) {
+		return _Utils_update(
+			md,
+			{modValue: mv});
+	});
+var $author$project$ModData$setModValueUpdate = F2(
+	function (mdu, mv) {
+		return _Utils_update(
+			mdu,
+			{
+				mduModData: A2($author$project$ModData$setModValue, mdu.mduModData, mv)
+			});
+	});
+var $author$project$Update$regValueTypeModelUpdate = F2(
+	function (model, opt) {
+		return _Utils_update(
+			model,
+			{
+				regMdu: A2($author$project$ModData$setModValueUpdate, model.regMdu, opt.value),
+				regModValueDd: A2($author$project$Dropdown$setDropdown, model.regModValueDd, opt),
+				regTypeDd: $author$project$Dropdown$retract(model.regTypeDd)
+			});
+	});
 var $author$project$Update$selectAllCheckedModelUpdate = F2(
 	function (model, b) {
 		var _v0 = model.activeTab;
@@ -9130,20 +9195,6 @@ var $author$project$Update$selectAllCheckedModelUpdate = F2(
 					model,
 					{selectAllCheckbox: b});
 		}
-	});
-var $author$project$ModData$setModValue = F2(
-	function (md, mv) {
-		return _Utils_update(
-			md,
-			{modValue: mv});
-	});
-var $author$project$ModData$setModValueUpdate = F2(
-	function (mdu, mv) {
-		return _Utils_update(
-			mdu,
-			{
-				mduModData: A2($author$project$ModData$setModValue, mdu.mduModData, mv)
-			});
 	});
 var $author$project$Update$andMap = F2(
 	function (x, f) {
@@ -9585,8 +9636,8 @@ var $author$project$Update$updateKeepAliveResponseModel = F2(
 				});
 		}
 	});
-var $author$project$Types$ReadRegisters = function (a) {
-	return {$: 'ReadRegisters', a: a};
+var $author$project$Types$UpdateRegisters = function (a) {
+	return {$: 'UpdateRegisters', a: a};
 };
 var $elm$json$Json$Decode$bool = _Json_decodeBool;
 var $author$project$ReadWrite$Write = {$: 'Write'};
@@ -9743,7 +9794,7 @@ var $author$project$Update$updateModDataRequest = function (regs) {
 				A2($elm$json$Json$Encode$list, $author$project$ModData$encodeModDataUpdate, regs)),
 			expect: A2(
 				$elm$http$Http$expectJson,
-				$author$project$Types$ReadRegisters,
+				$author$project$Types$UpdateRegisters,
 				$elm$json$Json$Decode$list($author$project$ModData$decodeModDataUpdate)),
 			url: 'http://localhost:4000/modData'
 		});
@@ -9861,35 +9912,70 @@ var $author$project$Update$updateRegMduModelUpdate = F2(
 var $author$project$Update$update = F2(
 	function (msg, model) {
 		switch (msg.$) {
-			case 'ReadRegisters':
+			case 'ReceivedInitInfo':
 				var response = msg.a;
 				return _Utils_Tuple2(
-					A2($author$project$Update$readRegistersModelUpdate, model, response),
+					A2($author$project$Update$initInfoModelUpdate, model, response),
 					$author$project$Update$jumpToBottom('status'));
-			case 'ReceivedConnectionInfo':
-				var result = msg.a;
-				return _Utils_Tuple2(
-					A2($author$project$Update$receivedConnectionInfoModelUpdate, model, result),
-					$author$project$Update$jumpToBottom('status'));
-			case 'RefreshRequest':
-				var regs = msg.a;
+			case 'TimeZone':
+				var zone = msg.a;
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
-						{
-							notifications: A2($author$project$Update$simpleNot, model, 'Updating registers')
-						}),
-					$author$project$Update$updateModDataRequest(regs));
-			case 'ConnectRequest':
+						{timeZone: zone}),
+					$author$project$Update$initTime);
+			case 'InitTime':
+				var time = msg.a;
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{timePosix: time}),
+					$elm$core$Platform$Cmd$none);
+			case 'NewTime':
+				var time = msg.a;
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{timePosix: time}),
+					$elm$core$Platform$Cmd$none);
+			case 'ChangeActiveTab':
+				var tab = msg.a;
+				return _Utils_Tuple2(
+					A2($author$project$Update$changeActiveTabModelUpdate, model, tab),
+					$elm$core$Platform$Cmd$none);
+			case 'ChangeActiveConnectPanel':
+				var tab = msg.a;
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{connActiveTab: tab}),
+					$elm$core$Platform$Cmd$none);
+			case 'ConnectionRequest':
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
 						{connectStatus: $author$project$Types$Connecting}),
 					$author$project$Update$connectRequest(model));
-			case 'ConnectedResponse':
+			case 'ConnectionResponse':
 				var result = msg.a;
 				return _Utils_Tuple2(
 					A2($author$project$Update$connectedResponseModelUpdate, model, result),
+					$author$project$Update$jumpToBottom('status'));
+			case 'DisconnectRequest':
+				var _v1 = model.connectStatus;
+				if (_v1.$ === 'Connected') {
+					return _Utils_Tuple2(
+						_Utils_update(
+							model,
+							{connectStatus: $author$project$Types$Disconnecting}),
+						$author$project$Update$disconnectRequest);
+				} else {
+					return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
+				}
+			case 'DisconnectedResponse':
+				var result = msg.a;
+				return _Utils_Tuple2(
+					A2($author$project$Update$disconnectedResponseModelUpdate, model, result),
 					$author$project$Update$jumpToBottom('status'));
 			case 'ChangeIpAddress':
 				var _byte = msg.a;
@@ -9907,27 +9993,75 @@ var $author$project$Update$update = F2(
 				return _Utils_Tuple2(
 					A2($author$project$Update$changeTimeoutModelUpdate, model, tm),
 					$elm$core$Platform$Cmd$none);
-			case 'DisconnectRequest':
-				var _v1 = model.connectStatus;
-				if (_v1.$ === 'Connected') {
-					return _Utils_Tuple2(
-						_Utils_update(
-							model,
-							{connectStatus: $author$project$Types$Disconnecting}),
-						$author$project$Update$disconnectRequest);
-				} else {
-					return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
-				}
-			case 'DisconnectedResponse':
-				var result = msg.a;
+			case 'ChangeSerialPort':
+				var str = msg.a;
 				return _Utils_Tuple2(
-					A2($author$project$Update$disconnectedResponseModelUpdate, model, result),
-					$author$project$Update$jumpToBottom('status'));
-			case 'ChangeActiveTab':
-				var tab = msg.a;
-				return _Utils_Tuple2(
-					A2($author$project$Update$changeActiveTabModelUpdate, model, tab),
+					A2($author$project$Update$changeSerialPortModelUpdate, model, str),
 					$elm$core$Platform$Cmd$none);
+			case 'BaudRateDrop':
+				var opt = msg.a;
+				return _Utils_Tuple2(
+					A2($author$project$Update$baudRateDdModelUpdate, model, opt),
+					$elm$core$Platform$Cmd$none);
+			case 'StopBitsDrop':
+				var opt = msg.a;
+				return _Utils_Tuple2(
+					A2($author$project$Update$stopBitsModelUpdate, model, opt),
+					$elm$core$Platform$Cmd$none);
+			case 'ParityDrop':
+				var opt = msg.a;
+				return _Utils_Tuple2(
+					A2($author$project$Update$parityModelUpdate, model, opt),
+					$elm$core$Platform$Cmd$none);
+			case 'RegRegTypeDrop':
+				var opt = msg.a;
+				return _Utils_Tuple2(
+					A2($author$project$Update$regTypeDropModelUpdate, model, opt),
+					$elm$core$Platform$Cmd$none);
+			case 'RegValueTypeDrop':
+				var opt = msg.a;
+				return _Utils_Tuple2(
+					A2($author$project$Update$regValueTypeModelUpdate, model, opt),
+					$elm$core$Platform$Cmd$none);
+			case 'RegAddress':
+				var str = msg.a;
+				return _Utils_Tuple2(
+					A2($author$project$Update$regAddressModelUpdate, model, str),
+					$elm$core$Platform$Cmd$none);
+			case 'RegUid':
+				var str = msg.a;
+				return _Utils_Tuple2(
+					A2($author$project$Update$regUidModelUpdate, model, str),
+					$elm$core$Platform$Cmd$none);
+			case 'RegToggleRW':
+				var rw = msg.a;
+				return _Utils_Tuple2(
+					A2($author$project$Update$regToggleRWModelUpdate, model, rw),
+					$elm$core$Platform$Cmd$none);
+			case 'RegNumber':
+				var str = msg.a;
+				return _Utils_Tuple2(
+					A2($author$project$Update$regNumberModelUpdate, model, str),
+					$elm$core$Platform$Cmd$none);
+			case 'RegModValue':
+				var str = msg.a;
+				return _Utils_Tuple2(
+					A2($author$project$Update$regModValueModelUpdate, model, str),
+					$elm$core$Platform$Cmd$none);
+			case 'UpdateRegMdu':
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{
+							regModValueDd: $author$project$Dropdown$retract(model.regModValueDd),
+							regTypeDd: $author$project$Dropdown$retract(model.regTypeDd)
+						}),
+					$author$project$Update$updateRegMdu(model));
+			case 'UpdateRegMduResponse':
+				var response = msg.a;
+				return _Utils_Tuple2(
+					A2($author$project$Update$updateRegMduModelUpdate, model, response),
+					$author$project$Update$jumpToBottom('status'));
 			case 'CsvRequested':
 				return _Utils_Tuple2(
 					model,
@@ -9935,12 +10069,7 @@ var $author$project$Update$update = F2(
 			case 'CsvSelected':
 				var file = msg.a;
 				return _Utils_Tuple2(
-					_Utils_update(
-						model,
-						{
-							csvFileName: $elm$core$Maybe$Just(
-								$elm$file$File$name(file))
-						}),
+					A2($author$project$Update$csvSelectedModelUpdate, model, file),
 					A2(
 						$elm$core$Task$perform,
 						$author$project$Types$CsvLoaded,
@@ -9948,17 +10077,26 @@ var $author$project$Update$update = F2(
 			case 'CsvLoaded':
 				var content = msg.a;
 				return _Utils_Tuple2(
+					A2($author$project$Update$csvLoadedModelUpdate, model, content),
+					$author$project$Update$parseModDataRequest(content));
+			case 'ReceivedParsedModData':
+				var result = msg.a;
+				return _Utils_Tuple2(
+					A2($author$project$Update$receivedParsedModDataModelUpdate, model, result),
+					$author$project$Update$jumpToBottom('status'));
+			case 'UpdateModDataRequest':
+				var regs = msg.a;
+				return _Utils_Tuple2(
 					_Utils_update(
 						model,
 						{
-							csvContent: $elm$core$Maybe$Just(content),
-							csvLoaded: false
+							notifications: A2($author$project$Update$simpleNot, model, 'Updating registers')
 						}),
-					$author$project$Update$requestModData(content));
-			case 'ReceivedModData':
-				var result = msg.a;
+					$author$project$Update$updateModDataRequest(regs));
+			case 'UpdateRegisters':
+				var response = msg.a;
 				return _Utils_Tuple2(
-					A2($author$project$Update$receivedModDataModelUpdate, model, result),
+					A2($author$project$Update$readRegistersModelUpdate, model, response),
 					$author$project$Update$jumpToBottom('status'));
 			case 'SelectAllChecked':
 				var b = msg.a;
@@ -9987,175 +10125,6 @@ var $author$project$Update$update = F2(
 				var str = msg.b;
 				return _Utils_Tuple2(
 					A3($author$project$Update$changeModDataValueModelUpdate, model, idx, str),
-					$elm$core$Platform$Cmd$none);
-			case 'ExpandStatus':
-				return _Utils_Tuple2(
-					$author$project$Update$expandStatusModelUpdate(model),
-					$elm$core$Platform$Cmd$none);
-			case 'TimeZone':
-				var zone = msg.a;
-				return _Utils_Tuple2(
-					_Utils_update(
-						model,
-						{timeZone: zone}),
-					$author$project$Update$initTime);
-			case 'NewTime':
-				var time = msg.a;
-				return _Utils_Tuple2(
-					_Utils_update(
-						model,
-						{timePosix: time}),
-					$elm$core$Platform$Cmd$none);
-			case 'InitTime':
-				var time = msg.a;
-				return _Utils_Tuple2(
-					_Utils_update(
-						model,
-						{timePosix: time}),
-					$elm$core$Platform$Cmd$none);
-			case 'ExpandNotification':
-				var not = msg.a;
-				return _Utils_Tuple2(
-					_Utils_update(
-						model,
-						{
-							notifications: A2($author$project$Notifications$changeNotificationState, not, model.notifications)
-						}),
-					$elm$core$Platform$Cmd$none);
-			case 'SetActiveSetting':
-				var setting = msg.a;
-				return _Utils_Tuple2(
-					A2($author$project$Update$activeSettingModelUpdate, model, setting),
-					$elm$core$Platform$Cmd$none);
-			case 'KeepAliveMsg':
-				var settingIdx = msg.a;
-				var inputIdx = msg.b;
-				var flag = msg.c;
-				return _Utils_Tuple2(
-					A4($author$project$Update$keepAliveModelUpdate, model, settingIdx, inputIdx, flag),
-					A2($author$project$Update$keepAliveRequest, model, flag));
-			case 'KeepAliveIdleMsg':
-				var settingIdx = msg.a;
-				var inputIdx = msg.b;
-				var valueStr = msg.c;
-				return _Utils_Tuple2(
-					A4($author$project$Update$keepAliveIdleModelUpdate, model, settingIdx, inputIdx, valueStr),
-					$elm$core$Platform$Cmd$none);
-			case 'KeepAliveIntervalMsg':
-				var settingIdx = msg.a;
-				var inputIdx = msg.b;
-				var valueStr = msg.c;
-				return _Utils_Tuple2(
-					A4($author$project$Update$keepAliveIntervalModelUpdate, model, settingIdx, inputIdx, valueStr),
-					$elm$core$Platform$Cmd$none);
-			case 'KeepAliveResponseMsg':
-				var response = msg.a;
-				return _Utils_Tuple2(
-					A2($author$project$Update$updateKeepAliveResponseModel, model, response),
-					$author$project$Update$jumpToBottom('status'));
-			case 'ChangeWordOrderMsg':
-				var settingIdx = msg.a;
-				var inputIdx = msg.b;
-				var setting = msg.c;
-				return _Utils_Tuple2(
-					A4($author$project$Update$changeWordOrderModelUpdate, model, settingIdx, inputIdx, setting),
-					$author$project$Update$changeWordOrderRequest(
-						$author$project$Types$toWordOrder(setting)));
-			case 'ChangeWordOrderResponse':
-				var result = msg.a;
-				return _Utils_Tuple2(
-					A2($author$project$Update$changeWordOrderResponseModelUpdate, model, result),
-					$author$project$Update$jumpToBottom('status'));
-			case 'RegRegTypeDrop':
-				var opt = msg.a;
-				return _Utils_Tuple2(
-					A2($author$project$Update$regTypeDropModelUpdate, model, opt),
-					$elm$core$Platform$Cmd$none);
-			case 'RegValueTypeDrop':
-				var opt = msg.a;
-				return _Utils_Tuple2(
-					_Utils_update(
-						model,
-						{
-							regMdu: A2($author$project$ModData$setModValueUpdate, model.regMdu, opt.value),
-							regModValueDd: A2($author$project$Dropdown$setDropdown, model.regModValueDd, opt),
-							regTypeDd: $author$project$Dropdown$retract(model.regTypeDd)
-						}),
-					$elm$core$Platform$Cmd$none);
-			case 'RegAddress':
-				var str = msg.a;
-				return _Utils_Tuple2(
-					A2($author$project$Update$regAddressModelUpdate, model, str),
-					$elm$core$Platform$Cmd$none);
-			case 'RegUid':
-				var str = msg.a;
-				return _Utils_Tuple2(
-					A2($author$project$Update$regUidModelUpdate, model, str),
-					$elm$core$Platform$Cmd$none);
-			case 'RegToggleRW':
-				var rw = msg.a;
-				return _Utils_Tuple2(
-					A2($author$project$Update$regToggleRWModelUpdate, model, rw),
-					$elm$core$Platform$Cmd$none);
-			case 'RegNumber':
-				var str = msg.a;
-				return _Utils_Tuple2(
-					_Utils_update(
-						model,
-						{
-							regNumReg: $elm$core$String$toInt(str)
-						}),
-					$elm$core$Platform$Cmd$none);
-			case 'RegModValue':
-				var str = msg.a;
-				return _Utils_Tuple2(
-					A2($author$project$Update$regModValueModelUpdate, model, str),
-					$elm$core$Platform$Cmd$none);
-			case 'UpdateRegMdu':
-				return _Utils_Tuple2(
-					_Utils_update(
-						model,
-						{
-							regModValueDd: $author$project$Dropdown$retract(model.regModValueDd),
-							regTypeDd: $author$project$Dropdown$retract(model.regTypeDd)
-						}),
-					$author$project$Update$updateRegMdu(model));
-			case 'UpdateRegMduResponse':
-				var response = msg.a;
-				return _Utils_Tuple2(
-					A2($author$project$Update$updateRegMduModelUpdate, model, response),
-					$author$project$Update$jumpToBottom('status'));
-			case 'ReceivedInitInfo':
-				var response = msg.a;
-				return _Utils_Tuple2(
-					A2($author$project$Update$initInfoModelUpdate, model, response),
-					$author$project$Update$jumpToBottom('status'));
-			case 'ChangeActiveConnectTab':
-				var tab = msg.a;
-				return _Utils_Tuple2(
-					_Utils_update(
-						model,
-						{connActiveTab: tab}),
-					$elm$core$Platform$Cmd$none);
-			case 'ChangeSerialPort':
-				var str = msg.a;
-				return _Utils_Tuple2(
-					A2($author$project$Update$changeSerialPortModelUpdate, model, str),
-					$elm$core$Platform$Cmd$none);
-			case 'BaudRateDrop':
-				var opt = msg.a;
-				return _Utils_Tuple2(
-					A2($author$project$Update$baudRateDdModelUpdate, model, opt),
-					$elm$core$Platform$Cmd$none);
-			case 'StopBitsDrop':
-				var opt = msg.a;
-				return _Utils_Tuple2(
-					A2($author$project$Update$stopBitsModelUpdate, model, opt),
-					$elm$core$Platform$Cmd$none);
-			case 'ParityDrop':
-				var opt = msg.a;
-				return _Utils_Tuple2(
-					A2($author$project$Update$parityModelUpdate, model, opt),
 					$elm$core$Platform$Cmd$none);
 			case 'HeartUid':
 				var uid = msg.a;
@@ -10203,6 +10172,63 @@ var $author$project$Update$update = F2(
 				return _Utils_Tuple2(
 					A2($author$project$Update$hbHighModelUpdate, model, str),
 					$elm$core$Platform$Cmd$none);
+			case 'SetActiveSetting':
+				var setting = msg.a;
+				return _Utils_Tuple2(
+					A2($author$project$Update$activeSettingModelUpdate, model, setting),
+					$elm$core$Platform$Cmd$none);
+			case 'KeepAliveMsg':
+				var settingIdx = msg.a;
+				var inputIdx = msg.b;
+				var flag = msg.c;
+				return _Utils_Tuple2(
+					A4($author$project$Update$keepAliveModelUpdate, model, settingIdx, inputIdx, flag),
+					A2($author$project$Update$keepAliveRequest, model, flag));
+			case 'KeepAliveIdleMsg':
+				var settingIdx = msg.a;
+				var inputIdx = msg.b;
+				var valueStr = msg.c;
+				return _Utils_Tuple2(
+					A4($author$project$Update$keepAliveIdleModelUpdate, model, settingIdx, inputIdx, valueStr),
+					$elm$core$Platform$Cmd$none);
+			case 'KeepAliveIntervalMsg':
+				var settingIdx = msg.a;
+				var inputIdx = msg.b;
+				var valueStr = msg.c;
+				return _Utils_Tuple2(
+					A4($author$project$Update$keepAliveIntervalModelUpdate, model, settingIdx, inputIdx, valueStr),
+					$elm$core$Platform$Cmd$none);
+			case 'KeepAliveResponseMsg':
+				var response = msg.a;
+				return _Utils_Tuple2(
+					A2($author$project$Update$updateKeepAliveResponseModel, model, response),
+					$author$project$Update$jumpToBottom('status'));
+			case 'ExpandStatus':
+				return _Utils_Tuple2(
+					$author$project$Update$expandStatusModelUpdate(model),
+					$elm$core$Platform$Cmd$none);
+			case 'ExpandNotification':
+				var not = msg.a;
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{
+							notifications: A2($author$project$Notifications$changeNotificationState, not, model.notifications)
+						}),
+					$elm$core$Platform$Cmd$none);
+			case 'ChangeWordOrderMsg':
+				var settingIdx = msg.a;
+				var inputIdx = msg.b;
+				var setting = msg.c;
+				return _Utils_Tuple2(
+					A4($author$project$Update$changeWordOrderModelUpdate, model, settingIdx, inputIdx, setting),
+					$author$project$Update$changeWordOrderRequest(
+						$author$project$Types$toWordOrder(setting)));
+			case 'ChangeWordOrderResponse':
+				var result = msg.a;
+				return _Utils_Tuple2(
+					A2($author$project$Update$changeWordOrderResponseModelUpdate, model, result),
+					$author$project$Update$jumpToBottom('status'));
 			default:
 				return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
 		}
@@ -16130,8 +16156,8 @@ var $author$project$View$logoModule = function (model) {
 		$author$project$View$renderLogoModule(model));
 };
 var $author$project$Types$RTUTab = {$: 'RTUTab'};
-var $author$project$Types$ChangeActiveConnectTab = function (a) {
-	return {$: 'ChangeActiveConnectTab', a: a};
+var $author$project$Types$ChangeActiveConnectPanel = function (a) {
+	return {$: 'ChangeActiveConnectPanel', a: a};
 };
 var $mdgriffith$elm_ui$Internal$Model$Button = {$: 'Button'};
 var $elm$html$Html$Attributes$boolProperty = F2(
@@ -16504,10 +16530,10 @@ var $author$project$View$connActiveTabButton = F2(
 				label: $mdgriffith$elm_ui$Element$text(
 					$author$project$View$connActiveTabText(connTab)),
 				onPress: _Utils_eq(model.connActiveTab, connTab) ? $elm$core$Maybe$Nothing : $elm$core$Maybe$Just(
-					$author$project$Types$ChangeActiveConnectTab(connTab))
+					$author$project$Types$ChangeActiveConnectPanel(connTab))
 			});
 	});
-var $author$project$Types$ConnectRequest = {$: 'ConnectRequest'};
+var $author$project$Types$ConnectionRequest = {$: 'ConnectionRequest'};
 var $author$project$Palette$lightGreen = A3($mdgriffith$elm_ui$Element$rgb255, 82, 172, 162);
 var $author$project$View$connectButtonBgd = function (model) {
 	var _v0 = model.connectStatus;
@@ -16560,7 +16586,7 @@ var $author$project$View$connectButton = function (model) {
 			onPress: function () {
 				var _v0 = model.connectStatus;
 				if (_v0.$ === 'Connect') {
-					return $elm$core$Maybe$Just($author$project$Types$ConnectRequest);
+					return $elm$core$Maybe$Just($author$project$Types$ConnectionRequest);
 				} else {
 					return $elm$core$Maybe$Nothing;
 				}
@@ -18097,8 +18123,8 @@ var $author$project$View$loadCSVButton = A2(
 		label: $mdgriffith$elm_ui$Element$text('Load CSV File'),
 		onPress: $elm$core$Maybe$Just($author$project$Types$CsvRequested)
 	});
-var $author$project$Types$RefreshRequest = function (a) {
-	return {$: 'RefreshRequest', a: a};
+var $author$project$Types$UpdateModDataRequest = function (a) {
+	return {$: 'UpdateModDataRequest', a: a};
 };
 var $author$project$View$updateSelectedButton = function (model) {
 	return A2(
@@ -18125,7 +18151,7 @@ var $author$project$View$updateSelectedButton = function (model) {
 				var _v0 = model.connectStatus;
 				if (_v0.$ === 'Connected') {
 					return $elm$core$Maybe$Just(
-						$author$project$Types$RefreshRequest(model.modDataUpdate));
+						$author$project$Types$UpdateModDataRequest(model.modDataUpdate));
 				} else {
 					return $elm$core$Maybe$Nothing;
 				}

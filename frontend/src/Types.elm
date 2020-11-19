@@ -84,39 +84,32 @@ import Types.IpAddress
 -----------------------------------------------------------------------------------------------------------------------------------
 
 
-type Msg
-    = ReadRegisters (Result Http.Error (List ModDataUpdate))
-    | ReceivedConnectionInfo (Result Http.Error (Maybe ConnectionInfo))
-    | RefreshRequest (List ModDataUpdate)
-    | ConnectRequest
-    | ConnectedResponse (Result Http.Error ())
-    | ChangeIpAddress IpAddressByte String
-    | ChangePort String
-    | ChangeTimeout String
-    | DisconnectRequest
-    | DisconnectedResponse (Result Http.Error ())
-    | ChangeActiveTab ActiveTab
-    | CsvRequested
-    | CsvSelected File
-    | CsvLoaded String
-    | ReceivedModData (Result Http.Error (List ModData))
-    | SelectAllChecked Bool
-    | ModDataChecked Int Bool
-    | ToggleWriteAll ReadWrite
-    | ModDataWrite Int ReadWrite
-    | ChangeModDataValue Int String
-    | ExpandStatus
+type
+    Msg
+    -- initial server info
+    = ReceivedInitInfo (Result Http.Error InitInfo)
+      -- time
     | TimeZone Time.Zone
     | InitTime Time.Posix
     | NewTime Time.Posix
-    | ExpandNotification Notification
-    | SetActiveSetting (Setting SettingsOptions Msg)
-    | KeepAliveMsg Int Int Bool
-    | KeepAliveIdleMsg Int Int String
-    | KeepAliveIntervalMsg Int Int String
-    | KeepAliveResponseMsg (Result Http.Error KeepAliveResponse)
-    | ChangeWordOrderMsg Int Int SettingsOptions
-    | ChangeWordOrderResponse (Result Http.Error WordOrder)
+      -- tab management
+    | ChangeActiveTab ActiveTab
+      -- connect tab
+    | ChangeActiveConnectPanel ConnectActiveTab
+    | ConnectionRequest
+    | ConnectionResponse (Result Http.Error ())
+    | DisconnectRequest
+    | DisconnectedResponse (Result Http.Error ())
+      -- TCP
+    | ChangeIpAddress IpAddressByte String
+    | ChangePort String
+    | ChangeTimeout String
+      -- RTU
+    | ChangeSerialPort String
+    | BaudRateDrop (Option BaudRate Msg)
+    | StopBitsDrop (Option StopBits Msg)
+    | ParityDrop (Option Parity Msg)
+      -- register tab
     | RegRegTypeDrop (Option RegType Msg)
     | RegValueTypeDrop (Option ModValue Msg)
     | RegAddress String
@@ -126,12 +119,18 @@ type Msg
     | RegModValue String
     | UpdateRegMdu
     | UpdateRegMduResponse (Result Http.Error (List ModDataUpdate))
-    | ReceivedInitInfo (Result Http.Error InitInfo)
-    | ChangeActiveConnectTab ConnectActiveTab
-    | ChangeSerialPort String
-    | BaudRateDrop (Option BaudRate Msg)
-    | StopBitsDrop (Option StopBits Msg)
-    | ParityDrop (Option Parity Msg)
+      -- register table tab
+    | CsvRequested
+    | CsvSelected File
+    | CsvLoaded String
+    | ReceivedParsedModData (Result Http.Error (List ModData))
+    | UpdateModDataRequest (List ModDataUpdate)
+    | UpdateRegisters (Result Http.Error (List ModDataUpdate))
+    | SelectAllChecked Bool
+    | ModDataChecked Int Bool
+    | ToggleWriteAll ReadWrite
+    | ModDataWrite Int ReadWrite
+    | ChangeModDataValue Int String
       -- Heartbeat
     | HeartUid String
     | HeartAddress String
@@ -144,6 +143,19 @@ type Msg
     | HeartbeatTypeDrop (Option HeartbeatType Msg)
     | HBLow String
     | HBHigh String
+      -- settings
+    | SetActiveSetting (Setting SettingsOptions Msg)
+      -- keep alive setting
+    | KeepAliveMsg Int Int Bool
+    | KeepAliveIdleMsg Int Int String
+    | KeepAliveIntervalMsg Int Int String
+    | KeepAliveResponseMsg (Result Http.Error KeepAliveResponse)
+      -- Word order setting
+    | ChangeWordOrderMsg Int Int SettingsOptions
+    | ChangeWordOrderResponse (Result Http.Error WordOrder)
+      -- notifications
+    | ExpandStatus
+    | ExpandNotification Notification
       -- Noop
     | NoOp
 
@@ -234,6 +246,7 @@ retractDropdowns model =
         , baudrateDd = retract model.baudrateDd
         , stopBitsDd = retract model.stopBitsDd
         , parityDd = retract model.parityDd
+        , hbTypeDd = retract model.hbTypeDd
     }
 
 
@@ -321,7 +334,7 @@ encodeTCPConnectionRequest : Model -> E.Value
 encodeTCPConnectionRequest model =
     E.object
         [ ( "connection info", encodeTCPConnectionInfo model )
-        , ( "keep alive", encodeKeepAlive model model.keepAlive )
+        , ( "keep alive", encodeKeepAlive model.keepAlive model.keepAliveIdle model.keepAliveInterval )
         ]
 
 
@@ -329,7 +342,7 @@ encodeRTUConnectionRequest : Model -> E.Value
 encodeRTUConnectionRequest model =
     E.object
         [ ( "connection info", encodeRTUConnectionInfo model )
-        , ( "keep alive", encodeKeepAlive model model.keepAlive )
+        , ( "keep alive", encodeKeepAlive model.keepAlive model.keepAliveIdle model.keepAliveInterval )
         ]
 
 
@@ -481,12 +494,12 @@ type ConnectActiveTab
 --------------------------------------------------------------------------------------------------
 
 
-encodeKeepAlive : Model -> Bool -> E.Value
-encodeKeepAlive model flag =
+encodeKeepAlive : Bool -> Maybe Int -> Maybe Int -> E.Value
+encodeKeepAlive flag idle intv =
     E.object
         [ ( "flag", E.bool flag )
-        , ( "idle", E.int <| Maybe.withDefault 60 model.keepAliveIdle )
-        , ( "interval", E.int <| Maybe.withDefault 10 model.keepAliveInterval )
+        , ( "idle", E.int <| Maybe.withDefault 60 idle )
+        , ( "interval", E.int <| Maybe.withDefault 10 intv )
         ]
 
 
@@ -910,6 +923,10 @@ showFailedHeartbeat hb str =
         ++ ", interval: "
         ++ String.fromInt hb.interval
         ++ "\n"
+
+
+
+-- returns a function that updates the selected field of a Heartbeat in an indexed map
 
 
 replaceHeartbeatSelected : Int -> Bool -> Int -> Heartbeat -> Heartbeat

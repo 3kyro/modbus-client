@@ -65,7 +65,6 @@ import Types.Server
 type ServerAPI =
     "modData" :> ReqBody '[JSON] [ModDataUpdate] :> Post '[JSON] [ModDataUpdate]
         :<|> "connect" :> ReqBody '[JSON] ConnectionRequest :> Post '[JSON] ()
-        :<|> "connectInfo" :> Get '[JSON] (Maybe ConnectionInfo)
         :<|> "disconnect" :> ReqBody '[JSON] String :> Post '[JSON] ()
         :<|> "parseModData" :> ReqBody '[JSON] String :> Post '[JSON] [ModData]
         :<|> "keepAlive" :> ReqBody '[JSON] KeepAliveServ :> Post '[JSON] KeepAliveResponse
@@ -80,7 +79,6 @@ serverAPI :: TVar ServState -> Server ServerAPI
 serverAPI state =
     updateModData state
         :<|> connect state
-        :<|> getConnectionInfo state
         :<|> disconnect state
         :<|> parseAndSend
         :<|> keepAlive state

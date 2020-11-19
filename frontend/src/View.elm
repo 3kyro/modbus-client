@@ -536,7 +536,7 @@ connectButton model =
         { onPress =
             case model.connectStatus of
                 Connect ->
-                    Just ConnectRequest
+                    Just ConnectionRequest
 
                 _ ->
                     Nothing
@@ -610,7 +610,7 @@ connActiveTabButton model connTab =
                 Nothing
 
             else
-                Just <| ChangeActiveConnectTab connTab
+                Just <| ChangeActiveConnectPanel connTab
         , label = text <| connActiveTabText connTab
         }
 
@@ -1041,7 +1041,7 @@ updateSelectedButton model =
         { onPress =
             case model.connectStatus of
                 Connected ->
-                    Just <| RefreshRequest model.modDataUpdate
+                    Just <| UpdateModDataRequest model.modDataUpdate
 
                 _ ->
                     Nothing

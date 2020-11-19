@@ -2,7 +2,7 @@ module ModData exposing
     ( ModData
     , ModDataUpdate
     , ModValue(..)
-    , RegType(..), modEmptyColumn, readWriteColumn
+    , RegType(..), getRegMduList, modEmptyColumn, readWriteColumn
     , bitsFromString
     , decodeModData
     , decodeModDataUpdate
@@ -275,15 +275,35 @@ setModValueUpdate mdu mv =
     { mdu | mduModData = setModValue mdu.mduModData mv }
 
 
+-- create a list of ModDataUpdates
+getRegMduList : ModDataUpdate -> Maybe Int -> List ModDataUpdate
+getRegMduList mdu mnum =
+    case mdu.mduRW of
+        Write ->
+            -- only write a single register
+            [ mdu ]
+
+        Read ->
+            case mnum of
+                Nothing ->
+                    []
+
+                -- offset the given mdu based on the requested number of registers
+                Just num ->
+                    offsetMdu mdu num
+
+-- crete a list of ModDataUpdate by offeseting a base mdu by a given number
 offsetMdu : ModDataUpdate -> Int -> List ModDataUpdate
 offsetMdu mdu num =
     let
         mdus =
             List.repeat num mdu
     in
+    -- increment ModData address
     List.indexedMap
         (\i m -> { m | mduModData = incrementModDataAddr m.mduModData i })
         mdus
+
 
 
 
