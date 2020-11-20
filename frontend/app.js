@@ -19615,7 +19615,7 @@ var $author$project$ModData$modValueColumn = function (cmd) {
 		width: A2(
 			$mdgriffith$elm_ui$Element$maximum,
 			200,
-			A2($mdgriffith$elm_ui$Element$minimum, 100, $mdgriffith$elm_ui$Element$fill))
+			A2($mdgriffith$elm_ui$Element$minimum, 150, $mdgriffith$elm_ui$Element$fill))
 	};
 };
 var $author$project$ModData$modValueTypeColumn = {

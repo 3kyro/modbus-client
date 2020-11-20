@@ -439,7 +439,7 @@ modValueTypeColumn =
 modValueColumn : Maybe (Int -> String -> msg) -> IndexedColumn ModDataUpdate msg
 modValueColumn cmd =
     { header = el [ height <| px 38 ] <| el headerTextAttr <| text "Value"
-    , width = fill |> minimum 100 |> maximum 200
+    , width = fill |> minimum 150 |> maximum 200
     , view = \idx md -> viewModValueColumn cmd idx md
     }
 
