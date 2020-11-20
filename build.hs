@@ -98,9 +98,11 @@ main = do
         cd appRootPath
         
         echo "-----------------------------------------------------"
-        echo "copying license"
+        echo "copying files"
         echo "-----------------------------------------------------"
         cp (appRootPath </> "LICENSE")  (build appRootPath </> "LICENSE")
+        cp (appRootPath </> "sample.csv")  (build appRootPath </> "sample.csv")
+
         
         case getOs of
             Windows -> do
