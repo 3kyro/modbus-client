@@ -1028,25 +1028,34 @@ heartbeatTab model =
 
 updateSelectedButton : Model -> Element Msg
 updateSelectedButton model =
-    Input.button
-        [ Background.color lightGrey
-        , mouseOver [ Font.color white ]
-        , width fill
-        , height <| px 38
-        , Font.center
-        , Font.color greyWhite
-        , paddingXY 0 10
-        , focused []
-        ]
-        { onPress =
-            case model.connectStatus of
-                Connected ->
-                    Just <| UpdateModDataRequest model.modDataUpdate
+    -- do not show button when no table has been loaded
+    if List.isEmpty model.modDataUpdate then
+        none
 
-                _ ->
-                    Nothing
-        , label = text "Update Selected"
-        }
+    -- only show if some registers are selected
+    else if model.selectAllCheckbox || model.selectSome then
+        Input.button
+            [ Background.color lightGrey
+            , mouseOver [ Font.color white ]
+            , width fill
+            , height <| px 38
+            , Font.center
+            , Font.color greyWhite
+            , paddingXY 0 10
+            , focused []
+            ]
+            { onPress =
+                case model.connectStatus of
+                    Connected ->
+                        Just <| UpdateModDataRequest model.modDataUpdate
+
+                    _ ->
+                        Nothing
+            , label = text "Update Selected"
+            }
+
+    else
+        none
 
 
 

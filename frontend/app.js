@@ -9856,21 +9856,21 @@ var $author$project$ModData$offsetMdu = F2(
 				}),
 			mdus);
 	});
-var $author$project$Update$getRegMduList = function (model) {
-	var _v0 = model.regMdu.mduRW;
-	if (_v0.$ === 'Write') {
-		return _List_fromArray(
-			[model.regMdu]);
-	} else {
-		var _v1 = model.regNumReg;
-		if (_v1.$ === 'Nothing') {
-			return _List_Nil;
+var $author$project$ModData$getRegMduList = F2(
+	function (mdu, mnum) {
+		var _v0 = mdu.mduRW;
+		if (_v0.$ === 'Write') {
+			return _List_fromArray(
+				[mdu]);
 		} else {
-			var num = _v1.a;
-			return A2($author$project$ModData$offsetMdu, model.regMdu, num);
+			if (mnum.$ === 'Nothing') {
+				return _List_Nil;
+			} else {
+				var num = mnum.a;
+				return A2($author$project$ModData$offsetMdu, mdu, num);
+			}
 		}
-	}
-};
+	});
 var $author$project$Update$updateRegMdu = function (model) {
 	return $elm$http$Http$post(
 		{
@@ -9878,7 +9878,7 @@ var $author$project$Update$updateRegMdu = function (model) {
 				A2(
 					$elm$json$Json$Encode$list,
 					$author$project$ModData$encodeModDataUpdate,
-					$author$project$Update$getRegMduList(model))),
+					A2($author$project$ModData$getRegMduList, model.regMdu, model.regNumReg))),
 			expect: A2(
 				$elm$http$Http$expectJson,
 				$author$project$Types$UpdateRegMduResponse,
@@ -10203,19 +10203,6 @@ var $author$project$Update$update = F2(
 				return _Utils_Tuple2(
 					A2($author$project$Update$updateKeepAliveResponseModel, model, response),
 					$author$project$Update$jumpToBottom('status'));
-			case 'ExpandStatus':
-				return _Utils_Tuple2(
-					$author$project$Update$expandStatusModelUpdate(model),
-					$elm$core$Platform$Cmd$none);
-			case 'ExpandNotification':
-				var not = msg.a;
-				return _Utils_Tuple2(
-					_Utils_update(
-						model,
-						{
-							notifications: A2($author$project$Notifications$changeNotificationState, not, model.notifications)
-						}),
-					$elm$core$Platform$Cmd$none);
 			case 'ChangeWordOrderMsg':
 				var settingIdx = msg.a;
 				var inputIdx = msg.b;
@@ -10229,6 +10216,19 @@ var $author$project$Update$update = F2(
 				return _Utils_Tuple2(
 					A2($author$project$Update$changeWordOrderResponseModelUpdate, model, result),
 					$author$project$Update$jumpToBottom('status'));
+			case 'ExpandStatus':
+				return _Utils_Tuple2(
+					$author$project$Update$expandStatusModelUpdate(model),
+					$elm$core$Platform$Cmd$none);
+			case 'ExpandNotification':
+				var not = msg.a;
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{
+							notifications: A2($author$project$Notifications$changeNotificationState, not, model.notifications)
+						}),
+					$elm$core$Platform$Cmd$none);
 			default:
 				return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
 		}
@@ -18127,7 +18127,7 @@ var $author$project$Types$UpdateModDataRequest = function (a) {
 	return {$: 'UpdateModDataRequest', a: a};
 };
 var $author$project$View$updateSelectedButton = function (model) {
-	return A2(
+	return $elm$core$List$isEmpty(model.modDataUpdate) ? $mdgriffith$elm_ui$Element$none : ((model.selectAllCheckbox || model.selectSome) ? A2(
 		$mdgriffith$elm_ui$Element$Input$button,
 		_List_fromArray(
 			[
@@ -18156,7 +18156,7 @@ var $author$project$View$updateSelectedButton = function (model) {
 					return $elm$core$Maybe$Nothing;
 				}
 			}()
-		});
+		}) : $mdgriffith$elm_ui$Element$none);
 };
 var $author$project$View$tableNavModule = function (model) {
 	return A2(
