@@ -1,0 +1,29 @@
+{
+    "seed": 2058990928405356568,
+    "samples": [
+        {
+            "low": 3403,
+            "type": "Alternate",
+            "high": 21256
+        },
+        {
+            "low": 1563,
+            "type": "Range",
+            "high": 10500
+        },
+        {
+            "low": 6040,
+            "type": "Range",
+            "high": 30447
+        },
+        {
+            "value": 24385,
+            "type": "Pulse"
+        },
+        {
+            "low": 31143,
+            "type": "Alternate",
+            "high": 24902
+        }
+    ]
+}

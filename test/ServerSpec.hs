@@ -61,7 +61,6 @@ businessLogicSpec =
             -- create a test client function
             let updateModData
                     :<|> connect
-                    :<|> getConnectionInfo
                     :<|> disconnect
                     :<|> parseAndSend
                     :<|> keepAlive
@@ -120,21 +119,6 @@ businessLogicSpec =
                     void $ runClientM (connect connectRequest) (clientEnv port)
                     result <- runClientM (updateModData requestMDU) (clientEnv port)
                     result `shouldBe` Right responseMDU
-
-            describe "GET /connectInfo" $ do
-                let info =
-                        TCPConnectionInfo
-                            (read "127.0.0.1")
-                            5502
-                            10
-                it "returns Nothing when not connected" $ \port -> do
-                    result <- runClientM getConnectionInfo (clientEnv port)
-                    result `shouldBe` Right Nothing
-
-                it "returns valid info when connected" $ \port -> do
-                    void $ runClientM (connect connectRequest) (clientEnv port)
-                    result <- runClientM getConnectionInfo (clientEnv port)
-                    result `shouldBe` Right (Just info)
 
             describe "POST /disconnect" $ do
                 it "returns error when not connected" $ \port -> do

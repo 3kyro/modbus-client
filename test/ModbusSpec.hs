@@ -1,4 +1,4 @@
-module ModbusSpec (modbusSpec, helpFun1) where
+module ModbusSpec (modbusSpec) where
 
 import Test.Aeson.GenericSpecs
 import Test.Hspec (Spec, describe, hspec, it)

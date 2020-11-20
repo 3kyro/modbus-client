@@ -33,7 +33,7 @@ commands =
     , WriteRegistersFloat
     , Read
     , Write
-    , Heartbeat
+    , StartHeartbeat
     , StopHeartbeat
     , ListHeartbeat
     , Import
