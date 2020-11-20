@@ -37,6 +37,7 @@ import Element
         , scrollbars
         , spacing
         , text
+        , textColumn
         , width
         )
 import Element.Background as Background
@@ -318,7 +319,7 @@ registersTabButton model =
 
 registerTableTabButton : Model -> Element Msg
 registerTableTabButton model =
-    newNavigationButton model "Table" ModDataTab
+    newNavigationButton model "Table" RegisterTableTab
 
 
 heartbeatTabButton : Model -> Element Msg
@@ -357,7 +358,7 @@ renderManModule model =
         RegistersTab ->
             registersNavModule model
 
-        ModDataTab ->
+        RegisterTableTab ->
             tableNavModule model
 
         HeartbeatTab ->
@@ -435,11 +436,40 @@ renderHelpModule model =
         RegistersTab ->
             registersHelpModule model
 
+        RegisterTableTab ->
+            registerTableHelpModule model
+
         HeartbeatTab ->
             hbHelpModule model
 
         _ ->
             none
+
+
+registerTableHelpModule : Model -> Element Msg
+registerTableHelpModule model =
+    paragraph
+        [ alignTop
+        , Font.color lightGrey
+        ]
+    <|
+        regTableHelpText model
+
+
+regTableHelpText : Model -> List (Element Msg)
+regTableHelpText model =
+    if List.isEmpty model.modDataUpdate then
+        [ text "Load a CSV file containing a register table"
+        ]
+
+    else
+        [ text "Load another CSV file containing a register table or "
+        , if model.selectAllCheckbox || model.selectSome then
+            text "update the selected registers"
+
+          else
+            text "select some registers to update"
+        ]
 
 
 hbHelpModule : Model -> Element Msg
@@ -491,7 +521,7 @@ renderInfoModule model =
             else
                 renderOutput model.regResponse
 
-        ModDataTab ->
+        RegisterTableTab ->
             if List.isEmpty model.modDataUpdate then
                 none
 
@@ -1031,8 +1061,8 @@ updateSelectedButton model =
     -- do not show button when no table has been loaded
     if List.isEmpty model.modDataUpdate then
         none
+        -- only show if some registers are selected
 
-    -- only show if some registers are selected
     else if model.selectAllCheckbox || model.selectSome then
         Input.button
             [ Background.color lightGrey

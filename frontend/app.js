@@ -9160,7 +9160,7 @@ var $author$project$Update$selectAllCheckedModelUpdate = F2(
 	function (model, b) {
 		var _v0 = model.activeTab;
 		switch (_v0.$) {
-			case 'ModDataTab':
+			case 'RegisterTableTab':
 				return _Utils_update(
 					model,
 					{
@@ -9474,7 +9474,7 @@ var $elm$file$File$toString = _File_toString;
 var $author$project$Update$toggleWriteAllModelUpdate = F2(
 	function (model, b) {
 		var _v0 = model.activeTab;
-		if (_v0.$ === 'ModDataTab') {
+		if (_v0.$ === 'RegisterTableTab') {
 			return _Utils_update(
 				model,
 				{
@@ -16031,6 +16031,26 @@ var $author$project$View$hbHelpModule = function (model) {
 };
 var $mdgriffith$elm_ui$Internal$Model$Empty = {$: 'Empty'};
 var $mdgriffith$elm_ui$Element$none = $mdgriffith$elm_ui$Internal$Model$Empty;
+var $author$project$View$regTableHelpText = function (model) {
+	return $elm$core$List$isEmpty(model.modDataUpdate) ? _List_fromArray(
+		[
+			$mdgriffith$elm_ui$Element$text('Load a CSV file containing a register table')
+		]) : _List_fromArray(
+		[
+			$mdgriffith$elm_ui$Element$text('Load another CSV file containing a register table or '),
+			(model.selectAllCheckbox || model.selectSome) ? $mdgriffith$elm_ui$Element$text('update the selected registers') : $mdgriffith$elm_ui$Element$text('select some registers to update')
+		]);
+};
+var $author$project$View$registerTableHelpModule = function (model) {
+	return A2(
+		$mdgriffith$elm_ui$Element$paragraph,
+		_List_fromArray(
+			[
+				$mdgriffith$elm_ui$Element$alignTop,
+				$mdgriffith$elm_ui$Element$Font$color($author$project$Palette$lightGrey)
+			]),
+		$author$project$View$regTableHelpText(model));
+};
 var $elm$core$String$endsWith = _String_endsWith;
 var $author$project$ModData$showModValueType = function (mv) {
 	switch (mv.$) {
@@ -16084,6 +16104,8 @@ var $author$project$View$renderHelpModule = function (model) {
 	switch (_v0.$) {
 		case 'RegistersTab':
 			return $author$project$RegisterTab$registersHelpModule(model);
+		case 'RegisterTableTab':
+			return $author$project$View$registerTableHelpModule(model);
 		case 'HeartbeatTab':
 			return $author$project$View$hbHelpModule(model);
 		default:
@@ -18179,7 +18201,7 @@ var $author$project$View$renderManModule = function (model) {
 			return $author$project$View$connectNavModule(model);
 		case 'RegistersTab':
 			return $author$project$View$registersNavModule(model);
-		case 'ModDataTab':
+		case 'RegisterTableTab':
 			return $author$project$View$tableNavModule(model);
 		case 'HeartbeatTab':
 			return $author$project$View$heartbeatNavModule(model);
@@ -18241,9 +18263,9 @@ var $author$project$View$newNavigationButton = F3(
 var $author$project$View$connectTabButton = function (model) {
 	return A3($author$project$View$newNavigationButton, model, 'Connect', $author$project$Types$ConnectMenu);
 };
-var $author$project$Types$ModDataTab = {$: 'ModDataTab'};
+var $author$project$Types$RegisterTableTab = {$: 'RegisterTableTab'};
 var $author$project$View$registerTableTabButton = function (model) {
-	return A3($author$project$View$newNavigationButton, model, 'Table', $author$project$Types$ModDataTab);
+	return A3($author$project$View$newNavigationButton, model, 'Table', $author$project$Types$RegisterTableTab);
 };
 var $author$project$Types$RegistersTab = {$: 'RegistersTab'};
 var $author$project$View$registersTabButton = function (model) {
@@ -20400,7 +20422,7 @@ var $author$project$View$renderInfoModule = function (model) {
 			return $author$project$View$connectIsland(model);
 		case 'RegistersTab':
 			return $elm$core$List$isEmpty(model.regResponse) ? $mdgriffith$elm_ui$Element$none : $author$project$RegisterTab$renderOutput(model.regResponse);
-		case 'ModDataTab':
+		case 'RegisterTableTab':
 			return $elm$core$List$isEmpty(model.modDataUpdate) ? $mdgriffith$elm_ui$Element$none : A2(
 				$author$project$View$newRegisterTab,
 				model.modDataUpdate,

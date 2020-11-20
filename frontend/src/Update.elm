@@ -939,7 +939,7 @@ readRegistersModelUpdate model result =
 selectAllCheckedModelUpdate : Model -> Bool -> Model
 selectAllCheckedModelUpdate model b =
     case model.activeTab of
-        ModDataTab ->
+        RegisterTableTab ->
             { model
                 | selectAllCheckbox = b
                 , selectSome = b
@@ -972,7 +972,7 @@ modDataCheckedModelUpdate model idx checked =
 toggleWriteAllModelUpdate : Model -> ReadWrite -> Model
 toggleWriteAllModelUpdate model b =
     case model.activeTab of
-        ModDataTab ->
+        RegisterTableTab ->
             { model
                 | readWriteAll = b
                 , modDataUpdate =

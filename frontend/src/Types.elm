@@ -472,7 +472,7 @@ showOs os =
 type ActiveTab
     = ConnectMenu
     | RegistersTab
-    | ModDataTab
+    | RegisterTableTab
     | HeartbeatTab
     | SettingsTab
 
