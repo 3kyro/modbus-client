@@ -73,7 +73,7 @@ type ServerAPI =
         :<|> "stopHeartbeat" :> ReqBody '[JSON] [Word32] :> Post '[JSON] [Word32]
         :<|> "initHeartbeat" :> Post '[JSON] [HeartbeatRequest]
         :<|> "init" :> Get '[JSON] InitRequest
-        :<|> Raw --FIX ME :: fix for path traversal attacks
+        :<|> Raw 
 
 serverAPI :: TVar ServState -> Server ServerAPI
 serverAPI state =
@@ -87,7 +87,7 @@ serverAPI state =
         :<|> stopHeartbeat state
         :<|> initHeartbeat state
         :<|> initRequest state
-        :<|> serveDirectoryWebApp "frontend"
+        :<|> serveDirectoryFileServer "frontend"
 
 proxyAPI :: Proxy ServerAPI
 proxyAPI = Proxy
