@@ -757,6 +757,7 @@ encodeStopBits sb =
 type Parity
     = OddParity
     | EvenParity
+    | NoParity
 
 
 decodeParity : D.Decoder Parity
@@ -769,6 +770,9 @@ decodeParity =
                         D.succeed OddParity
 
                     "even" ->
+                        D.succeed EvenParity
+
+                    "none" ->
                         D.succeed EvenParity
 
                     _ ->
@@ -784,6 +788,9 @@ encodeParity pr =
 
         EvenParity ->
             E.string "even"
+
+        NoParity ->
+            E.string "none"
 
 
 

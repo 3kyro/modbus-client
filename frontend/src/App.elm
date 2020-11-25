@@ -252,7 +252,7 @@ twoSBOpt =
 parityDd : Dropdown Parity Msg
 parityDd =
     { onClick = ParityDrop
-    , options = [ odd, even ]
+    , options = [ odd, even, noParity ]
     , selected = odd
     , expanded = False
     , label = ""
@@ -267,6 +267,10 @@ odd =
 even : Option Parity Msg
 even =
     getOption EvenParity (text "Even")
+
+noParity : Option Parity Msg
+noParity =
+    getOption NoParity (text "No Parity")
 
 
 

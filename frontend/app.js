@@ -6952,6 +6952,8 @@ var $author$project$Types$decodeParity = A2(
 				return $elm$json$Json$Decode$succeed($author$project$Types$OddParity);
 			case 'even':
 				return $elm$json$Json$Decode$succeed($author$project$Types$EvenParity);
+			case 'none':
+				return $elm$json$Json$Decode$succeed($author$project$Types$EvenParity);
 			default:
 				return $elm$json$Json$Decode$fail('Not a Parity');
 		}
@@ -7260,6 +7262,11 @@ var $author$project$App$even = A2(
 	$author$project$Dropdown$getOption,
 	$author$project$Types$EvenParity,
 	$mdgriffith$elm_ui$Element$text('Even'));
+var $author$project$Types$NoParity = {$: 'NoParity'};
+var $author$project$App$noParity = A2(
+	$author$project$Dropdown$getOption,
+	$author$project$Types$NoParity,
+	$mdgriffith$elm_ui$Element$text('No Parity'));
 var $author$project$App$odd = A2(
 	$author$project$Dropdown$getOption,
 	$author$project$Types$OddParity,
@@ -7269,7 +7276,7 @@ var $author$project$App$parityDd = {
 	label: '',
 	onClick: $author$project$Types$ParityDrop,
 	options: _List_fromArray(
-		[$author$project$App$odd, $author$project$App$even]),
+		[$author$project$App$odd, $author$project$App$even, $author$project$App$noParity]),
 	selected: $author$project$App$odd
 };
 var $author$project$Types$RegRegTypeDrop = function (a) {
@@ -8066,10 +8073,13 @@ var $author$project$Types$encodeBaudRate = function (br) {
 	}
 };
 var $author$project$Types$encodeParity = function (pr) {
-	if (pr.$ === 'OddParity') {
-		return $elm$json$Json$Encode$string('odd');
-	} else {
-		return $elm$json$Json$Encode$string('even');
+	switch (pr.$) {
+		case 'OddParity':
+			return $elm$json$Json$Encode$string('odd');
+		case 'EvenParity':
+			return $elm$json$Json$Encode$string('even');
+		default:
+			return $elm$json$Json$Encode$string('none');
 	}
 };
 var $author$project$Types$encodeStopBits = function (sb) {
