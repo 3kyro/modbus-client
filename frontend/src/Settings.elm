@@ -29,6 +29,8 @@ import Element
         , text
         , width
         , alignRight
+        , paragraph
+        , maximum
         )
 import Element.Background as Background
 import Element.Border as Border
@@ -116,7 +118,7 @@ renderSetting message parentIdx setting =
         , onClick <| message setting
         ]
     <|
-        text setting.description
+        paragraph [] [text setting.description]
             :: List.indexedMap (renderSettingInput parentIdx) setting.inputs
 
 
@@ -154,7 +156,7 @@ renderSettingInput parentIdx idx input =
 
         NumberInput ni ->
             Input.text
-                [ width <| px 500
+                [ width (fill |> maximum 500)
                 , height <| px 32
                 , spacing 20
                 , centerY

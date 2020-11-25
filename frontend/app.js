@@ -20308,7 +20308,7 @@ var $author$project$Settings$renderSettingInput = F3(
 					_List_fromArray(
 						[
 							$mdgriffith$elm_ui$Element$width(
-							$mdgriffith$elm_ui$Element$px(500)),
+							A2($mdgriffith$elm_ui$Element$maximum, 500, $mdgriffith$elm_ui$Element$fill)),
 							$mdgriffith$elm_ui$Element$height(
 							$mdgriffith$elm_ui$Element$px(32)),
 							$mdgriffith$elm_ui$Element$spacing(20),
@@ -20391,7 +20391,13 @@ var $author$project$Settings$renderSetting = F3(
 				]),
 			A2(
 				$elm$core$List$cons,
-				$mdgriffith$elm_ui$Element$text(setting.description),
+				A2(
+					$mdgriffith$elm_ui$Element$paragraph,
+					_List_Nil,
+					_List_fromArray(
+						[
+							$mdgriffith$elm_ui$Element$text(setting.description)
+						])),
 				A2(
 					$elm$core$List$indexedMap,
 					$author$project$Settings$renderSettingInput(parentIdx),
