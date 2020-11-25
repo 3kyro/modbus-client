@@ -83,7 +83,7 @@ navAddress model =
 
 navInterval : Model -> Element Msg
 navInterval model =
-    navInput "Interval" HeartInterval <| Maybe.map String.fromInt model.heartIntv
+    navInput "Interval (s)" HeartInterval <| Maybe.map String.fromInt model.heartIntv
 
 
 navLow : Model -> Element Msg

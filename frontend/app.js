@@ -17834,7 +17834,7 @@ var $author$project$Types$HeartInterval = function (a) {
 var $author$project$Heartbeat$navInterval = function (model) {
 	return A3(
 		$author$project$NavigationModule$navInput,
-		'Interval',
+		'Interval (s)',
 		$author$project$Types$HeartInterval,
 		A2($elm$core$Maybe$map, $elm$core$String$fromInt, model.heartIntv));
 };
