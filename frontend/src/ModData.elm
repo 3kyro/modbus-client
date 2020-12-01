@@ -36,28 +36,7 @@ module ModData exposing
     , tableCellColor
     )
 
-import Element
-    exposing
-        ( Attribute
-        , Color
-        , Element
-        , IndexedColumn
-        , alignLeft
-        , centerX
-        , centerY
-        , el
-        , fill
-        , fillPortion
-        , focused
-        , height
-        , maximum
-        , minimum
-        , paddingXY
-        , px
-        , text
-        , width
-        , none
-        )
+import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border
 import Element.Font as Font
@@ -407,7 +386,7 @@ viewReadWriteModDataCell idx md msg =
 modNameColumn : IndexedColumn ModDataUpdate msg
 modNameColumn =
     { header = el [ height <| px 38 ] <| el headerTextAttr <| text "Name"
-    , width = fill |> minimum 100 |> maximum 200
+    , width = fill |> minimum 200 
     , view = \i md -> viewCell i md.mduModData.modName
     }
 
@@ -538,7 +517,7 @@ viewEmptyColumn idx =
 
 headerTextAttr : List (Attribute msg)
 headerTextAttr =
-    [ centerX, centerY ]
+    [ centerX, centerY, paddingXY 10 0 ]
 
 
 viewCell : Int -> String -> Element msg
@@ -548,6 +527,8 @@ viewCell idx str =
         , Font.color greyWhite
         , height <| px 38
         , Font.center
+        , width fill
+        , paddingXY 10 0
         ]
         (el [ centerX, centerY ] <| text str)
 
