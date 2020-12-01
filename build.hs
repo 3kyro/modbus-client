@@ -88,7 +88,7 @@ main = do
                 stderr "Error getting frontend directory path"
                 exit $ ExitFailure 1
             Right (inputPath, outputPath) -> do
-                void $ proc "elm" ["make", inputPath, "--output", outputPath] empty
+                void $ proc "elm" ["make", inputPath, "--output", outputPath, "--optimize"] empty
         echo "-----------------------------------------------------"
         echo "copying frontend files"
         echo "-----------------------------------------------------"
