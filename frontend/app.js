@@ -16135,7 +16135,7 @@ var $author$project$View$renderLogoModule = function (model) {
 					[
 						$mdgriffith$elm_ui$Element$Font$size(15)
 					]),
-				$mdgriffith$elm_ui$Element$text('version : 0.1.0')),
+				$mdgriffith$elm_ui$Element$text('version : 0.1.1')),
 				A2(
 				$mdgriffith$elm_ui$Element$el,
 				_List_fromArray(
