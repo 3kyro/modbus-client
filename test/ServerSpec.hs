@@ -137,7 +137,7 @@ businessLogicSpec =
                 it "correctly parses valid ModData" $ \port -> do
                     let s = serializeModData mds
                     result <- runClientM (parseAndSend $ T.unpack s) (clientEnv port)
-                    result `shouldBe` Right mds
+                    result `shouldBe` Right (Right mds)
 
                 it "fails on invalid input" $ \port -> do
                     result <- runClientM (parseAndSend invalidmds) (clientEnv port)
