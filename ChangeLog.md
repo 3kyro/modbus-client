@@ -5,3 +5,4 @@
 ## 0.1.1
 
 - Display parse errors as notifications
+- Register table display tuning
