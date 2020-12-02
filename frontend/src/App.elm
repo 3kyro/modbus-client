@@ -160,7 +160,7 @@ holdingRegisterOption =
 valueTypeDropdown : Dropdown ModValue Msg
 valueTypeDropdown =
     { onClick = RegValueTypeDrop
-    , options = [ wordOption, bitsOption, floatOption ]
+    , options = [ wordOption, bitsOption, floatOption, doubleOption ]
     , selected = wordOption
     , expanded = False
     , label = ""
@@ -180,6 +180,10 @@ bitsOption =
 floatOption : Option ModValue Msg
 floatOption =
     getOption (ModFloat Nothing) (text "Float")
+
+doubleOption : Option ModValue Msg
+doubleOption =
+    getOption (ModDouble Nothing) (text "Double")
 
 
 initRegMdu : ModDataUpdate

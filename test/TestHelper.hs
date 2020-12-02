@@ -13,6 +13,8 @@ instance TestShow ModValue where
   tShow (ModWordBit Nothing) = "bits;"
   tShow (ModFloat (Just x)) = "float;" ++ show x
   tShow (ModFloat Nothing) = "float;"
+  tShow (ModDouble (Just x)) = "double;" ++ show x
+  tShow (ModDouble Nothing) = "double;"
 
 instance TestShow RegType where
 --   tShow DiscreteInput = "Discrete Input"

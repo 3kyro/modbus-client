@@ -57,6 +57,9 @@ insertModValue md val =
         ModFloat _ -> do
             parsed <- pReplFloat val
             return $ md{modValue = ModFloat (Just parsed)}
+        ModDouble _ -> do
+            parsed <- pReplFloat val
+            return $ md{modValue = ModDouble (Just parsed)}
 
 -- Returns a pair of successive values
 -- Returns Nothing if the list size is odd

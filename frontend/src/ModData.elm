@@ -130,6 +130,9 @@ fromModValueInput md str =
         ModFloat _ ->
             { md | modValue = ModFloat <| toMFloat str }
 
+        ModDouble _ ->
+            { md | modValue = ModDouble <| toMFloat str }
+
 
 setRegType : ModData -> RegType -> ModData
 setRegType md rt =
@@ -617,6 +620,7 @@ type ModValue
     = ModWord (Maybe Int)
     | ModBits (Maybe Bits)
     | ModFloat (Maybe MFloat)
+    | ModDouble (Maybe MFloat)
 
 
 showModValueType : ModValue -> String
@@ -631,6 +635,9 @@ showModValueType mv =
         ModFloat _ ->
             "Float"
 
+        ModDouble _ ->
+            "Double"
+
 
 getModValue : ModValue -> Maybe String
 getModValue mv =
@@ -642,6 +649,9 @@ getModValue mv =
             Maybe.map .value v
 
         ModFloat v ->
+            Maybe.map showMFloat v
+
+        ModDouble v ->
             Maybe.map showMFloat v
 
 
@@ -681,6 +691,17 @@ encodeModValue mv =
                 [ ( "type", E.string "float" )
                 ]
 
+        ModDouble (Just x) ->
+            E.object
+                [ ( "type", E.string "double" )
+                , ( "value", E.float x.flt )
+                ]
+
+        ModDouble Nothing ->
+            E.object
+                [ ( "type", E.string "double" )
+                ]
+
 
 decodeModValue : D.Decoder ModValue
 decodeModValue =
@@ -699,6 +720,9 @@ decodeModValue =
                     "float" ->
                         D.map ModFloat <| D.field "value" (D.nullable decodeMFloat)
 
+                    "double" ->
+                        D.map ModDouble <| D.field "value" (D.nullable decodeMFloat)
+
                     _ ->
                         D.fail "Not a valid ModValue"
             )
@@ -715,6 +739,9 @@ getModValueMult mv =
 
         ModFloat _ ->
             2
+
+        ModDouble _ ->
+            4
 
 
 modValueFuzzer : Fuzzer ModValue

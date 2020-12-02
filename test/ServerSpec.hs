@@ -140,8 +140,8 @@ businessLogicSpec =
                     result `shouldBe` Right (Right mds)
 
                 it "fails on invalid input" $ \port -> do
-                    result <- runClientM (parseAndSend invalidmds) (clientEnv port)
-                    result `shouldSatisfy` isLeft
+                    Right result <- runClientM (parseAndSend invalidmds) (clientEnv port)
+                    result `shouldSatisfy` isLeft 
 
             describe "POST /keepAlive" $ do
                 kas <- runIO $ generate arbitrary

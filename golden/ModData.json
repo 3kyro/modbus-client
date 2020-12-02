@@ -1,60 +1,60 @@
 {
-    "seed": -313981897834828301,
+    "seed": 3678579690687661267,
     "samples": [
         {
             "register value": {
-                "value": 32105,
-                "type": "word"
-            },
-            "uid": 208,
-            "address": 30336,
-            "register type": "input register",
-            "name": "KYR",
-            "description": "GA"
-        },
-        {
-            "register value": {
-                "value": 28069,
-                "type": "word"
-            },
-            "uid": 116,
-            "address": 3590,
-            "register type": "input register",
-            "name": "jhlmHNwmymIvTFLScLxjZLltvwxwyrZgSXYFyFFyOoQ",
-            "description": "AxB FuxqNd"
-        },
-        {
-            "register value": {
                 "value": null,
-                "type": "float"
+                "type": "bits"
             },
-            "uid": 208,
-            "address": 31724,
-            "register type": "input register",
-            "name": "A_tofeO",
-            "description": "YvStsZW:qo&WlJoeXxa=qdeousFVk=kefTB"
-        },
-        {
-            "register value": {
-                "value": null,
-                "type": "float"
-            },
-            "uid": 255,
-            "address": 26139,
+            "uid": 219,
+            "address": 16586,
             "register type": "holding register",
-            "name": "Q",
-            "description": "GLirnM"
+            "name": "fVZ5wuBNOAuzmXMsbyF",
+            "description": "t=eSoiv"
         },
         {
             "register value": {
-                "value": 1.5643481,
-                "type": "float"
+                "value": "0110111000001010",
+                "type": "bits"
             },
-            "uid": 144,
-            "address": 27790,
+            "uid": 215,
+            "address": 23110,
             "register type": "input register",
-            "name": "t",
-            "description": "OHN"
+            "name": "Uwd1cDX3pGydLmYHkiJpz_VlGRhDIVYdoylhI",
+            "description": "Wx"
+        },
+        {
+            "register value": {
+                "value": null,
+                "type": "bits"
+            },
+            "uid": 163,
+            "address": 8371,
+            "register type": "input register",
+            "name": "UQZEjwtHDGsYqpEckIEmlygCK9eKE",
+            "description": "FMXzàI&Hi:prJx="
+        },
+        {
+            "register value": {
+                "value": null,
+                "type": "word"
+            },
+            "uid": 204,
+            "address": 12668,
+            "register type": "input register",
+            "name": "GZY1tzhtqau",
+            "description": "QècImodxFUf"
+        },
+        {
+            "register value": {
+                "value": null,
+                "type": "word"
+            },
+            "uid": 88,
+            "address": 11919,
+            "register type": "input register",
+            "name": "BhIuozYLPcNAYDh",
+            "description": "cSEthTafVsLNèrGçXURPdr&v"
         }
     ]
 }

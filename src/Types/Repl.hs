@@ -49,12 +49,15 @@ data ReplArg = ReplName String
 data Command = ReadInputRegistersWord
     | ReadInputRegistersBits
     | ReadInputRegistersFloat
+    | ReadInputRegistersDouble
     | ReadHoldingRegistersWord
     | ReadHoldingRegistersBits
     | ReadHoldingRegistersFloat
+    | ReadHoldingRegistersDouble
     | WriteRegistersWord
     | WriteRegistersBits
     | WriteRegistersFloat
+    | WriteRegistersDouble
     | Read
     | Write
     | StartHeartbeat

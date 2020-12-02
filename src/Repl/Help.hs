@@ -20,12 +20,15 @@ getHelpCmd str =
         ReadInputRegistersWord    -> hReadInputRegistersWord
         ReadInputRegistersBits    -> hReadInputRegistersBits
         ReadInputRegistersFloat   -> hReadInputRegistersFloat
+        ReadInputRegistersDouble   -> hReadInputRegistersDouble
         ReadHoldingRegistersWord  -> hReadHoldingRegistersWord
         ReadHoldingRegistersBits  -> hReadHoldingRegistersBits
         ReadHoldingRegistersFloat -> hReadHoldingRegistersFloat
+        ReadHoldingRegistersDouble -> hReadHoldingRegistersDouble
         WriteRegistersWord        -> hWriteRegistersWord
         WriteRegistersBits        -> hWriteRegistersBits
         WriteRegistersFloat       -> hWriteRegistersFloat
+        WriteRegistersDouble       -> hWriteRegistersDouble
         Read                      -> hRead
         Write                     -> hWrite
         StartHeartbeat            -> hHeartbeat
@@ -47,12 +50,15 @@ helpOutputs =
     [ hReadInputRegistersWord
     , hReadInputRegistersBits
     , hReadInputRegistersFloat
+    , hReadInputRegistersDouble
     , hReadHoldingRegistersWord
     , hReadHoldingRegistersBits
     , hReadHoldingRegistersFloat
+    , hReadHoldingRegistersDouble
     , hWriteRegistersWord
     , hWriteRegistersBits
     , hWriteRegistersFloat
+    , hWriteRegistersDouble
     , hRead
     , hWrite
     , hHeartbeat
@@ -90,6 +96,13 @@ hReadInputRegistersFloat =
     ++ "Usage: readInputRegistersFloat [Starting address] [Number of registers]\n"
     ++ "e.g. readInputRegistersFloat 3001 10\n"
 
+hReadInputRegistersDouble :: String
+hReadInputRegistersDouble =
+    "readInputRegistersDouble:\n"
+    ++ "Read values of double type from the provided input registers\n"
+    ++ "Usage: readInputRegistersDouble [Starting address] [Number of registers]\n"
+    ++ "e.g. readInputRegistersDouble 3001 10\n"
+
 hReadHoldingRegistersWord :: String
 hReadHoldingRegistersWord =
     "readHoldingRegistersWord:\n"
@@ -111,6 +124,13 @@ hReadHoldingRegistersFloat =
     ++ "Read values of float type from the provided holding registers\n"
     ++ "Usage: readHoldingRegistersFloat [Starting address] [Number of registers]\n"
     ++ "e.g. readHoldingRegistersFloat 3001 10\n"
+    
+hReadHoldingRegistersDouble :: String
+hReadHoldingRegistersDouble =
+    "readHoldingRegistersDouble:\n"
+    ++ "Read values of double type from the provided holding registers\n"
+    ++ "Usage: readHoldingRegistersDouble [Starting address] [Number of registers]\n"
+    ++ "e.g. readHoldingRegistersDouble 3001 10\n"
 
 hWriteRegistersWord :: String
 hWriteRegistersWord =
@@ -126,14 +146,21 @@ hWriteRegistersBits =
     ++ "The values should be provided in raw bit form, starting with the least significant bit\n"
     ++ "All 16 bits must be provided for a valid input\n"
     ++ "Usage: writeSingleRegisterBits [starting address] [word values ..]\n"
-    ++ "e.g. writeRegistersWord 10 1000000000000000 0100000000000000 1100000000000000  \n"
+    ++ "e.g. writeSingleRegisterBits 10 1000000000000000 0100000000000000 1100000000000000  \n"
 
 hWriteRegistersFloat :: String
 hWriteRegistersFloat =
     "writeRegistersFloat:\n"
     ++ "Write multiple values of float type, starting from the provided address\n"
-    ++ "Usage: writeSingleRegisterFloat [starting address] [float values ..]\n"
-    ++ "e.g. writeRegistersWord 1001 1.1 2.1 3.4\n"
+    ++ "Usage: writeRegistersFloat [starting address] [float values ..]\n"
+    ++ "e.g. writeRegistersFloat 1001 1.1 2.1 3.4\n"
+
+hWriteRegistersDouble :: String
+hWriteRegistersDouble =
+    "writeRegistersDouble:\n"
+    ++ "Write multiple values of double type, starting from the provided address\n"
+    ++ "Usage: writeRegistersDouble [starting address] [float values ..]\n"
+    ++ "e.g. writeRegistersDouble 1001 1.1 2.1 3.4\n"
 
 hRead :: String
 hRead =

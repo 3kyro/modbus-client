@@ -61,12 +61,15 @@ getCommand s = case s of
     "readInputRegistersWord" -> ReadInputRegistersWord
     "readInputRegistersBits" -> ReadInputRegistersBits
     "readInputRegistersFloat" -> ReadInputRegistersFloat
+    "readInputRegistersDouble" -> ReadInputRegistersDouble
     "readHoldingRegistersWord" -> ReadHoldingRegistersWord
     "readHoldingRegistersBits" -> ReadHoldingRegistersBits
     "readHoldingRegistersFloat" -> ReadHoldingRegistersFloat
+    "readHoldingRegistersDouble" -> ReadHoldingRegistersDouble
     "writeRegistersWord" -> WriteRegistersWord
     "writeRegistersBits" -> WriteRegistersBits
     "writeRegistersFloat" -> WriteRegistersFloat
+    "writeRegistersDouble" -> WriteRegistersDouble
     "read" -> Read
     "write" -> Write
     "heartbeat" -> StartHeartbeat
@@ -92,18 +95,24 @@ runReplCommand input =
                 readRegisters args InputRegister (ModWordBit Nothing)
             ReadInputRegistersFloat ->
                 readRegisters args InputRegister (ModFloat Nothing)
+            ReadInputRegistersDouble ->
+                readRegisters args InputRegister (ModDouble Nothing)
             ReadHoldingRegistersWord ->
                 readRegisters args HoldingRegister (ModWord Nothing)
             ReadHoldingRegistersBits ->
                 readRegisters args HoldingRegister (ModWordBit Nothing)
             ReadHoldingRegistersFloat ->
                 readRegisters args HoldingRegister (ModFloat Nothing)
+            ReadHoldingRegistersDouble ->
+                readRegisters args HoldingRegister (ModDouble Nothing)
             WriteRegistersWord ->
                 writeRegisters args HoldingRegister (ModWord Nothing)
             WriteRegistersBits ->
                 writeRegisters args HoldingRegister (ModWordBit Nothing)
             WriteRegistersFloat ->
                 writeRegisters args HoldingRegister (ModFloat Nothing)
+            WriteRegistersDouble ->
+                writeRegisters args HoldingRegister (ModDouble Nothing)
             Read -> readModData args
             Write -> writeModData args
             StartHeartbeat -> heartbeat args
@@ -119,12 +128,15 @@ commandsCompl =
     [ "readInputRegistersWord"
     , "readInputRegistersBits"
     , "readInputRegistersFloat"
+    , "readInputRegistersDouble"
     , "readHoldingRegistersWord"
     , "readHoldingRegistersBits"
     , "readHoldingRegistersFloat"
+    , "readHoldingRegistersDouble"
     , "writeRegistersWord"
     , "writeRegistersBits"
     , "writeRegistersFloat"
+    , "writeRegistersDouble"
     , "read"
     , "write"
     , "heartbeat"
@@ -234,6 +246,7 @@ getAddressModValue mv (addr, value) = do
         ModWord _ -> ModWord . Just <$> pReplWord value
         ModWordBit _ -> ModWordBit . Just <$> pReplWordBit value
         ModFloat _ -> ModFloat . Just <$> pReplFloat value
+        ModDouble _ -> ModDouble . Just <$> pReplFloat value
     return (address, modvalue)
 
 writeModData :: [String] -> Repl ()

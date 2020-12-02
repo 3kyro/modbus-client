@@ -22,7 +22,7 @@ bitsFromString) where
 import Data.Aeson
 import Data.List (foldl')
 import Data.Word (Word16, Word8)
-import Modbus (
+import Modbus (word16ToDouble, double2Word16, 
     Address (..),
     MBRegister (..),
     RegType (..),
@@ -112,13 +112,16 @@ instance MBRegister ModData where
             ModWordBit (Just wb) -> [fromIntegral wb]
             ModFloat Nothing -> []
             ModFloat (Just v) -> float2Word16 bo v
+            ModDouble Nothing -> []
+            ModDouble (Just v) -> double2Word16 bo v
 
+    registerFromWord16 _ md [] = md
     registerFromWord16 bo md vs@(x : _) =
         case modValue md of
             ModWord _ -> md{modValue = ModWord (Just x)}
             ModWordBit _ -> md{modValue = ModWordBit (Just $ fromIntegral x)}
             ModFloat _ -> md{modValue = ModFloat (word16ToFloat bo vs)}
-    registerFromWord16 _ md [] = md
+            ModDouble _ -> md{modValue = ModDouble (word16ToDouble bo vs)}
 
 ---------------------------------------------------------------------------------------------------------------
 -- ModValue
@@ -133,6 +136,7 @@ data ModValue
     = ModWord (Maybe Word16)
     | ModWordBit (Maybe WordBit)
     | ModFloat (Maybe Float)
+    | ModDouble (Maybe Double)
     deriving (Eq)
 
 instance Show ModValue where
@@ -141,6 +145,7 @@ instance Show ModValue where
             ModWord value -> showM value ++ " (Word)"
             ModWordBit value -> showM value ++ " (Word Bits)"
             ModFloat value -> showM value ++ " (Float)"
+            ModDouble value -> showM value ++ " (Double)"
       where
         showM (Just x) = show x
         showM Nothing = "No current value"
@@ -151,6 +156,7 @@ instance Arbitrary ModValue where
             [ ModWord <$> arbitrary
             , ModWordBit <$> (fmap WB <$> arbitrary)
             , ModFloat <$> arbitrary
+            , ModDouble <$> arbitrary
             ]
 
 instance ToJSON ModValue where
@@ -186,6 +192,16 @@ instance ToJSON ModValue where
                     [ "type" .= String "float"
                     , "value" .= Null
                     ]
+            ModDouble (Just x) ->
+                object
+                    [ "type" .= String "double"
+                    , "value" .= x
+                    ]
+            ModDouble Nothing ->
+                object
+                    [ "type" .= String "double"
+                    , "value" .= Null
+                    ]
 
 instance FromJSON ModValue where
     parseJSON (Object o) = do
@@ -200,6 +216,9 @@ instance FromJSON ModValue where
             "float" -> do
                 v <- o .:? "value"
                 return $ ModFloat v
+            "double" -> do
+                v <- o .:? "value"
+                return $ ModDouble v
             _ -> fail "Not a ModValue"
     parseJSON _ = fail "Not a ModValue"
 
@@ -345,6 +364,7 @@ getModValueMult :: ModValue -> Word16
 getModValueMult (ModWord _) = 1
 getModValueMult (ModWordBit _) = 1
 getModValueMult (ModFloat _) = 2
+getModValueMult (ModDouble _) = 4
 
 -- Serialize ModData, including the necessary header for
 -- modbus table parsing
@@ -376,6 +396,7 @@ serializeModValue mt =
         ModWord mv -> "word;" ++ serMaybe mv ++ ";"
         ModWordBit mv -> "bits;" ++ serMaybe mv ++ ";"
         ModFloat fl -> "float;" ++ serMaybe fl ++ ";"
+        ModDouble dl -> "double;" ++ serMaybe dl ++ ";"
   where
     serMaybe (Just x) = show x
     serMaybe Nothing = ""

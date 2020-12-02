@@ -26,7 +26,7 @@ import           Types                   (WordBit, AppError(..), ReplArg (..))
 pReplAddrNum :: String -> String-> Either AppError (Word16, Word16)
 pReplAddrNum a n = (,) <$> pReplWord a <*> pReplWord n
 
-pReplFloat :: String -> Either AppError Float
+pReplFloat :: (Floating a, Read a) => String -> Either AppError a
 pReplFloat = replConvParser pFloat
 
 pReplWord :: Read a => String -> Either AppError a

@@ -1,17 +1,17 @@
 {
-    "seed": -3201846915695007128,
+    "seed": -2241577644300993073,
     "samples": [
         {
             "modData": {
                 "register value": {
-                    "value": 12830,
-                    "type": "word"
+                    "value": 8.73471863119106,
+                    "type": "double"
                 },
-                "uid": 109,
-                "address": 3870,
+                "uid": 12,
+                "address": 9661,
                 "register type": "input register",
-                "name": "lSF",
-                "description": "OQM"
+                "name": "i7PLf2_2wxR",
+                "description": "OHYoWlUbèDEi"
             },
             "selected": false,
             "rw": "read"
@@ -19,29 +19,14 @@
         {
             "modData": {
                 "register value": {
-                    "value": "0000110001101000",
+                    "value": "1001111111111010",
                     "type": "bits"
                 },
-                "uid": 67,
-                "address": 19832,
+                "uid": 247,
+                "address": 3201,
                 "register type": "input register",
-                "name": "ChkXbUX",
-                "description": "CvFPvobigYskTndf"
-            },
-            "selected": true,
-            "rw": "read"
-        },
-        {
-            "modData": {
-                "register value": {
-                    "value": "1011000011111100",
-                    "type": "bits"
-                },
-                "uid": 242,
-                "address": 21442,
-                "register type": "input register",
-                "name": "FBu",
-                "description": "kRIcéU"
+                "name": "awvOs7_CgwpQdIJLF6R5yTB",
+                "description": ""
             },
             "selected": false,
             "rw": "write"
@@ -49,32 +34,47 @@
         {
             "modData": {
                 "register value": {
-                    "value": 32164,
-                    "type": "word"
+                    "value": "0101110000101110",
+                    "type": "bits"
                 },
                 "uid": 128,
-                "address": 13006,
-                "register type": "input register",
-                "name": "cVb5bhdev0yoDMmvJ",
-                "description": "MBogGaMHSDVslhAoDK"
+                "address": 5499,
+                "register type": "holding register",
+                "name": "z",
+                "description": "aVUYèéHdDpXljq"
             },
             "selected": false,
-            "rw": "read"
+            "rw": "write"
         },
         {
             "modData": {
                 "register value": {
-                    "value": null,
+                    "value": 6.76363,
+                    "type": "float"
+                },
+                "uid": 102,
+                "address": 32388,
+                "register type": "holding register",
+                "name": "x3yVtFP1NuYEzpLOzjC",
+                "description": "JçsNUCZj"
+            },
+            "selected": false,
+            "rw": "write"
+        },
+        {
+            "modData": {
+                "register value": {
+                    "value": "1010110100101100",
                     "type": "bits"
                 },
-                "uid": 21,
-                "address": 16819,
-                "register type": "input register",
-                "name": "G5LYD_CzI0vkTkmjympsm",
-                "description": "W"
+                "uid": 210,
+                "address": 14049,
+                "register type": "holding register",
+                "name": "UlCcuGolNyhQj2FqjZb",
+                "description": "cuVjvQsè"
             },
             "selected": true,
-            "rw": "read"
+            "rw": "write"
         }
     ]
 }

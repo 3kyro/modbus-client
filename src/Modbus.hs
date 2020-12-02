@@ -64,6 +64,8 @@ module Modbus (
     newHeartbeat,
     HeartbeatType (..),
     getFunctionAcc,
+    double2Word16,
+    word16ToDouble,
 ) where
 
 import Control.Concurrent (
@@ -100,8 +102,8 @@ import Data.Aeson (
     (.:),
     (.=),
  )
-import Data.Binary.Get (getFloatle, getWord16host, runGet)
-import Data.Binary.Put (putFloatle, putWord16host, runPut)
+import Data.Binary.Get (getDoublele, getFloatle, getWord16host, runGet)
+import Data.Binary.Put (putDoublele, putFloatle, putWord16host, runPut)
 import Data.IP (toHostAddress)
 import Data.IP.Internal (IPv4)
 import Data.Range (Range (..), begin, fromBounds)
@@ -530,6 +532,32 @@ word16ToFloat BE [a, b] =
   where
     float = runPut $ putWord16host b >> putWord16host a
 word16ToFloat _ _ = Nothing
+
+-- Converts a Double to a list of Word16s
+double2Word16 :: WordOrder -> Double -> [Word16]
+double2Word16 LE double =
+    runGet (combine <$> getWord16host <*> getWord16host <*> getWord16host <*> getWord16host) doublele
+  where
+    doublele = runPut $ putDoublele double
+    combine a b c d = a : b : c : [d]
+double2Word16 BE double =
+    runGet (combine <$> getWord16host <*> getWord16host <*> getWord16host <*> getWord16host) doublele
+  where
+    doublele = runPut $ putDoublele double
+    combine a b c d = d : c : b : [a]
+
+-- Converts a list of Word16s to a Maybe Float
+word16ToDouble :: WordOrder -> [Word16] -> Maybe Double
+word16ToDouble _ [] = Nothing
+word16ToDouble LE [a, b, c, d] =
+    Just $ runGet getDoublele double
+  where
+    double = runPut $ putWord16host a >> putWord16host b >> putWord16host c >> putWord16host d
+word16ToDouble BE [a, b, c, d] =
+    Just $ runGet getDoublele double
+  where
+    double = runPut $ putWord16host d >> putWord16host c >> putWord16host b >> putWord16host a
+word16ToDouble _ _ = Nothing
 
 ---------------------------------------------------------------------------------------------------------------
 -- Heartbeat Signal

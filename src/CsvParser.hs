@@ -117,12 +117,13 @@ pValue = do
   dataType <- T.map toLower <$> field pText
   case T.unpack dataType of
     "float" -> ModFloat <$> pMaybeFloat
+    "double" -> ModDouble <$> pMaybeFloat
     "word"  -> ModWord <$> pMaybeWord
     "bits"  -> ModWordBit <$> pMaybeWordBit
     _       -> fail ""
 
 -- Parses a float field, returns Nothing if field is empty
-pMaybeFloat :: Parser (Maybe Float)
+pMaybeFloat :: (Floating a, Read a) => Parser (Maybe a)
 pMaybeFloat = Just <$> combinations <|> nothing
   where
     combinations = field pFloatLeadingDot <|> noDot <|> noFractional <|> dotted <|> scientific
@@ -139,7 +140,7 @@ pMaybeFloat = Just <$> combinations <|> nothing
 -- no fractional: eg 15.
 -- usual representation: eg 10.24
 -- scientific representation: eg 3.24e-12
-pFloat :: Parser Float
+pFloat :: (Floating a , Read a )=>Parser a
 pFloat =
         pFloatLeadingDot
     <|> try (only $ fromIntegral <$> pInt)
@@ -172,17 +173,17 @@ pInt :: Parser Int
 pInt = read <$> ((:) <$> option ' ' (char '-') <*> many1 digit)
 
 -- Parses a float in leading dot format (eg .2)
-pFloatLeadingDot :: Parser Float
+pFloatLeadingDot :: (Floating a , Read a )=> Parser a
 pFloatLeadingDot = read <$> (char '.' *> addLeadingZero)
   where
     addLeadingZero = (++) "0." <$> many1 digit
 
 -- Parses a float when no fractional is given
-pFloatNoFractional :: Parser Float
+pFloatNoFractional :: (Floating a , Read a ) => Parser a
 pFloatNoFractional = read . show <$> pInt <* char '.'
 
 -- Parses a float in the normal (integer dot fractional) representation
-pFloatDotted :: Parser Float
+pFloatDotted :: (Floating a , Read a ) => Parser a
 pFloatDotted = read <$> pFloatDottedRaw
 
 pFloatDottedRaw :: Parser String
@@ -193,7 +194,7 @@ pFloatDottedRaw = (:) <$> option ' ' (char '-') <*> float
       fractional = (:) <$> char '.' <*> many1 digit
 
 -- Parses a float in scientific format eg 1.3e-2
-pFloatScientific :: Parser Float
+pFloatScientific :: (Floating a , Read a ) => Parser a
 pFloatScientific = read <$> ((++) <$> dotted <*> expo)
   where
       dotted = pFloatDottedRaw

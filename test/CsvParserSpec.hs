@@ -1,3 +1,5 @@
+{-# LANGUAGE ScopedTypeVariables #-}
+
 module CsvParserSpec where
 
 import Data.Char (
@@ -97,7 +99,7 @@ pCommentSpec = describe "Parse a comment field" $ do
 pFloatSpec :: Spec
 pFloatSpec = describe "Parse a float" $ do
     it "parses floats" $
-        property $ \x ->
+        property $ \(x :: Float) ->
             Right (Just x) == testCSVParser pMaybeFloat (show x ++ ";")
     it "parses integers as floats" $ property prop_ints_as_floats
     it "parses floats with no fractional (eg 100.)" $ property prop_no_fractional
