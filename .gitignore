@@ -1,5 +1,5 @@
 frontend/elm-stuff/*
-frontend/main.js
+frontend/app.js
 testModbusServer/mbserver/target
 testModbusServer/mbserver/Cargo.lock
 .stack-work/

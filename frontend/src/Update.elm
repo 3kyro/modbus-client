@@ -58,6 +58,7 @@ import Time
 import Types
     exposing
         ( ActiveTab(..)
+        , RequestResult
         , BaudRate
         , ConnectActiveTab(..)
         , ConnectStatus(..)
@@ -91,11 +92,12 @@ import Types
         , showConnInfo
         , showFailedHeartbeat
         , showKeepAliveResponse
-        , showOs
+        , showOs 
         , showWordOrderResponse
         , toWordOrder
         )
 import Types.IpAddress exposing (IpAddressByte, setIpAddressByte)
+import Expect exposing (ok)
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -587,7 +589,7 @@ changeActiveTabModelUpdate model tab =
 
 -- Connect tab management
 ------------------------------------------------------------------------------------------------------------------
-
+ 
 
 connectRequest : Model -> Cmd Msg
 connectRequest model =
@@ -882,23 +884,31 @@ parseModDataRequest content =
     Http.post
         { url = "http://localhost:4000/parseModData"
         , body = Http.jsonBody <| E.string content
-        , expect = Http.expectJson ReceivedParsedModData <| D.list decodeModData
+        , expect = Http.expectJson ReceivedParsedModData <| decodeResult (D.list decodeModData)
         }
 
 
-receivedParsedModDataModelUpdate : Model -> Result Http.Error (List ModData) -> Model
+receivedParsedModDataModelUpdate : Model -> Result Http.Error (RequestResult (List ModData)) -> Model
 receivedParsedModDataModelUpdate model result =
     case result of
         Err err ->
             { model
                 | notifications =
+                    simpleNot
+                        model
+                        "Error processing register table"
+            }
+
+        Ok (Err parseErr) ->
+            { model
+                | notifications =
                     detailedNot
                         model
                         "Error parsing register table"
-                        (showHttpError err)
+                        parseErr
             }
 
-        Ok mds ->
+        Ok (Ok mds) ->
             { model
                 | modDataUpdate = newModDataUpdate mds
                 , csvLoaded = True
@@ -1462,6 +1472,14 @@ detailedNot model header detailed =
 -- Other
 ------------------------------------------------------------------------------------------------------------------
 
+
+-- Decode a Haskell Result type
+decodeResult : D.Decoder a -> D.Decoder (Result String a)
+decodeResult decoder =  
+    D.oneOf
+        [ D.map Err <| D.field "Left" D.string
+        , D.map Ok <| D.field "Right" decoder
+        ] 
 
 showHttpError : Http.Error -> String
 showHttpError err =

@@ -12,6 +12,7 @@ module Types exposing
     , Msg(..)
     , OS(..)
     , Parity(..)
+    , RequestResult
     , SettingsOptions(..)
     , StopBits(..)
     , WordOrder(..)
@@ -123,7 +124,7 @@ type
     | CsvRequested
     | CsvSelected File
     | CsvLoaded String
-    | ReceivedParsedModData (Result Http.Error (List ModData))
+    | ReceivedParsedModData (Result Http.Error (RequestResult (List ModData)))
     | UpdateModDataRequest (List ModDataUpdate)
     | UpdateRegisters (Result Http.Error (List ModDataUpdate))
     | SelectAllChecked Bool
@@ -973,6 +974,13 @@ fromIdList hbs ids =
     List.foldr (f hbs) [] ids
 
 
+
+--------------------------------------------------------------------------------------------------
+-- RequestResult
+--------------------------------------------------------------------------------------------------
+-- A RequestResult is a response to a request that can fail. The response contains a message to be sent to 
+-- the notifications 
+type alias RequestResult a = Result String a 
 
 --------------------------------------------------------------------------------------------------
 -- Utils

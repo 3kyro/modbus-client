@@ -156,7 +156,6 @@ incrementModDataAddr md i =
     { md | modAddress = md.modAddress + i * getModValueMult md.modValue }
 
 
-
 --------------------------------------------------------------------------------------------------
 -- ModDataUpdate
 --------------------------------------------------------------------------------------------------
@@ -834,3 +833,5 @@ bitsFuzz =
             Fuzz.map String.fromList list
     in
     Fuzz.map bitsFromString str
+
+

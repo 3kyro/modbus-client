@@ -66,7 +66,7 @@ type ServerAPI =
     "modData" :> ReqBody '[JSON] [ModDataUpdate] :> Post '[JSON] [ModDataUpdate]
         :<|> "connect" :> ReqBody '[JSON] ConnectionRequest :> Post '[JSON] ()
         :<|> "disconnect" :> ReqBody '[JSON] String :> Post '[JSON] ()
-        :<|> "parseModData" :> ReqBody '[JSON] String :> Post '[JSON] [ModData]
+        :<|> "parseModData" :> ReqBody '[JSON] String :> Post '[JSON] (Either T.Text [ModData])
         :<|> "keepAlive" :> ReqBody '[JSON] KeepAliveServ :> Post '[JSON] KeepAliveResponse
         :<|> "wordOrder" :> ReqBody '[JSON] WordOrder :> Post '[JSON] WordOrder
         :<|> "startHeartbeat" :> ReqBody '[JSON] HeartbeatRequest :> Post '[JSON] [Word32]
@@ -279,13 +279,13 @@ rtuModUpdateSession order mdu =
             MDUWrite -> rtuUpdateMBRegister order mdu
         else pure mdu
 
-parseAndSend :: String -> Handler [ModData]
+parseAndSend :: String -> Handler (Either T.Text [ModData])
 parseAndSend content =
     let md = runpCSV $ T.pack content
      in case md of
-            Left _ -> throwError err400
+            Left err -> pure $ Left $ T.pack $ show err
             Right mds -> do
-                pure mds
+                pure $ Right mds
 
 keepAlive :: TVar ServState -> KeepAliveServ -> Handler KeepAliveResponse
 keepAlive state kaValue = do
