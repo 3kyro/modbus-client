@@ -7,7 +7,7 @@ Unicode True
 !define EXECUTABLE_NAME "modbus-client.exe"
 
 !define VERSIONMAJOR 0
-!define VERSIONMINOR 1
+!define VERSIONMINOR 2
 !define VERSIONPATCH 0
 
 ; The name of the installer
