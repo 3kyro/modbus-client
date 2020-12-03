@@ -497,7 +497,7 @@ renderLogoModule model =
         , alignBottom
         , spacing 10
         ]
-        [ el [ Font.size 15 ] <| text "version : 0.1.1"
+        [ el [ Font.size 15 ] <| text "version : 0.2.0"
         , el [ Font.size 30 ] <| text "Modbus Client"
         ]
 

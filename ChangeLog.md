@@ -2,7 +2,7 @@
 
 ## Unreleased changes
 
-## 0.1.1
+## 0.2.0
 
 - Add Double (4 words) type to ModValue
 - Display parse errors as notifications
