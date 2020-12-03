@@ -36,8 +36,11 @@ elmInput basePath = frontend basePath </> "src" </> "App.elm"
 elmOutput :: FilePath -> FilePath
 elmOutput basePath = buildFrontend basePath  </> "app.js"
 
+buildRoot :: FilePath -> FilePath
+buildRoot basePath = basePath </> "build"
+
 build :: FilePath -> FilePath
-build basePath = basePath </> "build"
+build basePath = buildRoot basePath </> "modbus-client"
 
 mbServer :: FilePath -> FilePath
 mbServer basePath = testModbusServer basePath </> "mbserver"
@@ -101,6 +104,7 @@ main = do
         echo "copying files"
         echo "-----------------------------------------------------"
         cp (appRootPath </> "LICENSE")  (build appRootPath </> "LICENSE")
+        cp (appRootPath </> "README.md")  (build appRootPath </> "README.md")
         cp (appRootPath </> "sample.csv")  (build appRootPath </> "sample.csv")
 
         
@@ -116,6 +120,13 @@ main = do
                 echo "-----------------------------------------------------"
                 cd $ build appRootPath
                 void $ proc "makensis" ["install.nsi"] empty
+            Linux -> do
+                echo "-----------------------------------------------------"
+                echo "creating tar.gz"
+                echo "-----------------------------------------------------"
+                cd $ buildRoot appRootPath
+                void $ proc "tar" ["-czf", "modbus-client.tar.gz", "modbus-client" ] empty
+                cd appRootPath
             _ -> return ()
 
         echo "-----------------------------------------------------"
