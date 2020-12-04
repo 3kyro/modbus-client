@@ -55,6 +55,7 @@ Section "Modbus Client"
   CreateDirectory $INSTDIR\frontend
   File "modbus-client.exe"
   File "LICENSE"
+  File "README.MD"
   File "sample.csv"
   File /r "app.js"
   File /r "index.html"

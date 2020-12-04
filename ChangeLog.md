@@ -2,6 +2,8 @@
 
 ## Unreleased changes
 
+- Add Readme.md to Windows installation
+
 ## 0.2.0
 
 - Add Double (4 words) type 
