@@ -2,44 +2,7 @@ module View exposing (view)
 
 import Deque exposing (isEmpty)
 import Dropdown exposing (..)
-import Element
-    exposing
-        ( Attribute
-        , Color
-        , Element
-        , IndexedColumn
-        , alignBottom
-        , alignLeft
-        , alignTop
-        , centerX
-        , centerY
-        , column
-        , el
-        , fill
-        , fillPortion
-        , focused
-        , height
-        , htmlAttribute
-        , indexedTable
-        , layout
-        , mouseOver
-        , moveDown
-        , moveLeft
-        , none
-        , padding
-        , paddingXY
-        , paragraph
-        , px
-        , rotate
-        , row
-        , scrollbarX
-        , scrollbarY
-        , scrollbars
-        , spacing
-        , text
-        , textColumn
-        , width
-        )
+import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border
 import Element.Font as Font
@@ -497,7 +460,12 @@ renderLogoModule model =
         , alignBottom
         , spacing 10
         ]
-        [ el [ Font.size 15 ] <| text "version : 0.2.0"
+        [ newTabLink [ Font.color blueSapphire ]
+            { url = "https://github.com/3kyro/modbus-client"
+            , label = text "website"
+
+            }
+        , el [ Font.size 15 ] <| text "version : 0.2.0"
         , el [ Font.size 30 ] <| text "Modbus Client"
         ]
 
