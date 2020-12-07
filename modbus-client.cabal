@@ -4,10 +4,10 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: f90b02bd40b7234bc0c5416136f042f5826136e7e2706ac9646d30926d47c159
+-- hash: 88ad8793a33d280e69b2bfc5c6772d11506eae75fe775e01fac63c249204e59d
 
 name:           modbus-client
-version:        0.2.0.0
+version:        0.2.1.0
 description:    Please see the README on GitHub at <https://github.com/githubuser/modbus-client#readme>
 homepage:       https://github.com/3kyro/modbus-client#readme
 bug-reports:    https://github.com/3kyro/modbus-client/issues
