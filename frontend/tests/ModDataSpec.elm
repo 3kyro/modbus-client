@@ -29,6 +29,11 @@ suite =
                                 (ModFloat (Just (fromFloat 2)))
                             <|
                                 (fromModValueInput md "2").modValue
+                        ModDouble _ ->
+                            Expect.equal
+                                (ModDouble (Just (fromFloat 3.14)))
+                            <|
+                                (fromModValueInput md "3.14").modValue
             , fuzz fuzzModData "correctly modifies a ModBits" <|
                 \md ->
                     case md.modValue of
@@ -45,6 +50,9 @@ suite =
                         ModFloat _ ->
                             Expect.equal (ModFloat <| Just (fromFloat 1100110011101010)) <|
                                 (fromModValueInput md "1100110011101010").modValue
+                        ModDouble _ ->
+                            Expect.equal (ModDouble <| Just (fromFloat 1100110011101010)) <|
+                                (fromModValueInput md "1100110011101010").modValue
             , fuzz fuzzModData "correctly modifies a ModFloat" <|
                 \md ->
                     case md.modValue of
@@ -60,6 +68,10 @@ suite =
 
                         ModBits _ ->
                             Expect.equal (ModBits Nothing) <|
+                                (fromModValueInput md "3.24").modValue
+
+                        ModDouble _ ->
+                            Expect.equal (ModDouble Nothing) <|
                                 (fromModValueInput md "3.24").modValue
             ]
         ]
