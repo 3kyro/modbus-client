@@ -236,6 +236,9 @@ type alias Model =
     , keepAliveIdle : Maybe Int -- in seconds
     , keepAliveInterval : Maybe Int -- in seconds
     , wordOrder : WordOrder
+
+    -- version
+    , version : String
     }
 
 

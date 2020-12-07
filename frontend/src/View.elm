@@ -465,7 +465,7 @@ renderLogoModule model =
             , label = text "website"
 
             }
-        , el [ Font.size 15 ] <| text "version : 0.2.1"
+        , el [ Font.size 15 ] <| text <| "version : " ++ model.version
         , el [ Font.size 30 ] <| text "Modbus Client"
         ]
 

@@ -118,6 +118,9 @@ initModel =
     , keepAliveIdle = Nothing
     , keepAliveInterval = Nothing
     , wordOrder = LE
+
+    -- version
+    , version = "0.2.1"
     }
 
 
