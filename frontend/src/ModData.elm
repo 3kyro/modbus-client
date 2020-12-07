@@ -2,7 +2,7 @@ module ModData exposing
     ( ModData
     , ModDataUpdate
     , ModValue(..)
-    , RegType(..), getRegMduList, modEmptyColumn, readWriteColumn
+    , RegType(..)
     , bitsFromString
     , decodeModData
     , decodeModDataUpdate
@@ -12,11 +12,12 @@ module ModData exposing
     , fromModValueInputUpdate
     , fuzzModData
     , getModValue
-    , showModValueType
     , getModValueUpdate
+    , getRegMduList
     , isWriteableReg
     , modAddressColumn
     , modDescriptionColumn
+    , modEmptyColumn
     , modNameColumn
     , modRegTypeColumn
     , modUidColumn
@@ -24,6 +25,7 @@ module ModData exposing
     , modValueTypeColumn
     , newModDataUpdate
     , offsetMdu
+    , readWriteColumn
     , replaceModDataSelected
     , replaceModDataWrite
     , selectColumn
@@ -32,6 +34,7 @@ module ModData exposing
     , setRegRWUpdate
     , setRegTypeUpdate
     , setRegUidUpdate
+    , showModValueType
     , showRegType
     , tableCellColor
     )
@@ -46,20 +49,21 @@ import Json.Decode as D
 import Json.Encode as E
 import Palette
     exposing
-        ( grey
+        ( blueSapphire
+        , fireBrick
+        , grey
         , greyWhite
         , lightGrey
-        , blueSapphire
-        , fireBrick
         )
 import ReadWrite
     exposing
         ( ReadWrite(..)
         , decodeRW
         , encodeRW
-        , readWriteButton
         , flipRW
+        , readWriteButton
         )
+
 
 
 --------------------------------------------------------------------------------------------------
@@ -159,6 +163,7 @@ incrementModDataAddr md i =
     { md | modAddress = md.modAddress + i * getModValueMult md.modValue }
 
 
+
 --------------------------------------------------------------------------------------------------
 -- ModDataUpdate
 --------------------------------------------------------------------------------------------------
@@ -256,7 +261,10 @@ setModValueUpdate mdu mv =
     { mdu | mduModData = setModValue mdu.mduModData mv }
 
 
+
 -- create a list of ModDataUpdates
+
+
 getRegMduList : ModDataUpdate -> Maybe Int -> List ModDataUpdate
 getRegMduList mdu mnum =
     case mdu.mduRW of
@@ -273,7 +281,11 @@ getRegMduList mdu mnum =
                 Just num ->
                     offsetMdu mdu num
 
+
+
 -- crete a list of ModDataUpdate by offeseting a base mdu by a given number
+
+
 offsetMdu : ModDataUpdate -> Int -> List ModDataUpdate
 offsetMdu mdu num =
     let
@@ -284,7 +296,6 @@ offsetMdu mdu num =
     List.indexedMap
         (\i m -> { m | mduModData = incrementModDataAddr m.mduModData i })
         mdus
-
 
 
 
@@ -364,6 +375,7 @@ readWriteColumn rwAllmsg readwriteall rwOnemsg =
     , view = \i md -> viewReadWriteModDataCell i md rwOnemsg
     }
 
+
 viewReadWriteModDataCell : Int -> ModDataUpdate -> (Int -> ReadWrite -> msg) -> Element msg
 viewReadWriteModDataCell idx md msg =
     el
@@ -385,10 +397,11 @@ viewReadWriteModDataCell idx md msg =
         else
             none
 
+
 modNameColumn : IndexedColumn ModDataUpdate msg
 modNameColumn =
     { header = el [ height <| px 38 ] <| el headerTextAttr <| text "Name"
-    , width = fill |> minimum 200 
+    , width = fill |> minimum 200
     , view = \i md -> viewCell i md.mduModData.modName
     }
 
@@ -498,13 +511,18 @@ viewDescCell idx str =
         ]
         (el [ alignLeft, centerY ] <| text str)
 
+
+
 -- Hack to fill empty space in a ModDataYpdate table
+
+
 modEmptyColumn : IndexedColumn ModDataUpdate msg
 modEmptyColumn =
     { header = el [ height <| px 38 ] <| el headerTextAttr <| text ""
     , width = fill
     , view = \i md -> viewEmptyColumn i
     }
+
 
 viewEmptyColumn : Int -> Element msg
 viewEmptyColumn idx =
@@ -760,6 +778,7 @@ modValueFuzzer =
 -- Custom type to overcome a limitaion of elm when updating float inputs
 -- Speciffically "1." is a valid float that is shown as "1"
 -- This blocks inputs after a dot is typed
+-- Mfloat also address starting an input with a minus
 
 
 type alias MFloat =
@@ -783,7 +802,12 @@ showMFloat mf =
 
 toMFloat : String -> Maybe MFloat
 toMFloat s =
-    Maybe.map (MFloat s) <| String.toFloat s
+    -- Necessary in input boxes when we start typing with a minus
+    if s == "-" then
+        Just <| MFloat s 0
+
+    else
+        Maybe.map (MFloat s) <| String.toFloat s
 
 
 fromFloat : Float -> MFloat
@@ -860,5 +884,3 @@ bitsFuzz =
             Fuzz.map String.fromList list
     in
     Fuzz.map bitsFromString str
-
-
