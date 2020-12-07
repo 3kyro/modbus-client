@@ -4,6 +4,7 @@
 
 - Add Readme.md to Windows installation
 - Fix sample.csv typo
+- Float inputs accept "-" as first letter
 
 ## 0.2.0
 

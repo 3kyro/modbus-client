@@ -37,6 +37,7 @@ module ModData exposing
     , showModValueType
     , showRegType
     , tableCellColor
+    , updateModValue
     )
 
 import Element exposing (..)
@@ -114,28 +115,38 @@ decodeModData =
         (D.field "description" D.string)
 
 
+
+-- Update a ModData by using a ModValue's value
+
+
 fromModValueInput : ModData -> String -> ModData
 fromModValueInput md str =
-    case md.modValue of
+    { md | modValue = updateModValue md.modValue str }
+
+
+
+-- Update a ModValue's value
+
+
+updateModValue : ModValue -> String -> ModValue
+updateModValue mv str =
+    case mv of
         ModWord _ ->
-            { md | modValue = ModWord <| String.toInt str }
+            ModWord <| String.toInt str
 
         ModBits _ ->
             if bitsValidString str then
-                { md
-                    | modValue =
-                        ModBits <|
-                            bitsFromString str
-                }
+                ModBits <|
+                    bitsFromString str
 
             else
-                md
+                mv
 
         ModFloat _ ->
-            { md | modValue = ModFloat <| toMFloat str }
+            ModFloat <| toMFloat str
 
         ModDouble _ ->
-            { md | modValue = ModDouble <| toMFloat str }
+            ModDouble <| toMFloat str
 
 
 setRegType : ModData -> RegType -> ModData
