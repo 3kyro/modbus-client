@@ -8,7 +8,7 @@ Unicode True
 
 !define VERSIONMAJOR 0
 !define VERSIONMINOR 2
-!define VERSIONPATCH 0
+!define VERSIONPATCH 1
 
 ; The name of the installer
 Name "Modbus Client"

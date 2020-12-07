@@ -1,5 +1,5 @@
 name:                modbus-client
-version:             0.2.0.0
+version:             0.2.1.0
 github:              "3kyro/modbus-client"
 license:             BSD3
 author:              "Kyriakos Papachrysanthou"

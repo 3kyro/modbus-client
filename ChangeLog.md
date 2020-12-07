@@ -2,6 +2,8 @@
 
 ## Unreleased changes
 
+## 0.2.1
+
 - Add Readme.md to Windows installation
 - Fix sample.csv typo
 - Float inputs accept "-" as first letter
