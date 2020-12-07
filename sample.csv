@@ -1,5 +1,5 @@
 Name;Register Type;Register Address;Data Type;Data Value;Unit Id;Description
-stat#2s;input register;10;Word;1;1;0 = device is stopped, 1 = device is running
+status;input register;10;Word;1;1;0 = device is stopped, 1 = device is running
 command;holding register;10;Word;0;1;0 = stop device, 1 = start device
 setpoint;holding register;15;Float;;1;power setpoint
 temperature;input register;20;Double;35.2;1;device temperature
